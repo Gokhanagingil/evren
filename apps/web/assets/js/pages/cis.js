@@ -3,6 +3,7 @@
 import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
 import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, splitCi, srcChip } from '../lib/data.js';
+import { openEditDialog } from './ci-edit.js';
 
 const SCOPES = {
   '': 'Tüm kapsam',
@@ -13,6 +14,7 @@ const SCOPES = {
 };
 const PAGE = 100;
 const SPLIT_TONE = { pending: 'warn', applied: 'good', rejected: 'bad' };
+const EDIT_RESULT = { applied: 'uygulandı', cleared: 'elle değer kaldırıldı', overridden: 'yedek', unauthorized: 'elle yazılamaz', invalid: 'geçersiz' };
 /** Tarih-saat alanları yerel biçimde (API ISO 8601 UTC döner). */
 const shown = (a) => (a.type === 'glide_date_time' ? formatDateTime(a.value) : a.display);
 
@@ -152,6 +154,19 @@ export async function renderCis(view, param) {
       other ? h('div', { class: 'small' }, h('a', { href: `#/ci/${other}` }, s.side === 'source' ? 'Kaydın taşındığı CI' : 'Kaydın ayrıldığı CI')) : null);
   }
 
+  function editItem(c, e) {
+    const labels = Object.fromEntries(c.editable.map((f) => [f.attribute, f.label]));
+    return h('li', {},
+      h('div', { class: 'pills' }, pill(e.status_label, SPLIT_TONE[e.status] || 'neutral'), srcChip('Manual', 'Manual')),
+      h('div', { class: 'small' }, e.attributes.map((a) => {
+        const r = e.result?.[a];
+        const label = labels[a] || a;
+        if (!r) return label;
+        return r.status === 'overridden' ? `${label}: yedek (${r.source} öncelikli)` : `${label}: ${EDIT_RESULT[r.status] || r.status}`;
+      }).join(' · ')),
+      h('div', { class: 'cell-sub' }, `${e.requested_by} · ${formatDateTime(e.requested_at)}`));
+  }
+
   async function open(id, opener) {
     const c = await ciDetail(id);
     if (!c) return;
@@ -163,6 +178,8 @@ export async function renderCis(view, param) {
       kicker: `Konfigürasyon öğesi · ${c.class_label}`, title: c.name, opener,
       onClose: () => { selected = null; history.replaceState(null, '', '#/ci'); table?.refreshSelection(); },
       body: [
+        mode === 'api' && c.can_edit ? h('div', { class: 'panel-actions' }, h('button', { class: 'btn secondary small', type: 'button', id: 'ciEdit',
+          onclick: (ev) => openEditDialog(c, ev.currentTarget, () => open(c.sys_id, opener)) }, 'Düzenle…')) : null,
         h('div', { class: 'pills' }, pill(c.class_label, 'neutral'), c.used_for ? pill(c.used_for_label || c.used_for, c.used_for === 'Production' ? 'good' : 'neutral') : null,
           c.operational_status ? pill(c.operational_status, 'info') : null),
         h('div', { class: 'stat-strip', 'aria-label': 'Kaynak kapsamı' }, cov.map(([label, ok]) => h('div', { class: `stat ${ok ? 'good' : c.server || label === 'Keşif' ? 'bad' : ''}` },
@@ -177,6 +194,7 @@ export async function renderCis(view, param) {
         section('Kaynak kayıtları ve kimlik kararı', h('ul', { class: 'mini', id: 'ciLinks' }, c.links.map((l) => linkItem(c, l))),
           mode === 'api' && c.can_split && c.links.length > 1
             ? h('p', { class: 'muted small' }, 'Yanlış birleştirilmiş bir kaynak kaydını "Ayır" ile bu CI\'dan ayırabilirsiniz.') : null),
+        c.edits?.length ? section('Elle düzenlemeler', h('ul', { class: 'mini', id: 'ciEdits' }, c.edits.map((e) => editItem(c, e)))) : null,
         c.splits?.length ? section('Ayırma geçmişi', h('ul', { class: 'mini', id: 'ciSplits' }, c.splits.map(splitItem))) : null,
         mode === 'api' ? section('Değişim geçmişi', historyBox) : null,
         section('Kimlik', kv([['sys_id', h('span', { class: 'mono' }, c.sys_id)], ['Sınıf (sys_class_name)', h('span', { class: 'mono' }, c.class)],

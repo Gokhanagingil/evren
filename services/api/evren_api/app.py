@@ -17,10 +17,11 @@ from evren_core.web import SECURITY_HEADERS, STATIC_TYPES
 from .authz import Authorizer
 from .config import REPO_ROOT, Settings
 from .db import make_pool
+from .editing import EditPolicy
 from .entra import Entra
 from .errors import install_handlers
 from .present import Presenter
-from .routers import auth, ci, platform, queue
+from .routers import auth, ci, platform, queue, refs
 from .rules_view import build_rules_view
 from .security import SessionCodec
 
@@ -53,6 +54,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     app.state.presenter = Presenter(md)
     app.state.sessions = SessionCodec(settings.session_key, settings.session_hours)
     app.state.rules_view = build_rules_view(md)
+    app.state.edit_policy = EditPolicy(md)
     app.state.entra = entra or (Entra(settings.entra) if settings.entra else None)
     install_handlers(app)
 
@@ -78,7 +80,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
             return JSONResponse({"status": "unavailable"}, status_code=503)
         return JSONResponse({"status": "ok"})
 
-    for r in (platform.router, ci.router, queue.router, auth.router):
+    for r in (platform.router, ci.router, queue.router, refs.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

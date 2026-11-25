@@ -129,6 +129,20 @@ export async function decide(item, body) {
 
 export function undoDemoDecision(id) { demoDecisions.delete(id); }
 
+/** Elle düzenleme (yalnızca API modu): değerler Manual kaynak kaydı olarak uzlaştırmaya girer; yanıt 202. */
+export async function editCi(ciId, attributes, note) {
+  return api(`/api/v1/ci/${encodeURIComponent(ciId)}`, {
+    method: 'PATCH', body: JSON.stringify({ attributes, note: note || null, idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+
+/** Referans verisi araması (grup, kişi, konum…). */
+export async function refSearch(table, q = '', limit = 200) {
+  const p = new URLSearchParams({ limit: String(limit) });
+  if (q) p.set('q', q);
+  return api(`/api/v1/ref/${encodeURIComponent(table)}?${p}`);
+}
+
 /** Birleştirmeyi ayırma isteği (yalnızca API modu): uzlaştırıcı uygular; yanıt 202 + istek kimliği. */
 export async function splitCi(ciId, linkId, note) {
   return api(`/api/v1/ci/${encodeURIComponent(ciId)}/split`, {

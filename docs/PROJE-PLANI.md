@@ -74,7 +74,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_
   - Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
 - [ ] **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_
-  - Not: Kod ve testler tamam (services/api, ADR-0010): okuma uç noktaları, kalıcı kuyruk kararı, Entra OIDC + PKCE, rol eşlemesi, girişte SoD; arayüz API modunda çalışıyor. Canlı Entra kaydıyla kabul bekliyor. CI düzenleme (PATCH, Manual kaydı) ve ServiceNow uyumlu uç noktalar sonraki adım.
+  - Not: Kod ve testler tamam (services/api, ADR-0010, ADR-0012): okuma uç noktaları, kalıcı kuyruk kararı, birleştirmeyi ayırma, elle düzenleme (Manual kaynak kaydı, alan başına sonuç), Entra OIDC + PKCE, rol eşlemesi, girişte SoD; arayüz API modunda çalışıyor. Canlı Entra kaydıyla kabul bekliyor. Makine hesapları ve ilişki düzenleme sırada.
   - Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
 - [ ] **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_
   - Not: Eşleme dosyası ve sys_id koruyan ilk yükleme mantığı hazır (connectors/servicenow_cmdb, IdentityEngine.import_existing).

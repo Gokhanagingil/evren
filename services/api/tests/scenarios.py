@@ -71,3 +71,25 @@ def apply_pending_splits() -> list[str]:
     with psycopg.connect(autocommit=True) as conn:
         conn.execute("SET ROLE evren_app_reconciler")
         return [r.ci_sys_id for r in ReconcilerStore(conn, md).apply_splits() if r.outcome == "split"]
+
+
+def make_ci() -> tuple[str, str]:
+    """Tek keşif kaydından oluşan, testin kendine ait CI'ı. Döner: (sys_id, ad)."""
+    md = load_metadata(REPO / "metadata")
+    tag = uuid.uuid4().hex[:8]
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        store = ReconcilerStore(conn, md)
+        run = store.start_run(uuid.uuid4(), "BMC")
+        ci = store.apply(IngestRecord(data_source="BMC", run_id=run, source_key=f"ed-{tag}",
+                                      class_hint="cmdb_ci_linux_server", observed_at=datetime.now(UTC),
+                                      attributes={"name": f"ed-{tag}", "serial_number": f"CZE{tag}", "os": "RHEL 9.4"}))
+    return ci.ci_sys_id, f"ed-{tag}"
+
+
+def apply_pending_edits() -> list[str]:
+    """Uzlaştırıcıyı bir tur çalıştırır (elle düzenleme istekleri); sonuç notlarını döner."""
+    md = load_metadata(REPO / "metadata")
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        return [r.summary for r in ReconcilerStore(conn, md).apply_manual_edits()]

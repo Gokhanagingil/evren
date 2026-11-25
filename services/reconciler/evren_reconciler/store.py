@@ -21,7 +21,7 @@ from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
 from psycopg import sql
@@ -81,6 +81,32 @@ def _record_from_row(row: dict[str, Any]) -> IngestRecord:
         data_source=row["data_source"], run_id=row["last_run"] or UUID(int=0), source_key=row["source_key"],
         class_hint=row["class_hint"], attributes=row["attributes"], lookup=row["lookup"],
         external_ids=row["external_ids"], relations=row["relations"], observed_at=row["last_seen"])
+
+
+def _manual_outcome(name: str, value: Any, winners: dict[str, Any], conflicts: dict[str, Any]) -> dict[str, Any]:
+    """Elle girilen değerin uzlaştırmadaki sonucu (arayüzde alan başına gösterilir)."""
+    if value is None:
+        w = winners.get(name)
+        return {"status": "cleared", "source": w.get("source") if w else None}
+    if name in (conflicts.get("_dropped") or {}):
+        return {"status": "invalid", "source": None}
+    if any(src == "Manual" for src, _ in conflicts.get(name, [])):
+        return {"status": "unauthorized", "source": None}
+    w = winners.get(name) or {}
+    if w.get("source") == "Manual":
+        return {"status": "applied", "source": "Manual"}
+    return {"status": "overridden", "source": w.get("source")}
+
+
+def _manual_note(outcome: dict[str, dict[str, Any]]) -> str:
+    counts: dict[str, int] = {}
+    for o in outcome.values():
+        counts[o["status"]] = counts.get(o["status"], 0) + 1
+    parts = [f"{n} alan {label}" for key, label in (
+        ("applied", "uygulandı"), ("cleared", "için elle değer kaldırıldı"),
+        ("overridden", "daha öncelikli kaynakta; elle değer yedek olarak saklandı"),
+        ("unauthorized", "elle yazılamaz"), ("invalid", "geçersiz")) if (n := counts.get(key))]
+    return "; ".join(parts) or "Değişiklik yok"
 
 
 def content_hash(record: IngestRecord) -> str:
@@ -202,13 +228,16 @@ class ReconcilerStore:
             index = PostgresCandidateIndex(cur)
             resolver = IdentityResolver(self.rules, index, links)
             sr = source_record_from_ingest(record)
-            keys = extract_keys(sr)
+            # Elle giriş sabit bir CI'a bağlıdır; yazım hatası kimlik dizinini kirletmesin diye anahtar eklemez.
+            keys = keys_from_json({}) if method == "manual" else extract_keys(sr)
 
             if attach_to is not None:
                 created = self._ensure_ci(cur, attach_to, record) if method == "import" else False
                 self._attach(cur, index, resolver, record, keys, attach_to, method=method, rule="import" if created
                              else method, resolution=None)
-                changes = self._reconcile(cur, attach_to, record.run_id)
+                manual = method == "manual"
+                changes = self._reconcile(cur, attach_to, record.run_id, released="Manual" if manual else None,
+                                          reason="manual" if manual else "reconciliation")
                 return ApplyResult("linked", attach_to, changes, "İlk yükleme" if created else "Elle bağlandı")
 
             res = resolver.resolve(sr, keys)
@@ -365,11 +394,12 @@ class ReconcilerStore:
             return None
 
     def _reconcile(self, cur: psycopg.Cursor[Any], ci: str, run_id: UUID | None, *,
-                   released: str | None = None) -> list[dict[str, Any]]:
+                   released: str | None = None, reason: str = "reconciliation") -> list[dict[str, Any]]:
         """CI'ın etkin bağlı kaynak kayıtlarını uzlaştırır.
 
-        ``released``: ayırmada CI'dan çıkan veri kaynağı. Önceki kazananı bu kaynak olan ve artık hiçbir kalan
-        kaynağın bildirmediği öznitelikler temizlenir (değer başka bir varlığa aitti); denetimde neden ``split``.
+        ``released``: CI'dan değer çekilen veri kaynağı — ayırmada ayrılan kaynak, elle düzenlemede değeri kaldırılan
+        Manual. Önceki kazananı bu kaynak olan ve artık hiçbir kaynağın bildirmediği öznitelikler temizlenir;
+        denetimde neden ayırmada ``split``, elle düzenlemede ``manual``.
         """
         cur.execute(
             """SELECT sr.data_source, sr.attributes, sr.last_seen, sr.content_hash, sr.first_seen
@@ -420,7 +450,7 @@ class ReconcilerStore:
             old = current[name] if where == "column" else attrs.get(name)
             if old != value:
                 changes.append({"attribute": name, "old": _jsonable(old), "new": value, "source": d.data_source,
-                                "reason": "reconciliation"})
+                                "reason": reason})
                 if where == "column":
                     columns[name] = value
                 else:
@@ -438,7 +468,7 @@ class ReconcilerStore:
                 else:
                     attrs.pop(name, None)
                 changes.append({"attribute": name, "old": _jsonable(old), "new": None, "source": released,
-                                "reason": "split"})
+                                "reason": "split" if reason == "reconciliation" else reason})
         if cls != current["sys_class_name"]:
             columns["sys_class_name"] = cls
         discovered = [r[2] for r in rows if self.registry.role_of(r[0]) in DISCOVERY_ROLES]
@@ -555,6 +585,56 @@ class ReconcilerStore:
                 results.append(result)
         return results
 
+    # ------------------------------------------------------------------ elle düzenleme (Manual kaynak kaydı)
+    def apply_manual_edits(self, limit: int = 100) -> list[ApplyResult]:
+        """API'nin kaydettiği elle düzenleme isteklerini uygular (CLAUDE.md kural 1).
+
+        CI başına tek bir ``Manual`` kaynak kaydı vardır (``source_key`` = CI sys_id). İstekteki değerler bu kayda
+        eklenir (``null``: o alandaki elle değer kaldırılır) ve kayıt uzlaştırmadan geçer. Rol önceliği geçerlidir:
+        keşif sahipli alanda Manual yalnızca yedektir. Sonuç alan başına isteğe yazılır.
+        """
+        results: list[ApplyResult] = []
+        for _ in range(limit):
+            with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as dcur:
+                dcur.execute(
+                    """SELECT e.sys_id, e.ci_sys_id, e.attributes, e.requested_by, ci.sys_class_name
+                         FROM ingest.manual_edit e JOIN cmdb.cmdb_ci ci ON ci.sys_id = e.ci_sys_id
+                        WHERE e.status = 'pending' ORDER BY e.requested_at, e.sys_id
+                        LIMIT 1 FOR UPDATE OF e SKIP LOCKED""")
+                req = dcur.fetchone()
+                if req is None:
+                    break
+                ci = req["ci_sys_id"]
+                dcur.execute("SELECT attributes FROM ingest.source_record WHERE data_source = 'Manual' "
+                             "AND source_key = %s", (ci,))
+                prev = dcur.fetchone()
+                merged = dict(prev["attributes"]) if prev else {}
+                for name, value in req["attributes"].items():
+                    if value is None:
+                        merged.pop(name, None)
+                    else:
+                        merged[name] = value
+                record = IngestRecord(data_source="Manual", run_id=uuid4(), source_key=ci,
+                                      class_hint=req["sys_class_name"], attributes=merged, observed_at=self.clock())
+                actor = self.actor
+                self.actor = req["requested_by"]  # bağın ve değişimin sahibi insan
+                try:
+                    applied = self._process(record, attach_to=ci, method="manual")
+                finally:
+                    self.actor = actor
+                dcur.execute("SELECT winners, conflicts FROM cmdb.ci_reconciliation_state WHERE ci_sys_id = %s",
+                             (ci,))
+                st = dcur.fetchone() or {"winners": {}, "conflicts": {}}
+                outcome = {name: _manual_outcome(name, value, st["winners"] or {}, st["conflicts"] or {})
+                           for name, value in req["attributes"].items()}
+                note = _manual_note(outcome)
+                dcur.execute(
+                    """UPDATE ingest.manual_edit SET status = 'applied', result = %s, result_note = %s,
+                              applied_at = now()
+                        WHERE sys_id = %s""", (Jsonb(outcome), note, req["sys_id"]))
+                results.append(ApplyResult("manual", ci, applied.changes, note))
+        return results
+
     # ------------------------------------------------------------------ birleştirmeyi ayırma (split)
     def apply_splits(self, limit: int = 100) -> list[ApplyResult]:
         """API'nin kaydettiği ayırma isteklerini uygular (CLAUDE.md kural 3: birleştirme geri alınabilir).
@@ -631,10 +711,12 @@ class ReconcilerStore:
         link = cur.fetchone()
         if link is None or not link[0] or link[1] != req["ci_sys_id"]:
             return "Bağ istekten sonra değişti; ayırma uygulanmadı"
+        if req["data_source"] == "Manual":
+            return "Elle giriş kaydı ayrılmaz; elle girilen değerler düzenleme ile kaldırılır"
         if link[2] == "import":
             return "Bu CI'ın sys_id'si bu kaynak kaydından geliyor (ilk yükleme); diğer kayıtları ayırın"
-        cur.execute("SELECT count(*) FROM ingest.identity_link WHERE ci_sys_id = %s AND active AND sys_id <> %s",
-                    (req["ci_sys_id"], req["link_sys_id"]))
+        cur.execute("SELECT count(*) FROM ingest.identity_link WHERE ci_sys_id = %s AND active AND sys_id <> %s "
+                    "AND data_source <> 'Manual'", (req["ci_sys_id"], req["link_sys_id"]))
         if cur.fetchone()[0] == 0:  # type: ignore[index]
             return "CI'ın tek kaynak kaydı ayrılamaz"
         if req["target_ci"] is None and not self.registry.may_create_ci(req["data_source"]):

@@ -93,6 +93,7 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
 - Kural yoksa en güncel gözlem kazanır. `null` hiçbir zaman değer silmez.
 - **Yönetişim alanları** (destek grubu, sahip, yaşam döngüsü) yalnızca Manual ve geçiş döneminde ITSM rolü (ServiceNow) tarafından yazılır.
 - **Keşif sahipli alanlarda Manual en düşük önceliktedir (900):** elle girilen değer yalnızca keşif kaynağı yoksa geçerlidir.
+- **Elle düzenleme (ADR-0012):** CI başına tek `Manual` kaynak kaydı (`source_key` = CI sys_id). Arayüzdeki Düzenle penceresi yalnızca değişen alanları gönderir; uzlaştırıcı kayda ekler ve uzlaştırır. Sonuç alan başına: uygulandı, yedek (daha öncelikli kaynak var) veya kaldırıldı. Manual kayıt kimlik anahtarı eklemez.
 
 ## 5. Devre kesici ve eskime
 

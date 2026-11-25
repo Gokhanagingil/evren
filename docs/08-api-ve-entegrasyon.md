@@ -37,6 +37,20 @@ Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 - Yanıt: `{"decision", "label", "ci_sys_id", "applied": false, "replayed", "message"}`. Karar `match_candidate`'e ve `evren.match.decided.v1` olayı olarak outbox'a yazılır; kimlik bağını ve CI'ı uzlaştırıcı kurar (`applied` sonradan `true` olur).
 - `409`: kayıt zaten karar almış, aday kuyrukta değil veya aynı anahtar farklı içerikle kullanılmış. `403`: Eşleştirme analisti rolü yok.
 
+### Elle düzenleme
+
+`PATCH /api/v1/ci/{sys_id}` (ADR-0012), yetki `cmdb_ci/write`:
+
+```json
+{"attributes": {"used_for": "Production", "support_group": "<sys_user_group sys_id>", "os": null},
+ "note": "Sahiplik devri", "idempotency_key": "ui-…"}
+```
+
+- Alanlar sözlükten çözülür; `GET /api/v1/ci/{sys_id}` yanıtındaki `editable[]` düzenlenebilir alanları, tiplerini, seçimleri, referans tablosunu, `governed` (Manual en öncelikli mi) ve `authority` (rol öncelik sırası) bilgisini verir. `null` elle değeri kaldırır.
+- Yanıt `202` + istek kimliği; olay `evren.ci.edit.requested.v1`. Uygulanınca `edits[].result` alan başına `applied` / `overridden` (+ kazanan kaynak) / `cleared`.
+- `422 gecersiz_alan` (`details`: alan + Türkçe neden; geçersiz alan adı yansıtılmaz), `403 yetki_yok`, `403 alan_yetkisi_yok`.
+- Referans seçenekleri: `GET /api/v1/ref/{tablo}?q=&limit=` (yalnızca `sys_user`, `sys_user_group`, `cmn_location`, `core_company`, `cmn_department`).
+
 ### Birleştirmeyi ayırma
 
 `POST /api/v1/ci/{sys_id}/split` (ADR-0011):
@@ -48,7 +62,7 @@ Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 - `link_id`: `GET /api/v1/ci/{sys_id}` yanıtındaki `links[].id`. Her bağ `split: {allowed, pending, reason}` taşır; yanıtta `can_split` ve `splits` (istek geçmişi) bulunur.
 - `target_ci` boşsa kayıt için yeni CI açılır; doluysa kayıt o CI'a taşınır (hedef sınıfta `merge` yetkisi ve sınıf uyumu gerekir).
 - Yanıt `202`: `{"id", "status": "pending", …}`; olay `evren.ci.split.requested.v1`. Uygulandığında `evren.ci.split.v1`.
-- `409 tek_kaynak`, `409 bekleyen_ayirma`, `422 ilk_yukleme_bagi`, `422 kaynak_ci_acamaz`, `422 bag_yok`, `422 hedef_yok`, `422 sinif_uyumsuz`, `403 yetki_yok`.
+- `409 tek_kaynak` (elle giriş kaydı sayılmaz), `409 bekleyen_ayirma`, `422 elle_giris_bagi`, `422 ilk_yukleme_bagi`, `422 kaynak_ci_acamaz`, `422 bag_yok`, `422 hedef_yok`, `422 sinif_uyumsuz`, `403 yetki_yok`.
 
 ## ServiceNow uyumlu Table API
 

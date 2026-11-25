@@ -1,6 +1,8 @@
-"""Konfigürasyon öğeleri: arama/listeleme (imleçli), CI 360° (kaynak bilgisiyle), değişim geçmişi, ayırma.
+"""Konfigürasyon öğeleri: arama/listeleme (imleçli), CI 360° (kaynak bilgisiyle), değişim geçmişi, ayırma,
+elle düzenleme.
 
-Ayırma (split) isteği ``ingest.split_request``'e yazılır; bağı uzlaştırıcı sonlandırır (göç 0007, ADR-0010).
+API golden record'a yazmaz (CLAUDE.md kural 1): ayırma isteği ``ingest.split_request``'e (göç 0007, ADR-0011),
+elle düzenleme ``ingest.manual_edit``'e (göç 0008) yazılır; uzlaştırıcı uygular.
 """
 from __future__ import annotations
 
@@ -40,6 +42,13 @@ _SYSID = r"^[0-9a-f]{32}$"
 SPLIT_STATUS = {"pending": "Uygulanmayı bekliyor", "applied": "Uygulandı", "rejected": "Reddedildi"}
 
 
+class ManualEditRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    attributes: dict[str, Any] = Field(min_length=1, max_length=50)
+    note: str | None = Field(default=None, max_length=2000)
+    idempotency_key: str = Field(pattern=r"^[A-Za-z0-9._:-]{8,128}$")
+
+
 class SplitRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     link_id: str = Field(pattern=_SYSID)
@@ -48,8 +57,14 @@ class SplitRequest(BaseModel):
     idempotency_key: str = Field(pattern=r"^[A-Za-z0-9._:-]{8,128}$")
 
 
-def _split_blocker(method: str, others: int, may_create: bool, has_target: bool) -> tuple[int, str, str] | None:
-    """Ayırmayı engelleyen durum (HTTP kodu, hata kodu, Türkçe ileti). Uzlaştırıcı aynı denetimi yeniden yapar."""
+def _split_blocker(method: str, others: int, may_create: bool, has_target: bool,
+                   data_source: str = "") -> tuple[int, str, str] | None:
+    """Ayırmayı engelleyen durum (HTTP kodu, hata kodu, Türkçe ileti). Uzlaştırıcı aynı denetimi yeniden yapar.
+
+    ``others``: CI'da kalacak, elle giriş dışındaki etkin kaynak kaydı sayısı."""
+    if data_source == "Manual":
+        return (422, "elle_giris_bagi",
+                "Elle giriş kaydı ayrılmaz; elle girilen değerleri Düzenle ile kaldırın.")
     if method == "import":
         return (422, "ilk_yukleme_bagi",
                 "Bu CI'ın sys_id'si bu kaynak kaydından geliyor (ilk yükleme); bunun yerine diğer kayıtları ayırın.")
@@ -172,6 +187,13 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                 WHERE l.ci_sys_id = %s AND l.active ORDER BY l.data_source, l.source_key""", (sys_id,))
         links = cur.fetchall()
         cur.execute(
+            """SELECT sys_id, status, attributes, requested_by, requested_at, result, result_note
+                 FROM ingest.manual_edit WHERE ci_sys_id = %s ORDER BY requested_at DESC LIMIT 10""", (sys_id,))
+        edits = cur.fetchall()
+        cur.execute("SELECT attributes FROM ingest.source_record WHERE data_source = 'Manual' AND source_key = %s",
+                    (sys_id,))
+        manual_row = cur.fetchone()
+        cur.execute(
             """SELECT sys_id, status, data_source, source_key, requested_by, requested_at, result_ci, result_note,
                       applied_at, CASE WHEN ci_sys_id = %s THEN 'source' ELSE 'result' END, ci_sys_id
                  FROM ingest.split_request WHERE ci_sys_id = %s OR result_ci = %s
@@ -219,10 +241,24 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                     fields.get(a, {}).get("sensitivity", "internal"))]
     roles = {r[0]: r[9] for r in links}
     reg = md.sources
+    write = ctx.grant(cls, "write")
+    editable = ctx.state.edit_policy.fields(cls, write)
+    manual_values = manual_row[0] if manual_row else {}
+    edit_fields = []
+    for name, spec in editable.items():
+        raw = doc.get(name) if name in CORE_COLUMNS else doc["class_attributes"].get(name)
+        if raw is not None and not grant.can_see(spec.sensitivity):
+            raw = None
+        edit_fields.append({**spec.as_json(), "value": raw, "manual_value": manual_values.get(name),
+                            "display": pres.display(name, raw, refs) if raw is not None else None,
+                            "source": (winners.get(name) or {}).get("source")})
+    edit_fields.sort(key=lambda f: (not f["governed"], f["label"].casefold()))
     can_split = ctx.grant(cls, "split").allowed
 
+    observed = sum(1 for r in links if r[0] != "Manual")
+
     def split_state(method: str, ds: str, pending: bool) -> dict[str, Any]:
-        blocker = _split_blocker(method, len(links) - 1, ds in reg.sources and reg.may_create_ci(ds), False)
+        blocker = _split_blocker(method, observed - 1, ds in reg.sources and reg.may_create_ci(ds), False, ds)
         return {"allowed": can_split and not pending and blocker is None, "pending": pending,
                 "reason": "Ayırma isteği uygulanmayı bekliyor" if pending else blocker[2] if blocker else None}
 
@@ -241,11 +277,44 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                    "observed_at": seen.isoformat(), "status": status, "id": link_id, "method": method,
                    "split": split_state(method, ds, pending)}
                   for ds, key, method, rule, prob, by, _at, seen, status, role, link_id, pending in links],
-        "can_split": can_split, "splits": splits,
+        "can_split": can_split, "splits": splits, "can_edit": bool(edit_fields), "editable": edit_fields,
+        "edits": [{"id": i, "status": st, "status_label": SPLIT_STATUS[st], "attributes": sorted(attrs),
+                   "requested_by": by, "requested_at": at.isoformat(), "result": res, "note": note}
+                  for i, st, attrs, by, at, res, note in edits],
         "server": cls in md.hierarchy and "cmdb_ci_server" in md.hierarchy.ancestors(cls),
         "coverage": coverage, "unauthorized_count": len(rejected),
         "golden_version": doc.get("golden_version"), "sys_updated_on": doc.get("sys_updated_on"),
     }
+
+
+@router.patch("/ci/{sys_id}", dependencies=[Depends(require_csrf)], status_code=202)
+def edit_ci(sys_id: str, body: ManualEditRequest, ctx: Ctx = Depends(context)) -> JSONResponse:
+    """Elle düzenleme isteği: değerler Manual kaynak kaydı olarak uzlaştırmaya girer (202: uzlaştırıcı uygular)."""
+    _valid_sysid(sys_id)
+    p = ctx.principal
+    row = ctx.conn.execute("SELECT sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = %s", (sys_id,)).fetchone()
+    if row is None:
+        raise ApiError(404, "bulunamadi", "CI bulunamadı.")
+    grant = ctx.require(row[0], "write")
+    values = ctx.state.edit_policy.validate(ctx.conn, row[0], grant, body.attributes)
+    digest = request_hash(sys_id, "edit", values, body.note)
+    with ctx.conn.transaction(), ctx.conn.cursor() as cur:
+        if (prior := replay(cur, p.audit_id, body.idempotency_key, digest)) is not None:
+            return prior
+        cur.execute("""INSERT INTO ingest.manual_edit (ci_sys_id, attributes, note, requested_by)
+                       VALUES (%s, %s, %s, %s) RETURNING sys_id""", (sys_id, Jsonb(values), body.note, p.audit_id))
+        req_id = cur.fetchone()[0]  # type: ignore[index]
+        payload = {"id": req_id, "ci_sys_id": sys_id, "attributes": sorted(values), "by": p.audit_id}
+        cur.execute("INSERT INTO events.outbox (aggregate_type, aggregate_id, event_type, payload) "
+                    "VALUES ('cmdb_ci', %s, 'evren.ci.edit.requested.v1', %s)", (sys_id, Jsonb(payload)))
+        cur.execute("INSERT INTO audit.security_event (principal, action, resource, decision, detail) "
+                    "VALUES (%s, 'ci_edit', %s, 'allow', %s)", (p.audit_id, f"cmdb_ci:{sys_id}", Jsonb(payload)))
+        response = {"id": req_id, "status": "pending", "status_label": SPLIT_STATUS["pending"], "ci_sys_id": sys_id,
+                    "attributes": sorted(values), "replayed": False,
+                    "message": "Düzenleme kaydedildi; uzlaştırıcı değerleri Manual kaynağı olarak uyguladığında CI "
+                               "güncellenir."}
+        remember(cur, p.audit_id, body.idempotency_key, f"/api/v1/ci/{sys_id}", digest, 202, response)
+    return JSONResponse(response, status_code=202)
 
 
 @router.post("/ci/{sys_id}/split", dependencies=[Depends(require_csrf)], status_code=202)
@@ -274,7 +343,7 @@ def split_ci(sys_id: str, body: SplitRequest, ctx: Ctx = Depends(context)) -> JS
         cur.execute(
             """SELECT l.ci_sys_id, l.active, l.method, l.data_source, l.source_key, sr.class_hint,
                       (SELECT count(*) FROM ingest.identity_link o WHERE o.ci_sys_id = l.ci_sys_id AND o.active
-                          AND o.sys_id <> l.sys_id)
+                          AND o.sys_id <> l.sys_id AND o.data_source <> 'Manual')
                  FROM ingest.identity_link l JOIN ingest.source_record sr USING (data_source, source_key)
                 WHERE l.sys_id = %s""", (body.link_id,))
         link = cur.fetchone()
@@ -283,7 +352,7 @@ def split_ci(sys_id: str, body: SplitRequest, ctx: Ctx = Depends(context)) -> JS
         _, _, method, ds, key, class_hint, others = link
         reg = md.sources
         if blocker := _split_blocker(method, others, ds in reg.sources and reg.may_create_ci(ds),
-                                     body.target_ci is not None):
+                                     body.target_ci is not None, ds):
             raise ApiError(*blocker)
         if body.target_ci == sys_id:
             raise ApiError(422, "hedef_ayni", "Hedef CI, ayrılan CI ile aynı olamaz.")

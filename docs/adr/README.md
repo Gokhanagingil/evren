@@ -13,5 +13,6 @@
 | [0009](0009-kaynak-rolleri-urun-bagimsizligi.md) | Kaynak rolleri: kurallar ürüne değil role bağlı; yaşam döngüsüyle ürün değişimi | Kabul edildi | 25.11.2026 |
 | [0010](0010-api-oturum-ve-yetki.md) | API: Entra OIDC + PKCE, şifreli çerez oturumu, RBAC + hassasiyet + SoD, kararı uzlaştırıcı uygular | Kabul edildi | 25.11.2026 |
 | [0011](0011-birlestirmeyi-ayirma.md) | Birleştirmeyi ayırma: istek API'de, uygulama uzlaştırıcıda; kimlik profili yeniden kurulur, ayrılan kaynağın değerleri temizlenir | Kabul edildi | 25.11.2026 |
+| [0012](0012-elle-duzenleme.md) | Elle düzenleme: istek tablosu, CI başına tek Manual kaydı, rol önceliği ve alan başına sonuç; API kaynak kaydı yazmaz | Kabul edildi | 25.11.2026 |
 
 Yeni karar: `/adr <başlık>` komutu.

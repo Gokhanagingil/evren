@@ -37,7 +37,7 @@ def base_url():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": "evren_reader,evren_match_reviewer",
+    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": "evren_reader,evren_match_reviewer,evren_cmdb_editor",
                                   "EVREN_DEV_USER": "arayuz-testi", "EVREN_DEV_NAME": "Arayüz Testi",
                                   "EVREN_DB_POOL_SIZE": "4"})
     server = uvicorn.Server(uvicorn.Config(create_app(settings), host="127.0.0.1", port=port, log_level="warning"))
@@ -165,3 +165,34 @@ def test_split_from_ci_panel_end_to_end(page, base_url):
     assert page.url.endswith(f"#/ci/{new}")
     expect(page.locator("#ciLinks")).to_contain_text("Ayrıldı (insan kararı)")
     shot(page, "api_split_applied")
+
+
+def test_manual_edit_from_ci_panel(page, base_url):
+    """Elle düzenleme: yalnızca değişen alanlar gönderilir; uzlaştırıcı uyguladıktan sonra değer Manual kaynaklıdır."""
+    from scenarios import apply_pending_edits, make_ci
+
+    ci, name = make_ci()
+    page.goto(base_url + f"/#/ci/{ci}")
+    page.wait_for_selector("#detail.open #ciEdit")
+    page.click("#ciEdit")
+    expect(page.locator(".dialog legend").first).to_have_text("Yönetişim alanları")
+    page.click("#editSave")  # hiçbir şey değişmedi: istek gönderilmez
+    expect(page.locator("#toast")).to_have_text("Değişiklik yok.")
+    page.select_option("#edit-used_for", "Production")
+    group = page.locator("#edit-support_group option").nth(1)
+    expect(group).to_be_attached()
+    page.select_option("#edit-support_group", index=1)
+    page.fill("#editNote", "Sahiplik devri")
+    shot(page, "api_edit_dialog")
+    page.click("#editSave")
+    expect(page.locator("#toast")).to_contain_text("Düzenleme kaydedildi")
+    expect(page.locator("#ciEdits")).to_contain_text("Uygulanmayı bekliyor")
+
+    assert apply_pending_edits() == ["2 alan uygulandı"]
+    page.reload()
+    page.wait_for_selector("#detail.open #ciEdits")
+    expect(page.locator("#ciEdits")).to_contain_text("Kullanım amacı: uygulandı")
+    used_for = page.locator("details.attr", has_text="Kullanım amacı")
+    expect(used_for.locator(".src")).to_have_text("Manual")
+    assert name in page.locator("#detailTitle").inner_text()
+    shot(page, "api_edit_applied")

@@ -10,7 +10,7 @@
 | Ürün yaşam döngüsü: gölge kaynak yazmaz ve CI açmaz; devredilen kaynak CI açmaz | ✓ | `SourceRegistry` + `_process` |
 | Kafka tüketicisi, outbox yayıncısı, Valkey kilidi | Planlandı | F0-10 ikinci adım (hedef ortam kararı bekleniyor) |
 | Bulanık ad adayları (OpenSearch) | Planlandı | F1-08 |
-| İnsan kararları: kuyruk kararları (`apply_decisions`) ve birleştirmeyi ayırma (`apply_splits`, ADR-0011) | ✓ | göç `0006`, `0007` |
+| İnsan kararları: kuyruk kararları (`apply_decisions`), birleştirmeyi ayırma (`apply_splits`, ADR-0011), elle düzenleme (`apply_manual_edits`, ADR-0012) | ✓ | göç `0006`–`0008` |
 | Eskime önerileri | Planlandı | F1-06 |
 
 Testler: `services/reconciler/tests` (gerçek PostgreSQL, `evren_app_reconciler` rolüyle). `tools/load_demo_pg.py`
