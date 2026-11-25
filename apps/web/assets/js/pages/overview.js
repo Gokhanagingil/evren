@@ -13,6 +13,23 @@ function gauge(value) {
     s('text', { x: 42, y: 49, 'text-anchor': 'middle' }, String(Math.round(value))));
 }
 
+/** Uzlaştırıcı çalışanının durumu (yalnızca API modu): insan istekleri uygulanıyor mu? */
+function workerNotice(w) {
+  if (!w) return null;
+  const p = w.pending.total;
+  const seen = w.last_seen ? `son görülme ${formatDateTime(w.last_seen)}` : 'hiç çalışmadı';
+  const failed = w.failed ? ` · ${w.failed} istek uygulanamadı (hata kimliğiyle kayıtlı)` : '';
+  const detail = `karar ${w.pending.decisions}, ayırma ${w.pending.splits}, elle düzenleme ${w.pending.edits}`;
+  if (w.state === 'ok') {
+    return h('p', { class: `notice${w.failed ? ' warn' : ''}`, id: 'workerStatus', role: 'status' },
+      h('strong', {}, 'Uzlaştırıcı çalışıyor. '), p ? `${p} istek uygulanıyor (${detail}). ` : 'Bekleyen insan isteği yok. ', `(${seen})${failed}`);
+  }
+  return h('p', { class: `notice ${p ? 'bad' : 'warn'}`, id: 'workerStatus', role: 'status' },
+    h('strong', {}, 'Uzlaştırıcı çalışmıyor. '),
+    p ? `${p} insan isteği (${detail}) uygulanmayı bekliyor; çalışan başlayınca uygulanır. ` : 'Bekleyen istek yok. ',
+    `(${seen})${failed}`);
+}
+
 export async function renderOverview(view) {
   const d = await overview();
   const sm = d.summary;
@@ -32,6 +49,7 @@ export async function renderOverview(view) {
 
   view.append(
     d.note ? h('p', { class: 'notice warn' }, d.note) : null,
+    workerNotice(sm.worker),
     h('section', { class: 'hero', 'aria-label': 'Özet' },
       h('div', {},
         h('div', { class: 'hero-kicker' }, date),

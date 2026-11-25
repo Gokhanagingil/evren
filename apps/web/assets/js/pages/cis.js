@@ -164,6 +164,7 @@ export async function renderCis(view, param) {
         if (!r) return label;
         return r.status === 'overridden' ? `${label}: yedek (${r.source} öncelikli)` : `${label}: ${EDIT_RESULT[r.status] || r.status}`;
       }).join(' · ')),
+      e.status === 'rejected' && e.note ? h('div', { class: 'small muted' }, e.note) : null,
       h('div', { class: 'cell-sub' }, `${e.requested_by} · ${formatDateTime(e.requested_at)}`));
   }
 

@@ -80,7 +80,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Not: Eşleme dosyası ve sys_id koruyan ilk yükleme mantığı hazır (connectors/servicenow_cmdb, IdentityEngine.import_existing).
   - Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
 - [ ] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Devam ediyor_
-  - Not: PostgreSQL deposu, aday dizini, devre kesici ve çalışma sonu tamam (services/reconciler); Kafka tüketicisi ve alım geçidi hedef ortam kararını bekliyor.
+  - Not: PostgreSQL deposu, aday dizini, devre kesici, çalışma sonu ve sürekli çalışan uzlaştırıcı tamam (insan isteklerini PostgreSQL bildirimiyle uygular, istek başına hata yalıtımı, nabız; ADR-0013). Kafka tüketicisi ve alım geçidi hedef ortam kararını bekliyor.
   - Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 - [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi

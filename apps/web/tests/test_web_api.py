@@ -88,6 +88,7 @@ def test_overview_in_api_mode_shows_identity_and_synthetic_flag(page, base_url):
     assert page.locator(".identity strong").inner_text() == "Arayüz Testi"
     assert "Eşleştirme analisti" in page.locator(".identity span").inner_text()
     assert page.locator(".demo-flag").is_visible()  # veritabanındaki veri sentetik (load_demo_pg)
+    expect(page.locator("#workerStatus")).to_contain_text("Uzlaştırıcı")  # çalışan durumu (göç 0009)
     shot(page, "api_overview")
 
 

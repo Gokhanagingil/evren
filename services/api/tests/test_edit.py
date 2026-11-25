@@ -137,3 +137,27 @@ def test_manual_link_cannot_be_split_and_does_not_count_as_source(editor, client
     r = client.post(f"/api/v1/ci/{ci}/split", json={"link_id": links["Manual"]["id"], "idempotency_key": _key()},
                     headers=CSRF)
     assert r.status_code == 422 and r.json()["error"]["code"] == "elle_giris_bagi"
+
+
+def test_summary_reports_pending_requests_and_worker_state(editor):
+    """Genel Bakış göstergesi: bekleyen insan istekleri ve uzlaştırıcı nabzı (göç 0009)."""
+    from evren_core.metadata import load_metadata
+    from evren_reconciler.worker import Worker, WorkerConfig
+
+    from .conftest import REPO
+
+    ci, _ = make_ci()
+    before = editor.get("/api/v1/summary").json()["worker"]
+    r = editor.patch(f"/api/v1/ci/{ci}", json={"attributes": {"used_for": "Test"}, "idempotency_key": _key()},
+                     headers=CSRF)
+    assert r.status_code == 202
+    pending = editor.get("/api/v1/summary").json()["worker"]
+    assert pending["pending"]["edits"] == before["pending"]["edits"] + 1
+    assert pending["pending"]["total"] >= 1
+
+    worker = Worker(WorkerConfig(conninfo="", poll_seconds=30, worker_id=f"api-testi-{uuid.uuid4().hex[:6]}"),
+                    load_metadata(REPO / "metadata"))
+    with worker._open() as conn:
+        worker.run_once(conn)  # tek tur: istekleri uygular ve nabız yazar (durdurulmadı → çalışıyor sayılır)
+    after = editor.get("/api/v1/summary").json()["worker"]
+    assert after["state"] == "ok" and after["pending"]["edits"] == 0 and after["last_seen"]

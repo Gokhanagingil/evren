@@ -68,7 +68,8 @@ export async function renderQueue(view, param) {
             render: (q) => (q.candidates.length ? h('span', {}, q.candidates[0].name,
               h('span', { class: 'cell-sub' }, q.candidates.length > 1 ? `+${q.candidates.length - 1} aday` : q.candidates[0].class_label)) : '—') },
           { key: 'state', label: 'Durum', sortable: false,
-            render: (q) => (q.decision ? pill(q.decision.label + (q.decision.applied ? ' · uygulandı' : ''), 'good')
+            render: (q) => (q.decision ? (q.decision.error ? pill(`${q.decision.label} · uygulanamadı`, 'bad')
+              : pill(q.decision.label + (q.decision.applied ? ' · uygulandı' : ''), 'good'))
               : pill(KIND_LABEL[q.kind] || q.kind, q.kind === 'review' ? 'bad' : 'warn')) },
         ],
       }),
@@ -141,9 +142,10 @@ export async function renderQueue(view, param) {
       body: [
         h('div', { class: `notice ${q.kind === 'review' ? 'bad' : 'warn'}` }, h('strong', {}, q.summary.split(';')[0]),
           q.reasons.length ? h('ul', {}, q.reasons.map((r) => h('li', {}, r))) : null),
-        q.decision ? h('p', { class: 'notice success' }, `Karar: ${q.decision.label}`,
+        q.decision ? h('p', { class: `notice ${q.decision.error ? 'bad' : 'success'}` }, `Karar: ${q.decision.label}`,
           q.decision.by ? ` · ${q.decision.by}` : '', q.decision.at ? ` · ${formatDateTime(q.decision.at)}` : '',
-          q.decision.applied ? ' · uzlaştırıcı uyguladı' : mode === 'api' ? ' · uygulanmayı bekliyor' : '') : null,
+          q.decision.error ? ` · ${q.decision.error}` : q.decision.applied ? ' · uzlaştırıcı uyguladı'
+            : mode === 'api' ? ' · uygulanmayı bekliyor' : '') : null,
         section('Kaynak kaydı', kv([
           ['Kaynak', srcChip(q.data_source, q.role)], ['Kaynak anahtarı', h('span', { class: 'mono' }, q.source_key)],
           ['Sınıf ipucu', q.class_label], ['Gözlem', formatDateTime(q.observed_at)], q.rule ? ['Eşleşen kural', q.rule] : null,

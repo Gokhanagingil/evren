@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
@@ -37,6 +38,8 @@ from evren_core.metadata import CORE_COLUMNS, Metadata
 from evren_core.reconcile import Reconciler, SourceValues
 
 from .pg_identity import PostgresCandidateIndex, PostgresLinkStore, keys_from_json
+
+log = logging.getLogger("evren.reconciler")
 
 __all__ = ["ApplyResult", "ReconcilerStore"]
 
@@ -541,49 +544,77 @@ class ReconcilerStore:
                        ON CONFLICT (parent, child, type) DO UPDATE SET last_discovered = EXCLUDED.last_discovered""",
                     (parent, child, data_source, seen, seen, rel["type"]))
 
-    # ------------------------------------------------------------------ insan kararları (eşleştirme kuyruğu)
-    def apply_decisions(self, limit: int = 100) -> list[ApplyResult]:
-        """API'nin kaydettiği kuyruk kararlarını uygular (kimlik bağı veya yeni CI) ve uzlaştırır.
+    # ------------------------------------------------------------------ insan istekleri: ortak döngü
+    def _drain(self, kind: str, fetch_sql: str, handle: Callable[[dict[str, Any]], ApplyResult],
+               fail: Callable[[psycopg.Cursor[Any], dict[str, Any], str], None], limit: int) -> list[ApplyResult]:
+        """Bekleyen istekleri birer birer, her biri kendi işleminde uygular.
 
-        Karar veren kişi bağın ``decided_by`` alanına yazılır; yöntem ``manual`` olur. Birden fazla uzlaştırıcı
-        örneği aynı anda çalışabilir (``FOR UPDATE SKIP LOCKED``).
+        Birden fazla uzlaştırıcı aynı anda çalışabilir (``FOR UPDATE SKIP LOCKED``). Bir isteğin uygulanması
+        beklenmeyen bir hatayla düşerse yalnızca o isteğin değişiklikleri geri alınır (kayıt noktası); istek hata
+        kimliğiyle reddedilir ve kuyruk kilitlenmez. Bağlantı/kilitlenme gibi geçici hatalar (``OperationalError``)
+        yukarı iletilir: istek beklemede kalır, çalışan yeniden dener.
         """
         results: list[ApplyResult] = []
         for _ in range(limit):
             with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as dcur:
-                dcur.execute(
-                    """SELECT mc.sys_id, mc.data_source, mc.source_key, mc.status, mc.decision, mc.decision_ci,
-                              mc.decided_by, sr.class_hint, sr.attributes, sr.lookup, sr.external_ids, sr.relations,
-                              sr.last_seen, sr.last_run
-                         FROM ingest.match_candidate mc
-                         JOIN ingest.source_record sr USING (data_source, source_key)
-                        WHERE mc.applied_at IS NULL AND mc.status IN ('accepted', 'created_new', 'rejected')
-                        ORDER BY mc.decided_at, mc.sys_id
-                        LIMIT 1 FOR UPDATE OF mc SKIP LOCKED""")
-                row = dcur.fetchone()
-                if row is None:
+                dcur.execute(fetch_sql)
+                req = dcur.fetchone()
+                if req is None:
                     break
-                with self.conn.cursor() as cur:
-                    record = _record_from_row(row)
-                    result = ApplyResult("decision_rejected", None, [], "Kaynakta düzeltilecek")
-                    if row["status"] in ("accepted", "created_new"):
-                        ci = row["decision_ci"] if row["status"] == "accepted" else self._create_ci(cur, record)
-                        index = PostgresCandidateIndex(cur)
-                        resolver = IdentityResolver(self.rules, index, PostgresLinkStore(cur))
-                        keys = extract_keys(source_record_from_ingest(record))
-                        actor = self.actor
-                        self.actor = row["decided_by"] or actor  # bağın karar vereni insan
-                        try:
-                            self._attach(cur, index, resolver, record, keys, ci, method="manual",
-                                         rule=f"karar:{row['decision']}", resolution=None)
-                        finally:
-                            self.actor = actor
-                        result = ApplyResult("decision_" + ("merged" if row["status"] == "accepted" else "new_ci"),
-                                             ci, self._reconcile(cur, ci, None), "İnsan kararı uygulandı")
-                    cur.execute("UPDATE ingest.match_candidate SET applied_at = now() WHERE sys_id = %s",
-                                (row["sys_id"],))
-                results.append(result)
+                try:
+                    with self.conn.transaction():
+                        results.append(handle(req))
+                except psycopg.OperationalError:
+                    raise
+                except Exception:
+                    error_id = uuid4().hex[:12]
+                    log.exception("istek uygulanamadı: tür=%s istek=%s hata_kimliği=%s", kind, req["sys_id"], error_id)
+                    note = f"Uygulanamadı: beklenmeyen hata (hata kimliği {error_id}); yöneticiye bildirin"
+                    fail(dcur, req, note)
+                    results.append(ApplyResult(f"{kind}_failed", req.get("ci_sys_id"), [], note))
         return results
+
+    # ------------------------------------------------------------------ insan kararları (eşleştirme kuyruğu)
+    def apply_decisions(self, limit: int = 100) -> list[ApplyResult]:
+        """API'nin kaydettiği kuyruk kararlarını uygular (kimlik bağı veya yeni CI) ve uzlaştırır.
+
+        Karar veren kişi bağın ``decided_by`` alanına yazılır; yöntem ``manual`` olur.
+        """
+        def handle(row: dict[str, Any]) -> ApplyResult:
+            with self.conn.cursor() as cur:
+                record = _record_from_row(row)
+                result = ApplyResult("decision_rejected", None, [], "Kaynakta düzeltilecek")
+                if row["status"] in ("accepted", "created_new"):
+                    ci = row["decision_ci"] if row["status"] == "accepted" else self._create_ci(cur, record)
+                    index = PostgresCandidateIndex(cur)
+                    resolver = IdentityResolver(self.rules, index, PostgresLinkStore(cur))
+                    keys = extract_keys(source_record_from_ingest(record))
+                    actor = self.actor
+                    self.actor = row["decided_by"] or actor  # bağın karar vereni insan
+                    try:
+                        self._attach(cur, index, resolver, record, keys, ci, method="manual",
+                                     rule=f"karar:{row['decision']}", resolution=None)
+                    finally:
+                        self.actor = actor
+                    result = ApplyResult("decision_" + ("merged" if row["status"] == "accepted" else "new_ci"),
+                                         ci, self._reconcile(cur, ci, None), "İnsan kararı uygulandı")
+                cur.execute("UPDATE ingest.match_candidate SET applied_at = now() WHERE sys_id = %s",
+                            (row["sys_id"],))
+            return result
+
+        def fail(cur: psycopg.Cursor[Any], row: dict[str, Any], note: str) -> None:
+            cur.execute("UPDATE ingest.match_candidate SET applied_at = now(), apply_error = %s WHERE sys_id = %s",
+                        (note, row["sys_id"]))
+
+        return self._drain("decision", """
+            SELECT mc.sys_id, mc.data_source, mc.source_key, mc.status, mc.decision, mc.decision_ci,
+                   mc.decided_by, sr.class_hint, sr.attributes, sr.lookup, sr.external_ids, sr.relations,
+                   sr.last_seen, sr.last_run
+              FROM ingest.match_candidate mc
+              JOIN ingest.source_record sr USING (data_source, source_key)
+             WHERE mc.applied_at IS NULL AND mc.status IN ('accepted', 'created_new', 'rejected')
+             ORDER BY mc.decided_at, mc.sys_id
+             LIMIT 1 FOR UPDATE OF mc SKIP LOCKED""", handle, fail, limit)
 
     # ------------------------------------------------------------------ elle düzenleme (Manual kaynak kaydı)
     def apply_manual_edits(self, limit: int = 100) -> list[ApplyResult]:
@@ -593,18 +624,9 @@ class ReconcilerStore:
         eklenir (``null``: o alandaki elle değer kaldırılır) ve kayıt uzlaştırmadan geçer. Rol önceliği geçerlidir:
         keşif sahipli alanda Manual yalnızca yedektir. Sonuç alan başına isteğe yazılır.
         """
-        results: list[ApplyResult] = []
-        for _ in range(limit):
-            with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as dcur:
-                dcur.execute(
-                    """SELECT e.sys_id, e.ci_sys_id, e.attributes, e.requested_by, ci.sys_class_name
-                         FROM ingest.manual_edit e JOIN cmdb.cmdb_ci ci ON ci.sys_id = e.ci_sys_id
-                        WHERE e.status = 'pending' ORDER BY e.requested_at, e.sys_id
-                        LIMIT 1 FOR UPDATE OF e SKIP LOCKED""")
-                req = dcur.fetchone()
-                if req is None:
-                    break
-                ci = req["ci_sys_id"]
+        def handle(req: dict[str, Any]) -> ApplyResult:
+            ci = req["ci_sys_id"]
+            with self.conn.cursor(row_factory=dict_row) as dcur:
                 dcur.execute("SELECT attributes FROM ingest.source_record WHERE data_source = 'Manual' "
                              "AND source_key = %s", (ci,))
                 prev = dcur.fetchone()
@@ -632,8 +654,17 @@ class ReconcilerStore:
                     """UPDATE ingest.manual_edit SET status = 'applied', result = %s, result_note = %s,
                               applied_at = now()
                         WHERE sys_id = %s""", (Jsonb(outcome), note, req["sys_id"]))
-                results.append(ApplyResult("manual", ci, applied.changes, note))
-        return results
+            return ApplyResult("manual", ci, applied.changes, note)
+
+        def fail(cur: psycopg.Cursor[Any], req: dict[str, Any], note: str) -> None:
+            cur.execute("""UPDATE ingest.manual_edit SET status = 'rejected', result_note = %s, applied_at = now()
+                            WHERE sys_id = %s""", (note, req["sys_id"]))
+
+        return self._drain("manual", """
+            SELECT e.sys_id, e.ci_sys_id, e.attributes, e.requested_by, ci.sys_class_name
+              FROM ingest.manual_edit e JOIN cmdb.cmdb_ci ci ON ci.sys_id = e.ci_sys_id
+             WHERE e.status = 'pending' ORDER BY e.requested_at, e.sys_id
+             LIMIT 1 FOR UPDATE OF e SKIP LOCKED""", handle, fail, limit)
 
     # ------------------------------------------------------------------ birleştirmeyi ayırma (split)
     def apply_splits(self, limit: int = 100) -> list[ApplyResult]:
@@ -647,63 +678,67 @@ class ReconcilerStore:
         4. İki CI yeniden uzlaştırılır; asıl CI'da yalnızca ayrılan kaynaktan gelen değerler temizlenir.
 
         İstek güvenle reddedilir: bağ istekten sonra değiştiyse, kayıt CI'ın ilk yükleme kaydıysa (sys_id o
-        kayıttan gelir), CI'ın tek kaynak kaydıysa veya kaynak yeni CI açamıyorsa (gölge/devir) ve hedef yoksa.
+        kayıttan gelir), elle giriş kaydıysa, CI'ın tek kaynak kaydıysa veya kaynak yeni CI açamıyorsa (gölge/devir)
+        ve hedef yoksa.
         """
-        results: list[ApplyResult] = []
-        for _ in range(limit):
-            with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as dcur:
+        def handle(req: dict[str, Any]) -> ApplyResult:
+            ds, key, ci = req["data_source"], req["source_key"], req["ci_sys_id"]
+            with self.conn.cursor() as cur, self.conn.cursor(row_factory=dict_row) as dcur:
+                # _process ile aynı kilit: aynı kaynak kaydı aynı anda alımdan da geçmesin.
+                cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"{ds}:{key}",))
+                reason = self._split_blocker(cur, req)
+                if reason:
+                    cur.execute(
+                        """UPDATE ingest.split_request SET status = 'rejected', result_note = %s, applied_at = now()
+                            WHERE sys_id = %s""", (reason, req["sys_id"]))
+                    return ApplyResult("split_rejected", ci, [], reason)
                 dcur.execute(
-                    """SELECT sys_id, link_sys_id, ci_sys_id, data_source, source_key, target_ci, requested_by, note
-                         FROM ingest.split_request WHERE status = 'pending'
-                        ORDER BY requested_at, sys_id LIMIT 1 FOR UPDATE SKIP LOCKED""")
-                req = dcur.fetchone()
-                if req is None:
-                    break
-                ds, key, ci = req["data_source"], req["source_key"], req["ci_sys_id"]
-                with self.conn.cursor() as cur:
-                    # _process ile aynı kilit: aynı kaynak kaydı aynı anda alımdan da geçmesin.
-                    cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"{ds}:{key}",))
-                    reason = self._split_blocker(cur, req)
-                    if reason:
-                        cur.execute(
-                            """UPDATE ingest.split_request SET status = 'rejected', result_note = %s, applied_at = now()
-                                WHERE sys_id = %s""", (reason, req["sys_id"]))
-                        results.append(ApplyResult("split_rejected", ci, [], reason))
-                        continue
-                    dcur.execute(
-                        """SELECT data_source, source_key, class_hint, attributes, lookup, external_ids, relations,
-                                  last_seen, last_run
-                             FROM ingest.source_record WHERE data_source = %s AND source_key = %s""", (ds, key))
-                    record = _record_from_row(dcur.fetchone())
-                    by = req["requested_by"]
-                    cur.execute(
-                        """UPDATE ingest.identity_link SET active = false, ended_at = now(), end_reason = %s
-                            WHERE sys_id = %s""", (f"ayrıldı: {by}"[:500], req["link_sys_id"]))
-                    target = req["target_ci"] or self._create_ci(cur, record)
-                    index = PostgresCandidateIndex(cur)
-                    resolver = IdentityResolver(self.rules, index, PostgresLinkStore(cur))
-                    keys = extract_keys(source_record_from_ingest(record))
-                    actor = self.actor
-                    self.actor = by  # bağın ve CI değişiminin karar vereni insan
-                    try:
-                        self._attach(cur, index, resolver, record, keys, target, method="split",
-                                     rule=f"ayırma:{req['sys_id']}", resolution=None)
-                    finally:
-                        self.actor = actor
-                    self._rebuild_profile(cur, index, resolver, ci)
-                    changes = self._reconcile(cur, ci, None, released=ds) + self._reconcile(cur, target, None)
-                    self._resolve_relations_of(cur, ds, key)
-                    self._outbox(cur, ci, "evren.ci.split.v1", {
-                        "sys_id": ci, "new_ci": target, "created": req["target_ci"] is None, "data_source": ds,
-                        "source_key": key, "by": by, "request": req["sys_id"]})
-                    cur.execute(
-                        """UPDATE ingest.split_request SET status = 'applied', result_ci = %s, applied_at = now(),
-                                  result_note = %s
-                            WHERE sys_id = %s""",
-                        (target, "Yeni CI açıldı" if req["target_ci"] is None else "Seçilen CI'a bağlandı",
-                         req["sys_id"]))
-                results.append(ApplyResult("split", target, changes, "Ayırma uygulandı"))
-        return results
+                    """SELECT data_source, source_key, class_hint, attributes, lookup, external_ids, relations,
+                              last_seen, last_run
+                         FROM ingest.source_record WHERE data_source = %s AND source_key = %s""", (ds, key))
+                record = _record_from_row(dcur.fetchone())
+                by = req["requested_by"]
+                cur.execute(
+                    """UPDATE ingest.identity_link SET active = false, ended_at = now(), end_reason = %s
+                        WHERE sys_id = %s""", (f"ayrıldı: {by}"[:500], req["link_sys_id"]))
+                target = req["target_ci"] or self._create_ci(cur, record)
+                index = PostgresCandidateIndex(cur)
+                resolver = IdentityResolver(self.rules, index, PostgresLinkStore(cur))
+                keys = extract_keys(source_record_from_ingest(record))
+                actor = self.actor
+                self.actor = by  # bağın ve CI değişiminin karar vereni insan
+                try:
+                    self._attach(cur, index, resolver, record, keys, target, method="split",
+                                 rule=f"ayırma:{req['sys_id']}", resolution=None)
+                finally:
+                    self.actor = actor
+                self._rebuild_profile(cur, index, resolver, ci)
+                changes = self._reconcile(cur, ci, None, released=ds) + self._reconcile(cur, target, None)
+                self._resolve_relations_of(cur, ds, key)
+                self._outbox(cur, ci, "evren.ci.split.v1", {
+                    "sys_id": ci, "new_ci": target, "created": req["target_ci"] is None, "data_source": ds,
+                    "source_key": key, "by": by, "request": req["sys_id"]})
+                cur.execute(
+                    """UPDATE ingest.split_request SET status = 'applied', result_ci = %s, applied_at = now(),
+                              result_note = %s
+                        WHERE sys_id = %s""",
+                    (target, "Yeni CI açıldı" if req["target_ci"] is None else "Seçilen CI'a bağlandı",
+                     req["sys_id"]))
+            return ApplyResult("split", target, changes, "Ayırma uygulandı")
+
+        def fail(cur: psycopg.Cursor[Any], req: dict[str, Any], note: str) -> None:
+            cur.execute("""UPDATE ingest.split_request SET status = 'rejected', result_note = %s, applied_at = now()
+                            WHERE sys_id = %s""", (note, req["sys_id"]))
+
+        return self._drain("split", """
+            SELECT sys_id, link_sys_id, ci_sys_id, data_source, source_key, target_ci, requested_by, note
+              FROM ingest.split_request WHERE status = 'pending'
+             ORDER BY requested_at, sys_id LIMIT 1 FOR UPDATE SKIP LOCKED""", handle, fail, limit)
+
+    def apply_requests(self, limit: int = 100) -> dict[str, list[ApplyResult]]:
+        """Tüm insan isteklerini bir tur uygular: elle düzenleme, kuyruk kararı, ayırma (bu sırayla)."""
+        return {"manual": self.apply_manual_edits(limit), "decision": self.apply_decisions(limit),
+                "split": self.apply_splits(limit)}
 
     def _split_blocker(self, cur: psycopg.Cursor[Any], req: dict[str, Any]) -> str | None:
         cur.execute("SELECT active, ci_sys_id, method FROM ingest.identity_link WHERE sys_id = %s FOR UPDATE",

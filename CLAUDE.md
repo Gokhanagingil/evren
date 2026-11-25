@@ -22,6 +22,7 @@ Mimarinin tamamı uygulamanın içindedir: **Mimari Harita** sayfası. İş plan
 - Verilmiş onayları dikkate al; aynı işlem için tekrar onay isteme.
 - Gerçek bir engelde üç şeyi açıkça yaz: neyin eksik olduğu, etkisi ve uygulanabilir alternatifler.
 - Uzun işlerde kısa ve anlamlı ilerleme bilgisi ver.
+- **Her büyük adımdan önce** büyük resmin yaklaşık yüzde kaçının tamamlandığını (`roadmap.json`'dan; faz bazında da) ve sıradaki adımın ne olduğunu kısaca söyle, sonra çalışmaya başla.
 - **Her oturumun sonunda** `DURUM.md`'yi güncelle (kararlar, yapılanlar, bilinen eksikler, sıradaki adımlar). `roadmap.json` durumlarını eşitle ve `updated_at` alanını güncelle. Kesinti sonrası kaldığın yerden buradan devam edilir.
 - Kalite yalnızca kodla ölçülmez: kullanım kolaylığı, görsel kalite, içerik, mantık bütünlüğü, testler ve tamamlanmış ürün davranışı birlikte değerlendirilir.
 
@@ -79,6 +80,7 @@ python tools/export_schemas.py
 
 # Arayüz (yerel, 127.0.0.1) ve tarayıcı duman testi
 python tools/dev_server.py --port 8088
+python -m evren_reconciler.worker            # uzlaştırıcı çalışanı (PYTHONPATH: packages/evren-core/src:services/reconciler)
 python -m pytest apps/web/tests          # Playwright + Chromium
 
 # ServiceNow sözlüğünü salt okunur dışa aktar ve karşılaştır

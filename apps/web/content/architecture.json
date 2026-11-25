@@ -314,10 +314,11 @@
       "kind_label": "Evren bileşeni",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer.",
+      "text": "Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer. İnsan istekleri (karar, ayırma, elle düzenleme) sürekli çalışan uzlaştırıcıyla PostgreSQL bildirimiyle uygulanır (ADR-0013).",
       "tech": [
         "evren_core.reconcile",
-        "metadata/reconciliation_rules.yaml"
+        "metadata/reconciliation_rules.yaml",
+        "evren_reconciler.worker"
       ],
       "security": [
         "Golden record'a tek yazan bileşen"

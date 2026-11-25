@@ -216,8 +216,8 @@ details:
     security: [Birleştirme bağlantıdır, geri alınabilir]
   reconcile:
     phase: F1
-    text: Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer.
-    tech: ["evren_core.reconcile", "metadata/reconciliation_rules.yaml"]
+    text: Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer. İnsan istekleri (karar, ayırma, elle düzenleme) sürekli çalışan uzlaştırıcıyla PostgreSQL bildirimiyle uygulanır (ADR-0013).
+    tech: ["evren_core.reconcile", "metadata/reconciliation_rules.yaml", "evren_reconciler.worker"]
     security: [Golden record'a tek yazan bileşen]
   breaker:
     phase: F1

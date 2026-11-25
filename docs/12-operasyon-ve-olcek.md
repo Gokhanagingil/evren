@@ -48,6 +48,7 @@
   - sn-sync hata oranı.
   - Denetim tetikleyicisi ihlal denemesi.
   - Break-glass kullanımı.
+- **Uzlaştırıcı çalışanı (F0-10, ADR-0013):** `ingest.worker_heartbeat` son görülme, işlenen ve başarısız istek sayısı; `/api/v1/summary` → `worker` (durum `ok`/`stale`/`none`, bekleyen istekler). Alarm önerisi: bekleyen istek varken çalışan 2 tarama aralığından uzun süre görülmüyor; başarısız istek sayısı artıyor.
 - Evren kendi altyapısını kendi CMDB'sinde CI olarak tutar.
 
 ## Dağıtım

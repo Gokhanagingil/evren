@@ -176,12 +176,37 @@ def summary(ctx: Ctx = Depends(context)) -> dict[str, Any]:
         records = cur.fetchone()[0]  # type: ignore[index]
         cur.execute("SELECT EXISTS (SELECT 1 FROM ingest.source_run WHERE notes LIKE 'sentetik%%')")
         synthetic = cur.fetchone()[0]  # type: ignore[index]
+        worker = _worker_status(cur)
     return {"generated_at": datetime.now(UTC).isoformat(), "ci_count": total, "server_count": servers,
             "network_count": net, "vm_count": vms, "queue_review": q.get("review", 0),
             "queue_insufficient": q.get("insufficient", 0),
             "queue_unmatched": q.get("unmatched_shadow", 0) + q.get("unmatched_retiring", 0),
             "unmonitored": unmon, "unprotected": unprot, "not_in_itsm": noitsm, "unauthorized_attempts": unauth,
-            "records": records, "synthetic": synthetic}
+            "records": records, "synthetic": synthetic, "worker": worker}
+
+
+def _worker_status(cur: Any) -> dict[str, Any]:
+    """Uzlaştırıcı çalışanının durumu ve bekleyen insan istekleri (göç 0009).
+
+    ``state``: ``ok`` (son tarama aralığının iki katı içinde görüldü), ``stale`` (görülmüyor), ``none`` (hiç
+    çalışmadı). Bekleyen istek varken çalışan yoksa arayüz uyarır.
+    """
+    cur.execute("""SELECT (SELECT count(*) FROM ingest.match_candidate
+                            WHERE applied_at IS NULL AND status IN ('accepted', 'created_new', 'rejected')),
+                          (SELECT count(*) FROM ingest.split_request WHERE status = 'pending'),
+                          (SELECT count(*) FROM ingest.manual_edit WHERE status = 'pending'),
+                          (SELECT count(*) FROM ingest.match_candidate WHERE apply_error IS NOT NULL)
+                          + (SELECT count(*) FROM ingest.split_request WHERE result_note LIKE 'Uygulanamadı:%%')
+                          + (SELECT count(*) FROM ingest.manual_edit WHERE result_note LIKE 'Uygulanamadı:%%')""")
+    decisions, splits, edits, failed = cur.fetchone()
+    cur.execute("""SELECT seen_at, poll_seconds, stopped_at IS NULL AND seen_at > now() - 2 * poll_seconds * interval '1 second'
+                     FROM ingest.worker_heartbeat ORDER BY seen_at DESC LIMIT 1""")
+    row = cur.fetchone()
+    state = "none" if row is None else ("ok" if row[2] else "stale")
+    return {"state": state, "last_seen": row[0].isoformat() if row else None,
+            "poll_seconds": row[1] if row else None, "failed": failed,
+            "pending": {"decisions": decisions, "splits": splits, "edits": edits,
+                        "total": decisions + splits + edits}}
 
 
 @router.get("/meta/classes")

@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 10/45 adım tamamlandı
+**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 10/45 adım tamamlandı, 2'si sürüyor (~%23)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -17,6 +17,8 @@ Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki *
 | 25.11.2026 | **Kaynak sistemler değişebilir** (keşif ürünü bugün BMC, yarın başka): kurallar ürüne değil kaynak rolüne bağlanır; ürün değişimi gölge → devir → emeklilik yaşam döngüsüyle yapılır | ADR-0009 |
 | 25.11.2026 | GRC Platformu'nun CMDB modülü, Evren hazır olunca CI verisini Evren'den alacak (bugün ServiceNow'dan senkron) | Proje sahibi, F2-08 |
 | 25.11.2026 | BMC ürünü: BMC Helix Discovery (on-prem mi SaaS mı belirsiz; ikisi aynı REST API) | Proje sahibi |
+| 25.11.2026 | İnsan istekleri tablolarda kalır; sürekli çalışan uzlaştırıcı PostgreSQL bildirimiyle uyanır, istek başına hata yalıtımı ve nabız | ADR-0013 |
+| 25.11.2026 | Her büyük adımdan önce proje sahibine "büyük resmin ~%'si tamamlandı + sıradaki adım" raporu verilir | Proje sahibi |
 | 25.11.2026 | Elle düzenleme istek tablosu üzerinden; CI başına tek Manual kaynak kaydı; rol önceliği geçerli, sonuç alan başına; API'nin kaynak kaydı yazma yetkisi geri alındı | ADR-0012 |
 | 25.11.2026 | Birleştirmeyi ayırma: istek API'de, uygulama uzlaştırıcıda; kimlik profili yeniden kurulur; ayrılan kaynağın tek başına verdiği değerler temizlenir; ilk yükleme kaydı ve tek kayıt ayrılmaz | ADR-0011 |
 | 25.11.2026 | API oturumu: Entra OIDC + PKCE + MFA bağlamı, şifreli `__Host-` çerez; rol = uygulama rolü + grup ataması, girişte SoD; API golden record'a yazmaz, kuyruk kararını uzlaştırıcı uygular | ADR-0010 |
@@ -76,9 +78,14 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Uzlaştırıcı `apply_manual_edits`: CI başına tek Manual kaydına ekler, uzlaştırır (neden `manual`, actor = kişi), sonucu alan başına yazar; kaldırılan elle değer golden record'da sahipsiz kalmaz; Manual kayıt kimlik anahtarı eklemez.
   - Arayüz: CI panelinde "Düzenle…": yönetişim alanları önde ve iki sütunlu, kaynak sahipli alanlar katlanır bölümde öncelik sırasıyla; referanslar aranabilir seçim; yalnızca değişen alanlar gönderilir; hata ayrıntısı pencere içinde. "Elle düzenlemeler" geçmişi alan başına sonuçla.
   - Ayırmada elle giriş bağı ayrılmaz ve "tek kaynak" sayımına girmez (API + uzlaştırıcı).
+- **F0-10: sürekli çalışan uzlaştırıcı** (ADR-0013, göç `0009_worker.sql`).
+  - `python -m evren_reconciler.worker`: `LISTEN evren_work` ile hemen uyanır (tetikleyiciler yeni istekte bildirir), kaçan bildirime karşı düzenli tarama; SIGTERM'de turu bitirip durur; bağlantı koparsa üstel beklemeyle yeniden bağlanır; bağlantı adresi günlüğe/`repr`'a girmez. `--once` bakım modu.
+  - `ReconcilerStore._drain`: her istek kendi kayıt noktasında; beklenmeyen hata yalnızca o isteği hata kimliğiyle reddeder (kuyruk kilitlenmez), geçici veritabanı hatası isteği beklemede bırakır. `apply_requests` üç türü bir turda uygular.
+  - Nabız `ingest.worker_heartbeat`; `/api/v1/summary` → `worker` (durum, bekleyen istekler, başarısız sayısı). Genel Bakış'ta "Uzlaştırıcı çalışıyor / çalışmıyor" göstergesi; kuyrukta uygulanamayan karar kırmızı ve nedeniyle.
+  - Test sırası: kalıcı veri yazan çalışan testi demo yüklemesinden sonra çalışan API takımına taşındı (demo yükleyici boş veritabanı ister).
 - **Testlerin yakaladığı güvenlik hatası (düzeltildi):** yetki reddi bir veritabanı işleminin içinde yazıldığında işlem geri alınınca denetim kaydı da kayboluyordu. Ret olayı artık işlem içindeyse ayrı bağlantıyla yazılır (`Ctx.security_event`) ve yetki denetimleri işlem dışında yapılır.
 - **Arayüz düzeltmesi:** tarih-saat öznitelikleri (ilk/son keşif) ham ISO yerine yerel biçimde.
-- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16):** çekirdek 158, uzlaştırıcı 28, API 49 (Entra olumsuz senaryoları dahil), tarayıcı 18 (13 demo modu + 5 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma ve elle düzenleme uçtan uca; düzenleme penceresi 390 px'te taşmasız) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
+- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 158, uzlaştırıcı 36, API 51 (Entra olumsuz senaryoları, çalışanın bildirimle uyanması ve düzgün kapanışı dahil), tarayıcı 18 (13 demo modu + 5 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma ve elle düzenleme uçtan uca; düzenleme penceresi 390 px'te taşmasız) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
 
 ## Bilinen eksikler ve sınırlar
 
@@ -87,7 +94,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 - Ayırma sonrası asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez (eskimeye bırakılır). Ayrılan kaydı başka mevcut CI'a taşıma API'de var, arayüzde yok.
 - Elle düzenlemeyi yalnızca Konfigürasyon analisti yapabilir; "CI sahibi" rolünün koşullu izni (kendi grubunun CI'ları) ABAC değerlendirmesi gelene kadar verilmez. İlişki düzenleme yok.
 - API'de henüz yok: makine hesapları, ilişki düzenleme, ServiceNow uyumlu uç noktalar (F2-05), ABAC koşul değerlendirmesi (koşullu izinler şimdilik verilmez).
-- Uzlaştırıcı kararları `apply_decisions` ile uygular, ancak bunu tetikleyen sürekli çalışan servis (Kafka tüketicisi) ve alım geçidi yok; hedef ortam kararını bekliyor. sn-sync ve MCP servisleri yok.
+- Sürekli çalışan uzlaştırıcı yalnızca insan isteklerini uygular; kaynak kayıtlarının alımı (alım geçidi + Kafka tüketicisi) hedef ortam kararını bekliyor. Çalışan için konteyner imajı ve OpenTelemetry metrikleri yok. sn-sync ve MCP servisleri yok.
 - Oturum iptali çerez süresine bağlı (8 saat); anında iptal için sunucu tarafı iptal listesi gerekir (ADR-0010).
 - Bağımlı CI kimliği (uygulama, ağ adaptörü) uygulanmadı; çözümleyici bilinçli olarak `insufficient` döner.
 - Encoded query dot-walk desteklemiyor; açık hata döner.
@@ -100,7 +107,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 1. **F0-09 devamı** — canlı Entra kabulü; makine hesapları (GRC Platformu için); ABAC koşul değerlendirmesi (CI sahibi). *Sizden: Entra uygulama kaydı (kiracı, istemci, `Evren.*` uygulama rolleri, MFA bağlamı).*
 2. **F0-07** — `tools/sn_metadata_export.py` ile kurum sözlüğü; `verify` işaretleri kapatılır. *Sizden: SN salt okunur hesap.*
 3. **F0-08** — ServiceNow CMDB ilk yüklemesi (eşleme ve `import_existing` hazır).
-4. **F0-10 devamı** — Alım geçidi, Kafka tüketicisi, uzlaştırıcıyı sürekli çalıştıran servis. *Sizden: hedef ortam kararı.*
+4. **F0-10 devamı** — Alım geçidi ve Kafka tüketicisi (uzlaştırıcı çalışanına eklenir), konteyner imajları. *Sizden: hedef ortam kararı.*
 5. **F0-11** — vCenter ve Zabbix bağlayıcıları. *Sizden: salt okunur servis hesapları.*
 6. **F0-13** — Gölge mod raporları; GRC Platformu'na kanıt aktarımı.
 

@@ -41,7 +41,7 @@ def _items(ctx: Ctx, where: sql.Composable, params: list[Any], limit: int) -> li
         cur.execute(sql.SQL(
             """SELECT mc.sys_id, mc.kind, mc.status, mc.data_source, mc.source_key, mc.reason, mc.probability,
                        mc.features, mc.candidates, mc.priority, mc.created_at, mc.decision, mc.decision_ci,
-                       mc.decided_by, mc.decided_at, mc.decision_note, mc.applied_at,
+                       mc.decided_by, mc.decided_at, mc.decision_note, mc.applied_at, mc.apply_error,
                        sr.class_hint, sr.attributes, sr.lookup, sr.last_seen
                   FROM ingest.match_candidate mc
                   JOIN ingest.source_record sr USING (data_source, source_key)
@@ -66,7 +66,7 @@ def _items(ctx: Ctx, where: sql.Composable, params: list[Any], limit: int) -> li
                               "attributes": {k: v for k, v in attrs.items() if v is not None}}
     out = []
     for (sid, kind, status, ds, key, reason, _prob, features, candidates, prio, created, decision, dci, by, at, note,
-         applied, cls, attrs, lookup, seen) in rows:
+         applied, apply_error, cls, attrs, lookup, seen) in rows:
         out.append({
             "id": sid, "code": f"EQ-{sid[:6].upper()}", "kind": kind, "status": status, "data_source": ds,
             "role": reg.role_of(ds) if ds in reg.sources else None, "source_key": key,
@@ -79,7 +79,8 @@ def _items(ctx: Ctx, where: sql.Composable, params: list[Any], limit: int) -> li
                            for c in candidates if c["sys_id"] in cands],
             "decision": None if decision is None else {"decision": decision, "label": LABELS[decision], "ci_sys_id": dci,
                                                        "by": by, "at": at.isoformat() if at else None, "note": note,
-                                                       "applied": applied is not None},
+                                                       "applied": applied is not None and apply_error is None,
+                                                       "error": apply_error},
         })
     return out
 
