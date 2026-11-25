@@ -3,7 +3,7 @@
 #   python tools/dev_stack.py up --demo   # sırlar → imaj → göç → demo verisi → Kafka konuları → servisler
 #   python tools/dev_stack.py smoke       # uçtan uca duman testi (CI "Yığın" işiyle aynı)
 #   python tools/dev_stack.py down        # durdur (--volumes: veriyi de sil)
-#   tarayıcı: http://127.0.0.1:8088
+#   tarayıcı: http://127.0.0.1:8088 · alım geçidi: http://127.0.0.1:8089/ingest/v1
 #
 # Dış görüntüler özetle (digest) sabittir; yeni özet: python tools/dev_stack.py digests --pull (tek değişiklik).
 # Tüm portlar yalnızca 127.0.0.1'e yayınlanır. Sırlar dosyadan okunur (compose secrets), ortam değişkenine
@@ -16,6 +16,12 @@ x-hardening: &hardening
   security_opt:
     - no-new-privileges:true
   restart: unless-stopped
+
+# Kafka istemci ayarları (geliştirme: düz metin, yalnızca bu ağda; üretimde SASL_SSL + konu ACL'leri, ADR-0017)
+x-kafka: &kafka
+  EVREN_KAFKA_BOOTSTRAP: kafka:9092
+  EVREN_KAFKA_SECURITY_PROTOCOL: PLAINTEXT
+  EVREN_KAFKA_ALLOW_PLAINTEXT: "1"
 
 x-evren: &evren
   <<: *hardening
@@ -53,7 +59,7 @@ services:
     command: ["migrate", "--service-roles", "/run/secrets"]
     environment:
       EVREN_DATABASE_URL_FILE: /run/secrets/owner_dsn
-    secrets: [owner_dsn, evren_api_svc, evren_worker_svc]
+    secrets: [owner_dsn, evren_api_svc, evren_worker_svc, evren_gateway_svc, evren_ingest_svc]
     depends_on:
       postgres: {condition: service_healthy}
 
@@ -94,10 +100,12 @@ services:
     depends_on:
       migrate: {condition: service_completed_successfully}
 
+  # İnsan istekleri, çalışma kapanışı ve outbox → Kafka (CI olayları)
   worker:
     <<: *evren
     command: ["worker"]
     environment:
+      <<: *kafka
       EVREN_DATABASE_URL_FILE: /run/secrets/worker_dsn
       EVREN_WORKER_POLL_SECONDS: "15"
       EVREN_WORKER_HEALTH_FILE: /tmp/worker.alive
@@ -110,6 +118,49 @@ services:
       start_period: 10s
     depends_on:
       migrate: {condition: service_completed_successfully}
+      kafka: {condition: service_healthy}
+
+  # Kafka alım tüketicisi: evren.ingest.record.v1 → kimlik çözümleme ve uzlaştırma (bölüm sayısı kadar ölçeklenir)
+  ingest:
+    <<: *evren
+    command: ["ingest"]
+    environment:
+      <<: *kafka
+      EVREN_DATABASE_URL_FILE: /run/secrets/ingest_dsn
+      EVREN_WORKER_HEALTH_FILE: /tmp/ingest.alive
+    secrets: [ingest_dsn]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "ingest"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      kafka: {condition: service_healthy}
+
+  # Alım geçidi: bağlayıcıların tek giriş noktası (belirteç + kaynak yetkisi + şema + hız sınırı → Kafka).
+  # Geliştirmede düz HTTP yalnızca 127.0.0.1'de; üretimde TLS (EVREN_GATEWAY_TLS_*), isteğe bağlı mTLS.
+  gateway:
+    <<: *evren
+    command: ["gateway"]
+    environment:
+      <<: *kafka
+      EVREN_GATEWAY_HOST: 0.0.0.0
+      EVREN_GATEWAY_PORT: "8089"
+      EVREN_GATEWAY_INSECURE_HTTP: "1"
+      EVREN_DATABASE_URL_FILE: /run/secrets/gateway_dsn
+    secrets: [gateway_dsn]
+    ports: ["127.0.0.1:8089:8089"]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "gateway"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      kafka: {condition: service_healthy}
 
   kafka:
     <<: *hardening
@@ -171,8 +222,12 @@ secrets:
   owner_dsn: {file: ./secrets/owner_dsn}
   api_dsn: {file: ./secrets/api_dsn}
   worker_dsn: {file: ./secrets/worker_dsn}
+  gateway_dsn: {file: ./secrets/gateway_dsn}
+  ingest_dsn: {file: ./secrets/ingest_dsn}
   evren_api_svc: {file: ./secrets/evren_api_svc}
   evren_worker_svc: {file: ./secrets/evren_worker_svc}
+  evren_gateway_svc: {file: ./secrets/evren_gateway_svc}
+  evren_ingest_svc: {file: ./secrets/evren_ingest_svc}
   session_key: {file: ./secrets/session_key}
 
 volumes:

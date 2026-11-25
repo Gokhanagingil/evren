@@ -203,14 +203,18 @@
       "kind_label": "Güvenlik denetimi",
       "chapter": "sources",
       "phase": "F0",
-      "text": "Bağlayıcılardan gelen CloudEvents zarfları burada doğrulanır. Şema dışı alan reddedilir. Her bağlayıcı yalnızca kendi data_source değeriyle yazabilir.",
+      "text": "Bağlayıcılardan gelen CloudEvents zarfları burada doğrulanır. Şema dışı alan reddedilir. Her bağlayıcı belirteci tek bir veri kaynağına bağlıdır, başka kaynak adına yazamaz. Toplu gönderim ya hep ya hiç işlenir; Kafka onaylamadan kabul edilmez. Çalışmayı geçit açar, kapanışını uzlaştırıcı yapar (ADR-0017).",
       "tech": [
+        "services/ingest-gateway",
         "schemas/ingest-envelope.schema.json",
-        "mTLS"
+        "tools/connector_credential.py",
+        "TLS/mTLS"
       ],
       "security": [
-        "İstemci sertifikası",
-        "Kaynak başına hız sınırı"
+        "Bağlayıcı belirteci (yalnızca SHA-256 özeti saklanır)",
+        "Kaynak yetkisi ve denetim izi",
+        "Boyut ve kimlik başına hız sınırı",
+        "Kaynak kaydına erişimi yok"
       ]
     },
     "kafka": {
@@ -315,11 +319,12 @@
       "kind_label": "Evren bileşeni",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer. İnsan istekleri (karar, ayırma, elle düzenleme) sürekli çalışan uzlaştırıcıyla PostgreSQL bildirimiyle uygulanır (ADR-0013).",
+      "text": "Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer. İnsan istekleri (karar, ayırma, elle düzenleme) sürekli çalışan uzlaştırıcıyla PostgreSQL bildirimiyle uygulanır (ADR-0013). Kaynak kayıtları Kafka'dan alım tüketicisiyle gelir; en az bir kez okunur, etkisi bir kezdir, zehirli mesaj DLQ'ya gider (ADR-0017).",
       "tech": [
         "evren_core.reconcile",
         "metadata/reconciliation_rules.yaml",
-        "evren_reconciler.worker"
+        "evren_reconciler.worker",
+        "evren_reconciler.consumer"
       ],
       "security": [
         "Golden record'a tek yazan bileşen"
@@ -335,7 +340,7 @@
       "kind_label": "Güvenlik denetimi",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Kısmi bir vCenter çalışması binlerce CI'ı emekliye ayıramaz. Taban çizgisinden sapan, tamamlanmamış veya hatalı çalışma karantinaya alınır.",
+      "text": "Kısmi bir vCenter çalışması binlerce CI'ı emekliye ayıramaz. Taban çizgisinden sapan, tamamlanmamış veya hatalı çalışma karantinaya alınır. Bildirilen kayıtları zamanında tamamlanmayan ya da terk edilen çalışma eksik sayılır. Delta çalışmasında yalnızca tamamlanma ve hata oranı denetlenir.",
       "tech": [
         "evren_core.circuit_breaker",
         "Medyan + MAD"
@@ -573,11 +578,14 @@
       "kind_label": "Veri deposu",
       "chapter": "store",
       "phase": "F0",
-      "text": "CI değişikliği ile olay yayını aynı işlemde yazılır. Olay kaybı veya hayalet olay oluşmaz.",
+      "text": "CI değişikliği ile olay yayını aynı işlemde yazılır. Olay kaybı veya hayalet olay oluşmaz. Çalışan, outbox'a yazım bildirimiyle uyanır ve olayları Kafka'ya taşır; Kafka'ya ulaşılamazsa olaylar beklemede kalır.",
       "tech": [
-        "events.outbox → Kafka"
+        "events.outbox → Kafka",
+        "evren_reconciler.outbox"
       ],
-      "security": []
+      "security": [
+        "Gizli alan değerleri olaya konmaz"
+      ]
     },
     "security_posture": {
       "label": "Güvenlik duruşu",
@@ -692,7 +700,7 @@
       "phase": "F2",
       "text": "CI değişiklikleri CloudEvents olarak yayınlanır. Dış uygulamalar HMAC imzalı webhook ile abone olur.",
       "tech": [
-        "Kafka cmdb.ci.changed",
+        "Kafka evren.cmdb.ci.changed.v1",
         "Webhook"
       ],
       "security": [

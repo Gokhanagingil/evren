@@ -18,5 +18,6 @@
 | [0014](0014-golge-mod-raporu-ve-kanit.md) | Gölge mod raporu (rol tabanlı kapsam, kimlik kurallarına uyan mükerrer sınıfı, değer farkları) ve değiştirilemez SHA-256 kanıt | Kabul edildi | 25.11.2026 |
 | [0015](0015-degisiklik-setleri-git-ile-yayin.md) | Metadata değişiklik setleri Evren'de onaylanır (hazırlayan onaylayamaz), yayın metadata/changes/ dosyasıdır ve Git'ten dağıtılır | Kabul edildi | 25.11.2026 |
 | [0016](0016-tek-imaj-ve-gelistirme-yigini.md) | Tek konteyner imajı (uid 10001, salt okunur kök), izlenen göçler (SHA-256 defteri, sürüklenme durdurur), servis giriş rolleri, sırlar yalnızca dosyadan, compose geliştirme yığını ve CI'da uçtan uca yığın sınaması | Kabul edildi | 25.11.2026 |
+| [0017](0017-olay-omurgasi.md) | Olay omurgası: alım geçidi (bağlayıcı belirteci, kaynak yetkisi, ya hep ya hiç toplu gönderim), Kafka konu sözleşmesi, en az bir kez + kalıcı sayaçlar, DLQ, outbox yayını, delta farkında devre kesici; confluent-kafka | Kabul edildi | 25.11.2026 |
 
 Yeni karar: `/adr <başlık>` komutu.

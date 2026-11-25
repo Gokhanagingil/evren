@@ -3,6 +3,7 @@
 
     python tools/migrate.py                 # bekleyen göçleri uygula, metadata'yı tohumla
     python tools/migrate.py --status        # uygulanan / bekleyen göçleri listele
+    python tools/migrate.py --baseline 0011_change_sets   # psql ile kurulmuş veritabanını deftere al
     python tools/migrate.py --service-roles /run/secrets/   # servis giriş rollerini oluştur/parolala
 
 * Göçler ``db/migrations/NNNN_*.sql`` ad sırasıyla, her biri bir kez uygulanır; ``meta.schema_migration``
@@ -32,6 +33,7 @@ MIGRATIONS = REPO_ROOT / "db" / "migrations"
 SERVICE_ROLES = {
     "evren_api_svc": "evren_app_api",
     "evren_worker_svc": "evren_app_reconciler",
+    "evren_ingest_svc": "evren_app_reconciler",   # Kafka alım tüketicisi (U2): uzlaştırıcıyla aynı yetki, ayrı kimlik
     "evren_gateway_svc": "evren_app_ingest",
     "evren_indexer_svc": "evren_readonly",
     "evren_sync_svc": "evren_app_sync",
@@ -66,14 +68,24 @@ def ledger(conn: psycopg.Connection) -> dict[str, str]:
     return dict(conn.execute("SELECT version, sha256 FROM meta.schema_migration").fetchall())
 
 
-def plan(conn: psycopg.Connection, *, baseline: bool = False) -> list[tuple[str, Path, str]]:
+def plan(conn: psycopg.Connection, *, baseline: str | None = None) -> list[tuple[str, Path, str]]:
     applied = ledger(conn)
-    if not applied and baseline and _has_schema(conn):
-        # Göç aracından önce psql ile kurulmuş veritabanı: mevcut göçleri uygulanmış say (bir kez, açıkça).
+    if baseline is not None:
+        # Göç aracından önce psql ile kurulmuş veritabanı: verilen sürüme KADAR olan göçleri uygulanmış say (bir kez,
+        # açıkça). Sürüm verilmesi zorunludur: veritabanı depodan geride olabilir, sonraki göçler uygulanmalıdır.
+        known = [v for v, _p, _d in files()]
+        if baseline not in known:
+            raise MigrationError(f"Temel çizgi sürümü depoda yok: {baseline}")
+        if applied:
+            raise MigrationError("Göç defteri zaten dolu; temel çizgi yalnızca defteri olmayan veritabanına uygulanır")
+        if not _has_schema(conn):
+            raise MigrationError("Veritabanında Evren şeması yok; temel çizgi yerine normal kurulum yapın")
         with conn.transaction():
             conn.execute(LEDGER)
             for version, _p, digest in files():
-                conn.execute("INSERT INTO meta.schema_migration (version, sha256) VALUES (%s, %s)", (version, digest))
+                if version <= baseline:
+                    conn.execute("INSERT INTO meta.schema_migration (version, sha256) VALUES (%s, %s)",
+                                 (version, digest))
         applied = ledger(conn)
     drift = [v for v, _p, d in files() if v in applied and applied[v] != d]
     if drift:
@@ -85,7 +97,7 @@ def plan(conn: psycopg.Connection, *, baseline: bool = False) -> list[tuple[str,
     return [f for f in files() if f[0] not in applied]
 
 
-def migrate(conn: psycopg.Connection, *, baseline: bool = False) -> list[str]:
+def migrate(conn: psycopg.Connection, *, baseline: str | None = None) -> list[str]:
     done = []
     for version, path, digest in plan(conn, baseline=baseline):
         # Göç dosyaları kendi BEGIN/COMMIT bloklarını içerir; defter kaydı göçün hemen ardından yazılır.
@@ -130,8 +142,9 @@ def service_roles(conn: psycopg.Connection, secret_dir: Path) -> list[str]:
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--status", action="store_true", help="uygulanan ve bekleyen göçleri listele")
-    ap.add_argument("--baseline", action="store_true",
-                    help="psql ile kurulmuş veritabanında mevcut göçleri uygulanmış say (bir kez)")
+    ap.add_argument("--baseline", metavar="SÜRÜM",
+                    help="psql ile kurulmuş veritabanında bu sürüme kadarki göçleri uygulanmış say (bir kez), "
+                         "ör. 0011_change_sets")
     ap.add_argument("--no-seed", action="store_true", help="metadata tohumunu atla")
     ap.add_argument("--service-roles", metavar="DİZİN", type=Path, help="servis giriş rolleri için parola dizini")
     args = ap.parse_args(argv)

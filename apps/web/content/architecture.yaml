@@ -186,9 +186,9 @@ details:
     security: [Bağlayıcı CMDB'ye yazamaz, Ham yük arşive yazılır]
   ingest_gateway:
     phase: F0
-    text: Bağlayıcılardan gelen CloudEvents zarfları burada doğrulanır. Şema dışı alan reddedilir. Her bağlayıcı yalnızca kendi data_source değeriyle yazabilir.
-    tech: ["schemas/ingest-envelope.schema.json", mTLS]
-    security: [İstemci sertifikası, Kaynak başına hız sınırı]
+    text: Bağlayıcılardan gelen CloudEvents zarfları burada doğrulanır. Şema dışı alan reddedilir. Her bağlayıcı belirteci tek bir veri kaynağına bağlıdır, başka kaynak adına yazamaz. Toplu gönderim ya hep ya hiç işlenir; Kafka onaylamadan kabul edilmez. Çalışmayı geçit açar, kapanışını uzlaştırıcı yapar (ADR-0017).
+    tech: ["services/ingest-gateway", "schemas/ingest-envelope.schema.json", "tools/connector_credential.py", TLS/mTLS]
+    security: [Bağlayıcı belirteci (yalnızca SHA-256 özeti saklanır), Kaynak yetkisi ve denetim izi, Boyut ve kimlik başına hız sınırı, Kaynak kaydına erişimi yok]
   kafka:
     phase: F0
     text: Kaynaklar ile işleyiciler birbirinden bağımsızlaşır. Kayıtlar yeniden oynatılabilir; bir kural değişikliğinden sonra geçmiş yeniden işlenebilir.
@@ -216,12 +216,12 @@ details:
     security: [Birleştirme bağlantıdır, geri alınabilir]
   reconcile:
     phase: F1
-    text: Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer. İnsan istekleri (karar, ayırma, elle düzenleme) sürekli çalışan uzlaştırıcıyla PostgreSQL bildirimiyle uygulanır (ADR-0013).
-    tech: ["evren_core.reconcile", "metadata/reconciliation_rules.yaml", "evren_reconciler.worker"]
+    text: Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer. İnsan istekleri (karar, ayırma, elle düzenleme) sürekli çalışan uzlaştırıcıyla PostgreSQL bildirimiyle uygulanır (ADR-0013). Kaynak kayıtları Kafka'dan alım tüketicisiyle gelir; en az bir kez okunur, etkisi bir kezdir, zehirli mesaj DLQ'ya gider (ADR-0017).
+    tech: ["evren_core.reconcile", "metadata/reconciliation_rules.yaml", "evren_reconciler.worker", "evren_reconciler.consumer"]
     security: [Golden record'a tek yazan bileşen]
   breaker:
     phase: F1
-    text: Kısmi bir vCenter çalışması binlerce CI'ı emekliye ayıramaz. Taban çizgisinden sapan, tamamlanmamış veya hatalı çalışma karantinaya alınır.
+    text: Kısmi bir vCenter çalışması binlerce CI'ı emekliye ayıramaz. Taban çizgisinden sapan, tamamlanmamış veya hatalı çalışma karantinaya alınır. Bildirilen kayıtları zamanında tamamlanmayan ya da terk edilen çalışma eksik sayılır. Delta çalışmasında yalnızca tamamlanma ve hata oranı denetlenir.
     tech: ["evren_core.circuit_breaker", Medyan + MAD]
     security: [Yıkıcı işlem yalnızca OK durumunda]
   match_queue:
@@ -286,9 +286,9 @@ details:
     security: [Parolalı/TLS bağlantı]
   outbox:
     phase: F0
-    text: CI değişikliği ile olay yayını aynı işlemde yazılır. Olay kaybı veya hayalet olay oluşmaz.
-    tech: [events.outbox → Kafka]
-    security: []
+    text: CI değişikliği ile olay yayını aynı işlemde yazılır. Olay kaybı veya hayalet olay oluşmaz. Çalışan, outbox'a yazım bildirimiyle uyanır ve olayları Kafka'ya taşır; Kafka'ya ulaşılamazsa olaylar beklemede kalır.
+    tech: [events.outbox → Kafka, "evren_reconciler.outbox"]
+    security: [Gizli alan değerleri olaya konmaz]
   security_posture:
     phase: F1
     text: Defender kaynaklı maruziyet, risk ve zafiyet sayıları ayrı tabloda tutulur. Genel okuyucu rolü bu tabloyu göremez.
@@ -317,7 +317,7 @@ details:
   event_stream:
     phase: F2
     text: CI değişiklikleri CloudEvents olarak yayınlanır. Dış uygulamalar HMAC imzalı webhook ile abone olur.
-    tech: [Kafka cmdb.ci.changed, Webhook]
+    tech: [Kafka evren.cmdb.ci.changed.v1, Webhook]
     security: [HMAC imza, Abonelik başına kapsam]
   evren_mcp:
     phase: F2

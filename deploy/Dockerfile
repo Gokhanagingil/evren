@@ -1,4 +1,4 @@
-# Evren CMDB — tek imaj, birden çok servis (api, worker, migrate, demo; U2'de gateway, U3'te indexer). ADR-0016.
+# Evren CMDB — tek imaj, birden çok servis (api, gateway, worker, ingest, migrate, demo; U3'te indexer). ADR-0016.
 #   docker build -f deploy/Dockerfile -t evren:dev .
 # Güvenlik: bağımlılıklar hash'li kilitten (--require-hashes), root olmayan kullanıcı, kaynak dosyalar salt
 # okunur (root sahipli), derleme araçları son katmanda yok. Temel görüntü özetiyle (digest) sabitlenir.
@@ -17,7 +17,7 @@ RUN --mount=type=secret,id=build_ca,required=false \
 
 FROM ${PYTHON_IMAGE}
 LABEL org.opencontainers.image.title="Evren CMDB" \
-      org.opencontainers.image.description="Evren CMDB servisleri: api, worker, migrate" \
+      org.opencontainers.image.description="Evren CMDB servisleri: api, gateway, worker, ingest, migrate" \
       org.opencontainers.image.source="https://github.com/Gokhanagingil/evren"
 ENV PATH=/opt/venv/bin:$PATH \
     PYTHONDONTWRITEBYTECODE=1 \
@@ -39,6 +39,7 @@ WORKDIR /app
 COPY packages/evren-core/src packages/evren-core/src
 COPY services/api/evren_api services/api/evren_api
 COPY services/reconciler/evren_reconciler services/reconciler/evren_reconciler
+COPY services/ingest-gateway/evren_gateway services/ingest-gateway/evren_gateway
 COPY tools tools
 COPY metadata metadata
 COPY db/migrations db/migrations
@@ -47,6 +48,6 @@ COPY schemas schemas
 COPY apps/web apps/web
 COPY deploy/evren.py deploy/evren.py
 USER 10001
-EXPOSE 8088
+EXPOSE 8088 8089
 ENTRYPOINT ["python", "/app/deploy/evren.py"]
 CMD ["api"]

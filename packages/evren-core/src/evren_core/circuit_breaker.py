@@ -61,7 +61,11 @@ def evaluate_run(
     error_count: int = 0,
     completed: bool = True,
     thresholds: BreakerThresholds = DEFAULT_THRESHOLDS,
+    mode: str = "snapshot",
 ) -> BreakerVerdict:
+    """Çalışmanın sağlığı. ``mode='delta'``: yalnızca değişenler gelir; hacim, sıfır kayıt ve değişim oranı kuralları
+    anlamsızdır (delta zaten "görülmeyeni eksik say" işlemine girmez). Yalnızca tamamlanma ve hata oranı denetlenir.
+    """
     t = thresholds
     reasons: list[str] = []
     state = BreakerState.OK
@@ -75,13 +79,16 @@ def evaluate_run(
 
     if not completed:
         raise_to(BreakerState.OPEN, "Çalışma tamamlanmadı (kısmi toplama); yıkıcı işlem yapılmaz")
-    if record_count == 0:
+    if record_count == 0 and mode != "delta":
         raise_to(BreakerState.OPEN, "Kaynak sıfır kayıt döndürdü")
 
     total = max(record_count, 1)
     error_pct = 100.0 * error_count / total
-    if error_pct >= t.open_error_pct:
+    if error_pct >= t.open_error_pct and (record_count or error_count):
         raise_to(BreakerState.OPEN, f"Hatalı kayıt oranı %{error_pct:.1f}")
+    if mode == "delta":
+        reasons.append("Delta çalışması: hacim ve değişim oranı denetlenmez; eskime yalnızca tam çalışmayla")
+        return BreakerVerdict(state, tuple(reasons), None)
 
     changed_pct = 100.0 * changed_count / total
     if changed_pct >= t.open_changed_pct:

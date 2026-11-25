@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 12/45 adım tamamlandı
+**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 13/45 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -14,10 +14,10 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 1/10 adım tamamlandı
+**İzlek ilerlemesi:** 2/10 adım tamamlandı
 
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
-- [ ] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Planlandı_ (ilgili: F0-10)
+- [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
 - [ ] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Planlandı_ (ilgili: F1-08)
 - [ ] **U4** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04)
 - [ ] **U5** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_
@@ -36,8 +36,6 @@
    Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
 1. **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
-1. **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Devam ediyor_  
-   Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 1. **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_  
@@ -50,7 +48,6 @@
 | F0-07 | ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma | Planlandı |
 | F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Devam ediyor |
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
-| F0-10 | Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı | Devam ediyor |
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Planlandı |
 | F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Devam ediyor |
 | F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Planlandı |
@@ -74,7 +71,7 @@
 
 ## F0 · Temel ve gölge mod
 
-_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 10/16 adım
+_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 11/16 adım
 
 Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki kaynağın gölge modda eşleştirilmesi. ServiceNow'a hiçbir yazma yapılmaz.
 
@@ -97,9 +94,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_
   - Not: Eşleme dosyası ve sys_id koruyan ilk yükleme mantığı hazır (connectors/servicenow_cmdb, IdentityEngine.import_existing).
   - Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
-- [ ] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Devam ediyor_
-  - Not: PostgreSQL deposu, aday dizini, devre kesici, çalışma sonu ve sürekli çalışan uzlaştırıcı tamam (insan isteklerini PostgreSQL bildirimiyle uygular, istek başına hata yalıtımı, nabız; ADR-0013). Kafka tüketicisi ve alım geçidi hedef ortam kararını bekliyor.
-  - Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
+- [x] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi
+  - Not: PostgreSQL deposu, aday dizini, devre kesici, sürekli çalışan uzlaştırıcı (ADR-0013); alım geçidi (bağlayıcı belirteci, kaynak yetkisi), Kafka alım tüketicisi (en az bir kez, kalıcı sayaçlar, DLQ), çalışma kapanışı ve outbox yayını (ADR-0017). Canlı kurum ortamında kabul U10'da.
 - [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 - [x] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)

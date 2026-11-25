@@ -11,4 +11,6 @@ fastapi>=0.115,<1
 uvicorn>=0.32,<1          # ASGI sunucusu; [standard] ekleri bilinçli olarak alınmaz (yüzey küçük kalsın)
 psycopg[binary,pool]>=3.2,<4
 PyYAML>=6.0,<7
-# services/reconciler Kafka bağlayıcısı (confluent-kafka) F0-10'un ikinci adımında eklenecek.
+# Olay omurgası (U2, ADR-0017): alım geçidi üretici, uzlaştırıcı tüketici, outbox yayıncısı.
+# librdkafka tekerleğe gömülü (TLS/SASL dahil); geçişli Python bağımlılığı yok.
+confluent-kafka>=2.6,<3

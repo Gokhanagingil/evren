@@ -4,3 +4,4 @@ evren.ingest.record.v1 6 604800000
 evren.ingest.run.v1 1 2592000000
 evren.cmdb.ci.changed.v1 6 2592000000
 evren.dlq.v1 1 2592000000
+evren.cmdb.activity.v1 3 2592000000

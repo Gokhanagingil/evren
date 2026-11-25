@@ -62,13 +62,21 @@ def test_drift_and_unknown_versions_stop_the_install(scratch, capsys):
     assert "depoda olmayan göç" in capsys.readouterr().err
 
 
-def test_baseline_marks_psql_installed_database_once(scratch, capsys):
+def test_baseline_marks_only_up_to_given_version(scratch, capsys):
+    """psql ile kurulmuş, depodan GERİDE kalmış veritabanı: temel çizgiden sonraki göçler yine uygulanır."""
+    versions = migrate.files()
+    upto = versions[-2][0]
     with psycopg.connect(dbname=scratch, autocommit=True) as c:
-        for _v, path, _d in migrate.files():
-            c.execute(path.read_text(encoding="utf-8"))
+        for v, path, _d in versions:
+            if v <= upto:
+                c.execute(path.read_text(encoding="utf-8"))
         c.execute("DROP TABLE IF EXISTS meta.schema_migration")
-    assert migrate.main(["--baseline", "--no-seed"]) == 0
-    assert "Göç: 0 uygulandı (güncel)" in capsys.readouterr().out
+    assert migrate.main(["--baseline", "yok_0000", "--no-seed"]) == 1
+    assert "Temel çizgi sürümü depoda yok" in capsys.readouterr().err
+    assert migrate.main(["--baseline", upto, "--no-seed"]) == 0
+    assert f"Göç: 1 uygulandı ({versions[-1][0]})" in capsys.readouterr().out
+    assert migrate.main(["--baseline", upto, "--no-seed"]) == 1  # defter doluyken ikinci temel çizgi reddedilir
+    assert "defteri zaten dolu" in capsys.readouterr().err
 
 
 def test_service_login_roles_get_only_their_group_role(scratch, tmp_path):

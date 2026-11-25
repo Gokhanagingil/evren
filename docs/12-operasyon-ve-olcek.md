@@ -67,12 +67,15 @@
 
 | Parça | Ne | Nerede |
 | --- | --- | --- |
-| İmaj | Tek Evren imajı; komut servisi seçer: `api`, `worker`, `migrate`, `demo`, `healthcheck api\|worker`. uid 10001, hash'li bağımlılıklar, temel görüntü özetle sabit | `deploy/Dockerfile`, `deploy/evren.py` |
+| İmaj | Tek Evren imajı; komut servisi seçer: `api`, `gateway`, `worker`, `ingest`, `migrate`, `connector`, `demo`, `healthcheck api\|gateway\|worker\|ingest`. uid 10001, hash'li bağımlılıklar, temel görüntü özetle sabit | `deploy/Dockerfile`, `deploy/evren.py` |
+| Alım geçidi | Bağlayıcıların tek giriş noktası (`/ingest/v1`). TLS (`EVREN_GATEWAY_TLS_CERT_FILE`/`_KEY_FILE`), mTLS için `EVREN_GATEWAY_TLS_CLIENT_CA_FILE`. Ağa TLS'siz açılmaz. Yatay ölçeklenir (hız sınırı örnek başına) | ADR-0017 |
+| Alım tüketicisi | `evren ingest`: `evren.ingest.record.v1` tüketici grubu (`evren-reconciler`). En fazla bölüm sayısı (6) kadar örnek paralel çalışır | ADR-0017 |
+| Çalışan | `evren worker`: insan istekleri, çalışma kapanışı, outbox → Kafka. Birden çok örnek güvenli (`SKIP LOCKED`) | ADR-0013, ADR-0017 |
 | Göç | Bir kez çalışan iş. Göçler `meta.schema_migration` defterine (sürüm + SHA-256) yazılır; içeriği değişmiş göçte durur. Metadata tohumu ve servis giriş rolleri de bu işte | `tools/migrate.py` |
 | Veritabanı bağlantısı | Servis başına giriş rolü (`evren_api_svc`, `evren_worker_svc` …), NOINHERIT, yalnızca kendi grup rolü | ADR-0016 madde 4 |
 | Sırlar | `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE` (+ Entra'da istemci sırrı dosyası); servis başına parola dosyası `<dizin>/<giriş rolü>` | kurum sır kasası → dosya |
 | Sağlık | API: `/readyz` (veritabanı erişimi), `/healthz`. Çalışan: nabız dosyası (`EVREN_WORKER_HEALTH_FILE`) + `ingest.worker_heartbeat` | `deploy/evren.py healthcheck` |
-| Kafka | KRaft; otomatik konu açma kapalı; konular, bölüm sayısı ve saklama süresi `deploy/kafka/topics.txt`'te | U2'de kullanılmaya başlar |
+| Kafka | KRaft; otomatik konu açma kapalı; konular, bölüm sayısı ve saklama süresi `deploy/kafka/topics.txt`'te. İstemci: `EVREN_KAFKA_BOOTSTRAP`, `EVREN_KAFKA_SECURITY_PROTOCOL` (varsayılan `SASL_SSL`), `EVREN_KAFKA_USERNAME` + `EVREN_KAFKA_PASSWORD_FILE`, `EVREN_KAFKA_CA_FILE`; `PLAINTEXT` yalnızca `EVREN_KAFKA_ALLOW_PLAINTEXT=1` ile | ADR-0017 |
 | OpenSearch | Tek düğüm (geliştirme) | U3'te kullanılmaya başlar |
 
 Geliştirme yığını (yalnızca 127.0.0.1):
@@ -88,13 +91,14 @@ python tools/dev_stack.py down         # durdur; --volumes veriyi de siler
 | --- | --- |
 | http://127.0.0.1:8088 | Evren arayüzü ve API (dev oturumu) |
 | 127.0.0.1:55432 | PostgreSQL (`evren`; parola `deploy/secrets/pg_owner_password`) |
+| http://127.0.0.1:8089/ingest/v1 | Alım geçidi (bağlayıcılar; belirteç: `docker compose -f deploy/compose.dev.yaml run --rm migrate connector issue …`) |
 | 127.0.0.1:59092 | Kafka (dış dinleyici) |
 | http://127.0.0.1:59200 | OpenSearch |
 
 - **TLS denetimli kurumsal vekil sunucu arkasında derleme:** `EVREN_BUILD_CA_FILE=/yol/kurum-ca.pem python tools/dev_stack.py up`. CA yalnızca bağımlılık kurulum adımına derleme sırrı olarak bağlanır; imaja yazılmaz.
 - **Debian güvenlik güncellemeleri** derlemede zorunludur; depoya erişilemezse derleme durur. Debian deposuna erişimi olmayan geliştirme makinesinde: `EVREN_BUILD_OS_UPDATES=0` (yalnızca geliştirme; CI'daki Trivy imaj kapısı bu imajı kabul etmeyebilir).
 - **Görüntü güncelleme:** `python tools/dev_stack.py digests --pull` sabit özetle bugünkü özeti karşılaştırır. Yeni özet tek değişiklik olarak yazılır ve incelenir.
-- **Psql ile kurulmuş mevcut veritabanı:** `python tools/migrate.py --baseline` mevcut göçleri bir kez deftere alır; sonrasında `python tools/migrate.py` yalnızca yeni göçleri uygular.
+- **Psql ile kurulmuş mevcut veritabanı:** `python tools/migrate.py --baseline 0011_change_sets` (veritabanına son uygulanan göç) o sürüme kadarki göçleri bir kez deftere alır; sonrasında `python tools/migrate.py` yalnızca yeni göçleri uygular.
 - **Geliştirme kolaylıkları üretimde yoktur:** dev oturumu (`EVREN_DEV_CONTAINER`), Kafka düz metin, OpenSearch güvenlik eklentisi kapalı. Üretimde Entra, Kafka SASL/TLS + konu ACL'leri, OpenSearch güvenlik eklentisi + TLS zorunludur.
 
 ## Yük testi (F0 sonu)

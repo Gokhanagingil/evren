@@ -20,7 +20,7 @@ import logging
 import re
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -68,14 +68,16 @@ class ApplyResult:
     summary: str = ""
 
 
-@dataclass
-class _Run:
+@dataclass(frozen=True)
+class RunClosure:
+    """Alım geçidinden açılan bir çalışmanın kapanışı: ``completed`` | ``timed_out`` | ``abandoned``."""
+
+    run_id: UUID
     data_source: str
-    mode: str
-    started_at: datetime
-    records: int = 0
-    changed: int = 0   # önceden var olan ve içeriği değişen kayıt (eşleme hatası belirtisi)
-    new: int = 0       # ilk kez görülen kayıt (ilk yükleme veya yeni kaynakta doğal olarak yüksek)
+    reason: str
+    processed: int
+    reported: int | None
+    verdict: BreakerVerdict
 
 
 def _record_from_row(row: dict[str, Any]) -> IngestRecord:
@@ -133,7 +135,6 @@ class ReconcilerStore:
         self.reconciler = Reconciler.from_metadata(metadata.hierarchy, metadata.reconciliation, self.registry)
         self.actor = actor
         self.clock = clock or (lambda: datetime.now(UTC))
-        self.runs: dict[UUID, _Run] = {}
 
     # ------------------------------------------------------------------ çalışma yaşam döngüsü
     def start_run(self, run_id: UUID, data_source: str, *, mode: str = "snapshot",
@@ -143,48 +144,112 @@ class ReconcilerStore:
         with self.conn.transaction(), self.conn.cursor() as cur:
             cur.execute("INSERT INTO ingest.source_run (run_id, data_source, mode, started_at) VALUES (%s, %s, %s, %s)",
                         (run_id, data_source, mode, started))
-        self.runs[run_id] = _Run(data_source, mode, started)
         return run_id
 
+    def run_counts(self, cur: psycopg.Cursor[Any], run_id: UUID, data_source: str) -> tuple[int, int, int]:
+        """(işlenen, yeni, değişen) — kaynak kayıtlarından; aynı kaydın yeniden teslimi iki kez sayılmaz (ADR-0017)."""
+        cur.execute("""SELECT count(*), count(*) FILTER (WHERE first_run = %(r)s),
+                              count(*) FILTER (WHERE changed_run = %(r)s AND first_run IS DISTINCT FROM %(r)s)
+                         FROM ingest.source_record WHERE data_source = %(ds)s AND last_run = %(r)s""",
+                    {"r": run_id, "ds": data_source})
+        return cur.fetchone()  # type: ignore[return-value]
+
     def finish_run(self, run_id: UUID, *, completed: bool = True, error_count: int = 0,
-                   finished_at: datetime | None = None) -> BreakerVerdict:
-        run = self.runs.pop(run_id)
+                   finished_at: datetime | None = None, note: str | None = None) -> BreakerVerdict:
+        """Çalışmayı kapatır: sayaçlar veritabanından, devre kesici kararı, ilişkiler, görülmeyenlerin işaretlenmesi."""
         with self.conn.transaction(), self.conn.cursor() as cur:
+            cur.execute("SELECT data_source, mode, finished_at FROM ingest.source_run WHERE run_id = %s FOR UPDATE",
+                        (run_id,))
+            row = cur.fetchone()
+            if row is None:
+                raise ValueError(f"Çalışma bulunamadı: {run_id}")
+            data_source, mode, already = row
+            if already is not None:
+                raise ValueError(f"Çalışma zaten kapatılmış: {run_id}")
+            records, new, changed = self.run_counts(cur, run_id, data_source)
             cur.execute(
                 """SELECT record_count FROM ingest.source_run
                     WHERE data_source = %s AND run_id <> %s AND completed AND breaker_state IN ('ok', 'warn')
-                    ORDER BY started_at DESC LIMIT 10""", (run.data_source, run_id))
+                      AND mode = 'snapshot'
+                    ORDER BY started_at DESC LIMIT 10""", (data_source, run_id))
             baseline = [r[0] for r in cur.fetchall()]
-            if self.registry.roles[self.registry.role_of(run.data_source)].kind in ("manual", "platform"):
+            if self.registry.roles[self.registry.role_of(data_source)].kind in ("manual", "platform"):
                 # Elle giriş ve platform kuralları toplu toplama değildir; devre kesici uygulanmaz.
                 verdict = BreakerVerdict(BreakerState.OK, ("Elle giriş/platform: devre kesici uygulanmaz",), None)
             else:
-                verdict = evaluate_run(run.records, baseline, changed_count=run.changed, error_count=error_count,
-                                       completed=completed)
+                verdict = evaluate_run(records, baseline, changed_count=changed, error_count=error_count,
+                                       completed=completed, mode=mode)
+            notes = "; ".join(n for n in (f"yeni kayıt: {new}" if new else None, note) if n) or None
             cur.execute(
                 """UPDATE ingest.source_run SET finished_at = %s, completed = %s, record_count = %s, changed_count = %s,
-                          error_count = %s, breaker_state = %s, breaker_reasons = %s, baseline = %s,
+                          new_count = %s, error_count = %s, breaker_state = %s, breaker_reasons = %s, baseline = %s,
                           notes = %s
                     WHERE run_id = %s""",
-                (finished_at or self.clock(), completed, run.records, run.changed, error_count, verdict.state.value,
-                 list(verdict.reasons), verdict.baseline, f"yeni kayıt: {run.new}" if run.new else None, run_id))
-            self._resolve_relations(cur, run_id, run.data_source)
-            if verdict.allows_destructive and run.mode == "snapshot":
+                (finished_at or self.clock(), completed, records, changed, new, error_count, verdict.state.value,
+                 list(verdict.reasons), verdict.baseline, notes, run_id))
+            self._resolve_relations(cur, run_id, data_source)
+            if verdict.allows_destructive and mode == "snapshot":
                 # Görülmeyen kayıtlar yalnızca işaretlenir; değerleri eskime kuralı karar verene kadar korunur.
                 cur.execute(
                     """UPDATE ingest.source_record SET status = 'missing'
                         WHERE data_source = %s AND status = 'active' AND last_run IS DISTINCT FROM %s""",
-                    (run.data_source, run_id))
+                    (data_source, run_id))
             elif not verdict.allows_destructive:
                 cur.execute(
                     """INSERT INTO insight.anomaly (kind, severity, data_source, details, explanation)
                        VALUES ('source_volume', %s, %s, %s, %s)""",
-                    ("high" if verdict.state.value == "open" else "medium", run.data_source,
+                    ("high" if verdict.state.value == "open" else "medium", data_source,
                      Jsonb({"run_id": str(run_id), "state": verdict.state.value, "reasons": list(verdict.reasons),
-                            "records": run.records, "new": run.new, "changed": run.changed,
+                            "records": records, "new": new, "changed": changed,
                             "baseline": verdict.baseline}),
                      "Devre kesici: " + "; ".join(verdict.reasons)))
         return verdict
+
+    def finalize_ready_runs(self, *, grace: timedelta = timedelta(minutes=15),
+                            abandon_after: timedelta = timedelta(hours=24), limit: int = 50) -> list[RunClosure]:
+        """Alım geçidinden açılan çalışmaları kapatır (ADR-0017).
+
+        * Kapanış istendi ve bildirilen sayıda kayıt işlendi → bildirilen tamamlanma durumuyla kapanır.
+        * Kapanış istendi ama ``grace`` içinde kayıtlar gelmedi → eksik (``completed=false``): devre kesici açılır,
+          yıkıcı işlem yapılmaz.
+        * Kapanış hiç istenmedi ve çalışma ``abandon_after``'dan eski → terk edilmiş, eksik kapanır.
+        Birden çok çalışan güvenle çalışır (``FOR UPDATE SKIP LOCKED``).
+        """
+        now = self.clock()
+        closed: list[RunClosure] = []
+        with self.conn.cursor() as cur:
+            cur.execute("""SELECT run_id FROM ingest.source_run
+                            WHERE finished_at IS NULL AND opened_by IS NOT NULL
+                              AND (close_requested_at IS NOT NULL OR started_at < %s)
+                            ORDER BY coalesce(close_requested_at, started_at) LIMIT %s""",
+                        (now - abandon_after, limit))
+            candidates = [r[0] for r in cur.fetchall()]
+        for run_id in candidates:
+            with self.conn.transaction(), self.conn.cursor() as cur:
+                cur.execute("""SELECT data_source, started_at, close_requested_at, reported_count, reported_completed,
+                                      reported_error_count
+                                 FROM ingest.source_run WHERE run_id = %s AND finished_at IS NULL
+                                  FOR UPDATE SKIP LOCKED""", (run_id,))
+                row = cur.fetchone()
+                if row is None:
+                    continue
+                ds, started, close_at, reported, reported_ok, errors = row
+                processed = self.run_counts(cur, run_id, ds)[0]
+                if close_at is not None and processed >= (reported or 0):
+                    verdict = self.finish_run(run_id, completed=bool(reported_ok), error_count=errors or 0)
+                    closed.append(RunClosure(run_id, ds, "completed", processed, reported, verdict))
+                elif close_at is not None and now - close_at > grace:
+                    note = f"Bildirilen {reported} kaydın {processed} tanesi işlendi; bekleme süresi doldu"
+                    verdict = self.finish_run(run_id, completed=False, error_count=errors or 0, note=note)
+                    closed.append(RunClosure(run_id, ds, "timed_out", processed, reported, verdict))
+                elif close_at is None and started < now - abandon_after:
+                    note = "Bağlayıcı çalışmayı kapatmadı (terk edildi)"
+                    verdict = self.finish_run(run_id, completed=False, note=note)
+                    closed.append(RunClosure(run_id, ds, "abandoned", processed, None, verdict))
+        for c in closed:
+            log.info("Çalışma kapatıldı: %s %s %s (%s/%s) devre kesici=%s", c.data_source, c.run_id, c.reason,
+                     c.processed, c.reported, c.verdict.state.value)
+        return closed
 
     # ------------------------------------------------------------------ kayıt işleme
     def apply(self, record: IngestRecord) -> ApplyResult:
@@ -203,7 +268,6 @@ class ReconcilerStore:
 
     def _process(self, record: IngestRecord, *, attach_to: str | None, method: str | None) -> ApplyResult:
         src = self.registry.source(record.data_source)
-        run = self.runs.get(record.run_id)
         digest = content_hash(record)
         with self.conn.transaction(), self.conn.cursor() as cur:
             cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
@@ -213,8 +277,6 @@ class ReconcilerStore:
             row = cur.fetchone()
             links = PostgresLinkStore(cur)
             linked = links.get(record.data_source, record.source_key)
-            if run:
-                run.records += 1
             if row and row[0] == digest and (linked or attach_to is None):
                 cur.execute("""UPDATE ingest.source_record SET last_seen = %s, last_run = %s, status = 'active'
                                 WHERE data_source = %s AND source_key = %s""",
@@ -222,11 +284,6 @@ class ReconcilerStore:
                 if linked:
                     self._touch_discovered(cur, linked, src.name, record.observed_at)
                 return ApplyResult("unchanged", linked)
-            if run:
-                if row is None:
-                    run.new += 1
-                else:
-                    run.changed += 1
             self._upsert_source_record(cur, record, digest)
             index = PostgresCandidateIndex(cur)
             resolver = IdentityResolver(self.rules, index, links)
@@ -279,17 +336,17 @@ class ReconcilerStore:
         cur.execute(
             """INSERT INTO ingest.source_record (data_source, source_key, class_hint, attributes, lookup, external_ids,
                                                  relations, content_hash, raw_ref, status, first_seen, last_seen,
-                                                 last_changed, last_run)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s)
+                                                 last_changed, last_run, first_run, changed_run)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s, %s)
                ON CONFLICT (data_source, source_key) DO UPDATE SET class_hint = EXCLUDED.class_hint,
                  attributes = EXCLUDED.attributes, lookup = EXCLUDED.lookup, external_ids = EXCLUDED.external_ids,
                  relations = EXCLUDED.relations, content_hash = EXCLUDED.content_hash, raw_ref = EXCLUDED.raw_ref,
                  status = EXCLUDED.status, last_seen = EXCLUDED.last_seen, last_changed = now(),
-                 last_run = EXCLUDED.last_run""",
+                 last_run = EXCLUDED.last_run, changed_run = EXCLUDED.changed_run""",
             (record.data_source, record.source_key, record.class_hint, Jsonb(dumped["attributes"]),
              Jsonb(dumped["lookup"]), Jsonb(dumped["external_ids"]), Jsonb(dumped["relations"]), digest,
              record.raw_ref, "deleted" if record.deleted else "active", record.observed_at, record.observed_at,
-             record.run_id))
+             record.run_id, record.run_id, record.run_id))
 
     def _profile_class(self, index: PostgresCandidateIndex, ci: str, class_hint: str) -> str:
         try:

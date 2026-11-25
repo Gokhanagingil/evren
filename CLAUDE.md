@@ -68,9 +68,11 @@ for f in db/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$f"; done
 python tools/load_metadata.py --sql build/seed.sql && psql -v ON_ERROR_STOP=1 -f build/seed.sql
 cd packages/evren-core && EVREN_TEST_PG=1 python -m pytest
 
-# Tüm yığın konteynerde (PostgreSQL, Kafka, OpenSearch, api, worker) — ADR-0016
+# Tüm yığın konteynerde (PostgreSQL, Kafka, OpenSearch, api, gateway, worker, ingest) — ADR-0016, ADR-0017
 python tools/dev_stack.py up --demo && python tools/dev_stack.py smoke
 python tools/migrate.py --status            # izlenen göçler (EVREN_DATABASE_URL_FILE veya libpq ortamı)
+python tools/connector_credential.py issue --name zabbix-dc1 --data-source Zabbix --by <kişi>   # bağlayıcı belirteci (ADR-0017)
+EVREN_TEST_PG=1 python -m pytest services/ingest-gateway/tests   # alım geçidi
 
 # Metadata doğrula / tohum SQL üret
 python tools/load_metadata.py --check
@@ -114,6 +116,9 @@ packages/evren-core/      Saf alan mantığı + testler
   circuit_breaker.py      kaynak sağlığı ve karantina
   encoded_query.py        ServiceNow sysparm_query → güvenli SQL
   envelope.py             alım zarfı (CloudEvents) → schemas/
+  messaging.py            olay omurgası sözleşmesi: konular, anahtarlar, olay biçimi, Kafka ayarları (ADR-0017)
+  kafka_client.py         Kafka G/Ç adaptörü (çekirdekte Kafka'ya dokunan tek modül)
+  credentials.py          bağlayıcı belirteçleri (yalnızca SHA-256 özeti saklanır)
   connectors/             bağlayıcı sözleşmesi, YAML alan eşleme motoru
   metadata.py             sözlük yükleme/doğrulama, tohum SQL, sn.* görünümler
   sources.py              kaynak rolleri, veri kaynağı yaşam döngüsü (ADR-0009)
@@ -122,7 +127,7 @@ connectors/<kaynak>/      kaynak başına eşleme dosyaları
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
 db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … (tools/migrate.py uygular)
-services/                 api, reconciler, ingest-gateway, sn-sync, mcp — sorumluluk tanımları
+services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), sn-sync, mcp
 deploy/                   tek imaj (Dockerfile, evren.py giriş noktası), compose geliştirme yığını, Kafka konuları
 docs/                     mimari belgeler, ADR'ler
 tools/                    yükleyici, harita/büyük resim/plan/demo üreticileri, SN dışa aktarım, geliştirme sunucusu

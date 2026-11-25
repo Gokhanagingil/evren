@@ -200,13 +200,29 @@ def _worker_status(cur: Any) -> dict[str, Any]:
                           + (SELECT count(*) FROM ingest.manual_edit WHERE result_note LIKE 'Uygulanamadı:%%')""")
     decisions, splits, edits, failed = cur.fetchone()
     cur.execute("""SELECT seen_at, poll_seconds, stopped_at IS NULL AND seen_at > now() - 2 * poll_seconds * interval '1 second'
-                     FROM ingest.worker_heartbeat ORDER BY seen_at DESC LIMIT 1""")
+                     FROM ingest.worker_heartbeat WHERE kind = 'requests' ORDER BY seen_at DESC LIMIT 1""")
     row = cur.fetchone()
     state = "none" if row is None else ("ok" if row[2] else "stale")
     return {"state": state, "last_seen": row[0].isoformat() if row else None,
             "poll_seconds": row[1] if row else None, "failed": failed,
             "pending": {"decisions": decisions, "splits": splits, "edits": edits,
-                        "total": decisions + splits + edits}}
+                        "total": decisions + splits + edits},
+            "ingest": _ingest_status(cur)}
+
+
+def _ingest_status(cur: Any) -> dict[str, Any]:
+    """Kafka alım tüketicileri (U2): canlı örnek sayısı, işlenen ve DLQ'ya giden kayıt (süreç başlangıcından beri).
+
+    ``state``: ``ok`` (en az bir canlı örnek), ``stale`` (örnekler görülmüyor), ``none`` (hiç çalışmadı; Kafka'sız
+    geliştirme ortamı veya alım henüz kurulmadı).
+    """
+    cur.execute("""SELECT count(*) FILTER (WHERE stopped_at IS NULL AND seen_at > now() - interval '60 seconds'),
+                          count(*), coalesce(sum(processed), 0)::bigint, coalesce(sum(failed), 0)::bigint, max(seen_at)
+                     FROM ingest.worker_heartbeat WHERE kind = 'ingest'""")
+    live, total, processed, dead, seen = cur.fetchone()
+    state = "none" if total == 0 else "ok" if live else "stale"
+    return {"state": state, "instances": live, "processed": processed, "dead_lettered": dead,
+            "last_seen": seen.isoformat() if seen else None}
 
 
 @router.get("/meta/classes")

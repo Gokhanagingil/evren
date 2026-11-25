@@ -6,7 +6,8 @@
 | --- | --- | --- |
 | Yerel REST `/api/v1` | Evren arayüzü, GRC Platformu (tedarik), otomasyonlar | `services/api` |
 | ServiceNow uyumlu `/api/now/table/{table}`, `/api/now/identifyreconcile` | SN Table API'ye yazılmış eski betikler, SN IRE biçiminde veri üreten araçlar | `services/api` (F2-05) |
-| Olay akışı (CloudEvents + imzalı webhook) | Değişikliğe tepki veren uygulamalar | Kafka `cmdb.ci.changed`, webhook |
+| Alım geçidi `/ingest/v1` | Bağlayıcılar (vCenter, Zabbix, keşif …) | `services/ingest-gateway` (ADR-0017) |
+| Olay akışı (CloudEvents + imzalı webhook) | Değişikliğe tepki veren uygulamalar | Kafka `evren.cmdb.ci.changed.v1`, webhook (F2-06) |
 | MCP | Kurumun kendi MCP uygulaması ve yapay zekâ ajanları | `services/mcp`, docs/09 |
 
 Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
@@ -101,13 +102,43 @@ Bilinçli farklar (güvenlik):
 GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_server^operational_status=1^ram>=16384^ORDERBYname&sysparm_fields=sys_id,name,ip_address,ram&sysparm_limit=100
 ```
 
+## Alım geçidi (bağlayıcı sözleşmesi, ADR-0017)
+
+Bağlayıcı `Authorization: Bearer evr_…` ile gelir. Belirteci `tools/connector_credential.py issue` verir; arayüzden yönetim U4'te gelecek. Belirteç tek bir veri kaynağına bağlıdır.
+
+| Adım | İstek | Yanıt |
+| --- | --- | --- |
+| 1. Çalışmayı aç | `POST /ingest/v1/runs` gövde: `evren.ingest.run.started.v1` (`run_id`, `mode`: `snapshot` \| `delta`) | 201; aynı `run_id` tekrar: 200 `replayed` |
+| 2. Kayıtları gönder | `POST /ingest/v1/runs/{run_id}/records` gövde: `{"records": [evren.ingest.record.v1 …]}` (≤ 500) | 202 `accepted` — Kafka onayladıktan sonra |
+| 3. Kapanış iste | `POST /ingest/v1/runs/{run_id}/complete` gövde: `evren.ingest.run.completed.v1` (`record_count`, `completed`, `error_count`) | 202 `closing`; aynı değerlerle tekrar: 200 |
+| 4. Durumu izle | `GET /ingest/v1/runs/{run_id}` | `open` · `closing` · `finished` (+ `completed`, `breaker_state`) |
+
+- Toplu gönderim **ya hep ya hiç** işlenir. Bir kayıt reddedilirse hiçbiri alınmaz; `details` reddedilen kaydın sırasını, alanını ve nedenini verir: `kaynak_uyumsuz`, `calisma_uyumsuz`, `gelecek_tarih`, `kayit_buyuk`.
+- `record_count` = çalışmada gönderilen **farklı** nesne sayısı. Aynı `source_key` bir çalışmada bir kez gönderilmelidir. `record_count` Kafka'ya teslim edilen sayıdan büyükse 409 döner.
+- Çalışma, uzlaştırıcı bildirilen kayıtları işleyince kapanır. 15 dakikada tamamlanmazsa eksik kapanır ve devre kesici yıkıcı işlemleri durdurur. Kapanış hiç istenmezse çalışma 24 saat sonra terk edilmiş sayılır.
+- Delta çalışmasında görülmeyen kayıt eksik sayılmaz. Hacim ve değişim oranı yalnızca tam (snapshot) çalışmada denetlenir.
+- Hata kodları:
+
+  | Kod | Anlam |
+  | --- | --- |
+  | 400 | Şema hatası (alan konumu döner, girdi yansıtılmaz) veya kayıt reddi |
+  | 401 | Belirteç yok, geçersiz, süresi dolmuş veya iptal edilmiş |
+  | 403 | Belirteç başka kaynağa bağlı veya kaynak emekli |
+  | 404 | Çalışma yok veya başka kaynağa ait |
+  | 409 | Çalışma kapalı veya sayı uyumsuz |
+  | 411/413 | Gövde uzunluğu bildirilmemiş veya sınırı aşıyor |
+  | 429 | Hız sınırı (`Retry-After`) |
+  | 503 | Kafka'ya ulaşılamıyor; aynı toplu gönderimi yeniden deneyin, tekrar zararsızdır |
+
 ## Olaylar
 
-`cmdb.ci.changed.v1` (CloudEvents):
+Kafka `evren.cmdb.ci.changed.v1` (anahtar: `sys_id`, CloudEvents; outbox'tan yayınlanır, ADR-0017):
 
-- `subject` = sys_id.
-- `data`: sınıf, değişen öznitelikler (eski → yeni), kaynak, gerekçe, korelasyon (çalışma, Change numarası).
-- Webhook imzası: `X-Evren-Signature: sha256=<HMAC>` + zaman damgası (tekrar saldırısına karşı 5 dakika penceresi).
+- `id` = `outbox-<n>`: tekrarlar bununla ayıklanır (en az bir kez teslim).
+- `type`: `evren.cmdb.ci.created.v1`, `evren.cmdb.ci.changed.v1`. `subject` = sys_id.
+- `data`: sınıf, değişen öznitelikler (eski → yeni), kaynak, çalışma. Hassasiyeti `confidential`/`restricted` olan alanın değeri konmaz (`redacted: true`).
+- İnsan istekleri (elle düzenleme, ayırma …) `evren.cmdb.activity.v1` konusundadır.
+- Webhook (F2-06): `X-Evren-Signature: sha256=<HMAC>` + zaman damgası (tekrar saldırısına karşı 5 dakika penceresi).
 
 ## GRC Platformu (tedarik) entegrasyonu (F2-08)
 

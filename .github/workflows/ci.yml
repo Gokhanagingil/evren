@@ -88,6 +88,8 @@ jobs:
         run: python tools/load_demo_pg.py
       - name: API (evren_app_api rolüyle; Entra akışı sahte kimlik sağlayıcıyla)
         run: python -m pytest -q services/api/tests
+      - name: Alım geçidi (evren_app_ingest rolüyle; Kafka taklit, uçtan uca akış "Yığın" işinde)
+        run: python -m pytest -q services/ingest-gateway/tests
       - name: Arayüz API modunda (gerçek uvicorn + PostgreSQL, Chromium)
         run: |
           python -m playwright install --with-deps chromium

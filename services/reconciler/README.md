@@ -41,6 +41,17 @@ python -m evren_reconciler.worker --once          # bekleyen istekleri bir tur u
 
 Konteynerde: `python tools/dev_stack.py up` ile `worker` servisi `evren_worker_svc` giriş rolüyle çalışır (ADR-0016).
 
+### Olay omurgası (U2, ADR-0017)
+
+```bash
+python -m evren_reconciler.worker --ingest        # Kafka alım tüketicisi (evren.ingest.record.v1)
+```
+
+- **Alım tüketicisi** (`consumer.py`, `evren ingest`, giriş rolü `evren_ingest_svc`): kayıtları kimlik çözümleme ve uzlaştırmadan geçirir. Ofset yalnızca veritabanı işlemi tamamlanınca saklanır. Zehirli mesaj `evren.dlq.v1`'e gider (neden başlıkta). Geçici hatada mesaja geri sarılır. Nabız `kind='ingest'`.
+- **Çalışma kapanışı** (`ReconcilerStore.finalize_ready_runs`, her turda): bildirilen kayıtlar işlendiyse kapatır. Kayıtlar 15 dakikada tamamlanmazsa eksik, 24 saat kapanış gelmezse terk edilmiş kapatır. Sayaçlar kaynak kayıtlarından (`first_run`, `changed_run`, `last_run`) hesaplanır; yeniden teslim iki kez sayılmaz.
+- **Outbox yayını** (`outbox.py`, çalışanda, `EVREN_KAFKA_BOOTSTRAP` varsa): `events.outbox` → `evren.cmdb.ci.changed.v1` / `evren.cmdb.activity.v1`. Gizli alanların değerleri olaya konmaz.
+- Devre kesici çalışma türünü bilir: delta çalışmasında hacim ve değişim oranı denetlenmez.
+
 - SIGTERM/SIGINT: elindeki turu bitirir, nabza `stopped_at` yazar, çıkar (en geç ~1 sn).
 - Birden fazla örnek güvenle çalışır (`FOR UPDATE SKIP LOCKED`).
 - Uygulanamayan istek hata kimliğiyle reddedilir; aynı kimlik günlükte yığın iziyle bulunur.

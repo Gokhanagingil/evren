@@ -14,7 +14,8 @@ biri başarısız olursa yığın yarım açılmaz, hata o adımda görünür.
 
 Duman testi yalnızca 127.0.0.1'e bağlanır ve şunları doğrular: API hazır, CMDB veri içeriyor, uzlaştırıcı çalışanı
 canlı; API'den gönderilen bir elle düzenleme konteynerdeki uzlaştırıcı tarafından uygulanıyor (golden record
-değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı. Hiçbir sır yazdırılmaz.
+değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı; olay omurgası uçtan uca çalışıyor (geçici bağlayıcı
+kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali). Hiçbir sır yazdırılmaz.
 """
 from __future__ import annotations
 
@@ -28,13 +29,15 @@ import time
 import urllib.error
 import urllib.request
 import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ["docker", "compose", "-f", str(ROOT / "deploy" / "compose.dev.yaml")]
-LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker"]
+LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "gateway"]
 API = "http://127.0.0.1:8088"
+GATEWAY = "http://127.0.0.1:8089"
 OPENSEARCH = "http://127.0.0.1:59200"
 TOPICS = {"evren.ingest.record.v1", "evren.ingest.run.v1", "evren.cmdb.ci.changed.v1", "evren.dlq.v1"}
 
@@ -96,11 +99,14 @@ def up(demo: bool) -> int:
 
 
 # --------------------------------------------------------------------------- duman testi
-def http(method: str, url: str, body: dict[str, Any] | None = None) -> tuple[int, Any]:
+def http(method: str, url: str, body: dict[str, Any] | None = None, *,
+         auth: str | None = None) -> tuple[int, Any]:
     data = json.dumps(body).encode() if body is not None else None
     headers = {"Accept": "application/json"}
     if body is not None:
         headers |= {"Content-Type": "application/json", "X-Evren-Request": "1", "Origin": API}
+    if auth:
+        headers["Authorization"] = f"Bearer {auth}"
     req = urllib.request.Request(url, data=data, method=method, headers=headers)
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:  # nosec B310
@@ -184,11 +190,79 @@ def smoke() -> int:
         health = wait_for("OpenSearch kümesi", lambda: (r := http("GET", f"{OPENSEARCH}/_cluster/health"))[0] == 200
                           and r[1])
         check(health["status"] in {"green", "yellow"}, f"küme durumu {health['status']}")
+
+        smoke_event_backbone()
     except SmokeError as exc:
         print(f"\nDuman testi BAŞARISIZ: {exc}", file=sys.stderr)
         return 1
     print("\nDuman testi geçti.")
     return 0
+
+
+def _envelope(kind: str, data: dict[str, Any]) -> dict[str, Any]:
+    now = datetime.now(UTC).isoformat()
+    return {"specversion": "1.0", "id": str(uuid.uuid4()), "source": "urn:evren:connector:duman-testi", "time": now,
+            "type": kind, "data": data}
+
+
+def smoke_event_backbone() -> None:
+    """Bağlayıcı → alım geçidi → Kafka → tüketici → golden record → outbox → Kafka (ADR-0017)."""
+    step("Olay omurgası: geçit → Kafka → uzlaştırıcı → CI olayı")
+    wait_for("alım geçidi hazır (/readyz)", lambda: http("GET", f"{GATEWAY}/readyz")[0] == 200)
+    print("  ✓ alım geçidi hazır (veritabanı ve Kafka erişimi)")
+    tag = uuid.uuid4().hex[:10]
+    issued = compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "issue", "--name", f"duman-{tag}",
+                     "--data-source", "Zabbix", "--by", "duman-testi", "--expires-days", "1", capture=True)
+    token = issued.stdout.strip().splitlines()[-1]  # ekrana yazılmaz
+    check(token.startswith("evr_"), "geçici bağlayıcı kimliği verildi (Zabbix, 1 gün)")
+    rid = str(uuid.uuid4())
+    run = {"data_source": "Zabbix", "run_id": rid, "mode": "delta", "completed": False, "record_count": 0,
+           "started_at": datetime.now(UTC).isoformat()}
+    check(http("POST", f"{GATEWAY}/ingest/v1/runs", _envelope("evren.ingest.run.started.v1", run))[0] == 401,
+          "belirteçsiz istek reddedildi (401)")
+    other = {**run, "data_source": "vCenter"}
+    check(http("POST", f"{GATEWAY}/ingest/v1/runs", _envelope("evren.ingest.run.started.v1", other),
+               auth=token)[0] == 403, "kimlik başka kaynak adına yazamıyor (403)")
+    status, _ = http("POST", f"{GATEWAY}/ingest/v1/runs", _envelope("evren.ingest.run.started.v1", run), auth=token)
+    check(status == 201, "çalışma açıldı (201)")
+    name = f"duman-{tag}"
+    rec = {"data_source": "Zabbix", "run_id": rid, "source_key": f"smoke-{tag}", "class_hint": "cmdb_ci_linux_server",
+           "attributes": {"name": name, "serial_number": f"SMK{tag.upper()}", "os": "Linux"},
+           "lookup": {"mac_addresses": [f"02:00:{tag[0:2]}:{tag[2:4]}:{tag[4:6]}:{tag[6:8]}"]},
+           "observed_at": datetime.now(UTC).isoformat()}
+    status, body = http("POST", f"{GATEWAY}/ingest/v1/runs/{rid}/records",
+                        {"records": [_envelope("evren.ingest.record.v1", rec)]}, auth=token)
+    check(status == 202 and body["accepted"] == 1, "kayıt Kafka'ya teslim edildi (202)")
+    done = {**run, "completed": True, "record_count": 1, "finished_at": datetime.now(UTC).isoformat()}
+    status, body = http("POST", f"{GATEWAY}/ingest/v1/runs/{rid}/complete",
+                        _envelope("evren.ingest.run.completed.v1", done), auth=token)
+    check(status == 202 and body["state"] == "closing", "kapanış istendi (bildirilen 1 kayıt)")
+
+    def finished() -> Any:
+        _s, b = http("GET", f"{GATEWAY}/ingest/v1/runs/{rid}", auth=token)
+        return b and b.get("state") == "finished" and b
+
+    final = wait_for("çalışma kapanışı (tüketici işledi, çalışan kapattı)", finished, timeout=120)
+    check(final["completed"] is True and final["processed"] == 1,
+          f"çalışma tamamlandı: işlenen {final['processed']}, devre kesici {final['breaker_state']}")
+    found = wait_for("CI arayüzde", lambda: (r := http("GET", f"{API}/api/v1/ci?q={name}"))[0] == 200
+                     and r[1]["items"] and r[1]["items"][0])
+    check(found["name"] == name, f"CI oluştu ve API'de görünüyor ({found['sys_id']})")
+
+    def published() -> bool:
+        out = compose("exec", "-T", "kafka", "/opt/kafka/bin/kafka-console-consumer.sh", "--bootstrap-server",
+                      "localhost:9092", "--topic", "evren.cmdb.ci.changed.v1", "--from-beginning", "--timeout-ms",
+                      "8000", check=False, capture=True).stdout
+        return found["sys_id"] in out
+
+    wait_for("CI olayı Kafka'da", published, timeout=90, interval=3)
+    print("  ✓ CI olayı outbox'tan Kafka'ya yayınlandı (evren.cmdb.ci.changed.v1)")
+    ingest = http("GET", f"{API}/api/v1/summary")[1]["worker"]["ingest"]
+    check(ingest["state"] == "ok" and ingest["processed"] >= 1,
+          f"alım tüketicisi canlı ({ingest['instances']} örnek, {ingest['processed']} kayıt)")
+    compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "revoke", "--name", f"duman-{tag}", "--by",
+            "duman-testi", capture=True)
+    check(http("GET", f"{GATEWAY}/ingest/v1/runs/{rid}", auth=token)[0] == 401, "iptal edilen kimlik reddediliyor")
 
 
 def pinned_images() -> list[str]:

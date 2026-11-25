@@ -14,6 +14,17 @@ function gauge(value) {
 }
 
 /** Uzlaştırıcı çalışanının durumu (yalnızca API modu): insan istekleri uygulanıyor mu? */
+/** Kafka alım tüketicisi (U2): yalnızca kurulmuşsa gösterilir (Kafka'sız geliştirmede "none"). */
+function ingestText(i) {
+  if (!i || i.state === 'none') return null;
+  if (i.state === 'ok') {
+    const dlq = i.dead_lettered ? ` · ${formatNumber(i.dead_lettered)} kayıt DLQ'da` : '';
+    return h('span', { id: 'ingestStatus' }, ` Alım tüketicisi çalışıyor (${i.instances} örnek, ${formatNumber(i.processed)} kayıt işlendi${dlq}).`);
+  }
+  return h('span', { id: 'ingestStatus' }, h('strong', {}, ' Alım tüketicisi görülmüyor: '),
+    'kaynaklardan gelen kayıtlar Kafka\'da bekliyor, kayıp yok; tüketici başlayınca işlenir.');
+}
+
 function workerNotice(w) {
   if (!w) return null;
   const p = w.pending.total;
@@ -22,12 +33,13 @@ function workerNotice(w) {
   const detail = `karar ${w.pending.decisions}, ayırma ${w.pending.splits}, elle düzenleme ${w.pending.edits}`;
   if (w.state === 'ok') {
     return h('p', { class: `notice${w.failed ? ' warn' : ''}`, id: 'workerStatus', role: 'status' },
-      h('strong', {}, 'Uzlaştırıcı çalışıyor. '), p ? `${p} istek uygulanıyor (${detail}). ` : 'Bekleyen insan isteği yok. ', `(${seen})${failed}`);
+      h('strong', {}, 'Uzlaştırıcı çalışıyor. '), p ? `${p} istek uygulanıyor (${detail}). ` : 'Bekleyen insan isteği yok. ', `(${seen})${failed}`,
+      ingestText(w.ingest));
   }
   return h('p', { class: `notice ${p ? 'bad' : 'warn'}`, id: 'workerStatus', role: 'status' },
     h('strong', {}, 'Uzlaştırıcı çalışmıyor. '),
     p ? `${p} insan isteği (${detail}) uygulanmayı bekliyor; çalışan başlayınca uygulanır. ` : 'Bekleyen istek yok. ',
-    `(${seen})${failed}`);
+    `(${seen})${failed}`, ingestText(w.ingest));
 }
 
 export async function renderOverview(view) {

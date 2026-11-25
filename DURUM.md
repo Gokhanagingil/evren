@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 12/45 adım tamamlandı, 3'ü sürüyor (~%30) · **Uçtan uca izlek:** 1/10 (U1 tamam, sırada U2)
+**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 13/45 adım tamamlandı, 2'si sürüyor (~%31) · **Uçtan uca izlek:** 2/10 (U1, U2 tamam; sırada U3)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -17,6 +17,7 @@ Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki *
 | 25.11.2026 | **Kaynak sistemler değişebilir** (keşif ürünü bugün BMC, yarın başka): kurallar ürüne değil kaynak rolüne bağlanır; ürün değişimi gölge → devir → emeklilik yaşam döngüsüyle yapılır | ADR-0009 |
 | 25.11.2026 | GRC Platformu'nun CMDB modülü, Evren hazır olunca CI verisini Evren'den alacak (bugün ServiceNow'dan senkron) | Proje sahibi, F2-08 |
 | 25.11.2026 | BMC ürünü: BMC Helix Discovery (on-prem mi SaaS mı belirsiz; ikisi aynı REST API) | Proje sahibi |
+| 25.11.2026 | Olay omurgası: bağlayıcılar yalnızca alım geçidine gönderir (belirteç tek kaynağa bağlı, yalnızca SHA-256 özeti saklanır); Kafka en az bir kez + kalıcı sayaçlar (etkisi bir kez); zehirli mesaj DLQ'ya; çalışmayı geçit açar, uzlaştırıcı kapatır; delta çalışmasında hacim denetlenmez; outbox → Kafka, gizli alan değeri olaya konmaz; Kafka istemcisi confluent-kafka | ADR-0017 |
 | 25.11.2026 | Tek konteyner imajı (servis komutla seçilir), izlenen göçler (SHA-256 defteri; değişmiş göçte durur), servis başına giriş rolü, sırlar yalnızca dosyadan; compose geliştirme yığını CI'da uçtan uca sınanır. Üretim dağıtım biçimi hedef ortam kararıyla yazılacak | ADR-0016 |
 | 25.11.2026 | Metadata değişiklik setleri Evren'de hazırlanır ve onaylanır (hazırlayan onaylayamaz); yayın metadata/changes/ değişiklik dosyasıdır, Git'ten dağıtılır; YAML doğruluk kaynağı kalır | ADR-0015 |
 | 25.11.2026 | Gölge mod raporu rol tabanlı; mükerrer sınıfı kimlik kurallarına uyar (kesin/güçlü/olası/çelişkili); GRC kanıtı salt ekleme ve SHA-256 | ADR-0014 |
@@ -93,9 +94,19 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Demo verisinde bulduğu gerçekçi durum: iki `ist-db-01` ServiceNow kaydı aynı MAC/IP, farklı seri (fiziksel → sanal taşıma); keşfin görmediği kayıt emekliye ayırma adayı olarak öneriliyor.
 - **Yeni çalışma düzeni: uçtan uca izlek (25.11.2026, proje sahibinin kararı).** Beklenti: PostgreSQL, Kafka ve OpenSearch altyapısı; kaynak verisini anlamlandıran akıl katmanı (elle girdi dahil); veri modeli; büyük resim uçtan uca ve tek arayüzden yönetim. Sıra (yol haritasında `track`, Yol Haritası sayfasının en üstünde): U1 altyapı yığını → U2 olay omurgası (alım geçidi, Kafka, tüketici, outbox) → U3 OpenSearch arama → U4 bağlayıcılar ve kaynak yönetimi → U5 elle girdi → U6 veri modeli yönetimi → U7 yaşam döngüsü ve ilişkiler → U8 yönetim ekranları → U9 ServiceNow replika ve MCP yapısı → U10 canlı kabul (dış girdilerle, en sonda). Sağlık panosunun zemini commit'lendi; pano U8'de.
 - **Dış girdiler (Entra kaydı, ServiceNow hesabı, hedef ortam, kaynak hesapları) proje sahibinin kararıyla en sona bırakıldı;** önce yapı ana hatlarıyla tamamlanacak.
+- **U2 olay omurgası (tamamlandı)** (ADR-0017, göç `0012_event_backbone.sql`).
+  - Bağımlılık: `confluent-kafka` 2.16.1 (gerekçe ADR-0017; hash kilitli, pip-audit temiz). Kafka'ya dokunan tek modül `evren_core/kafka_client.py`; sözleşme `evren_core/messaging.py` (konular, anahtar `<kaynak>:<source_key>`, CloudEvents, DLQ başlıkları, `KafkaSettings`: varsayılan SASL_SSL, PLAINTEXT yalnızca açık izinle, parola yalnızca dosyadan).
+  - Alım geçidi `services/ingest-gateway` (`evren gateway`, :8089): bağlayıcı belirteci (`evr_…`, `ingest.connector_credential`, süre/iptal/son kullanım, kimlik başına hız sınırı), kaynak yetkisi (başka kaynak/emekli kaynak 403 + denetim), şema, gelecek tarih, boyut sınırları, ya hep ya hiç toplu gönderim, Kafka onayından sonra 202. Çalışmayı açar, teslim edilenleri sayar, kapanış ister (bildirilen ≤ teslim edilen). TLS/mTLS, ağa TLS'siz açılmaz. Kaynak kaydına erişimi yok.
+  - Bağlayıcı kimlikleri: `tools/connector_credential.py issue|list|revoke` (konteynerde `evren connector`); belirteç bir kez gösterilir veya 0600 dosyaya yazılır; işlemler denetim izinde.
+  - Alım tüketicisi (`evren ingest`, `evren_ingest_svc`): DB işleminden sonra ofset, zehirli/geçit dışı/başka kaynağın çalışmasına yazan kayıt DLQ'ya, geçici hatada geri sarma; nabız `kind='ingest'`; Genel Bakış'ta durumu.
+  - Çalışma sayaçları artık kalıcı (`source_record.first_run/changed_run/last_run`); `finalize_ready_runs`: tamam / 15 dk sonra eksik / 24 saat sonra terk edilmiş. Bellekteki sayaçlar kaldırıldı.
+  - Outbox yayını çalışanda (`NOTIFY` ile uyanır): `cmdb.ci.*` → `evren.cmdb.ci.changed.v1`, insan istekleri → `evren.cmdb.activity.v1`; gizli hassasiyetteki alan değerleri maskelenir; Kafka yoksa olaylar beklemede kalır.
+  - **Duman testinin yakaladığı hata (düzeltildi):** devre kesici delta çalışmasını tam çalışma geçmişiyle kıyaslıyor, tek kayıtlı delta çalışmasını "hacim düştü" diye karantinaya alıyordu. `evaluate_run(mode=…)`: delta'da yalnızca tamamlanma ve hata oranı; taban çizgisi yalnızca snapshot çalışmalardan.
+  - Göç aracı: `--baseline` artık sürüm ister (`--baseline 0011_change_sets`); önceki hâli depodan geride kalan veritabanında uygulanmamış göçleri de uygulanmış sayabilirdi.
+  - Yığın: `gateway` ve `ingest` servisleri, yeni servis giriş rolleri, `evren.cmdb.activity.v1` konusu; `tools/dev_stack.py smoke` olay omurgasını uçtan uca sınar (geçici kimlik → 401/403 olumsuz denetimler → çalışma → kayıt → tüketici → CI → "tamam" kapanış → Kafka CI olayı → kimlik iptali). CI'a alım geçidi testleri eklendi.
 - **U1 altyapı yığını (tamamlandı)** (ADR-0016).
   - Tek imaj `deploy/Dockerfile` + giriş noktası `deploy/evren.py` (`api`, `worker`, `migrate`, `demo`, `healthcheck`). Bağımlılıklar hash'li kilitten, temel görüntü özetle sabit, uid 10001, ≈280 MB. Kurumsal TLS vekil sunucusu için isteğe bağlı `build_ca` derleme sırrı, imaja yazılmaz.
-  - `tools/migrate.py`: izlenen göçler (`meta.schema_migration`, sürüm + SHA-256). Değişmiş göçte ya da depoda olmayan sürümde durur. `--baseline` (psql ile kurulmuş veritabanı), `--status`, metadata tohumu, servis giriş rolleri (`evren_api_svc` … `evren_mcp_svc`; NOINHERIT, yalnız kendi grup rolü, parola dosyadan, ≥24 karakter).
+  - `tools/migrate.py`: izlenen göçler (`meta.schema_migration`, sürüm + SHA-256). Değişmiş göçte ya da depoda olmayan sürümde durur. `--baseline SÜRÜM` (psql ile kurulmuş veritabanı; yalnızca o sürüme kadar), `--status`, metadata tohumu, servis giriş rolleri (`evren_api_svc` … `evren_mcp_svc`; NOINHERIT, yalnız kendi grup rolü, parola dosyadan, ≥24 karakter).
   - `deploy/compose.dev.yaml`: PostgreSQL 16, Kafka 4 (KRaft; otomatik konu açma kapalı, konular `deploy/kafka/topics.txt`), OpenSearch 2.19, migrate, api, worker, demo. Dış görüntüler özetle sabit. Portlar yalnızca 127.0.0.1. Evren servisleri salt okunur kök, `cap_drop: ALL`, `no-new-privileges`. Sırlar compose `secrets` ile, `tools/dev_secrets.py` üretir (git dışı).
   - `tools/dev_stack.py`: `up [--demo]`, `smoke`, `status`, `logs`, `digests [--pull]`, `down [--volumes]`. Duman testi API'den elle düzenleme gönderir, konteynerdeki uzlaştırıcının golden record'a uyguladığını doğrular, ardından Kafka konularını ve OpenSearch sağlığını denetler.
   - API: konteynerde dev oturumu için açık `EVREN_DEV_CONTAINER=1`. Bu modda yalnızca loopback ve özel ağdan istek kabul edilir, diğerlerine 403 döner (testli). Çalışan: nabız dosyası (`EVREN_WORKER_HEALTH_FILE`).
@@ -114,7 +125,7 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Gerçek veritabanı: `ReconcilerStore.rereconcile_source` (yaşam döngüsü/rol sırası değişince bağlı CI'ları yeniden uzlaştırır; emekli kaynağın tek başına verdiği alanlar silinmez, sayılır), `tests/test_product_swap_pg.py`.
 - **Testlerin yakaladığı güvenlik hatası (düzeltildi):** yetki reddi bir veritabanı işleminin içinde yazıldığında işlem geri alınınca denetim kaydı da kayboluyordu. Ret olayı artık işlem içindeyse ayrı bağlantıyla yazılır (`Ctx.security_event`) ve yetki denetimleri işlem dışında yapılır.
 - **Arayüz düzeltmesi:** tarih-saat öznitelikleri (ilk/son keşif) ham ISO yerine yerel biçimde.
-- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 185 (değişiklik setleri, göç aracı, sağlık puanı dahil), uzlaştırıcı 38, API 68 (Entra olumsuz senaryoları, çalışan, gölge mod raporu, kanıt bütünlüğü, değişiklik setleri ve görevler ayrılığı dahil), tarayıcı 22 (14 demo modu + 8 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma, elle düzenleme, gölge mod raporu ve kanıt, değişiklik seti akışı uçtan uca; tüm sayfalar 390 px'te taşmasız) — hepsi geçti; `ruff` ve bandit eşiği temiz; konteyner yığını duman testi geçti. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
+- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 210 (olay sözleşmesi, delta devre kesici, 0012 yetki sınırları dahil), uzlaştırıcı 50 (tüketici, çalışma kapanışı, outbox), API 68, alım geçidi 20 (Entra olumsuz senaryoları, çalışan, gölge mod raporu, kanıt bütünlüğü, değişiklik setleri ve görevler ayrılığı dahil), tarayıcı 22 (14 demo modu + 8 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma, elle düzenleme, gölge mod raporu ve kanıt, değişiklik seti akışı uçtan uca; tüm sayfalar 390 px'te taşmasız) — hepsi geçti; `ruff` ve bandit eşiği temiz; konteyner yığını duman testi geçti. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
 
 ## Bilinen eksikler ve sınırlar
 
@@ -126,7 +137,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 - Ayırma sonrası asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez (eskimeye bırakılır). Ayrılan kaydı başka mevcut CI'a taşıma API'de var, arayüzde yok.
 - Elle düzenlemeyi yalnızca Konfigürasyon analisti yapabilir; "CI sahibi" rolünün koşullu izni (kendi grubunun CI'ları) ABAC değerlendirmesi gelene kadar verilmez. İlişki düzenleme yok.
 - API'de henüz yok: makine hesapları, ilişki düzenleme, ServiceNow uyumlu uç noktalar (F2-05), ABAC koşul değerlendirmesi (koşullu izinler şimdilik verilmez).
-- Sürekli çalışan uzlaştırıcı yalnızca insan isteklerini uygular; kaynak kayıtlarının alımı (alım geçidi + Kafka tüketicisi) U2'de. Kafka ve OpenSearch yığında ayağa kalkıyor ama Evren onları henüz kullanmıyor (U2, U3). OpenTelemetry metrikleri yok. sn-sync ve MCP servisleri yok.
+- Olay omurgası çalışıyor ama ona gönderen gerçek bağlayıcı yok: vCenter, Zabbix vb. istemciler U4'te. Bağlayıcı kimlikleri yalnızca komut satırından yönetiliyor (arayüz U4). Geçidin hız sınırı örnek başına (süreç içi). Bir çalışmada aynı `source_key` iki kez gönderilirse çalışma süre sonunda eksik kapanır (güvenli taraf; sözleşmede yazılı). Geliştirme yığınında Kafka SASL/ACL yok. OpenSearch henüz kullanılmıyor (U3). OpenTelemetry metrikleri yok. sn-sync ve MCP servisleri yok.
 - Üretim dağıtım tanımı (Kubernetes manifesti, Helm, VM betiği) yok: hedef ortam kararını bekliyor (U10). Geliştirme yığınında Kafka ve OpenSearch şifresiz, düz metin (yalnızca 127.0.0.1). İmaj imzalama (cosign) ve imaj kayıt defteri yok (hedef ortamla). Bu sanal geliştirme ortamında Debian deposuna erişim olmadığı için yerel imaj `EVREN_BUILD_OS_UPDATES=0` ile derlendi; güvenlik güncellemeli derleme ve Trivy imaj kapısı yalnızca CI'da doğrulanır.
 - Oturum iptali çerez süresine bağlı (8 saat); anında iptal için sunucu tarafı iptal listesi gerekir (ADR-0010).
 - Bağımlı CI kimliği (uygulama, ağ adaptörü) uygulanmadı; çözümleyici bilinçli olarak `insufficient` döner.
@@ -138,8 +149,8 @@ Doğrulanınca bu bölümden kaldırılacak.
 ## Sıradaki adımlar (uçtan uca izlek)
 
 1. ~~**U1 Altyapı yığını**~~ — tamamlandı (ADR-0016).
-2. **U2 Olay omurgası** *(sırada)* — alım geçidi (bağlayıcı kimliği, şema doğrulama, kaynak başına yetki) → Kafka `evren.ingest.record.v1` → uzlaştırıcı tüketicisi → golden record → `events.outbox` → `evren.cmdb.ci.changed.v1`. Kafka istemci bağımlılığı için gerekçe + ADR + hash kilidi gerekir.
-3. **U3 Arama** — OpenSearch dizinleyici ve arama API'si.
+2. ~~**U2 Olay omurgası**~~ — tamamlandı (ADR-0017).
+3. **U3 Arama** *(sırada)* — OpenSearch dizinleyici (`evren.cmdb.ci.changed.v1` tüketicisi), CI arama API'si ve arayüz araması OpenSearch'ten; PostgreSQL yedek. OpenSearch istemci bağımlılığı için gerekçe + ADR.
 4. **U4 Bağlayıcılar ve kaynak yönetimi** — 6 kaynak istemcisi (kaydedilmiş örneklerle), arayüzden çalıştırma/zamanlama.
 5. **U5 Elle girdi** — CI oluşturma, ilişki, CSV içe aktarma.
 6. **U6 Veri modeli yönetimi**, **U7 yaşam döngüsü ve ilişkiler**, **U8 yönetim ekranları**, **U9 ServiceNow replika ve MCP yapısı**.

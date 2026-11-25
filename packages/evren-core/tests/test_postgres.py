@@ -165,6 +165,21 @@ def test_segregation_of_duties_enforced():
                           "VALUES ('X', 'y', 'eeee0000000000000000000000000004', 'split', 't')"),
         ("evren_app_ingest", "SELECT count(*) FROM ingest.split_request"),
         ("evren_app_mcp", "SELECT count(*) FROM ingest.split_request"),
+        # 0012 (U2): geçit kaynak kaydına erişemez, çalışmayı kapatamaz, kimlik bilgisini iptal edemez;
+        # kimlik bilgisini yalnızca geçit (ve denetçi, özet hariç) görür
+        ("evren_app_ingest", "SELECT count(*) FROM ingest.source_record"),
+        ("evren_app_ingest", "INSERT INTO ingest.source_record (data_source, source_key, class_hint, content_hash) "
+                             "VALUES ('Zabbix', 'x', 'cmdb_ci', 'x')"),
+        ("evren_app_ingest", "UPDATE ingest.source_run SET completed = true, breaker_state = 'ok'"),
+        ("evren_app_ingest", "INSERT INTO ingest.source_run (run_id, data_source, mode, started_at, completed) "
+                             "VALUES (gen_random_uuid(), 'Zabbix', 'delta', now(), true)"),
+        ("evren_app_ingest", "UPDATE ingest.connector_credential SET revoked_at = now(), revoked_by = 'x'"),
+        ("evren_app_ingest", "INSERT INTO ingest.connector_credential (name, data_source, token_sha256, token_hint, "
+                             "created_by, expires_at) VALUES ('x1', 'Zabbix', repeat('a', 64), 'abcd', 'x', "
+                             "now() + interval '1 day')"),
+        ("evren_app_reconciler", "SELECT count(*) FROM ingest.connector_credential"),
+        ("evren_app_api", "SELECT count(*) FROM ingest.connector_credential"),
+        ("evren_auditor_ro", "SELECT token_sha256 FROM ingest.connector_credential"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -186,6 +201,9 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_ingest", "SELECT role, lifecycle FROM ingest.data_source"),
         ("evren_app_api", "SELECT count(*) FROM ingest.split_request"),
         ("evren_auditor_ro", "SELECT count(*) FROM ingest.split_request"),
+        ("evren_app_ingest", "SELECT count(*) FROM ingest.connector_credential"),
+        ("evren_app_ingest", "UPDATE ingest.source_run SET accepted_count = accepted_count WHERE false"),
+        ("evren_auditor_ro", "SELECT name, token_hint, last_used_at FROM ingest.connector_credential"),
     ],
 )
 def test_allowed_paths_work(role, statement):
