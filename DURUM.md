@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 11/45 adım tamamlandı, 3'ü sürüyor (~%28)
+**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 12/45 adım tamamlandı, 3'ü sürüyor (~%30)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -17,6 +17,7 @@ Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki *
 | 25.11.2026 | **Kaynak sistemler değişebilir** (keşif ürünü bugün BMC, yarın başka): kurallar ürüne değil kaynak rolüne bağlanır; ürün değişimi gölge → devir → emeklilik yaşam döngüsüyle yapılır | ADR-0009 |
 | 25.11.2026 | GRC Platformu'nun CMDB modülü, Evren hazır olunca CI verisini Evren'den alacak (bugün ServiceNow'dan senkron) | Proje sahibi, F2-08 |
 | 25.11.2026 | BMC ürünü: BMC Helix Discovery (on-prem mi SaaS mı belirsiz; ikisi aynı REST API) | Proje sahibi |
+| 25.11.2026 | Metadata değişiklik setleri Evren'de hazırlanır ve onaylanır (hazırlayan onaylayamaz); yayın metadata/changes/ değişiklik dosyasıdır, Git'ten dağıtılır; YAML doğruluk kaynağı kalır | ADR-0015 |
 | 25.11.2026 | Gölge mod raporu rol tabanlı; mükerrer sınıfı kimlik kurallarına uyar (kesin/güçlü/olası/çelişkili); GRC kanıtı salt ekleme ve SHA-256 | ADR-0014 |
 | 25.11.2026 | İnsan istekleri tablolarda kalır; sürekli çalışan uzlaştırıcı PostgreSQL bildirimiyle uyanır, istek başına hata yalıtımı ve nabız | ADR-0013 |
 | 25.11.2026 | Her büyük adımdan önce proje sahibine "büyük resmin ~%'si tamamlandı + sıradaki adım" raporu verilir | Proje sahibi |
@@ -89,6 +90,12 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Kanıt: `POST /api/v1/reports/shadow/snapshots` → `insight.evidence_snapshot` (salt ekleme, sahibi dahil değiştirilemez), kararlı JSON + SHA-256; indirme `X-Evren-Content-SHA256` ile doğrulanır. İzin: Veri sorumlusu, Denetçi.
   - Arayüz: "Gölge Mod Raporu" sayfası (CMDB grubunda): kesinlik uyarısı, özet kartları, kapsam tablosu, boşluk sekmeleri, mükerrer grupları ve önerileri, değer farkları (yazım farkları isteğe bağlı), kanıt kaydı ve JSON indirme; 390 px'te taşmasız.
   - Demo verisinde bulduğu gerçekçi durum: iki `ist-db-01` ServiceNow kaydı aynı MAC/IP, farklı seri (fiziksel → sanal taşıma); keşfin görmediği kayıt emekliye ayırma adayı olarak öneriliyor.
+- **F1-11: şema değişiklik setleri (tamamlandı)** (ADR-0015, göç `0011_change_sets.sql`).
+  - Çekirdek `evren_core.changeset`: 7 işlem (sınıf ekle, alan ekle — `u_` önekli JSONB —, alan değiştir, kullanımdan kaldır, seçim değeri, veri kaynağı ekle — gölge —, yaşam döngüsü — izinli geçişler), tüm hatalar Türkçe ve birlikte; sonuç tam metadata doğrulamasından geçer. `load_metadata` temel dosyalardan sonra `metadata/changes/*.yaml` dosyalarını ad sırasıyla uygular.
+  - API `/api/v1/schema/*`: katalog, liste/ayrıntı, oluştur (idempotency), onaya gönder (yeniden doğrulama + etki analizi), onayla/reddet/yayınla; çakışma önleme için yayınlanmış ama dağıtılmamış setler doğrulamaya katılır; değişiklik dosyası indirme (SHA-256).
+  - Görevler ayrılığı: API 403, veritabanı kısıtları ve tetikleyici (izinli geçişler; yayınlanan/reddedilen set ve işlemleri değişmez/silinmez; işlem yalnız taslağa); API güncellemesi sütun düzeyinde.
+  - Arayüz: "Şema ve Değişiklikler" sayfası (akış şeridi, set listesi, ayrıntı panelinde doğrulama, etki analizi, süreç ve duruma/yetkiye göre eylemler, dağıtım talimatı), işlem türüne göre değişen formla oluşturma penceresi.
+  - Çalışan: `python -m evren_reconciler.worker --rereconcile <kaynak>` (yaşam döngüsü dağıtıldıktan sonra).
 - **F1-13: ürün değişimi tatbikatı (tamamlandı, sentetik).** `tools/build_drill.py` → `apps/web/content/drill.json` (CI `--check`), Veri Kaynakları sayfasında tatbikat paneli.
   - BMC Helix Discovery → "Keşif-B" (tatbikat ürünü; yalnız kendi eşleme dosyası `tools/drill/kesif_b_host.mapping.yaml`), Keşif rolünde: Başlangıç → Gölge → Etkin + devir → Emeklilik.
   - 9 denetim geçti: gölgede golden record'da değer/kaynak değişimi 0 ve CI açılmadı; etkin olunca 32 değer + 178 kaynak değişimi yalnız Keşif-B lehine, gölgedeyken eşleşmeyen 2 kayıt CI açtı; devredilen BMC CI açamadı; emeklilik önizlemesi sahipsiz kalacak 180 özniteliği önceden ve birebir gösterdi; kural dosyalarının SHA-256'sı hiç değişmedi.
@@ -96,13 +103,14 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Gerçek veritabanı: `ReconcilerStore.rereconcile_source` (yaşam döngüsü/rol sırası değişince bağlı CI'ları yeniden uzlaştırır; emekli kaynağın tek başına verdiği alanlar silinmez, sayılır), `tests/test_product_swap_pg.py`.
 - **Testlerin yakaladığı güvenlik hatası (düzeltildi):** yetki reddi bir veritabanı işleminin içinde yazıldığında işlem geri alınınca denetim kaydı da kayboluyordu. Ret olayı artık işlem içindeyse ayrı bağlantıyla yazılır (`Ctx.security_event`) ve yetki denetimleri işlem dışında yapılır.
 - **Arayüz düzeltmesi:** tarih-saat öznitelikleri (ilk/son keşif) ham ISO yerine yerel biçimde.
-- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 158, uzlaştırıcı 36, API 59 (Entra olumsuz senaryoları, çalışan, gölge mod raporu ve kanıt bütünlüğü dahil), tarayıcı 20 (13 demo modu + 5 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma ve elle düzenleme uçtan uca; düzenleme penceresi 390 px'te taşmasız) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
+- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 176 (değişiklik setleri dahil), uzlaştırıcı 38, API 67 (Entra olumsuz senaryoları, çalışan, gölge mod raporu, kanıt bütünlüğü, değişiklik setleri ve görevler ayrılığı dahil), tarayıcı 22 (13 demo modu + 5 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma ve elle düzenleme uçtan uca; düzenleme penceresi 390 px'te taşmasız) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
 
 ## Bilinen eksikler ve sınırlar
 
 - Veritabanındaki veri **sentetiktir** (`tools/load_demo_pg.py`); arayüz bunu üst çubukta işaretler. Statik sunucuda (demo modu) kuyruk kararları yalnızca oturumluktur.
 - Entra akışı sahte kimlik sağlayıcıyla test edildi; **kurumun Entra kaydıyla canlı kabul yapılmadı.**
-- Ürün değişimi tatbikatı sentetiktir; gerçek ikinci ürün geldiğinde onunla tekrarlanmalı. Yaşam döngüsü değişikliği şimdilik metadata dosyası + yeniden yükleme ile yapılır; arayüzden taslak → onay → yayın akışı (değişiklik setleri) F1'de.
+- Ürün değişimi tatbikatı sentetiktir; gerçek ikinci ürün geldiğinde onunla tekrarlanmalı.
+- Değişiklik seti yayını anında etkili değildir: dosya PR ile repoya girip dağıtılınca uygulanır (ADR-0015); PR açma otomatik değil. Alan silme (`drop_field`), fiziksel kolona taşıma ve ilişki tipi ekleme arayüzde yok.
 - Gölge mod raporu canlı SQL ile üretilir; milyonlarca CI'da özet tabloları gerekebilir (F1-09). Demo modunda (statik sunucu) rapor yok. Yerel veritabanında testlerin bitirmediği çalışmalar raporu "kesin değil" yapar (doğru davranış).
 - Ayırma sonrası asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez (eskimeye bırakılır). Ayrılan kaydı başka mevcut CI'a taşıma API'de var, arayüzde yok.
 - Elle düzenlemeyi yalnızca Konfigürasyon analisti yapabilir; "CI sahibi" rolünün koşullu izni (kendi grubunun CI'ları) ABAC değerlendirmesi gelene kadar verilmez. İlişki düzenleme yok.

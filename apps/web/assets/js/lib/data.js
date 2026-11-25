@@ -131,6 +131,18 @@ export async function decide(item, body) {
 
 export function undoDemoDecision(id) { demoDecisions.delete(id); }
 
+/** Metadata değişiklik setleri (yalnızca API modu). */
+export const schemaCatalog = () => api('/api/v1/schema/catalog');
+export const changeSets = () => api('/api/v1/schema/change-sets');
+export const changeSetDetail = (id) => api(`/api/v1/schema/change-sets/${encodeURIComponent(id)}`);
+export function createChangeSet(body) {
+  return api('/api/v1/schema/change-sets', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
+}
+/** ``action``: submit | approve | reject | publish. Onay/ret karar notu alır. */
+export function changeSetAction(id, action, body = null) {
+  return api(`/api/v1/schema/change-sets/${encodeURIComponent(id)}/${action}`, { method: 'POST', body: JSON.stringify(body || {}) });
+}
+
 /** Gölge mod raporu (yalnızca API modu; demo modunda null). */
 export async function shadowReport() {
   if (!(await isApi())) return null;

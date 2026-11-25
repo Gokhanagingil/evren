@@ -37,7 +37,7 @@ def base_url():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    roles = "evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward"
+    roles = "evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer"
     settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": roles,
                                   "EVREN_DEV_USER": "arayuz-testi", "EVREN_DEV_NAME": "Arayüz Testi",
                                   "EVREN_DB_POOL_SIZE": "4"})
@@ -235,3 +235,39 @@ def test_shadow_report_mobile_has_no_horizontal_overflow(browser, base_url):
     pg.wait_for_timeout(150)
     assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
     context.close()
+
+
+def test_change_set_draft_submit_then_other_person_approves_and_publishes(page, base_url):
+    """Şema değişiklik seti: arayüzde hazırla ve gönder; onay ve yayın başka bir kişi (görevler ayrılığı)."""
+    import uuid
+
+    from conftest import CSRF, make_client
+
+    element = f"u_ui_{uuid.uuid4().hex[:6]}"
+    page.goto(base_url + "/#/sema")
+    page.wait_for_selector("#csNew")
+    page.click("#csNew")
+    page.fill("#csName", "Arayüz testi alanı")
+    row = page.locator(".op-row").first
+    row.locator("select").nth(1).select_option("cmdb_ci_server")  # sınıf
+    row.locator("input[type=text]").nth(0).fill(element)
+    row.locator("input[type=text]").nth(1).fill("Arayüz testi")
+    shot(page, "api_changeset_dialog")
+    page.click("#csSave")
+    page.wait_for_selector("#detail.open #csChanges")
+    expect(page.locator("#csChanges")).to_contain_text(element)
+    page.click("#cs-submit")
+    expect(page.locator("#detail")).to_contain_text("Onay bekliyor")
+    expect(page.locator("#csImpact")).to_contain_text("DDL yok")
+    assert page.locator("#cs-approve").count() == 0  # hazırlayan onaylayamaz
+    set_id = page.url.rsplit("/", 1)[1]
+
+    with make_client(("evren_reader", "evren_schema_approver"), "arayuz-onayci") as approver:
+        assert approver.post(f"/api/v1/schema/change-sets/{set_id}/approve", json={}, headers=CSRF).status_code == 200
+        assert approver.post(f"/api/v1/schema/change-sets/{set_id}/publish", headers=CSRF).status_code == 200
+    page.reload()
+    page.wait_for_selector("#detail.open #csDownload")
+    expect(page.locator("#detail")).to_contain_text("Yayınlandı")
+    expect(page.locator("#detail")).to_contain_text("metadata/changes/")
+    assert page.locator("#csDownload").get_attribute("href").endswith(f"/{set_id}/artifact")
+    shot(page, "api_changeset_published")

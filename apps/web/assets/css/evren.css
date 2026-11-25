@@ -292,6 +292,17 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .compact-table th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
 .advice { margin: 0; }
 .evidence-form input { flex: 1 1 260px; min-width: 0; }
+.flow-strip { list-style: none; margin: 0 0 16px; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.flow-strip li { display: grid; grid-template-columns: 26px 1fr; gap: 8px; background: #fff; border: 1px solid var(--stroke); border-radius: 10px; padding: 10px; font-size: 12.5px; }
+.flow-strip b.n { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: #fff; font-weight: 800; display: grid; place-items: center; font-size: 12px; }
+.flow-strip strong { display: block; font-size: 13px; }
+.op-list { display: grid; gap: 10px; margin: 8px 0; }
+.op-row { border: 1px solid var(--stroke); border-radius: 10px; padding: 10px 12px; margin: 0; background: #fafbfc; }
+.op-head { display: flex; gap: 8px; align-items: center; margin-bottom: 6px; }
+.op-head select { flex: 1 1 auto; min-width: 0; font-weight: 600; }
+.op-row select, .op-row input[type=text], .op-row input[type=number], .dialog textarea { width: 100%; }
+@media (max-width: 900px) { .flow-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 520px) { .flow-strip { grid-template-columns: minmax(0, 1fr); } }
 .drill { margin-top: 16px; }
 .drill h3 { margin: 18px 0 8px; font-size: 13.5px; }
 .drill .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }

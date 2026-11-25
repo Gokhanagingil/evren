@@ -8,6 +8,7 @@ import { renderQueue } from './pages/queue.js';
 import { renderCis } from './pages/cis.js';
 import { renderControls } from './pages/controls.js';
 import { renderShadow } from './pages/shadow.js';
+import { renderSchema } from './pages/schema.js';
 import { renderSources } from './pages/sources.js';
 import { renderRules } from './pages/rules.js';
 import { renderBigPicture } from './pages/bigpicture.js';
@@ -27,6 +28,8 @@ const ROUTES = {
     help: 'Mevcut CMDB (ServiceNow) ile Evren gözlemlerinin karşılaştırması: keşfin görmediği kayıtlar, CMDB\'de olmayan keşif kayıtları, mükerrer adayları ve değer farkları. Rapor GRC Platformu için değiştirilemez kanıt olarak kaydedilebilir.' },
   kaynaklar: { title: 'Veri Kaynakları', icon: 'plug', render: renderSources,
     help: 'Her veri kaynağı bir rolü doldurur. Kurallar role bağlı olduğu için ürün değiştiğinde kurallar değişmez. Devre kesici kısmi çalışmada yıkıcı işlemleri durdurur.' },
+  sema: { title: 'Şema ve Değişiklikler', icon: 'key', render: renderSchema,
+    help: 'Sınıf, alan, seçim listesi ve veri kaynağı yaşam döngüsü değişiklikleri taslak → onay → yayın akışıyla yapılır. Hazırlayan onaylayamaz. Yayınlanan set metadata/changes/ altına değişiklik dosyası olarak PR ile eklenir.' },
   kurallar: { title: 'Kurallar', icon: 'sliders', render: renderRules,
     help: 'Uzlaştırma (rol önceliği), tanımlama (IRE), veri tazeleme ve eskime kuralları. Kaynak: metadata/*.yaml.' },
   'buyuk-resim': { title: 'Büyük Resim', icon: 'orbit', render: renderBigPicture,
@@ -40,10 +43,10 @@ const ROUTES = {
 const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk'] },
   { group: 'CMDB', items: ['ci', 'kontroller', 'golge-mod'] },
-  { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar'] },
+  { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];
-const SOON = [['CMDB sağlığı', 'F1'], ['Şema ve yetkiler', 'F1'], ['ServiceNow eşitleme', 'F2']];
+const SOON = [['CMDB sağlığı', 'F1'], ['Rol–yetki matrisi', 'F1'], ['ServiceNow eşitleme', 'F2']];
 
 function readClosed() {
   try { return new Set(JSON.parse(localStorage.getItem('evren.nav.closed') || '[]')); } catch { return new Set(); }

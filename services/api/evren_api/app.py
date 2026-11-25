@@ -11,6 +11,7 @@ from urllib.parse import unquote
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, Response
 
+from evren_core.changeset import load_change_files
 from evren_core.metadata import load_metadata
 from evren_core.web import SECURITY_HEADERS, STATIC_TYPES
 
@@ -21,7 +22,7 @@ from .editing import EditPolicy
 from .entra import Entra
 from .errors import install_handlers
 from .present import Presenter
-from .routers import auth, ci, platform, queue, refs, reports
+from .routers import auth, ci, platform, queue, refs, reports, schema
 from .rules_view import build_rules_view
 from .security import SessionCodec
 
@@ -50,6 +51,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     app.state.settings = settings
     app.state.pool = pool
     app.state.metadata = md
+    app.state.applied_change_files = frozenset(n for n, _ in load_change_files(REPO_ROOT / "metadata" / "changes"))
     app.state.authorizer = Authorizer(md.hierarchy)
     app.state.presenter = Presenter(md)
     app.state.sessions = SessionCodec(settings.session_key, settings.session_hours)
@@ -80,7 +82,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
             return JSONResponse({"status": "unavailable"}, status_code=503)
         return JSONResponse({"status": "ok"})
 
-    for r in (platform.router, ci.router, queue.router, refs.router, reports.router, auth.router):
+    for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

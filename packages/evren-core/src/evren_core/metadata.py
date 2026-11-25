@@ -110,8 +110,23 @@ def _read(path: Path) -> dict[str, Any]:
         return yaml.safe_load(fh) or {}
 
 
-def load_metadata(directory: str | Path) -> Metadata:
+def load_metadata(directory: str | Path, *, apply_change_files: bool = True) -> Metadata:
+    """Temel YAML dosyalarını yükler; ardından ``changes/`` altındaki yayınlanmış değişiklik setlerini ad sırasıyla
+    uygular (ADR-0015). ``apply_change_files=False``: yalnız temel dosyalar (değişiklik setinin etki analizi için)."""
     d = Path(directory)
+    md = _load_base(d)
+    if apply_change_files:
+        from .changeset import ChangeError, apply_changes, load_change_files
+
+        for name, changes in load_change_files(d / "changes"):
+            try:
+                md = apply_changes(md, changes)
+            except ChangeError as exc:
+                raise ChangeError([f"{name}: {e}" for e in exc.errors]) from None
+    return md
+
+
+def _load_base(d: Path) -> Metadata:
     classes = _read(d / "classes.yaml")
     sources = _read(d / "data_sources.yaml")
     return Metadata(

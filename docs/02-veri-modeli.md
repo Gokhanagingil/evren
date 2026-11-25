@@ -73,9 +73,11 @@
 
 Kaynak tabloları: `meta.schema_change_set` ve `meta.schema_change`.
 
-1. Taslak.
-2. Etki analizi: kurallar, eşlemeler, izinler, ServiceNow kapsamı.
-3. Onay. Hazırlayan onaylayamaz; veritabanı kısıtıyla zorlanır.
-4. Yayın.
+1. Taslak: Şema ve Değişiklikler sayfasında hazırlanır; işlemler kaydedilmeden önce tüm metadata kurallarıyla doğrulanır.
+2. Onaya gönderme ve etki analizi: etkilenen CI sayısı, değerli CI sayısı (kullanımdan kaldırmada), kaynağın tek başına verdiği öznitelikler (emeklilikte).
+3. Onay. Hazırlayan onaylayamaz ve reddedemez; API, veritabanı kısıtı ve tetikleyiciyle zorlanır.
+4. Yayın: `metadata/changes/` altına konacak değişiklik dosyası (SHA-256). PR ile repoya girer; yükleyici temel dosyalardan sonra ad sırasıyla uygular (ADR-0015).
+
+İşlemler: sınıf ekle (`u_`), alan ekle (`u_`, JSONB), alan etiketi/hassasiyeti/uzunluğu, alanı kullanımdan kaldır, seçim değeri ekle, veri kaynağı ekle (gölge), yaşam döngüsü değiştir.
 
 Alan silme şu sırayla yapılır: `deprecate_field` → arayüzden gizleme → saklama süresi → `drop_field`.

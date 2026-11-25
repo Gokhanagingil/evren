@@ -57,6 +57,14 @@ Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 - `POST /api/v1/reports/shadow/snapshots` (`note`, `idempotency_key`; yetki `shadow_report/create`) → `201` `{id, sha256, status, collection_status}`.
 - `GET /api/v1/reports/shadow/snapshots` → liste; `GET /api/v1/reports/shadow/snapshots/{id}` → kayıttaki kararlı JSON (ek dosya), `X-Evren-Content-SHA256` başlığı. GRC Platformu indirilen baytların SHA-256'sını bu başlıkla ve listedeki özetle doğrular.
 
+### Metadata değişiklik setleri
+
+ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans tabloları, roller, kaynaklar ve izinli geçişleri, yetenekler), `GET /api/v1/schema/change-sets`, `GET /api/v1/schema/change-sets/{id}`.
+
+- `POST /api/v1/schema/change-sets` (`schema/schema_draft`; `name`, `description`, `changes[]` = `{op, table, element, payload}`, `idempotency_key`) → `201`; geçersizse `422 gecersiz_degisiklik` ve Türkçe nedenler.
+- `POST …/{id}/submit` (yalnız hazırlayan), `…/approve` ve `…/reject` (`schema/schema_approve`, `{note}`), `…/publish` (`schema/schema_approve`). Hazırlayan onaylayamaz/reddedemez/yayınlayamaz: `403 hazirlayan_onaylayamaz`. Yanlış durum: `409 durum_uygun_degil`.
+- `GET …/{id}/artifact` → `metadata/changes/` dosyası (YAML), `X-Evren-Content-SHA256`.
+
 ### Birleştirmeyi ayırma
 
 `POST /api/v1/ci/{sys_id}/split` (ADR-0011):

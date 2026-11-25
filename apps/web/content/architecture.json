@@ -979,13 +979,16 @@
       "kind_label": "Güvenlik denetimi",
       "chapter": "security",
       "phase": "F1",
-      "text": "Tablo veya alan ekleme, kaldırma ve değiştirme işlemleri değişiklik setiyle yapılır. Akış taslak → inceleme → onay → yayın şeklindedir. Silme önce kullanımdan kaldırma ve gizleme adımlarından geçer.",
+      "text": "Sınıf, alan, seçim listesi ve veri kaynağı yaşam döngüsü değişiklikleri değişiklik setiyle yapılır. Akış taslak → onaya gönderme (etki analizi) → onay → yayın. Yayın metadata/changes/ altına değişiklik dosyası üretir; Git'ten dağıtılır (ADR-0015). Silme önce kullanımdan kaldırma adımından geçer.",
       "tech": [
-        "meta.schema_change_set"
+        "meta.schema_change_set",
+        "evren_core.changeset",
+        "metadata/changes/"
       ],
       "security": [
         "Etki analizi",
-        "Onay zorunlu"
+        "Hazırlayan onaylayamaz (API + kısıt + tetikleyici)",
+        "SHA-256 değişiklik dosyası"
       ]
     },
     "secrets": {

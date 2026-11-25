@@ -36,6 +36,7 @@ import psycopg
 from psycopg import sql
 
 from evren_core.metadata import Metadata, load_metadata
+from evren_core.sources import SourceRegistryError
 
 from .store import ReconcilerStore
 
@@ -181,6 +182,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="evren_reconciler.worker", description="Evren uzlaştırıcı çalışanı")
     parser.add_argument("--once", action="store_true", help="bekleyen istekleri bir tur uygula ve çık")
     parser.add_argument("--poll", type=int, default=None, help="tarama aralığı (sn); varsayılan ortamdan veya 30")
+    parser.add_argument("--rereconcile", metavar="KAYNAK", default=None,
+                        help="veri kaynağının yaşam döngüsü/rol sırası değişikliği dağıtıldıktan sonra bağlı CI'ları "
+                             "yeniden uzlaştır ve çık (ADR-0009, ADR-0015)"),
     args = parser.parse_args(argv)
     logging.basicConfig(level=os.environ.get("EVREN_LOG_LEVEL", "INFO"),
                         format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -190,6 +194,15 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Yapılandırma hatası: {exc}", file=sys.stderr)
         return 2
     worker = Worker(config)
+    if args.rereconcile:
+        with worker._open() as conn:
+            try:
+                totals = ReconcilerStore(conn, worker.md).rereconcile_source(args.rereconcile)
+            except SourceRegistryError:
+                print("Tanımsız veri kaynağı.", file=sys.stderr)
+                return 2
+        print(totals)
+        return 0
     if args.once:
         worker.started_at = time.time()
         with worker._open() as conn:

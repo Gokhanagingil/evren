@@ -16,5 +16,6 @@
 | [0012](0012-elle-duzenleme.md) | Elle düzenleme: istek tablosu, CI başına tek Manual kaydı, rol önceliği ve alan başına sonuç; API kaynak kaydı yazmaz | Kabul edildi | 25.11.2026 |
 | [0013](0013-insan-istekleri-postgresql-bildirimi.md) | İnsan istekleri tablolarda; uzlaştırıcı çalışanı PostgreSQL bildirimiyle uyanır, istek başına hata yalıtımı, nabız | Kabul edildi | 25.11.2026 |
 | [0014](0014-golge-mod-raporu-ve-kanit.md) | Gölge mod raporu (rol tabanlı kapsam, kimlik kurallarına uyan mükerrer sınıfı, değer farkları) ve değiştirilemez SHA-256 kanıt | Kabul edildi | 25.11.2026 |
+| [0015](0015-degisiklik-setleri-git-ile-yayin.md) | Metadata değişiklik setleri Evren'de onaylanır (hazırlayan onaylayamaz), yayın metadata/changes/ dosyasıdır ve Git'ten dağıtılır | Kabul edildi | 25.11.2026 |
 
 Yeni karar: `/adr <başlık>` komutu.

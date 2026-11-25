@@ -116,6 +116,7 @@ packages/evren-core/      Saf alan mantığı + testler
   web.py                  güvenlik başlıkları (tek kaynak)
 connectors/<kaynak>/      kaynak başına eşleme dosyaları
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
+  changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
 db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri
 services/                 api, reconciler, ingest-gateway, sn-sync, mcp — sorumluluk tanımları
 deploy/                   geliştirme ortamı (compose)

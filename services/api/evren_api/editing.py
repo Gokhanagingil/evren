@@ -71,7 +71,7 @@ class EditPolicy:
         out: dict[str, EditableField] = {}
         for name, f in self.md.fields_of(cls).items():
             ftype = f.get("type", "string")
-            if name in SYSTEM_MANAGED or name.startswith("sys_") or ftype not in SUPPORTED_TYPES:
+            if name in SYSTEM_MANAGED or name.startswith("sys_") or ftype not in SUPPORTED_TYPES or f.get("deprecated"):
                 continue
             if ftype == "reference" and f.get("reference") not in REF_TABLES:
                 continue  # referans hedefi Evren'de yansıtılmıyor: doğrulanamaz, düzenlenmez

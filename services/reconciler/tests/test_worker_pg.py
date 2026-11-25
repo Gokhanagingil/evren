@@ -137,3 +137,13 @@ def test_worker_least_privilege(conn, role, statement):
     with pytest.raises(psycopg.errors.InsufficientPrivilege), conn.transaction():
         conn.execute(statement)
     conn.execute("RESET ROLE")
+
+
+def test_rereconcile_cli(capsys):
+    """Yaşam döngüsü değişikliği dağıtıldıktan sonra: --rereconcile KAYNAK (ADR-0015)."""
+    from evren_reconciler.worker import main
+
+    assert main(["--rereconcile", "Tanimsiz"]) == 2
+    assert "Tanımsız veri kaynağı" in capsys.readouterr().err
+    assert main(["--rereconcile", "ServiceNowChange"]) == 0  # CI'a bağlı kaydı olmayan kaynak: 0 CI
+    assert "'cis': 0" in capsys.readouterr().out
