@@ -129,6 +129,24 @@ export async function decide(item, body) {
 
 export function undoDemoDecision(id) { demoDecisions.delete(id); }
 
+/** Gölge mod raporu (yalnızca API modu; demo modunda null). */
+export async function shadowReport() {
+  if (!(await isApi())) return null;
+  return api('/api/v1/reports/shadow');
+}
+
+export async function shadowSnapshots() {
+  if (!(await isApi())) return { items: [] };
+  return api('/api/v1/reports/shadow/snapshots');
+}
+
+/** Raporu değiştirilemez kanıt olarak kaydeder (SHA-256 ile; GRC Platformu bu kaydı alır). */
+export async function createShadowSnapshot(note) {
+  return api('/api/v1/reports/shadow/snapshots', {
+    method: 'POST', body: JSON.stringify({ note: note || null, idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+
 /** Elle düzenleme (yalnızca API modu): değerler Manual kaynak kaydı olarak uzlaştırmaya girer; yanıt 202. */
 export async function editCi(ciId, attributes, note) {
   return api(`/api/v1/ci/${encodeURIComponent(ciId)}`, {

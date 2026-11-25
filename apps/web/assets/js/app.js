@@ -7,6 +7,7 @@ import { renderOverview } from './pages/overview.js';
 import { renderQueue } from './pages/queue.js';
 import { renderCis } from './pages/cis.js';
 import { renderControls } from './pages/controls.js';
+import { renderShadow } from './pages/shadow.js';
 import { renderSources } from './pages/sources.js';
 import { renderRules } from './pages/rules.js';
 import { renderBigPicture } from './pages/bigpicture.js';
@@ -22,6 +23,8 @@ const ROUTES = {
     help: 'Golden record. Bir CI açıldığında her özniteliğin hangi kaynaktan, hangi kuralla geldiği ve hangi değerlerin ezildiği görünür.' },
   kontroller: { title: 'GRC Kontrolleri', icon: 'shield', render: renderControls,
     help: 'GRC Platformu\'na giden CMDB tabanlı kontrol sonuçları. Kaynak verisi kısmi toplandıysa sonuç "kesin değil" olur.' },
+  'golge-mod': { title: 'Gölge Mod Raporu', icon: 'layers', render: renderShadow,
+    help: 'Mevcut CMDB (ServiceNow) ile Evren gözlemlerinin karşılaştırması: keşfin görmediği kayıtlar, CMDB\'de olmayan keşif kayıtları, mükerrer adayları ve değer farkları. Rapor GRC Platformu için değiştirilemez kanıt olarak kaydedilebilir.' },
   kaynaklar: { title: 'Veri Kaynakları', icon: 'plug', render: renderSources,
     help: 'Her veri kaynağı bir rolü doldurur. Kurallar role bağlı olduğu için ürün değiştiğinde kurallar değişmez. Devre kesici kısmi çalışmada yıkıcı işlemleri durdurur.' },
   kurallar: { title: 'Kurallar', icon: 'sliders', render: renderRules,
@@ -36,7 +39,7 @@ const ROUTES = {
 
 const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk'] },
-  { group: 'CMDB', items: ['ci', 'kontroller'] },
+  { group: 'CMDB', items: ['ci', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];

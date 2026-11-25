@@ -46,6 +46,8 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | I | Geçersiz alan adının hata yanıtında yansıtılması | Yalnızca tanımlayıcı biçimindeki adlar yanıta girer; diğerleri "(geçersiz ad)" | `evren_api/editing.py` |
 | D | Uygulanamayan (zehirli) bir isteğin uzlaştırıcı kuyruğunu kilitlemesi | İstek başına kayıt noktası; beklenmeyen hata yalnızca o isteği hata kimliğiyle reddeder; geçici hata yeniden denenir | `ReconcilerStore._drain`, test_worker_pg |
 | I | Çalışan günlüğünde bağlantı adresinin (parola) görünmesi | Adres yalnızca dosya/ortamdan okunur; yapılandırma `repr`'ında yok; bağlantı hatalarında yalnızca hata sınıfı yazılır (testli) | `evren_reconciler/worker.py` |
+| T | GRC'ye giden kanıtın sonradan değiştirilmesi | `insight.evidence_snapshot` salt ekleme (sahibi dahil güncelleme/silme/TRUNCATE tetikleyiciyle engelli); kararlı JSON + SHA-256; indirmede özet yeniden doğrulanır | `0010_shadow_report.sql`, test_report |
+| I | Raporda okuma yetkisi olmayan sınıf veya hassas alanın görünmesi | Sınıflar okuma iznine göre süzülür; değer farkı öznitelikleri okuma izninin hassasiyet sınırıyla süzülür | `routers/reports.py` |
 | R | Yetki reddinin denetim kaydının işlemle birlikte geri alınması | Ret olayı istek işlemi içindeyse ayrı bağlantıyla yazılır; ret testlerle denetim izinde doğrulanır | `evren_api/deps.py`, test_split |
 | E | Grup üyeliği yoluyla görevler ayrılığı çatışması | Girişte uygulama rolü + grup ataması birleşimi `iam.sod_constraint` ile denetlenir; çatışmada giriş reddedilir ve denetime yazılır | `routers/auth.py` |
 
@@ -63,7 +65,7 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
   - `.gitleaks.toml` istisnası yalnızca genel anahtar kuralı ve sentetik `source_key` değerleriyle sınırlıdır; iş akışındaki olumsuz test, istisnanın gerçek bir belirteci gizlemediğini her çalıştırmada doğrular (yol bazlı istisna bu nedenle reddedildi).
   - Bağımlılıklar hash'li ve 14 günlük tedarik zinciri bekleme süresiyle kilitlenir (ADR-0005).
 - API (`services/api`, ADR-0010): her bağlantı `evren_app_api` rolüne geçer; sorgu zaman aşımı; tüm dinamik SQL `psycopg.sql` ile kurulur; Swagger/ReDoc (dış CDN) kapalı.
-  - `services/api/tests`: 51 test — yetki reddi ve denetimi, CSRF, idempotency, sütun düzeyi yetki, Entra akışının olumsuz senaryoları (tekrar, MFA bağlamı yok, yanlış kiracı/düzenleyen/hedef kitle, sahte imza, HS256'ya algoritma değişimi, kurcalanmış çerez, SoD).
+  - `services/api/tests`: 59 test — yetki reddi ve denetimi, CSRF, idempotency, sütun düzeyi yetki, Entra akışının olumsuz senaryoları (tekrar, MFA bağlamı yok, yanlış kiracı/düzenleyen/hedef kitle, sahte imza, HS256'ya algoritma değişimi, kurcalanmış çerez, SoD).
 - Uzlaştırıcı (`services/reconciler`): `evren_app_reconciler` rolüyle; denetim izini okuyamaz, CI ve kimlik anahtarı silemez (testli).
 
 ## Ağ ve platform

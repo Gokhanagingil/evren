@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 10/45 adım tamamlandı, 2'si sürüyor (~%23)
+**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 10/45 adım tamamlandı, 3'ü sürüyor (~%24)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -17,6 +17,7 @@ Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki *
 | 25.11.2026 | **Kaynak sistemler değişebilir** (keşif ürünü bugün BMC, yarın başka): kurallar ürüne değil kaynak rolüne bağlanır; ürün değişimi gölge → devir → emeklilik yaşam döngüsüyle yapılır | ADR-0009 |
 | 25.11.2026 | GRC Platformu'nun CMDB modülü, Evren hazır olunca CI verisini Evren'den alacak (bugün ServiceNow'dan senkron) | Proje sahibi, F2-08 |
 | 25.11.2026 | BMC ürünü: BMC Helix Discovery (on-prem mi SaaS mı belirsiz; ikisi aynı REST API) | Proje sahibi |
+| 25.11.2026 | Gölge mod raporu rol tabanlı; mükerrer sınıfı kimlik kurallarına uyar (kesin/güçlü/olası/çelişkili); GRC kanıtı salt ekleme ve SHA-256 | ADR-0014 |
 | 25.11.2026 | İnsan istekleri tablolarda kalır; sürekli çalışan uzlaştırıcı PostgreSQL bildirimiyle uyanır, istek başına hata yalıtımı ve nabız | ADR-0013 |
 | 25.11.2026 | Her büyük adımdan önce proje sahibine "büyük resmin ~%'si tamamlandı + sıradaki adım" raporu verilir | Proje sahibi |
 | 25.11.2026 | Elle düzenleme istek tablosu üzerinden; CI başına tek Manual kaynak kaydı; rol önceliği geçerli, sonuç alan başına; API'nin kaynak kaydı yazma yetkisi geri alındı | ADR-0012 |
@@ -83,14 +84,20 @@ Doğrulanınca bu bölümden kaldırılacak.
   - `ReconcilerStore._drain`: her istek kendi kayıt noktasında; beklenmeyen hata yalnızca o isteği hata kimliğiyle reddeder (kuyruk kilitlenmez), geçici veritabanı hatası isteği beklemede bırakır. `apply_requests` üç türü bir turda uygular.
   - Nabız `ingest.worker_heartbeat`; `/api/v1/summary` → `worker` (durum, bekleyen istekler, başarısız sayısı). Genel Bakış'ta "Uzlaştırıcı çalışıyor / çalışmıyor" göstergesi; kuyrukta uygulanamayan karar kırmızı ve nedeniyle.
   - Test sırası: kalıcı veri yazan çalışan testi demo yüklemesinden sonra çalışan API takımına taşındı (demo yükleyici boş veritabanı ister).
+- **F0-13: gölge mod raporu** (ADR-0014, göç `0010_shadow_report.sql`; adım "sürüyor": gerçek ServiceNow verisi ve CMDB sahibi değerlendirmesi bekleniyor).
+  - API `GET /api/v1/reports/shadow`: kapsam (mevcut CMDB'de olup keşfin görmediği / keşifte olup CMDB'de olmayan, sınıf × rol tablosu), mükerrer adayları (kimlik dizininden; kesin/güçlü/olası/çelişkili, keşfin görmediği kayıt için emekliye ayırma önerisi), değer farkları (gerçek / yalnız yazım; referanslar adıyla), gölge kaynak uyumu; bağımlı kaynak sağlıksızsa `inconclusive`.
+  - Kanıt: `POST /api/v1/reports/shadow/snapshots` → `insight.evidence_snapshot` (salt ekleme, sahibi dahil değiştirilemez), kararlı JSON + SHA-256; indirme `X-Evren-Content-SHA256` ile doğrulanır. İzin: Veri sorumlusu, Denetçi.
+  - Arayüz: "Gölge Mod Raporu" sayfası (CMDB grubunda): kesinlik uyarısı, özet kartları, kapsam tablosu, boşluk sekmeleri, mükerrer grupları ve önerileri, değer farkları (yazım farkları isteğe bağlı), kanıt kaydı ve JSON indirme; 390 px'te taşmasız.
+  - Demo verisinde bulduğu gerçekçi durum: iki `ist-db-01` ServiceNow kaydı aynı MAC/IP, farklı seri (fiziksel → sanal taşıma); keşfin görmediği kayıt emekliye ayırma adayı olarak öneriliyor.
 - **Testlerin yakaladığı güvenlik hatası (düzeltildi):** yetki reddi bir veritabanı işleminin içinde yazıldığında işlem geri alınınca denetim kaydı da kayboluyordu. Ret olayı artık işlem içindeyse ayrı bağlantıyla yazılır (`Ctx.security_event`) ve yetki denetimleri işlem dışında yapılır.
 - **Arayüz düzeltmesi:** tarih-saat öznitelikleri (ilk/son keşif) ham ISO yerine yerel biçimde.
-- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 158, uzlaştırıcı 36, API 51 (Entra olumsuz senaryoları, çalışanın bildirimle uyanması ve düzgün kapanışı dahil), tarayıcı 18 (13 demo modu + 5 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma ve elle düzenleme uçtan uca; düzenleme penceresi 390 px'te taşmasız) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
+- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 158, uzlaştırıcı 36, API 59 (Entra olumsuz senaryoları, çalışan, gölge mod raporu ve kanıt bütünlüğü dahil), tarayıcı 20 (13 demo modu + 5 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma ve elle düzenleme uçtan uca; düzenleme penceresi 390 px'te taşmasız) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
 
 ## Bilinen eksikler ve sınırlar
 
 - Veritabanındaki veri **sentetiktir** (`tools/load_demo_pg.py`); arayüz bunu üst çubukta işaretler. Statik sunucuda (demo modu) kuyruk kararları yalnızca oturumluktur.
 - Entra akışı sahte kimlik sağlayıcıyla test edildi; **kurumun Entra kaydıyla canlı kabul yapılmadı.**
+- Gölge mod raporu canlı SQL ile üretilir; milyonlarca CI'da özet tabloları gerekebilir (F1-09). Demo modunda (statik sunucu) rapor yok. Yerel veritabanında testlerin bitirmediği çalışmalar raporu "kesin değil" yapar (doğru davranış).
 - Ayırma sonrası asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez (eskimeye bırakılır). Ayrılan kaydı başka mevcut CI'a taşıma API'de var, arayüzde yok.
 - Elle düzenlemeyi yalnızca Konfigürasyon analisti yapabilir; "CI sahibi" rolünün koşullu izni (kendi grubunun CI'ları) ABAC değerlendirmesi gelene kadar verilmez. İlişki düzenleme yok.
 - API'de henüz yok: makine hesapları, ilişki düzenleme, ServiceNow uyumlu uç noktalar (F2-05), ABAC koşul değerlendirmesi (koşullu izinler şimdilik verilmez).
@@ -109,7 +116,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 3. **F0-08** — ServiceNow CMDB ilk yüklemesi (eşleme ve `import_existing` hazır).
 4. **F0-10 devamı** — Alım geçidi ve Kafka tüketicisi (uzlaştırıcı çalışanına eklenir), konteyner imajları. *Sizden: hedef ortam kararı.*
 5. **F0-11** — vCenter ve Zabbix bağlayıcıları. *Sizden: salt okunur servis hesapları.*
-6. **F0-13** — Gölge mod raporları; GRC Platformu'na kanıt aktarımı.
+6. **F0-13 kabulü** — Gerçek ServiceNow verisiyle ilk gölge mod raporu (F0-08'den sonra), CMDB sahibinin değerlendirmesi, ilk kanıtın GRC Platformu'na aktarımı (makine hesabı ile).
 
 ## Açık sorular
 

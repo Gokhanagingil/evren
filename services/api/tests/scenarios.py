@@ -93,3 +93,20 @@ def apply_pending_edits() -> list[str]:
     with psycopg.connect(autocommit=True) as conn:
         conn.execute("SET ROLE evren_app_reconciler")
         return [r.summary for r in ReconcilerStore(conn, md).apply_manual_edits()]
+
+
+def make_sn_pair(*, same_serial: bool) -> tuple[str, str, str]:
+    """İki ServiceNow ilk yükleme kaydı, aynı ad. ``same_serial``: aynı seri (kesin mükerrer) veya farklı seri
+    (ad çakışması). Döner: (sys_id_a, sys_id_b, ad)."""
+    md = load_metadata(REPO / "metadata")
+    tag = uuid.uuid4().hex[:8]
+    a, b = uuid.uuid4().hex, uuid.uuid4().hex
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        store = ReconcilerStore(conn, md)
+        sn = store.start_run(uuid.uuid4(), "ServiceNow")
+        for sid, serial in ((a, f"CZP{tag}A"), (b, f"CZP{tag}{'A' if same_serial else 'B'}")):
+            store.import_record(IngestRecord(data_source="ServiceNow", run_id=sn, source_key=sid,
+                                             class_hint="cmdb_ci_linux_server", observed_at=datetime.now(UTC),
+                                             attributes={"name": f"pair-{tag}", "serial_number": serial}), sid)
+    return a, b, f"pair-{tag}"

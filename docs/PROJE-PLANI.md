@@ -22,7 +22,7 @@
    Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
-1. **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Planlandı_  
+1. **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_  
    Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
 
 ## Sizden gerekenler (karar ve erişim)
@@ -34,7 +34,7 @@
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
 | F0-10 | Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı | Devam ediyor |
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Planlandı |
-| F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Planlandı |
+| F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Devam ediyor |
 | F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Planlandı |
 | F1-02 | Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni | Planlandı |
 | F1-03 | NNMi web servis kullanıcısı ve NNMi sürümü | Planlandı |
@@ -86,7 +86,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 - [x] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)
   - Not: Yan yana karşılaştırma, kanıtlar, kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) ve CI panelinden birleştirmeyi ayırma (ADR-0011: kimlik profili yeniden kurulur, ayrılan kaynağın değerleri temizlenir); uzlaştırıcı uygular. Sentetik veriyle test edildi.
-- [ ] **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Planlandı_
+- [ ] **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_
+  - Not: Rapor (kapsam, sınıf × rol, mükerrer adayları, değer farkları, gölge kaynak uyumu), arayüz sayfası ve değiştirilemez SHA-256 kanıt kaydı hazır (ADR-0014); sentetik veriyle test edildi. Gerçek ServiceNow verisiyle ilk rapor F0-08 yüklemesinden sonra; değerlendirme CMDB sahibinde.
   - Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
 
 **Çıkış kriterleri**

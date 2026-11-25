@@ -390,12 +390,15 @@
       "kind_label": "Veri deposu",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0).",
+      "text": "Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0). F0'da gölge mod raporu mevcut CMDB'yi rol tabanlı karşılaştırır (kapsam, mükerrer, değer farkı) ve GRC için değiştirilemez kanıt üretir (ADR-0014).",
       "tech": [
         "OpenSearch Anomaly Detection",
-        "insight.health_metric"
+        "insight.health_metric",
+        "insight.evidence_snapshot"
       ],
-      "security": []
+      "security": [
+        "Salt ekleme kanıt + SHA-256"
+      ]
     },
     "dependent_ids": {
       "label": "Bağımlı CI kimliği",

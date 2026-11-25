@@ -51,6 +51,12 @@ Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 - `422 gecersiz_alan` (`details`: alan + Türkçe neden; geçersiz alan adı yansıtılmaz), `403 yetki_yok`, `403 alan_yetkisi_yok`.
 - Referans seçenekleri: `GET /api/v1/ref/{tablo}?q=&limit=` (yalnızca `sys_user`, `sys_user_group`, `cmn_location`, `core_company`, `cmn_department`).
 
+### Gölge mod raporu ve kanıt
+
+- `GET /api/v1/reports/shadow` (ADR-0014): `status` (`conclusive`/`inconclusive`), `provenance` (`collection_status`, `depends_on`, `unhealthy_sources`, roller), `coverage` (toplamlar, sınıf × rol tablosu, keşfin görmediği ve CMDB'de olmayan CI listeleri), `duplicates` (gruplar: `verdict`, kanıt anahtarları, `advice`, CI'lar ve keşfin görüp görmediği), `drift` (öznitelik bazında gerçek/yazım farkı, örnekler), `shadow_sources`, `can_snapshot`.
+- `POST /api/v1/reports/shadow/snapshots` (`note`, `idempotency_key`; yetki `shadow_report/create`) → `201` `{id, sha256, status, collection_status}`.
+- `GET /api/v1/reports/shadow/snapshots` → liste; `GET /api/v1/reports/shadow/snapshots/{id}` → kayıttaki kararlı JSON (ek dosya), `X-Evren-Content-SHA256` başlığı. GRC Platformu indirilen baytların SHA-256'sını bu başlıkla ve listedeki özetle doğrular.
+
 ### Birleştirmeyi ayırma
 
 `POST /api/v1/ci/{sys_id}/split` (ADR-0011):

@@ -37,7 +37,8 @@ def base_url():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": "evren_reader,evren_match_reviewer,evren_cmdb_editor",
+    roles = "evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward"
+    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": roles,
                                   "EVREN_DEV_USER": "arayuz-testi", "EVREN_DEV_NAME": "Arayüz Testi",
                                   "EVREN_DB_POOL_SIZE": "4"})
     server = uvicorn.Server(uvicorn.Config(create_app(settings), host="127.0.0.1", port=port, log_level="warning"))
@@ -197,3 +198,40 @@ def test_manual_edit_from_ci_panel(page, base_url):
     expect(used_for.locator(".src")).to_have_text("Manual")
     assert name in page.locator("#detailTitle").inner_text()
     shot(page, "api_edit_applied")
+
+
+def test_shadow_report_and_evidence_snapshot(page, base_url):
+    """Gölge mod raporu: kesin değil uyarısı, mükerrer önerisi, kapsam sekmeleri (klavye), kanıt kaydı ve indirme."""
+    page.goto(base_url + "/#/golge-mod")
+    page.wait_for_selector("#shadowStats")
+    expect(page.locator("#shadowStatus")).to_contain_text("Kesin değil")
+    expect(page.locator("#shadowStatus")).to_contain_text("NNMi")
+    expect(page.locator("#shadowDuplicates")).to_contain_text("ist-db-01")
+    expect(page.locator("#shadowDuplicates")).to_contain_text("emekliye ayırma adayı")
+    # Değer farkları: yalnız yazım farkları varsayılan olarak gizli
+    real_rows = page.locator("table[aria-label='Değer farkı örnekleri'] tbody tr").count()
+    page.check("#driftCosmetic")
+    assert page.locator("table[aria-label='Değer farkı örnekleri'] tbody tr").count() > real_rows
+    page.focus("#tab-not_in_itsm")
+    page.keyboard.press("Enter")
+    expect(page.locator("#tab-not_in_itsm")).to_have_attribute("aria-selected", "true")
+    expect(page.locator("table[aria-label=\"Keşifte olup mevcut CMDB'de olmayan CI'lar\"]")).to_be_visible()
+    page.fill("#snapshotNote", "Tarayıcı testi")
+    page.click("#snapshotCreate")
+    expect(page.locator("#toast")).to_contain_text("değiştirilemez kanıt")
+    first = page.locator("#shadowSnapshots li").first
+    expect(first).to_contain_text("Tarayıcı testi")
+    expect(first).to_contain_text("Kesin değil")
+    href = first.locator("a").get_attribute("href")
+    assert href.startswith("/api/v1/reports/shadow/snapshots/")
+    shot(page, "api_shadow_report")
+
+
+def test_shadow_report_mobile_has_no_horizontal_overflow(browser, base_url):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    pg = context.new_page()
+    pg.goto(base_url + "/#/golge-mod")
+    pg.wait_for_selector("#shadowStats")
+    pg.wait_for_timeout(150)
+    assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+    context.close()

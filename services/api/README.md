@@ -16,6 +16,7 @@ EVREN_AUTH_MODE=dev EVREN_DATABASE_URL=postgresql://... uvicorn --factory evren_
 | `/auth/login`, `/auth/entra/callback`, `/auth/logout` | Tamam (canlı Entra kaydıyla kabul bekliyor) |
 | `POST /api/v1/ci/{sys_id}/split` (202; uzlaştırıcı uygular, ADR-0011) | Tamam |
 | `PATCH /api/v1/ci/{sys_id}` (202; Manual kaynak kaydı, ADR-0012), `GET /api/v1/ref/{tablo}` | Tamam |
+| `GET /api/v1/reports/shadow`, kanıt anlık görüntüsü (ADR-0014) | Tamam |
 | Makine hesapları, ilişki düzenleme | Sırada |
 | `/api/now/table/*`, `/api/now/identifyreconcile` | F2-05 |
 

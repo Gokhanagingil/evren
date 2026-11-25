@@ -285,6 +285,13 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .edit-more { margin: 6px 0 10px; border-top: 1px solid var(--stroke); padding-top: 8px; }
 .edit-more > summary { cursor: pointer; font-weight: 600; padding: 4px 0; }
 .ref-search { margin-bottom: 6px; }
+.gap { color: var(--bad); font-weight: 700; }
+.dup-list li { display: grid; gap: 6px; }
+.compact-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.compact-table th, .compact-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--stroke); vertical-align: top; }
+.compact-table th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.advice { margin: 0; }
+.evidence-form input { flex: 1 1 260px; min-width: 0; }
 .link-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .palette-input { border: 0; border-bottom: 1px solid var(--stroke); border-radius: 12px 12px 0 0; font-size: 16px; padding: 16px 18px; min-height: 56px; width: 100%; }
 .palette-input:focus { box-shadow: none; border-color: var(--stroke); }
