@@ -24,7 +24,7 @@ import sys
 import uuid
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Protocol
 
 import yaml
 
@@ -271,7 +271,7 @@ class Pipeline:
         self.engine = IdentityEngine(IdentityResolver(rules, InMemoryCandidateIndex(), InMemoryLinkStore()),
                                      id_factory=lambda: f"e7e{next(counter):029x}")
         self.records: list[dict[str, Any]] = []   # her kaynak kaydı + kimlik sonucu
-        self.manual: dict[str, dict[str, Any]] = {}
+        self.manual_values: dict[str, dict[str, Any]] = {}
 
     def ingest(self, mapping: str, raw: dict, observed_at: datetime, *, import_sys_id: str | None = None) -> None:
         rec = self.mappings[mapping].apply(raw, run_id=RUN, observed_at=observed_at)
@@ -281,16 +281,27 @@ class Pipeline:
         res = self.engine.import_existing(sr, import_sys_id) if import_sys_id else self.engine.process(sr)
         self.records.append({"ingest": rec, "resolution": res})
 
+    def manual(self, ci_sys_id: str, values: dict[str, Any], observed_at: datetime) -> None:
+        self.manual_values[ci_sys_id] = {**values, "_observed": observed_at}
+
 
 def fmt(dt: datetime) -> str:
     return dt.astimezone(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
 
 
-def build() -> dict[str, Any]:
+class Sink(Protocol):
+    """Sentetik envanteri tüketen hat: bellek içi (Pipeline) veya PostgreSQL uzlaştırıcısı (tools/load_demo_pg.py)."""
+
+    def ingest(self, mapping: str, raw: dict, observed_at: datetime, *, import_sys_id: str | None = None) -> None: ...
+
+    def manual(self, ci_sys_id: str, values: dict[str, Any], observed_at: datetime) -> None: ...
+
+
+def feed(sink: Sink) -> tuple[dict[str, str], list[Host]]:
+    """Sentetik envanteri kaynak yerel yükler olarak, gerçek alım sırasıyla hatta besler (deterministik)."""
     g = Gen()
-    p = Pipeline()
-    md = p.md
     refs: dict[str, str] = {}
+    sn_by_name: dict[str, str] = {}
     hosts = build_hosts(g)
 
     # Referans sys_id'leri deterministik olsun
@@ -312,11 +323,12 @@ def build() -> dict[str, Any]:
         if not h.in_sn:
             continue
         raw = sn_server(g, h, refs)
-        p.ingest("servicenow_cmdb/server.mapping.yaml", raw, sn_seen, import_sys_id=raw["sys_id"])
+        sink.ingest("servicenow_cmdb/server.mapping.yaml", raw, sn_seen, import_sys_id=raw["sys_id"])
+        sn_by_name.setdefault(h.name, raw["sys_id"])
         if h.quirks.get("sn_duplicate"):
             dup = sn_server(g, h, refs, serial=g.serial())
             dup["short_description"] = f"{h.role_tr} (2019 kaydı)"
-            p.ingest("servicenow_cmdb/server.mapping.yaml", dup, sn_seen, import_sys_id=dup["sys_id"])
+            sink.ingest("servicenow_cmdb/server.mapping.yaml", dup, sn_seen, import_sys_id=dup["sys_id"])
     net_serials = {}
     for i, (name, cat, _fw, in_sn, _zb) in enumerate(NET):
         net_serials[name] = "FDO" + g.hex(8).upper()
@@ -330,7 +342,7 @@ def build() -> dict[str, Any]:
                "owned_by": refs[f"user:{USERS[1]}"], "used_for": "Production",
                "location": refs[f"location:{LOCATIONS['ist' if name.startswith('IST') else 'ank']}"],
                "operational_status": "1", "install_status": "1"}
-        p.ingest("servicenow_cmdb/server.mapping.yaml", raw, sn_seen, import_sys_id=sid)
+        sink.ingest("servicenow_cmdb/server.mapping.yaml", raw, sn_seen, import_sys_id=sid)
 
     # 2) vCenter: VM örneği + misafir sunucu
     for h in hosts:
@@ -338,50 +350,50 @@ def build() -> dict[str, Any]:
             continue
         bios = g.uuid() if h.quirks.get("vm_recreated") else h.bios_uuid
         raw = vcenter_vm(h, g.uuid(), bios)
-        p.ingest("vcenter/vm_instance.mapping.yaml", raw, vc_seen)
-        p.ingest("vcenter/guest_server.mapping.yaml", raw, vc_seen)
+        sink.ingest("vcenter/vm_instance.mapping.yaml", raw, vc_seen)
+        sink.ingest("vcenter/guest_server.mapping.yaml", raw, vc_seen)
 
     # 3) BMC Helix Discovery
     for h in hosts:
         if h.in_bmc:
-            p.ingest("bmc_discovery/host.mapping.yaml", bmc_host(g, h, h.serial, h.bios_uuid),
+            sink.ingest("bmc_discovery/host.mapping.yaml", bmc_host(g, h, h.serial, h.bios_uuid),
                      NOW - timedelta(days=h.bmc_age_days))
 
     # 4) NNMi
     for i, (name, cat, fw, _sn, _zb) in enumerate(NET):
-        p.ingest("nnmi/mapping.yaml", nnmi_node(g, name, cat, fw, net_serials[name], f"10.0.0.{i + 1}"), nn_seen)
+        sink.ingest("nnmi/mapping.yaml", nnmi_node(g, name, cat, fw, net_serials[name], f"10.0.0.{i + 1}"), nn_seen)
 
     # 5) Defender
     for h in hosts:
         if h.in_defender:
-            p.ingest("defender/mapping.yaml", defender_machine(g, h), df_seen)
+            sink.ingest("defender/mapping.yaml", defender_machine(g, h), df_seen)
 
     # 6) Zabbix (sunucular + izlenen ağ cihazları)
     hostid = 10500
     for h in hosts:
         if h.in_zabbix:
             hostid += 1
-            p.ingest("zabbix/mapping.yaml", zabbix_host(h, hostid), zb_seen)
+            sink.ingest("zabbix/mapping.yaml", zabbix_host(h, hostid), zb_seen)
     for i, (name, _cat, _fw, _sn, in_zb) in enumerate(NET):
         if in_zb:
             hostid += 1
-            p.ingest("zabbix/mapping.yaml", {
+            sink.ingest("zabbix/mapping.yaml", {
                 "hostid": str(hostid), "host": name, "name": name, "status": "0",
                 "interfaces": [{"interfaceid": str(hostid), "type": "2", "ip": f"10.0.0.{i + 1}", "main": "1"}],
                 "inventory": {}, "hostgroups": [{"groupid": "9", "name": "Ağ cihazları"}]}, zb_seen)
 
     # 7) Elle düzeltme (Manual kaynak kaydı uzlaştırmadan geçer)
-    ci_by_name = {}
-    for r in p.records:
-        res = r["resolution"]
-        if r["ingest"].data_source == "ServiceNow" and res.ci_sys_id:
-            ci_by_name.setdefault(r["ingest"].attributes.get("name"), res.ci_sys_id)
     for h in hosts:
-        if h.quirks.get("manual_owner") and h.name in ci_by_name:
-            p.manual[ci_by_name[h.name]] = {"owned_by": refs[f"user:{h.quirks['manual_owner']}"],
-                                            "_observed": NOW - timedelta(days=12)}
+        if h.quirks.get("manual_owner") and h.name in sn_by_name:
+            sink.manual(sn_by_name[h.name], {"owned_by": refs[f"user:{h.quirks['manual_owner']}"]},
+                        NOW - timedelta(days=12))
+    return refs, hosts
 
-    return assemble(p, md, refs, hosts)
+
+def build() -> dict[str, Any]:
+    p = Pipeline()
+    refs, hosts = feed(p)
+    return assemble(p, p.md, refs, hosts)
 
 
 # --------------------------------------------------------------------------- çıktı
@@ -433,8 +445,8 @@ def assemble(p: Pipeline, md, refs: dict[str, str], hosts: list[Host]) -> dict[s
         cls = profile.class_name
         inputs = [SourceValues(r["ingest"].data_source, dict(r["ingest"].attributes), r["ingest"].observed_at)
                   for r in recs]
-        if ci in p.manual:
-            vals = dict(p.manual[ci])
+        if ci in p.manual_values:
+            vals = dict(p.manual_values[ci])
             observed = vals.pop("_observed")
             inputs.append(SourceValues("Manual", vals, observed))
         report = p.reconciler.reconcile_report(cls, inputs, NOW)
@@ -453,7 +465,7 @@ def assemble(p: Pipeline, md, refs: dict[str, str], hosts: list[Host]) -> dict[s
                      "attempts": [{"source": s_, "display": display(a, v)} for s_, v in vals_]}
                     for a, vals_ in sorted(report.rejected.items())]
         val = {a["attribute"]: a["value"] for a in attrs}
-        sources = sorted({r["ingest"].data_source for r in recs} | ({"Manual"} if ci in p.manual else set()))
+        sources = sorted({r["ingest"].data_source for r in recs} | ({"Manual"} if ci in p.manual_values else set()))
         relations = []
         for r in recs:
             for rel in r["ingest"].relations:

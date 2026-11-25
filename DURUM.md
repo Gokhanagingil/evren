@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 8/45 adım tamamlandı
+**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 9/45 adım tamamlandı
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -50,6 +50,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 - **Büyük resim ve plan (F0-15):** `tools/build_big_picture.py` → tek sayfalık çizim; `tools/build_plan.py` → `docs/PROJE-PLANI.md` (her adımda "sizden gereken"). Paylaşılabilir sayfa: claude.ai artifact (özel).
 - **Arayüz (F0-16):** GRC Platformu (tedarik) görsel dili: beyaz gruplu kenar menü, üst çubukta Ctrl+K arama ve ? yardım, sağdan açılan detay paneli. Yeni ekranlar: Eşleştirme Kuyruğu, Konfigürasyon Öğeleri (CI 360°: öznitelik başına kaynak, kural gerekçesi, ezilen değerler, yetkisiz deneme), GRC Kontrolleri (provenance, inconclusive), Veri Kaynakları (rol, yaşam döngüsü, devre kesici, çalışma geçmişi), Kurallar (sınıf × rol öncelik ızgarası, IRE, tazeleme/eskime), Büyük Resim. Veri: `tools/build_demo.py` sentetik envanteri çekirdeğin gerçek hattından geçirir.
 - **Belgeler:** "KS GRC" referansları GRC Platformu'na çevrildi; docs/03, 04, 10, CLAUDE.md, mimari harita güncellendi. CI'a `build_big_picture/plan/demo --check` eklendi.
+- **F0-06 (tamamlandı):** `requirements/*.txt` hash'li ve 14 günlük tedarik zinciri bekleme süresiyle (uv, CPython 3.12); PostgreSQL imajı digest ile sabit; `.gitleaks.toml` yalnızca sentetik `source_key` değerleri için dar istisna + iş akışında olumsuz test (yol bazlı istisna gerçek bir GitHub belirtecini gizlediği için reddedildi); SN dışa aktarımında adres doğrulaması (bandit B310). GitHub'da **Evren CI** ve **güvenlik kapıları** yeşil.
 - **Doğrulama (bu oturumda çalıştırıldı):** birim + PostgreSQL 16 testleri, 13 Chromium duman testi (tüm ekranlar, klavye, Esc, derin bağlantı, 390 px'te yatay taşma yok, konsol/CSP hatası yok), `ruff` temiz.
   - 150 birim ve PostgreSQL 16 entegrasyon testi geçti (rol FK'leri, aynı rolde yazan kaynağın benzersiz sırası, ürün değişimi senaryoları, kimlik hatalarının regresyon testleri dahil); 13 Chromium testi geçti.
   - Demo, büyük resim, plan ve mimari harita `--check` ile güncel; demo üretimi deterministik (eşit olasılıklı adaylar artık sys_id ile sıralanıyor).
@@ -57,7 +58,6 @@ Doğrulanınca bu bölümden kaldırılacak.
 
 ## Bilinen eksikler ve sınırlar
 
-- **F0-06 — CI güvenlik kapıları** yazıldı ama GitHub'da henüz çalışmadı; hash kilit dosyaları (`requirements/*.txt`) üretilmedi.
 - Ekranlar **sentetik demo verisiyle** çalışır; kuyruk kararları yalnızca oturum boyunca tutulur. Kalıcı kayıt API (F0-09) ve uzlaştırıcı (F0-10) ile gelecek.
 - Gölge kaynağın CI açmaması `SourceRegistry.may_create_ci` ile tanımlı; uzlaştırıcı servisi henüz olmadığı için uçtan uca zorlanmıyor (F0-10'da).
 - API, alım geçidi, uzlaştırıcı, sn-sync ve MCP servisleri yok (`services/*/README.md` tanımları var).
@@ -69,7 +69,6 @@ Doğrulanınca bu bölümden kaldırılacak.
 
 ## Sıradaki adımlar (sırayla)
 
-1. **F0-06** — Hash'li kilit dosyaları; `ci.yml` ve `security.yml` GitHub'da çalıştırılıp bulgular kapatılır.
 2. **F0-07** — `tools/sn_metadata_export.py` ile kurum sözlüğü; `verify` işaretleri kapatılır. *Sizden: SN salt okunur hesap.*
 3. **F0-09** — `services/api`: FastAPI, psycopg 3, Entra OIDC (`tedarik/vendor/entra_auth.py` deseni), rol eşlemesi, OpenAPI 3.1; ekranlar demo yerine API'den beslenir. *Sizden: Entra uygulama kaydı.*
 4. **F0-08** — ServiceNow CMDB ilk yüklemesi (eşleme ve `import_existing` hazır).

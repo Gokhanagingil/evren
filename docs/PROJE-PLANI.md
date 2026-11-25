@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 8/45 adım tamamlandı
+**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 9/45 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -12,8 +12,6 @@
 
 ## Sıradaki adımlar
 
-1. **F0-06** CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM — _Devam ediyor_  
-   Sizden gereken: GitHub Actions'ın repoda etkin olması (bulgular CI'da kapatılacak)
 1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
 1. **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Planlandı_  
@@ -24,12 +22,12 @@
    Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
+1. **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır) — _Planlandı_
 
 ## Sizden gerekenler (karar ve erişim)
 
 | Adım | Gereken | Durum |
 | --- | --- | --- |
-| F0-06 | GitHub Actions'ın repoda etkin olması (bulgular CI'da kapatılacak) | Devam ediyor |
 | F0-07 | ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma | Planlandı |
 | F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Planlandı |
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
@@ -57,7 +55,7 @@
 
 ## F0 · Temel ve gölge mod
 
-_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 8/16 adım
+_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 9/16 adım
 
 Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki kaynağın gölge modda eşleştirilmesi. ServiceNow'a hiçbir yazma yapılmaz.
 
@@ -70,9 +68,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [x] **F0-15** Büyük resim çizimi ve adım adım proje planı
 - [x] **F0-16** Arayüzün GRC Platformu görsel diline taşınması; Veri Kaynakları, Eşleştirme Kuyruğu, CI 360°, Kurallar ve GRC Kontrolleri önizleme ekranları (sentetik demo)
   - Not: Demo verisi çekirdeğin gerçek hattından üretilir (tools/build_demo.py); kalıcı kararlar API ile (F0-09, F0-10).
-- [ ] **F0-06** CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM — _Devam ediyor_
-  - Not: İş akışları yazıldı; GitHub'da ilk çalıştırma bekliyor.
-  - Sizden gereken: GitHub Actions'ın repoda etkin olması (bulgular CI'da kapatılacak)
+- [x] **F0-06** CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM
+  - Not: 25.11.2026: hash'li kilitler (14 gün bekleme), imaj digest'i, gitleaks istisnası olumsuz testli; iki iş akışı yeşil.
 - [ ] **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_
   - Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
 - [ ] **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Planlandı_
@@ -95,7 +92,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] vCenter ve Zabbix kayıtlarının en az %95'i otomatik eşleşti
 - [ ] Örneklem denetiminde yanlış birleştirme oranı %0,5'in altında
 - [x] ServiceNow'a hiçbir yazma yapılmadı
-- [ ] CI güvenlik kapıları yeşil; yüksek veya kritik bulgu yok
+- [x] CI güvenlik kapıları yeşil; yüksek veya kritik bulgu yok
 - [ ] İlk kapsam raporu GRC Platformu'na kanıt olarak aktarıldı
 
 **Riskler**
