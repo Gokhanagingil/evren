@@ -70,7 +70,7 @@
         {"id": "F1-10", "title": "Rol–yetki matrisi ekranı (RBAC + ABAC)", "status": "planned", "components": ["rbac_abac"], "needs": "Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı"},
         {"id": "F1-11", "title": "Şema tasarımcısı ve değişiklik setleri", "status": "planned", "components": ["schema_sets"]},
         {"id": "F1-12", "title": "ServiceNow'da elle yapılan değişikliklerin çekilmesi", "status": "planned", "components": ["sn_pull", "sn_edits"]},
-        {"id": "F1-13", "title": "Ürün değişimi tatbikatı: ikinci bir keşif kaynağını gölge modda çalıştırıp kapsam ve değer farkını raporlama", "status": "planned", "components": ["connectors", "reconcile", "analytics"]}
+        {"id": "F1-13", "title": "Ürün değişimi tatbikatı: ikinci bir keşif kaynağını gölge modda çalıştırıp kapsam ve değer farkını raporlama", "status": "done", "components": ["connectors", "reconcile", "analytics"], "note": "Sentetik tatbikat (tools/build_drill.py, Veri Kaynakları sayfası): BMC → Keşif-B gölge → etkin/devir → emekli; 9 denetim geçti, kural dosyaları değişmedi. Gerçek veritabanında rereconcile_source ile aynı geçişler testli. Bulgular: eşleme kapsamı farkı, adlandırma farkı. Gerçek ikinci ürün geldiğinde tatbikat onunla tekrarlanır."}
       ],
       "exit_criteria": [
         {"text": "Beş kaynak üretimde; her biri için devre kesici taban çizgisi oluştu", "met": false},

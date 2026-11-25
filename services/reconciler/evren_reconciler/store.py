@@ -397,7 +397,8 @@ class ReconcilerStore:
             return None
 
     def _reconcile(self, cur: psycopg.Cursor[Any], ci: str, run_id: UUID | None, *,
-                   released: str | None = None, reason: str = "reconciliation") -> list[dict[str, Any]]:
+                   released: str | None = None, reason: str = "reconciliation",
+                   force: bool = False) -> list[dict[str, Any]]:
         """CI'ın etkin bağlı kaynak kayıtlarını uzlaştırır.
 
         ``released``: CI'dan değer çekilen veri kaynağı — ayırmada ayrılan kaynak, elle düzenlemede değeri kaldırılan
@@ -420,7 +421,7 @@ class ReconcilerStore:
             state = dcur.fetchone()
         if current is None:
             raise LookupError(f"CI yok: {ci}")
-        if state and state["input_hash"] == input_hash:
+        if state and state["input_hash"] == input_hash and not force:
             return []
         cur.execute("SELECT class_name FROM ingest.identity_profile WHERE ci_sys_id = %s", (ci,))
         prof = cur.fetchone()
@@ -734,6 +735,34 @@ class ReconcilerStore:
             SELECT sys_id, link_sys_id, ci_sys_id, data_source, source_key, target_ci, requested_by, note
               FROM ingest.split_request WHERE status = 'pending'
              ORDER BY requested_at, sys_id LIMIT 1 FOR UPDATE SKIP LOCKED""", handle, fail, limit)
+
+    def rereconcile_source(self, data_source: str, *, batch: int = 500) -> dict[str, int]:
+        """Veri kaynağının yaşam döngüsü veya rol sırası değişince (ADR-0009) bağlı CI'ları yeniden uzlaştırır.
+
+        Depo, değişikliği içeren metadata ile kurulmuş olmalıdır. Girdi kayıtları değişmediği için özet denetimi
+        atlanır (``force``). Emekli kaynağın tek başına verdiği öznitelikler silinmez (yıkıcı işlem yok, kural 4);
+        değer kalır ama kazanan kaynağı olmaz — sayısı ``orphaned`` olarak döner, emeklilik önizlemesi bunu
+        önceden gösterir (tools/build_drill.py).
+        """
+        self.registry.source(data_source)  # tanımsız kaynak açık hata
+        with self.conn.cursor() as cur:
+            cur.execute("SELECT DISTINCT ci_sys_id FROM ingest.identity_link WHERE data_source = %s AND active "
+                        "ORDER BY 1", (data_source,))
+            cis = [r[0] for r in cur.fetchall()]
+        totals = {"cis": len(cis), "changes": 0, "orphaned": 0}
+        for start in range(0, len(cis), batch):
+            with self.conn.transaction(), self.conn.cursor() as cur:
+                for ci in cis[start:start + batch]:
+                    before = self._winner_keys(cur, ci)
+                    totals["changes"] += len(self._reconcile(cur, ci, None, force=True))
+                    totals["orphaned"] += len(before - self._winner_keys(cur, ci))
+        return totals
+
+    @staticmethod
+    def _winner_keys(cur: psycopg.Cursor[Any], ci: str) -> set[str]:
+        cur.execute("SELECT winners FROM cmdb.ci_reconciliation_state WHERE ci_sys_id = %s", (ci,))
+        row = cur.fetchone()
+        return set(row[0]) if row and row[0] else set()
 
     def apply_requests(self, limit: int = 100) -> dict[str, list[ApplyResult]]:
         """Tüm insan isteklerini bir tur uygular: elle düzenleme, kuyruk kararı, ayırma (bu sırayla)."""

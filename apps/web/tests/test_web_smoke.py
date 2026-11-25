@@ -29,6 +29,7 @@ from dev_server import make_server  # noqa: E402
 
 SHOTS = os.environ.get("EVREN_SHOTS")
 DEMO = json.loads((REPO / "apps/web/content/demo.json").read_text(encoding="utf-8"))
+DRILL = json.loads((REPO / "apps/web/content/drill.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")
@@ -177,6 +178,20 @@ def test_sources_breaker_and_roles(page, base_url):
     assert "karantinada" in text and "Ağ keşfi" in text
     assert page.locator("svg.runs rect").count() >= 5
     shot(page, "web_source_detail")
+
+
+def test_product_swap_drill_panel(page, base_url):
+    """Ürün değişimi tatbikatı (F1-13): 4 aşama, tüm denetimler geçti, bulgu görünür; atlama düğmesi rotayı bozmaz."""
+    page.goto(base_url + "/#/kaynaklar")
+    page.wait_for_selector("#drillPanel")
+    assert page.locator(".drill-phase").count() == len(DRILL["phases"]) == 4
+    assert page.locator("#drillChecks li.ok").count() == len(DRILL["checks"]) and DRILL["passed"]
+    assert "Keşif-B" in page.locator("#drillPanel").inner_text()
+    assert "üretmiyor" in page.locator("#drillFinding").inner_text()
+    page.click("#drillJump")
+    playwright.expect(page.locator("#drillPanel")).to_be_focused()  # CSP: metin ifadesiyle bekleme yok
+    assert page.url.endswith("#/kaynaklar")  # sayfa içi geçiş hash yönlendiricisini bozmaz
+    shot(page, "web_drill_panel")
 
 
 def test_rules_grid_uses_roles_not_products(page, base_url):

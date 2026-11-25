@@ -12,6 +12,7 @@
 | Bulanık ad adayları (OpenSearch) | Planlandı | F1-08 |
 | İnsan kararları: kuyruk kararları (`apply_decisions`), birleştirmeyi ayırma (`apply_splits`, ADR-0011), elle düzenleme (`apply_manual_edits`, ADR-0012) | ✓ | göç `0006`–`0008` |
 | Sürekli çalışan: bildirimle uyanma, istek başına hata yalıtımı, nabız, düzgün kapanış (ADR-0013) | ✓ | `evren_reconciler/worker.py`, göç `0009` |
+| Ürün değişimi: yaşam döngüsü/rol sırası değişince bağlı CI'ları yeniden uzlaştırma (`rereconcile_source`; emekli kaynağın tek başına verdiği alanlar silinmez, sayılır) | ✓ | F1-13, `tests/test_product_swap_pg.py` |
 | Eskime önerileri | Planlandı | F1-06 |
 
 Testler: `services/reconciler/tests` (gerçek PostgreSQL, `evren_app_reconciler` rolüyle). `tools/load_demo_pg.py`

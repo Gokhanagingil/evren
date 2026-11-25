@@ -63,6 +63,8 @@ export function backend() {
 }
 
 export const demo = () => loadJSON('/content/demo.json');
+/** Ürün değişimi tatbikatı (tools/build_drill.py; iki modda da statik içerik). */
+export const drillView = () => loadJSON('/content/drill.json');
 const isApi = async () => (await backend()).mode === 'api';
 
 export async function overview() {

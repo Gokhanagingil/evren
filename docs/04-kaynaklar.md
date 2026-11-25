@@ -21,6 +21,14 @@ Kaynak sistemler değişebilir ve bu listeyle sınırlı değildir. Bu yüzden u
 
 **Ürün değişimi yordamı:** (1) yeni bağlayıcı + eşleme + sentetik örnek ve test, (2) aynı rolde yeni veri kaynağı `shadow`: kapsam ve değer farkı raporlanır, golden record değişmez, (3) devir: yeni kaynak `active` + `role_rank: 1`, eskisi `retiring` + `role_rank: 2`, (4) eskisi `retired`. Kurallar, CI'lar ve sys_id'ler değişmez; mevcut CI'lar seri, UUID ve FQDN kurallarıyla yeni ürünün kayıtlarına bağlanır.
 
+**Ürün değişimi tatbikatı (F1-13, sentetik):** `python tools/build_drill.py` BMC'nin yerine tatbikat ürünü "Keşif-B"yi (kendi eşleme dosyası `tools/drill/kesif_b_host.mapping.yaml`) dört aşamadan geçirir ve sonucu Veri Kaynakları sayfasında gösterir (`apps/web/content/drill.json`, CI'da `--check`). Denetimler: gölge modda golden record'da değer/kaynak değişmez ve CI açılmaz; etkin olunca yeni ürün yetkili olur ve eşleşmeyen kayıtlar CI açar; devredilen ürün CI açamaz; emeklilik önizlemesi sahipsiz kalacak alanları önceden ve birebir gösterir; kural dosyalarının SHA-256'sı hiç değişmez. Gerçek veritabanında aynı geçişler `ReconcilerStore.rereconcile_source` ile uygulanır (`tests/test_product_swap_pg.py`).
+
+Tatbikatın gösterdiği, gerçek bir değişimde kontrol edilmesi gerekenler:
+
+- **Eşleme kapsamı:** yeni ürünün eşlemesi eski ürünün verdiği her alanı üretmeyebilir (tatbikatta işlemci tipi/hızı, çekirdek sayısı, DNS alanı, üretici). Emeklilik önizlemesinde sahipsiz kalacak alanlar ya eşlemeye eklenir ya da bilinçli bırakılır.
+- **Adlandırma farkı:** aynı değer farklı yazılabilir (tatbikatta işletim sistemi uyumu %0: "RHEL 9.4" ↔ "Red Hat Enterprise Linux 9.4"). Etkin moda geçmeden önce normalleştirme kararı verilir.
+- **Kapsam farkı:** yalnız eski ürünün gördüğü CI'lar emeklilikten önce listelenir; başka bir keşif rolündeki kaynak görmüyorsa kapsam kaybı olur.
+
 **Yeni kaynak türü** (bulut hesapları, Kubernetes, yedekleme, PAM…): mevcut bir rolü dolduruyorsa yalnızca kaynak kaydı ve eşleme; yeni bir görevse yeni rol + o rolün yazabileceği alanlar için uzlaştırma kuralı.
 
 ## vCenter (F0)

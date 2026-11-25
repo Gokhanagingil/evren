@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 10/45 adım tamamlandı, 3'ü sürüyor (~%24)
+**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 11/45 adım tamamlandı, 3'ü sürüyor (~%28)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -89,6 +89,11 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Kanıt: `POST /api/v1/reports/shadow/snapshots` → `insight.evidence_snapshot` (salt ekleme, sahibi dahil değiştirilemez), kararlı JSON + SHA-256; indirme `X-Evren-Content-SHA256` ile doğrulanır. İzin: Veri sorumlusu, Denetçi.
   - Arayüz: "Gölge Mod Raporu" sayfası (CMDB grubunda): kesinlik uyarısı, özet kartları, kapsam tablosu, boşluk sekmeleri, mükerrer grupları ve önerileri, değer farkları (yazım farkları isteğe bağlı), kanıt kaydı ve JSON indirme; 390 px'te taşmasız.
   - Demo verisinde bulduğu gerçekçi durum: iki `ist-db-01` ServiceNow kaydı aynı MAC/IP, farklı seri (fiziksel → sanal taşıma); keşfin görmediği kayıt emekliye ayırma adayı olarak öneriliyor.
+- **F1-13: ürün değişimi tatbikatı (tamamlandı, sentetik).** `tools/build_drill.py` → `apps/web/content/drill.json` (CI `--check`), Veri Kaynakları sayfasında tatbikat paneli.
+  - BMC Helix Discovery → "Keşif-B" (tatbikat ürünü; yalnız kendi eşleme dosyası `tools/drill/kesif_b_host.mapping.yaml`), Keşif rolünde: Başlangıç → Gölge → Etkin + devir → Emeklilik.
+  - 9 denetim geçti: gölgede golden record'da değer/kaynak değişimi 0 ve CI açılmadı; etkin olunca 32 değer + 178 kaynak değişimi yalnız Keşif-B lehine, gölgedeyken eşleşmeyen 2 kayıt CI açtı; devredilen BMC CI açamadı; emeklilik önizlemesi sahipsiz kalacak 180 özniteliği önceden ve birebir gösterdi; kural dosyalarının SHA-256'sı hiç değişmedi.
+  - Bulgular (gerçek değişimde kontrol listesi): Keşif-B eşlemesi 5 alanı üretmiyor; işletim sistemi adlandırması farklı (gölge uyumu %0); 1 CI'ı yalnız BMC görüyordu.
+  - Gerçek veritabanı: `ReconcilerStore.rereconcile_source` (yaşam döngüsü/rol sırası değişince bağlı CI'ları yeniden uzlaştırır; emekli kaynağın tek başına verdiği alanlar silinmez, sayılır), `tests/test_product_swap_pg.py`.
 - **Testlerin yakaladığı güvenlik hatası (düzeltildi):** yetki reddi bir veritabanı işleminin içinde yazıldığında işlem geri alınınca denetim kaydı da kayboluyordu. Ret olayı artık işlem içindeyse ayrı bağlantıyla yazılır (`Ctx.security_event`) ve yetki denetimleri işlem dışında yapılır.
 - **Arayüz düzeltmesi:** tarih-saat öznitelikleri (ilk/son keşif) ham ISO yerine yerel biçimde.
 - **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16, CI ile aynı sırada):** çekirdek 158, uzlaştırıcı 36, API 59 (Entra olumsuz senaryoları, çalışan, gölge mod raporu ve kanıt bütünlüğü dahil), tarayıcı 20 (13 demo modu + 5 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma ve elle düzenleme uçtan uca; düzenleme penceresi 390 px'te taşmasız) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
@@ -97,6 +102,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 
 - Veritabanındaki veri **sentetiktir** (`tools/load_demo_pg.py`); arayüz bunu üst çubukta işaretler. Statik sunucuda (demo modu) kuyruk kararları yalnızca oturumluktur.
 - Entra akışı sahte kimlik sağlayıcıyla test edildi; **kurumun Entra kaydıyla canlı kabul yapılmadı.**
+- Ürün değişimi tatbikatı sentetiktir; gerçek ikinci ürün geldiğinde onunla tekrarlanmalı. Yaşam döngüsü değişikliği şimdilik metadata dosyası + yeniden yükleme ile yapılır; arayüzden taslak → onay → yayın akışı (değişiklik setleri) F1'de.
 - Gölge mod raporu canlı SQL ile üretilir; milyonlarca CI'da özet tabloları gerekebilir (F1-09). Demo modunda (statik sunucu) rapor yok. Yerel veritabanında testlerin bitirmediği çalışmalar raporu "kesin değil" yapar (doğru davranış).
 - Ayırma sonrası asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez (eskimeye bırakılır). Ayrılan kaydı başka mevcut CI'a taşıma API'de var, arayüzde yok.
 - Elle düzenlemeyi yalnızca Konfigürasyon analisti yapabilir; "CI sahibi" rolünün koşullu izni (kendi grubunun CI'ları) ABAC değerlendirmesi gelene kadar verilmez. İlişki düzenleme yok.

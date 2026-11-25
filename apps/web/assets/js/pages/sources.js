@@ -2,6 +2,7 @@
 import { h, s, dataTable, formatDateTime, formatNumber, kv, metric, pill, section } from '../lib/dom.js';
 import { closeDetail, openDetail, setHeader } from '../lib/shell.js';
 import { BREAKER, LIFECYCLE, sourcesView, srcChip } from '../lib/data.js';
+import { drillPanel } from './drill.js';
 
 function runsChart(runs) {
   const list = [...runs].reverse();
@@ -115,7 +116,13 @@ export async function renderSources(view, param) {
             ['Gölge mod', 'Aynı rolde yeni kaynak, lifecycle: shadow. Kimlik çözülür, kapsam ve değer farkı raporlanır; golden record değişmez.'],
             ['Devir', 'Yeni kaynak active ve sıra 1; eskisi retiring ve sıra 2. Mevcut CI\'lar seri, UUID ve FQDN ile yeni kayıtlara bağlanır.'],
             ['Emeklilik', 'Eski kaynak retired. Kayıtları ve kimlik bağları denetim izi olarak kalır.']]
-            .map(([t, x], i) => h('li', {}, h('b', { class: 'n' }, String(i + 1)), h('span', {}, h('strong', {}, t), x)))))),
+            .map(([t, x], i) => h('li', {}, h('b', { class: 'n' }, String(i + 1)), h('span', {}, h('strong', {}, t), x)))),
+        h('button', { class: 'btn ghost small', type: 'button', id: 'drillJump', onclick: () => {
+          const panel = document.getElementById('drillPanel');
+          panel?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          panel?.focus({ preventScroll: true });
+        } }, 'Tatbikatı görün ↓'))),
+    await drillPanel(),
   );
   if (param) open(param);
   return { update: (p) => (p ? open(p) : closeDetail({ silent: true })) };

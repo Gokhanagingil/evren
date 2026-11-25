@@ -1,0 +1,29 @@
+# Tatbikat ürünü "Keşif-B" — sentetik bir keşif ürünü (F1-13, ürün değişimi tatbikatı).
+# Gerçek bir ürünü temsil etmez. Amaç: yeni bir ürünün yalnızca kendi eşleme dosyasıyla, mevcut ürünle
+# AYNI ROLDE (Discovery) devreye alınabildiğini ve hiçbir kural dosyasının değişmediğini göstermek.
+# Alan adları bilerek BMC'den farklıdır (her ürünün kendi API biçimi vardır).
+description: Keşif-B sunucu kayıtları (tatbikat ürünü)
+data_source: KesifB
+source_key: id
+class: cmdb_ci_server
+class_rules:
+  - when: {from: platform, matches: "(?i)windows"}
+    class: cmdb_ci_win_server
+  - when: {from: platform, matches: "(?i)linux"}
+    class: cmdb_ci_linux_server
+attributes:
+  name: {from: host, transform: strip}
+  fqdn: {from: dns_name, transform: lower}
+  serial_number: {from: hw_serial, transform: strip}
+  bios_uuid: {from: smbios_uuid, transform: lower}
+  os: {from: os_name}
+  os_version: {from: os_release}
+  cpu_count: {from: sockets, transform: int}
+  ram: {from: memory_mb, transform: int}
+  virtual: {from: is_virtual, transform: bool}
+  ip_address: {from: "addresses[0]"}
+lookup:
+  ip_addresses: {from: "addresses[*]"}
+  mac_addresses: {from: "nics[*]"}
+external_ids:
+  kesif_b_id: {from: id}

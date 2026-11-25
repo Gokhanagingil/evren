@@ -1,0 +1,791 @@
+{
+ "title": "Ürün değişimi tatbikatı",
+ "synthetic": true,
+ "generated_at": "2026-11-25T06:00:00Z",
+ "role": "Discovery",
+ "role_label": "Keşif",
+ "old": {
+  "name": "BMC",
+  "label": "BMC Helix Discovery"
+ },
+ "new": {
+  "name": "KesifB",
+  "label": "Keşif-B (tatbikat ürünü)",
+  "mapping": "tools/drill/kesif_b_host.mapping.yaml"
+ },
+ "note": "Sentetik tatbikat: Keşif-B gerçek bir ürün değildir. Aynı adımlar gerçek bir ürün değişiminde data_sources.yaml'daki yaşam döngüsü değişiklikleriyle (taslak → onay → yayın) uygulanır.",
+ "rules_sha256": {
+  "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+  "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+ },
+ "phases": [
+  {
+   "id": "baseline",
+   "title": "Başlangıç",
+   "lifecycle": [
+    {
+     "source": "BMC",
+     "label": "BMC",
+     "lifecycle": "active",
+     "lifecycle_label": "Etkin",
+     "role_rank": 1
+    }
+   ],
+   "ci_count": 75,
+   "discovery_coverage": 74,
+   "golden_changes": 0,
+   "provenance_changes": 0,
+   "provenance_by_source": [],
+   "orphaned": [],
+   "orphaned_count": 0,
+   "changes_by_attribute": [],
+   "change_samples": [],
+   "new_cis": [],
+   "unmatched_shadow": [],
+   "agreement": [],
+   "retire_risk": [],
+   "retire_preview": [],
+   "orphaned_by_attribute": [],
+   "rules_sha256": {
+    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+   },
+   "may_create_ci": {
+    "BMC": true
+   },
+   "writes_attributes": {
+    "BMC": true
+   }
+  },
+  {
+   "id": "shadow",
+   "title": "Gölge mod",
+   "lifecycle": [
+    {
+     "source": "BMC",
+     "label": "BMC",
+     "lifecycle": "active",
+     "lifecycle_label": "Etkin",
+     "role_rank": 1
+    },
+    {
+     "source": "KesifB",
+     "label": "Keşif-B (tatbikat)",
+     "lifecycle": "shadow",
+     "lifecycle_label": "Gölge",
+     "role_rank": 2
+    }
+   ],
+   "ci_count": 75,
+   "discovery_coverage": 74,
+   "golden_changes": 0,
+   "provenance_changes": 0,
+   "provenance_by_source": [],
+   "orphaned": [],
+   "orphaned_count": 0,
+   "changes_by_attribute": [],
+   "change_samples": [],
+   "new_cis": [],
+   "unmatched_shadow": [
+    "ist-yeni-01",
+    "ist-yeni-02"
+   ],
+   "agreement": [
+    {
+     "attribute": "cpu_count",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    },
+    {
+     "attribute": "fqdn",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    },
+    {
+     "attribute": "ip_address",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    },
+    {
+     "attribute": "name",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    },
+    {
+     "attribute": "os",
+     "compared": 31,
+     "agree": 0,
+     "pct": 0.0
+    },
+    {
+     "attribute": "os_version",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    },
+    {
+     "attribute": "ram",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    },
+    {
+     "attribute": "serial_number",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    },
+    {
+     "attribute": "virtual",
+     "compared": 31,
+     "agree": 31,
+     "pct": 100.0
+    }
+   ],
+   "retire_risk": [],
+   "retire_preview": [],
+   "orphaned_by_attribute": [],
+   "rules_sha256": {
+    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+   },
+   "may_create_ci": {
+    "BMC": true,
+    "KesifB": false
+   },
+   "writes_attributes": {
+    "BMC": true,
+    "KesifB": false
+   }
+  },
+  {
+   "id": "promote",
+   "title": "Etkin + devir",
+   "lifecycle": [
+    {
+     "source": "BMC",
+     "label": "BMC",
+     "lifecycle": "retiring",
+     "lifecycle_label": "Devrediliyor",
+     "role_rank": 2
+    },
+    {
+     "source": "KesifB",
+     "label": "Keşif-B (tatbikat)",
+     "lifecycle": "active",
+     "lifecycle_label": "Etkin",
+     "role_rank": 1
+    }
+   ],
+   "ci_count": 77,
+   "discovery_coverage": 76,
+   "golden_changes": 32,
+   "provenance_changes": 178,
+   "provenance_by_source": [
+    "BMC → KesifB",
+    "Defender → KesifB",
+    "ServiceNow → KesifB",
+    "vCenter → KesifB"
+   ],
+   "orphaned": [],
+   "orphaned_count": 0,
+   "changes_by_attribute": [
+    {
+     "attribute": "os",
+     "count": 31,
+     "sources": [
+      "KesifB"
+     ]
+    },
+    {
+     "attribute": "name",
+     "count": 1,
+     "sources": [
+      "KesifB"
+     ]
+    }
+   ],
+   "change_samples": [
+    {
+     "ci": "f0f0639d4014d386b2b14d9cc09c7126",
+     "name": "ist-crm-01",
+     "attribute": "name",
+     "before": "ist-crm-01",
+     "before_source": "Defender",
+     "after": "IST-CRM-01",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "1bb2c64aa76125b7dd3d79f442891f7b",
+     "name": "ank-bi-03",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RHEL 9.4",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "b091478f6818c85906a48cd88b306f08",
+     "name": "ank-crm-04",
+     "attribute": "os",
+     "before": "Microsoft Windows Server 2022 Standard",
+     "before_source": "BMC",
+     "after": "Windows Server 2022 Standard",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "d745dcf226c22d6e3a58ff3d395d8bab",
+     "name": "ank-dc-02",
+     "attribute": "os",
+     "before": "Microsoft Windows Server 2022 Standard",
+     "before_source": "BMC",
+     "after": "Windows Server 2022 Standard",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "3093cecaf82b51da5ed79369457afab3",
+     "name": "ank-erp-01",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RHEL 9.4",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "c6a89c8a39701c272d7d8d4f280ff889",
+     "name": "ank-file-02",
+     "attribute": "os",
+     "before": "Microsoft Windows Server 2022 Standard",
+     "before_source": "BMC",
+     "after": "Windows Server 2022 Standard",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "f73074bdaa8e5fcf32e54a1868894e02",
+     "name": "ank-log-01",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RHEL 9.4",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "4eb7baea205049270530f6897e1da053",
+     "name": "ank-muh-01",
+     "attribute": "os",
+     "before": "Microsoft Windows Server 2022 Standard",
+     "before_source": "BMC",
+     "after": "Windows Server 2022 Standard",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "26017ca49d18939ffc0d7a05f1e6df71",
+     "name": "ank-web-03",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RHEL 9.4",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "f8a694594583b4555ae2c859cbe68064",
+     "name": "ist-bi-01",
+     "attribute": "os",
+     "before": "RedHatEnterpriseLinux",
+     "before_source": "Defender",
+     "after": "RHEL 9.4",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "e54df9eacc9ad7b7bc5cd3c4bfb2f4c1",
+     "name": "ist-bi-02",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RHEL 9.4",
+     "after_source": "KesifB"
+    },
+    {
+     "ci": "4cf28de3bd6938c379f7638412d32f1a",
+     "name": "ist-bi-04",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RHEL 9.4",
+     "after_source": "KesifB"
+    }
+   ],
+   "new_cis": [
+    {
+     "ci": "e7e00000000000000000000000000022",
+     "name": "ist-yeni-01"
+    },
+    {
+     "ci": "e7e00000000000000000000000000023",
+     "name": "ist-yeni-02"
+    }
+   ],
+   "unmatched_shadow": [],
+   "agreement": [],
+   "retire_risk": [
+    {
+     "ci": "cf05df6108ba934345470b577a5173c6",
+     "name": "ist-web-02"
+    }
+   ],
+   "retire_preview": [
+    {
+     "attribute": "cpu_core_count",
+     "count": 35
+    },
+    {
+     "attribute": "cpu_speed",
+     "count": 35
+    },
+    {
+     "attribute": "cpu_type",
+     "count": 35
+    },
+    {
+     "attribute": "dns_domain",
+     "count": 35
+    },
+    {
+     "attribute": "manufacturer",
+     "count": 35
+    },
+    {
+     "attribute": "bios_uuid",
+     "count": 1
+    },
+    {
+     "attribute": "cpu_count",
+     "count": 1
+    },
+    {
+     "attribute": "os_version",
+     "count": 1
+    },
+    {
+     "attribute": "ram",
+     "count": 1
+    },
+    {
+     "attribute": "virtual",
+     "count": 1
+    }
+   ],
+   "orphaned_by_attribute": [],
+   "rules_sha256": {
+    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+   },
+   "may_create_ci": {
+    "BMC": false,
+    "KesifB": true
+   },
+   "writes_attributes": {
+    "BMC": true,
+    "KesifB": true
+   }
+  },
+  {
+   "id": "retire",
+   "title": "Emeklilik",
+   "lifecycle": [
+    {
+     "source": "BMC",
+     "label": "BMC",
+     "lifecycle": "retired",
+     "lifecycle_label": "Emekli",
+     "role_rank": 2
+    },
+    {
+     "source": "KesifB",
+     "label": "Keşif-B (tatbikat)",
+     "lifecycle": "active",
+     "lifecycle_label": "Etkin",
+     "role_rank": 1
+    }
+   ],
+   "ci_count": 77,
+   "discovery_coverage": 75,
+   "golden_changes": 5,
+   "provenance_changes": 18,
+   "provenance_by_source": [
+    "BMC → Defender",
+    "BMC → ServiceNow",
+    "BMC → vCenter"
+   ],
+   "orphaned": [
+    {
+     "ci": "3093cecaf82b51da5ed79369457afab3",
+     "name": "ank-erp-01",
+     "attribute": "cpu_core_count",
+     "before": 8,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "3093cecaf82b51da5ed79369457afab3",
+     "name": "ank-erp-01",
+     "attribute": "cpu_speed",
+     "before": 2500,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "3093cecaf82b51da5ed79369457afab3",
+     "name": "ank-erp-01",
+     "attribute": "cpu_type",
+     "before": "Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "3093cecaf82b51da5ed79369457afab3",
+     "name": "ank-erp-01",
+     "attribute": "dns_domain",
+     "before": "corp.ornek.local",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "3093cecaf82b51da5ed79369457afab3",
+     "name": "ank-erp-01",
+     "attribute": "manufacturer",
+     "before": "HPE",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "2186feea402bab89007662533423a4b8",
+     "name": "ist-db-01",
+     "attribute": "cpu_core_count",
+     "before": 1,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "2186feea402bab89007662533423a4b8",
+     "name": "ist-db-01",
+     "attribute": "cpu_speed",
+     "before": 2500,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "2186feea402bab89007662533423a4b8",
+     "name": "ist-db-01",
+     "attribute": "cpu_type",
+     "before": "Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "2186feea402bab89007662533423a4b8",
+     "name": "ist-db-01",
+     "attribute": "dns_domain",
+     "before": "corp.ornek.local",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "2186feea402bab89007662533423a4b8",
+     "name": "ist-db-01",
+     "attribute": "manufacturer",
+     "before": "VMware, Inc.",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5b8999b496b6614c4f10dfa35717b5d9",
+     "name": "ist-web-01",
+     "attribute": "cpu_core_count",
+     "before": 1,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5b8999b496b6614c4f10dfa35717b5d9",
+     "name": "ist-web-01",
+     "attribute": "cpu_speed",
+     "before": 2500,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5b8999b496b6614c4f10dfa35717b5d9",
+     "name": "ist-web-01",
+     "attribute": "cpu_type",
+     "before": "Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5b8999b496b6614c4f10dfa35717b5d9",
+     "name": "ist-web-01",
+     "attribute": "dns_domain",
+     "before": "corp.ornek.local",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5b8999b496b6614c4f10dfa35717b5d9",
+     "name": "ist-web-01",
+     "attribute": "manufacturer",
+     "before": "VMware, Inc.",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "ist-dc-01",
+     "attribute": "cpu_core_count",
+     "before": 1,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "ist-dc-01",
+     "attribute": "cpu_speed",
+     "before": 2500,
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "ist-dc-01",
+     "attribute": "cpu_type",
+     "before": "Intel(R) Xeon(R) Gold 6248 CPU @ 2.50GHz",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "ist-dc-01",
+     "attribute": "dns_domain",
+     "before": "corp.ornek.local",
+     "before_source": "BMC"
+    },
+    {
+     "ci": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "ist-dc-01",
+     "attribute": "manufacturer",
+     "before": "VMware, Inc.",
+     "before_source": "BMC"
+    }
+   ],
+   "orphaned_count": 180,
+   "changes_by_attribute": [
+    {
+     "attribute": "os",
+     "count": 4,
+     "sources": [
+      "Defender",
+      "vCenter"
+     ]
+    },
+    {
+     "attribute": "name",
+     "count": 1,
+     "sources": [
+      "vCenter"
+     ]
+    }
+   ],
+   "change_samples": [
+    {
+     "ci": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "ist-dc-01",
+     "attribute": "name",
+     "before": "IST-DC-01",
+     "before_source": "BMC",
+     "after": "ist-dc-01",
+     "after_source": "vCenter"
+    },
+    {
+     "ci": "f9e7e92cb4b46528fa3f589873590516",
+     "name": "ank-db-04",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "Red Hat Enterprise Linux 9 (64-bit)",
+     "after_source": "vCenter"
+    },
+    {
+     "ci": "9312131c529e2f077aeec1fe57e28a32",
+     "name": "ist-db-03",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RedHatEnterpriseLinux",
+     "after_source": "Defender"
+    },
+    {
+     "ci": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "ist-dc-01",
+     "attribute": "os",
+     "before": "Microsoft Windows Server 2022 Standard",
+     "before_source": "BMC",
+     "after": "WindowsServer2022",
+     "after_source": "Defender"
+    },
+    {
+     "ci": "cf05df6108ba934345470b577a5173c6",
+     "name": "ist-web-02",
+     "attribute": "os",
+     "before": "Red Hat Enterprise Linux 9.4",
+     "before_source": "BMC",
+     "after": "RedHatEnterpriseLinux",
+     "after_source": "Defender"
+    }
+   ],
+   "new_cis": [],
+   "unmatched_shadow": [],
+   "agreement": [],
+   "retire_risk": [],
+   "retire_preview": [],
+   "orphaned_by_attribute": [
+    {
+     "attribute": "cpu_core_count",
+     "count": 35
+    },
+    {
+     "attribute": "cpu_speed",
+     "count": 35
+    },
+    {
+     "attribute": "cpu_type",
+     "count": 35
+    },
+    {
+     "attribute": "dns_domain",
+     "count": 35
+    },
+    {
+     "attribute": "manufacturer",
+     "count": 35
+    },
+    {
+     "attribute": "bios_uuid",
+     "count": 1
+    },
+    {
+     "attribute": "cpu_count",
+     "count": 1
+    },
+    {
+     "attribute": "os_version",
+     "count": 1
+    },
+    {
+     "attribute": "ram",
+     "count": 1
+    },
+    {
+     "attribute": "virtual",
+     "count": 1
+    }
+   ],
+   "rules_sha256": {
+    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+   },
+   "may_create_ci": {
+    "BMC": false,
+    "KesifB": true
+   },
+   "writes_attributes": {
+    "BMC": false,
+    "KesifB": true
+   }
+  }
+ ],
+ "checks": [
+  {
+   "text": "Gölge modda golden record'da hiçbir değer ve kaynak değişmedi",
+   "met": true
+  },
+  {
+   "text": "Gölge kaynak eşleşmeyen kayıt için CI açmadı (kapsam farkı olarak raporlandı)",
+   "met": true
+  },
+  {
+   "text": "Etkin moda alınınca yeni ürün yetkili kaynak oldu (değer veya kaynak değişimleri yalnız Keşif-B lehine)",
+   "met": true
+  },
+  {
+   "text": "Etkin moda alınınca gölgedeyken eşleşmeyen kayıtlar CI açtı",
+   "met": true
+  },
+  {
+   "text": "Devredilen ürün (BMC) yeni CI açamaz, değeri yedek olarak kalır",
+   "met": true
+  },
+  {
+   "text": "Emeklilik öncesi yalnız eski ürünün gördüğü CI'lar listelendi",
+   "met": true
+  },
+  {
+   "text": "Emeklilik önizlemesi sahipsiz kalacak alanları önceden gösterdi ve gerçekleşenle birebir aynı",
+   "met": true
+  },
+  {
+   "text": "Emekli ürün değer yazmıyor",
+   "met": true
+  },
+  {
+   "text": "Uzlaştırma ve tanımlama kuralları hiçbir aşamada değişmedi (SHA-256)",
+   "met": true
+  }
+ ],
+ "mapping_gap": [
+  "cpu_core_count",
+  "cpu_speed",
+  "cpu_type",
+  "dns_domain",
+  "manufacturer"
+ ],
+ "labels": {
+  "asset_tag": "Varlık etiketi",
+  "assigned_to": "Atanan kişi",
+  "assignment_group": "Atama grubu",
+  "category": "Kategori",
+  "change_control": "Onay grubu",
+  "comments": "Yorumlar",
+  "company": "Şirket",
+  "correlation_id": "Korelasyon kimliği",
+  "cpu_core_count": "Çekirdek sayısı",
+  "cpu_count": "CPU sayısı",
+  "cpu_speed": "CPU hızı (MHz)",
+  "cpu_type": "CPU tipi",
+  "default_gateway": "Varsayılan ağ geçidi",
+  "department": "Departman",
+  "discovery_source": "Keşif kaynağı",
+  "disk_space": "Disk alanı (GB)",
+  "dns_domain": "DNS alanı",
+  "duplicate_of": "Mükerrer kaydı",
+  "firmware_version": "Firmware sürümü",
+  "first_discovered": "İlk keşif",
+  "form_factor": "Form faktörü",
+  "fqdn": "FQDN",
+  "hardware_status": "Donanım durumu",
+  "host_name": "Host adı",
+  "install_date": "Kurulum tarihi",
+  "install_status": "Kurulum durumu",
+  "ip_address": "IP adresi",
+  "last_discovered": "Son keşif",
+  "life_cycle_stage": "Yaşam döngüsü aşaması",
+  "life_cycle_stage_status": "Aşama durumu",
+  "location": "Konum",
+  "mac_address": "MAC adresi",
+  "managed_by": "Yöneten",
+  "manufacturer": "Üretici",
+  "model_id": "Model",
+  "name": "Ad",
+  "object_id": "Nesne kimliği",
+  "operational_status": "Operasyonel durum",
+  "os": "İşletim sistemi",
+  "os_domain": "OS alanı",
+  "os_service_pack": "OS service pack",
+  "os_version": "OS sürümü",
+  "owned_by": "Sahibi",
+  "ram": "RAM (MB)",
+  "serial_number": "Seri numarası",
+  "short_description": "Kısa açıklama",
+  "subcategory": "Alt kategori",
+  "support_group": "Destek grubu",
+  "used_for": "Kullanım amacı",
+  "virtual": "Sanal",
+  "warranty_expiration": "Garanti bitişi"
+ },
+ "passed": true
+}
