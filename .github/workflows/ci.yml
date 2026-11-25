@@ -86,6 +86,10 @@ jobs:
         run: python tools/load_demo_pg.py
       - name: API (evren_app_api rolüyle; Entra akışı sahte kimlik sağlayıcıyla)
         run: python -m pytest -q services/api/tests
+      - name: Arayüz API modunda (gerçek uvicorn + PostgreSQL, Chromium)
+        run: |
+          python -m playwright install --with-deps chromium
+          python -m pytest -q apps/web/tests/test_web_api.py
 
   web:
     name: Arayüz duman testi (Chromium)

@@ -1,5 +1,24 @@
 # services/api — Evren REST API ve arayüz sunucusu (F0-09)
 
+## Durum
+
+Çalışır durumda (ADR-0010). Çalıştırma:
+
+```bash
+EVREN_AUTH_MODE=dev EVREN_DATABASE_URL=postgresql://... uvicorn --factory evren_api:create_app --host 127.0.0.1 --port 8090
+```
+
+| Uç nokta | Durum |
+|---|---|
+| `GET /api/v1/me`, `/summary`, `/sources`, `/rules`, `/controls`, `/meta/classes` | Tamam |
+| `GET /api/v1/ci` (arama, sınıf/kaynak/kapsam süzgeci, imleçli sayfalama), `/ci/{sys_id}`, `/ci/{sys_id}/history` | Tamam |
+| `GET /api/v1/match-queue`, `/match-queue/{id}`, `POST /match-queue/{id}/decision` | Tamam |
+| `/auth/login`, `/auth/entra/callback`, `/auth/logout` | Tamam (canlı Entra kaydıyla kabul bekliyor) |
+| `PATCH /api/v1/ci/{sys_id}` (Manual kaynak kaydı), `POST /ci/{sys_id}/split` | Sırada |
+| `/api/now/table/*`, `/api/now/identifyreconcile` | F2-05 |
+
+Ortam değişkenleri: `EVREN_AUTH_MODE` (`dev` | `entra`, zorunlu), `EVREN_DATABASE_URL` veya `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE`, `EVREN_COOKIE_SECURE`, `EVREN_ENTRA_*`. Sırlar dosya yolundan okunur; `dev` modu yalnızca 127.0.0.1'de açılır.
+
 ## Sorumluluk
 
 - `/api/v1/*` yerel REST API, OpenAPI 3.1 ile belgelenir.
@@ -39,5 +58,9 @@ Bu sayede elle girilen her değer de kaynak bilgisi, kural ve denetim izinden ge
 
 ## Testler
 
-- HTTP testleri soket açmadan uygulama nesnesi üzerinden çalışır.
+```bash
+EVREN_TEST_PG=1 python -m pytest services/api/tests
+```
+
+- HTTP testleri soket açmadan uygulama nesnesi üzerinden çalışır. Entra akışı sahte kimlik sağlayıcıyla (yerel RSA anahtarı, JWKS) ağsız sınanır.
 - Her uç noktada yetkisiz erişim, yanlış rol, makine hesabıyla insan işlemi ve `409` senaryoları test edilir.

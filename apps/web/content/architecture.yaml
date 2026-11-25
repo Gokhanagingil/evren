@@ -306,9 +306,9 @@ details:
     security: ["CSP: script-src 'self'", innerHTML ile veri yazılmaz]
   rest_api:
     phase: F0
-    text: Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. GRC Platformu ile aynı sözleşme ilkelerini kullanır.
+    text: Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. GRC Platformu ile aynı sözleşme ilkelerini kullanır. Golden record'a yazmaz; kuyruk kararlarını kaydeder, uzlaştırıcı uygular (ADR-0010).
     tech: [Python 3.12, FastAPI, psycopg 3]
-    security: [Entra OIDC, Makine hesabı için kapsamlı anahtar]
+    security: [Entra OIDC, "evren_app_api rolü, sütun düzeyi yetki", "CSRF başlığı + aynı köken", Yetki dışı alanlar yanıta konmaz, Makine hesabı için kapsamlı anahtar (F1)]
   sn_compat_api:
     phase: F2
     text: ServiceNow Table API'yi (sysparm_query, sysparm_fields, sysparm_limit) ve IRE payload biçimini kabul eden uç noktalar. Mevcut betik ve entegrasyonlar minimum değişiklikle Evren'e yönlenir.
@@ -381,9 +381,9 @@ details:
     security: [Kullanıcı bağlamında yetki]
   entra:
     phase: F0
-    text: Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra gruplarından eşlenir. GRC Platformu ile aynı kimlik altyapısı kullanılır.
-    tech: [Entra ID]
-    security: [Koşullu erişim, Kısa ömürlü oturum]
+    text: Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra uygulama rollerinden ve grup atamalarından eşlenir; birleşik rol kümesi girişte görevler ayrılığı kurallarıyla denetlenir. GRC Platformu ile aynı kimlik altyapısı kullanılır.
+    tech: [Entra ID, "evren_api/entra.py"]
+    security: [Koşullu erişim, MFA kimlik doğrulama bağlamı, "PKCE + nonce, tekrar koruması", Şifreli kısa ömürlü oturum çerezi]
   rbac_abac:
     phase: F1
     text: İzin rol, sınıf, işlem, alan, hassasiyet ve koşul boyutlarıyla tanımlanır. Örnek koşul "yalnızca destek grubu olduğum CI'lar". Matris arayüzde düzenlenir.

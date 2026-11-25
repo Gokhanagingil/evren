@@ -33,6 +33,15 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | E | Makine hesabıyla insan işlemi | Makine rolleri (`machine=true`) yönetim işlemlerine kapalı | IAM |
 | E | MCP üzerinden istem enjeksiyonu | CMDB içeriği veri olarak işaretlenir; MCP rolü yazamaz; öneriler insan onayına düşer | mcp |
 | E | XSS ile oturum ele geçirme | CSP `script-src 'self'`; innerHTML yasak (test ve CI denetimi) | apps/web |
+| S | Entra akışında kod/akış tekrarı, nonce sahteciliği | PKCE S256; `state`/`nonce`/doğrulayıcı süreç anahtarıyla mühürlü akış çerezinde; aynı akış ikinci kez reddedilir; RS256, kiracı, hedef kitle, düzenleyen, `nonce`, MFA bağlamı (`acrs`) zorunlu | `evren_api/entra.py`, test_entra |
+| S | Oturum çerezinin kurcalanması | Fernet (şifreli + imzalı) süreli çerez; kurcalanan çerez yok sayılır (401) | `evren_api/security.py` |
+| S | `dev` modunun üretimde açılması | `dev` yalnızca geri döngü adresinde başlar; Entra ayarı varken reddedilir | `evren_api/config.py` |
+| T | Siteler arası istek sahteciliği (CSRF) | Durum değiştiren isteklerde `X-Evren-Request` başlığı + aynı köken; `SameSite=Strict`; CORS yok | `evren_api/deps.py` |
+| T | Kuyruk kararının API'den golden record'a doğrudan yazılması | API yalnızca karar sütunlarını güncelleyebilir (sütun düzeyi yetki); bağı ve CI'ı uzlaştırıcı yazar | `0006_api_decisions.sql` |
+| T | Aynı kararın tekrar gönderilmesi | `idempotency_key`: aynı içerik → kayıtlı yanıt; farklı içerik → 409 | `api.idempotency` |
+| I | Yetki dışı alanların yanıtta görünmesi | Rol izninin en yüksek hassasiyeti üstündeki alanlar yanıta hiç konmaz (arayüzde gizlemek yeterli sayılmaz) | `evren_api/authz.py` |
+| I | Doğrulama hatasında girdinin yansıtılması | Hata gövdesi yalnızca alan konumu ve hata türü içerir | `evren_api/errors.py` |
+| E | Grup üyeliği yoluyla görevler ayrılığı çatışması | Girişte uygulama rolü + grup ataması birleşimi `iam.sod_constraint` ile denetlenir; çatışmada giriş reddedilir ve denetime yazılır | `routers/auth.py` |
 
 ## Uygulanan denetimler (bu depoda, testli)
 
@@ -45,6 +54,11 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 - `evren_core.web.SECURITY_HEADERS`: CSP (`default-src 'none'`, inline yok), `X-Frame-Options DENY`, `nosniff`, `no-referrer`, COOP/COEP/CORP. Tarayıcı testinde CSP ihlali olursa test başarısız olur.
 - Arayüzde `innerHTML`/`eval` yasağı birim testinde ve güvenlik iş akışında denetlenir.
 - `.github/workflows/security.yml`: gitleaks (geçmiş dahil), pip-audit, bandit (yüksek eşik), Trivy (dosya sistemi + yanlış yapılandırma + sır), CycloneDX SBOM. Sürümler SHA-256 ile doğrulanır.
+  - `.gitleaks.toml` istisnası yalnızca genel anahtar kuralı ve sentetik `source_key` değerleriyle sınırlıdır; iş akışındaki olumsuz test, istisnanın gerçek bir belirteci gizlemediğini her çalıştırmada doğrular (yol bazlı istisna bu nedenle reddedildi).
+  - Bağımlılıklar hash'li ve 14 günlük tedarik zinciri bekleme süresiyle kilitlenir (ADR-0005).
+- API (`services/api`, ADR-0010): her bağlantı `evren_app_api` rolüne geçer; sorgu zaman aşımı; tüm dinamik SQL `psycopg.sql` ile kurulur; Swagger/ReDoc (dış CDN) kapalı.
+  - `services/api/tests`: 26 test — yetki reddi ve denetimi, CSRF, idempotency, sütun düzeyi yetki, Entra akışının olumsuz senaryoları (tekrar, MFA bağlamı yok, yanlış kiracı/düzenleyen/hedef kitle, sahte imza, HS256'ya algoritma değişimi, kurcalanmış çerez, SoD).
+- Uzlaştırıcı (`services/reconciler`): `evren_app_reconciler` rolüyle; denetim izini okuyamaz, CI ve kimlik anahtarı silemez (testli).
 
 ## Ağ ve platform
 

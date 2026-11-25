@@ -641,7 +641,7 @@
       "kind_label": "Evren bileşeni",
       "chapter": "consume",
       "phase": "F0",
-      "text": "Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. GRC Platformu ile aynı sözleşme ilkelerini kullanır.",
+      "text": "Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. GRC Platformu ile aynı sözleşme ilkelerini kullanır. Golden record'a yazmaz; kuyruk kararlarını kaydeder, uzlaştırıcı uygular (ADR-0010).",
       "tech": [
         "Python 3.12",
         "FastAPI",
@@ -649,7 +649,10 @@
       ],
       "security": [
         "Entra OIDC",
-        "Makine hesabı için kapsamlı anahtar"
+        "evren_app_api rolü, sütun düzeyi yetki",
+        "CSRF başlığı + aynı köken",
+        "Yetki dışı alanlar yanıta konmaz",
+        "Makine hesabı için kapsamlı anahtar (F1)"
       ]
     },
     "sn_compat_api": {
@@ -912,13 +915,16 @@
       "kind_label": "Güvenlik denetimi",
       "chapter": "security",
       "phase": "F0",
-      "text": "Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra gruplarından eşlenir. GRC Platformu ile aynı kimlik altyapısı kullanılır.",
+      "text": "Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra uygulama rollerinden ve grup atamalarından eşlenir; birleşik rol kümesi girişte görevler ayrılığı kurallarıyla denetlenir. GRC Platformu ile aynı kimlik altyapısı kullanılır.",
       "tech": [
-        "Entra ID"
+        "Entra ID",
+        "evren_api/entra.py"
       ],
       "security": [
         "Koşullu erişim",
-        "Kısa ömürlü oturum"
+        "MFA kimlik doğrulama bağlamı",
+        "PKCE + nonce, tekrar koruması",
+        "Şifreli kısa ömürlü oturum çerezi"
       ]
     },
     "rbac_abac": {

@@ -17,6 +17,7 @@ Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki *
 | 25.11.2026 | **Kaynak sistemler değişebilir** (keşif ürünü bugün BMC, yarın başka): kurallar ürüne değil kaynak rolüne bağlanır; ürün değişimi gölge → devir → emeklilik yaşam döngüsüyle yapılır | ADR-0009 |
 | 25.11.2026 | GRC Platformu'nun CMDB modülü, Evren hazır olunca CI verisini Evren'den alacak (bugün ServiceNow'dan senkron) | Proje sahibi, F2-08 |
 | 25.11.2026 | BMC ürünü: BMC Helix Discovery (on-prem mi SaaS mı belirsiz; ikisi aynı REST API) | Proje sahibi |
+| 25.11.2026 | API oturumu: Entra OIDC + PKCE + MFA bağlamı, şifreli `__Host-` çerez; rol = uygulama rolü + grup ataması, girişte SoD; API golden record'a yazmaz, kuyruk kararını uzlaştırıcı uygular | ADR-0010 |
 
 ## Varsayımlar
 
@@ -55,12 +56,24 @@ Doğrulanınca bu bölümden kaldırılacak.
   - 150 birim ve PostgreSQL 16 entegrasyon testi geçti (rol FK'leri, aynı rolde yazan kaynağın benzersiz sırası, ürün değişimi senaryoları, kimlik hatalarının regresyon testleri dahil); 13 Chromium testi geçti.
   - Demo, büyük resim, plan ve mimari harita `--check` ile güncel; demo üretimi deterministik (eşit olasılıklı adaylar artık sys_id ile sıralanıyor).
   - gitleaks, bandit, pip-audit ve Trivy bu ortamda çalıştırılmadı; CI'da çalışacak.
+- **F0-10 çekirdeği (devam ediyor):** `services/reconciler/evren_reconciler` — PostgreSQL deposu (`store.py`: çalışma başlat/bitir, kaynak kaydı, kimlik çözümleme, öznitelik uzlaştırma, `audit.ci_change`, outbox), aday dizini ve kimlik bağı (`pg_identity.py`, göç `0005_identity_index.sql`). Devre kesici yeni ve değişen kayıtları ayrı sayar (ilk yükleme karantinaya düşmez); yalnızca `OK` ve tam anlık görüntüde "görülmedi" işaretlenir. Uzlaştırıcı rolü denetim izini okuyamaz, CI ve kimlik anahtarı silemez (testli). `tools/load_demo_pg.py` sentetik envanteri aynı hattan PostgreSQL'e yükler; bellek içi hatla aynı golden record'u ürettiği test edilir.
+- **F0-09 (kod ve testler tamam, canlı Entra kabulü bekliyor):** `services/api/evren_api` (FastAPI, ADR-0010).
+  - Okuma: `/me`, `/summary`, `/sources`, `/rules`, `/controls` (provenance, inconclusive), `/meta/classes`, `/ci` (arama, süzgeç, imleçli sayfalama, kapsam boşluğu görünümleri), `/ci/{id}` (öznitelik başına kaynak), `/ci/{id}/history`.
+  - Yazma: `/match-queue/{id}/decision` — CSRF başlığı + aynı köken, `idempotency_key`, 409 sözleşmesi; karar `match_candidate` + outbox'a; uzlaştırıcı `apply_decisions` ile kimlik bağını kurar (göç `0006_api_decisions.sql`, API'nin yetkisi sütun düzeyinde).
+  - Oturum: `dev` (yalnızca 127.0.0.1) ve `entra` (PKCE, nonce, MFA bağlamı, tekrar koruması, uygulama rolü → IAM rolü, grup ataması, girişte SoD reddi).
+  - Yetki: rol ve sınıf kalıtımı, `deny` kazanır, hassasiyeti aşan alanlar yanıta konmaz, ret denetime yazılır.
+- **Arayüz ↔ API:** `lib/data.js` tek veri katmanı; `content/backend.json` ile API veya demo modu. Kuyruk kararları kalıcı, CI araması sunucuda, CI 360°'da değişim geçmişi, kimlik ve roller API'den.
+- **Belgeler:** tehdit modeline API satırları (docs/06), ADR-0010, `services/api/README.md` durum tablosu, docs/08 karar uç noktası, mimari harita (`rest_api`, `entra`).
+- **Bu oturumda düzeltilen CI hatası:** demo yükleyicisi referans verisini çağıranın rolüyle yazmaya çalışıyordu (uzlaştırıcı `ref.*` yazamaz) → her zaman `evren_app_sync` rolüne geçip geri dönüyor. GitHub'daki son üç CI kırmızısının nedeni buydu.
+- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16):** çekirdek 151, uzlaştırıcı 11, API 26 (Entra olumsuz senaryoları dahil), tarayıcı 16 (13 demo modu + 3 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında) — hepsi geçti; `ruff` temiz.
 
 ## Bilinen eksikler ve sınırlar
 
-- Ekranlar **sentetik demo verisiyle** çalışır; kuyruk kararları yalnızca oturum boyunca tutulur. Kalıcı kayıt API (F0-09) ve uzlaştırıcı (F0-10) ile gelecek.
-- Gölge kaynağın CI açmaması `SourceRegistry.may_create_ci` ile tanımlı; uzlaştırıcı servisi henüz olmadığı için uçtan uca zorlanmıyor (F0-10'da).
-- API, alım geçidi, uzlaştırıcı, sn-sync ve MCP servisleri yok (`services/*/README.md` tanımları var).
+- Veritabanındaki veri **sentetiktir** (`tools/load_demo_pg.py`); arayüz bunu üst çubukta işaretler. Statik sunucuda (demo modu) kuyruk kararları yalnızca oturumluktur.
+- Entra akışı sahte kimlik sağlayıcıyla test edildi; **kurumun Entra kaydıyla canlı kabul yapılmadı.**
+- API'de henüz yok: CI düzenleme (`PATCH`, Manual kaynak kaydı), birleştirmeyi ayırma (`split`), makine hesapları, ServiceNow uyumlu uç noktalar (F2-05), ABAC koşul değerlendirmesi (koşullu izinler şimdilik verilmez).
+- Uzlaştırıcı kararları `apply_decisions` ile uygular, ancak bunu tetikleyen sürekli çalışan servis (Kafka tüketicisi) ve alım geçidi yok; hedef ortam kararını bekliyor. sn-sync ve MCP servisleri yok.
+- Oturum iptali çerez süresine bağlı (8 saat); anında iptal için sunucu tarafı iptal listesi gerekir (ADR-0010).
 - Bağımlı CI kimliği (uygulama, ağ adaptörü) uygulanmadı; çözümleyici bilinçli olarak `insufficient` döner.
 - Encoded query dot-walk desteklemiyor; açık hata döner.
 - BMC Helix Discovery, NNMi, vCenter ve ServiceNow alan adları gerçek API çıktısıyla doğrulanmadı (`verify: true`).
@@ -69,18 +82,19 @@ Doğrulanınca bu bölümden kaldırılacak.
 
 ## Sıradaki adımlar (sırayla)
 
-2. **F0-07** — `tools/sn_metadata_export.py` ile kurum sözlüğü; `verify` işaretleri kapatılır. *Sizden: SN salt okunur hesap.*
-3. **F0-09** — `services/api`: FastAPI, psycopg 3, Entra OIDC (`tedarik/vendor/entra_auth.py` deseni), rol eşlemesi, OpenAPI 3.1; ekranlar demo yerine API'den beslenir. *Sizden: Entra uygulama kaydı.*
+1. **F0-12** — Birleştirmeyi ayırma: `POST /ci/{id}/split`, uzlaştırıcıda bağın geri alınması, CI 360°'da "ayır" eylemi.
+2. **F0-09 devamı** — `PATCH /ci/{id}` (Manual kaynak kaydı → uzlaştırma, 202); canlı Entra kabulü. *Sizden: Entra uygulama kaydı (kiracı, istemci, `Evren.*` uygulama rolleri, MFA bağlamı).*
+3. **F0-07** — `tools/sn_metadata_export.py` ile kurum sözlüğü; `verify` işaretleri kapatılır. *Sizden: SN salt okunur hesap.*
 4. **F0-08** — ServiceNow CMDB ilk yüklemesi (eşleme ve `import_existing` hazır).
-5. **F0-10** — Alım geçidi, Kafka, uzlaştırıcı servisi (gölge kaynak kuralları dahil). *Sizden: hedef ortam kararı.*
-6. **F0-11** — vCenter ve Zabbix bağlayıcıları.
-7. **F0-12** — Eşleştirme kuyruğu kararlarının kalıcı kaydı (ekran hazır).
-8. **F0-13** — Gölge mod raporları; GRC Platformu'na kanıt aktarımı.
+5. **F0-10 devamı** — Alım geçidi, Kafka tüketicisi, uzlaştırıcıyı sürekli çalıştıran servis. *Sizden: hedef ortam kararı.*
+6. **F0-11** — vCenter ve Zabbix bağlayıcıları. *Sizden: salt okunur servis hesapları.*
+7. **F0-13** — Gölge mod raporları; GRC Platformu'na kanıt aktarımı.
 
 ## Açık sorular
 
 - BMC Helix Discovery kurulumu on-prem appliance mı, Helix SaaS mı?
 - ServiceNow SaaS mı; MID Server var mı?
 - Hedef ortam Kubernetes/OpenShift mi, VM üzerinde Docker mı?
+- Entra uygulama kaydını kim açacak; GRC Platformu'nun kaydı mı genişletilecek, ayrı kayıt mı?
 - Kurumun sır kasası ve SIEM ürünü hangisi?
 - Yapay zekâ için onaylı model ve veri yerleşimi politikası nedir?

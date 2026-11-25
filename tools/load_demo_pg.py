@@ -105,9 +105,10 @@ def seed_history(conn: psycopg.Connection[Any], counts: dict[str, int]) -> None:
 
 def seed_refs(conn: psycopg.Connection[Any], refs: dict[str, str], role: str | None) -> None:
     """Referans verileri (grup, kişi, konum): üretimde sn-sync yansıtır; burada aynı rolle (evren_app_sync)."""
+    # Çağıranın rolü ne olursa olsun (uzlaştırıcı ref.* tablolarına yazamaz) senkron rolüne geçilir, sonra geri dönülür.
+    current = conn.execute("SELECT current_user").fetchone()[0]  # type: ignore[index]
     with conn.transaction():
-        if role:
-            conn.execute("SET ROLE evren_app_sync")
+        conn.execute("SET ROLE evren_app_sync")
         with conn.cursor() as cur:
             for key, sys_id in refs.items():
                 kind, label = key.split(":", 1)
@@ -121,8 +122,7 @@ def seed_refs(conn: psycopg.Connection[Any], refs: dict[str, str], role: str | N
                 elif kind == "location":
                     cur.execute("INSERT INTO ref.cmn_location (sys_id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                                 (sys_id, label))
-        if role:
-            conn.execute(psycopg.sql.SQL("SET ROLE {}").format(psycopg.sql.Identifier(role)))
+        conn.execute(psycopg.sql.SQL("SET ROLE {}").format(psycopg.sql.Identifier(role or current)))
 
 
 def load(conn: psycopg.Connection[Any], role: str | None = "evren_app_reconciler") -> dict[str, Any]:

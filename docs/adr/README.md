@@ -11,5 +11,6 @@
 | [0007](0007-mcp-kurum-uygulamasi.md) | MCP: kurumun kendi uygulaması + Evren MCP sunucusu | Kabul edildi | 25.11.2026 |
 | [0008](0008-guvenlik-temeli.md) | Güvenlik temeli: tek yazar, en az yetkili roller, salt ekleme denetim izi | Kabul edildi | 25.11.2026 |
 | [0009](0009-kaynak-rolleri-urun-bagimsizligi.md) | Kaynak rolleri: kurallar ürüne değil role bağlı; yaşam döngüsüyle ürün değişimi | Kabul edildi | 25.11.2026 |
+| [0010](0010-api-oturum-ve-yetki.md) | API: Entra OIDC + PKCE, şifreli çerez oturumu, RBAC + hassasiyet + SoD, kararı uzlaştırıcı uygular | Kabul edildi | 25.11.2026 |
 
 Yeni karar: `/adr <başlık>` komutu.

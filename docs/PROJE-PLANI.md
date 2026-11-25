@@ -14,7 +14,7 @@
 
 1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
-1. **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Planlandı_  
+1. **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_  
    Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
 1. **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
@@ -22,14 +22,14 @@
    Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
-1. **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır) — _Planlandı_
+1. **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır) — _Devam ediyor_
 
 ## Sizden gerekenler (karar ve erişim)
 
 | Adım | Gereken | Durum |
 | --- | --- | --- |
 | F0-07 | ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma | Planlandı |
-| F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Planlandı |
+| F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Devam ediyor |
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
 | F0-10 | Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı | Devam ediyor |
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Planlandı |
@@ -72,7 +72,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Not: 25.11.2026: hash'li kilitler (14 gün bekleme), imaj digest'i, gitleaks istisnası olumsuz testli; iki iş akışı yeşil.
 - [ ] **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_
   - Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
-- [ ] **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Planlandı_
+- [ ] **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_
+  - Not: Kod ve testler tamam (services/api, ADR-0010): okuma uç noktaları, kalıcı kuyruk kararı, Entra OIDC + PKCE, rol eşlemesi, girişte SoD; arayüz API modunda çalışıyor. Canlı Entra kaydıyla kabul bekliyor. CI düzenleme (PATCH, Manual kaydı) ve ServiceNow uyumlu uç noktalar sonraki adım.
   - Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
 - [ ] **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_
   - Not: Eşleme dosyası ve sys_id koruyan ilk yükleme mantığı hazır (connectors/servicenow_cmdb, IdentityEngine.import_existing).
@@ -82,8 +83,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 - [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
-- [ ] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır) — _Planlandı_
-  - Not: Önizleme ekranı F0-16 ile geldi; kararların kalıcı kaydı API ve uzlaştırıcıyla.
+- [ ] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır) — _Devam ediyor_
+  - Not: Yan yana karşılaştırma, kanıtlar ve kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) tamam; uzlaştırıcı kararları uygular. Birleştirmeyi ayırma (split) ekranı ve uç noktası eksik.
 - [ ] **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Planlandı_
   - Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
 

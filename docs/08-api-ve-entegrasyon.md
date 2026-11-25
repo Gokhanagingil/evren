@@ -22,6 +22,20 @@ Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 - **Zaman:** saat dilimli ISO 8601, UTC saklama.
 - **Hata gövdesi:** `{"error": {"code", "message" (Türkçe), "details"}}`.
 - **Sayfalama:** imleç + `limit` (en fazla 1000).
+- **Oturum:** tarayıcı için Entra ID OIDC + PKCE ve şifreli `__Host-` çerezi; durum değiştiren isteklerde `X-Evren-Request: 1` başlığı (ADR-0010). Makine hesapları (GRC Platformu, otomasyon) için kapsamlı istemci kimliği F1'de eklenecek.
+- **Uygulanan uç noktalar** ve durumları: `services/api/README.md`. Makine tarafından okunur sözleşme: `GET /api/v1/openapi.json`.
+
+### Eşleştirme kararı
+
+`POST /api/v1/match-queue/{id}/decision`:
+
+```json
+{"decision": "merge", "ci_sys_id": "<32 hex>", "note": "Seri doğrulandı", "idempotency_key": "ui-…"}
+```
+
+- `decision`: `merge` (aday zorunlu), `new_ci`, `defer`, `fix_at_source`.
+- Yanıt: `{"decision", "label", "ci_sys_id", "applied": false, "replayed", "message"}`. Karar `match_candidate`'e ve `evren.match.decided.v1` olayı olarak outbox'a yazılır; kimlik bağını ve CI'ı uzlaştırıcı kurar (`applied` sonradan `true` olur).
+- `409`: kayıt zaten karar almış, aday kuyrukta değil veya aynı anahtar farklı içerikle kullanılmış. `403`: Eşleştirme analisti rolü yok.
 
 ## ServiceNow uyumlu Table API
 
