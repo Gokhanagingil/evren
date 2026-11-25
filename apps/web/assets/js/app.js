@@ -1,7 +1,7 @@
 // Evren arayüzü — derlemesiz ES modülleri, hash tabanlı yönlendirme. Kabuk GRC Platformu (tedarik) düzenindedir.
 import { h, append, clear, errorBox, fold } from './lib/dom.js';
 import { icon } from './lib/icons.js';
-import { demo } from './lib/data.js';
+import { backend, ciSearch, overview, queueCounts, queueView, sourcesView } from './lib/data.js';
 import { closeDetail, closeOverlay, dialog, isDetailOpen, isOverlayOpen, palette, setHeader } from './lib/shell.js';
 import { renderOverview } from './pages/overview.js';
 import { renderQueue } from './pages/queue.js';
@@ -117,23 +117,24 @@ async function navigate() {
   document.getElementById('main').focus({ preventScroll: true });
 }
 
-async function searchItems() {
+async function searchItems(query = '') {
   const items = Object.entries(ROUTES).map(([id, r]) => ({ group: 'Sayfalar', label: r.title, kind: 'Sayfa', href: `#/${id}` }));
   try {
-    const d = await demo();
-    for (const c of d.cis) {
+    const [cis, src, queue] = await Promise.all([
+      query ? ciSearch({ q: query, limit: 25 }) : Promise.resolve({ items: [] }), sourcesView(), queueView('open')]);
+    for (const c of cis.items) {
       items.push({ group: 'Konfigürasyon öğeleri', label: c.name, sub: [c.class_label, c.ip_address, c.fqdn].filter(Boolean).join(' · '),
         kind: c.class_label, href: `#/ci/${c.sys_id}`, keywords: `${c.sys_id} ${c.os || ''} ${c.sources.join(' ')}` });
     }
-    for (const s of d.sources) {
+    for (const s of src.sources) {
       items.push({ group: 'Veri kaynakları', label: s.label_tr, sub: `${s.name} · ${s.role_label}`, kind: 'Kaynak', href: `#/kaynaklar/${s.name}`,
         keywords: `${s.product?.name || ''} ${s.product?.vendor || ''} ${s.connector || ''}` });
     }
-    for (const q of d.queue) {
-      items.push({ group: 'Eşleştirme kuyruğu', label: `${q.id} · ${q.record.name || q.source_key}`, sub: q.summary, kind: q.data_source,
+    for (const q of queue.items) {
+      items.push({ group: 'Eşleştirme kuyruğu', label: `${q.code || q.id} · ${q.record.name || q.source_key}`, sub: q.summary, kind: q.data_source,
         href: `#/kuyruk/${q.id}` });
     }
-  } catch { /* demo verisi yoksa yalnızca sayfalar */ }
+  } catch { /* veri alınamazsa yalnızca sayfalar */ }
   return items;
 }
 
@@ -145,7 +146,9 @@ function openHelp() {
     body: [
       h('p', {}, r.help),
       h('p', {}, 'Klavye: Ctrl+K hızlı arama · ? bu yardım · Esc paneli veya pencereyi kapatır · Tab ile satırlara gelip Enter ile açın.'),
-      h('p', { class: 'muted' }, 'Ekranlardaki CI, çalışma ve kuyruk kayıtları sentetik demo verisidir; kurallar, roller ve eşleme dosyaları gerçek metadata\'dır.'),
+      h('p', { class: 'muted' }, document.body.dataset.mode === 'api'
+        ? 'Veriler Evren API\'sinden gelir; yazma işlemleri yetkinize göre açılır.'
+        : 'Demo modu: CI, çalışma ve kuyruk kayıtları sentetiktir; kurallar, roller ve eşleme dosyaları gerçek metadata\'dır.'),
     ],
   });
 }
@@ -174,9 +177,29 @@ function setupShell() {
   });
 }
 
+async function setupIdentity() {
+  const { mode, me } = await backend();
+  document.body.dataset.mode = mode;
+  const flag = document.querySelector('.demo-flag');
+  const box = document.querySelector('.identity');
+  if (mode === 'api') {
+    const s = (await overview()).summary;
+    flag.hidden = !s.synthetic;
+    clear(box).append(h('strong', {}, me.name), h('span', {}, me.roles.map((r) => r.label_tr).join(', ') || 'Rol yok'));
+    document.querySelector('.avatar').textContent = (me.name || '?').trim().charAt(0).toLocaleUpperCase('tr');
+    if (me.mode === 'entra') {
+      box.append(h('button', { class: 'btn ghost small', type: 'button', id: 'signOut', onclick: async () => {
+        await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin', headers: { 'X-Evren-Request': '1' } });
+        location.assign('/auth/login');
+      } }, 'Çıkış'));
+    }
+  }
+}
+
 setupShell();
 buildNav(0);
-demo().then((d) => buildNav(d.summary.queue_review + d.summary.queue_insufficient)).then(() => {
+setupIdentity().catch(() => {});
+queueCounts().then((n) => buildNav(n)).then(() => {
   const { route } = parseHash();
   document.querySelector(`#nav a[data-route="${route}"]`)?.setAttribute('aria-current', 'page');
 }).catch(() => {});

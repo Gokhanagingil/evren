@@ -1,7 +1,7 @@
 // Genel Bakış: karar bekleyen işler önce; kapsam, kaynak sağlığı ve GRC Platformu'na giden kontroller.
 import { h, s, formatDateTime, formatNumber, metric, pill, percent } from '../lib/dom.js';
 import { setHeader } from '../lib/shell.js';
-import { BREAKER, CONTROL, demo, srcChip } from '../lib/data.js';
+import { BREAKER, CONTROL, overview, srcChip } from '../lib/data.js';
 
 function gauge(value) {
   const r = 34;
@@ -14,7 +14,7 @@ function gauge(value) {
 }
 
 export async function renderOverview(view) {
-  const d = await demo();
+  const d = await overview();
   const sm = d.summary;
   const writers = d.sources.filter((x) => x.runs.length);
   const quarantined = writers.filter((x) => x.breaker === 'open');
@@ -31,7 +31,7 @@ export async function renderOverview(view) {
   });
 
   view.append(
-    h('p', { class: 'notice warn' }, d.note),
+    d.note ? h('p', { class: 'notice warn' }, d.note) : null,
     h('section', { class: 'hero', 'aria-label': 'Özet' },
       h('div', {},
         h('div', { class: 'hero-kicker' }, date),

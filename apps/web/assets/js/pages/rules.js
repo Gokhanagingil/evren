@@ -1,7 +1,7 @@
 // Kurallar: uzlaştırma (sınıf × rol öncelik ızgarası), tanımlama (IRE), veri tazeleme ve eskime. Kaynak: metadata/*.yaml.
 import { h, append, clear, pill, tabs } from '../lib/dom.js';
 import { setHeader } from '../lib/shell.js';
-import { demo, srcChip } from '../lib/data.js';
+import { rulesView, sourcesView, srcChip } from '../lib/data.js';
 
 const ATTR_TR = {
   serial_number: 'seri', serial_number_type: 'seri tipi', bios_uuid: 'BIOS UUID', fqdn: 'FQDN', name: 'ad', mac_address: 'MAC',
@@ -9,7 +9,8 @@ const ATTR_TR = {
 };
 
 export async function renderRules(view, param) {
-  const d = await demo();
+  const [rules, sv] = await Promise.all([rulesView(), sourcesView()]);
+  const d = { rules, roles: sv.roles, sources: sv.sources };
   const roleLabel = Object.fromEntries(d.roles.map((r) => [r.name, r.label_tr]));
   const roleOrder = d.roles.filter((r) => d.rules.reconciliation.some((g) => r.name in g.priorities)).map((r) => r.name);
   let tab = ['uzlastirma', 'tanimlama', 'tazeleme'].includes(param) ? param : 'uzlastirma';

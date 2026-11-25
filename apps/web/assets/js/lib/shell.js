@@ -130,9 +130,13 @@ export function palette(buildItems) {
     input.setAttribute('aria-activedescendant', results.length ? `pal-${active}` : '');
     list.querySelector(`#pal-${active}`)?.scrollIntoView({ block: 'nearest' });
   }
+  let seq = 0;
   async function search() {
-    const q = fold(input.value.trim());
-    const all = await buildItems();
+    const raw = input.value.trim();
+    const q = fold(raw);
+    const my = ++seq;
+    const all = await buildItems(raw);
+    if (my !== seq) return; // eski yanıt yeni aramayı ezmesin
     results = (q ? all.filter((it) => fold(`${it.label} ${it.sub || ''} ${it.keywords || ''}`).includes(q)) : all.filter((it) => it.group === 'Sayfalar'))
       .slice(0, 40);
     active = 0;

@@ -1,7 +1,7 @@
 // Veri kaynakları: rol → ürün kaydı, yaşam döngüsü, devre kesici ve çalışma geçmişi; ürün değişimi yordamı.
 import { h, s, dataTable, formatDateTime, formatNumber, kv, metric, pill, section } from '../lib/dom.js';
 import { closeDetail, openDetail, setHeader } from '../lib/shell.js';
-import { BREAKER, LIFECYCLE, demo, srcChip } from '../lib/data.js';
+import { BREAKER, LIFECYCLE, sourcesView, srcChip } from '../lib/data.js';
 
 function runsChart(runs) {
   const list = [...runs].reverse();
@@ -23,7 +23,7 @@ function runsChart(runs) {
 }
 
 export async function renderSources(view, param) {
-  const d = await demo();
+  const d = await sourcesView();
   let selected = null;
   let table = null;
 

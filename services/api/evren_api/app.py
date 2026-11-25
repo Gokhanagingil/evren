@@ -81,6 +81,11 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     for r in (platform.router, ci.router, queue.router, auth.router):
         app.include_router(r)
 
+    @app.get("/content/backend.json", include_in_schema=False)
+    def backend_marker() -> JSONResponse:
+        # Arayüz bu işaretle API modunda çalışır (statik sunucuda aynı dosya "demo" der).
+        return JSONResponse({"mode": "api", "auth_mode": settings.auth_mode}, headers={"Cache-Control": "no-store"})
+
     web_root = settings.web_root.resolve()
 
     def _static(path: str) -> Path | None:

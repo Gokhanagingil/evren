@@ -1,0 +1,4 @@
+{
+ "mode": "demo",
+ "note": "Statik geliştirme sunucusu (tools/dev_server.py): ekranlar sentetik demo verisiyle çalışır. Evren API sunucusu bu adrese {\"mode\": \"api\"} döner."
+}

@@ -1,10 +1,10 @@
 // GRC Kontrolleri: GRC Platformu'na (tedarik) giden CMDB tabanlı kontrol sonuçlarının önizlemesi.
 import { h, dataTable, kv, metric, pill, section } from '../lib/dom.js';
 import { closeDetail, openDetail, setHeader } from '../lib/shell.js';
-import { CONTROL, demo } from '../lib/data.js';
+import { CONTROL, controlsView } from '../lib/data.js';
 
 export async function renderControls(view, param) {
-  const d = await demo();
+  const d = { controls: await controlsView() };
   let selected = null;
   let table = null;
 

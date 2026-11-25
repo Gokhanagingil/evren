@@ -174,9 +174,22 @@ def summary(ctx: Ctx = Depends(context)) -> dict[str, Any]:
         unauth = cur.fetchone()[0]  # type: ignore[index]
         cur.execute("SELECT count(*) FROM ingest.source_record")
         records = cur.fetchone()[0]  # type: ignore[index]
+        cur.execute("SELECT EXISTS (SELECT 1 FROM ingest.source_run WHERE notes LIKE 'sentetik%%')")
+        synthetic = cur.fetchone()[0]  # type: ignore[index]
     return {"generated_at": datetime.now(UTC).isoformat(), "ci_count": total, "server_count": servers,
             "network_count": net, "vm_count": vms, "queue_review": q.get("review", 0),
             "queue_insufficient": q.get("insufficient", 0),
             "queue_unmatched": q.get("unmatched_shadow", 0) + q.get("unmatched_retiring", 0),
             "unmonitored": unmon, "unprotected": unprot, "not_in_itsm": noitsm, "unauthorized_attempts": unauth,
-            "records": records}
+            "records": records, "synthetic": synthetic}
+
+
+@router.get("/meta/classes")
+def classes(ctx: Ctx = Depends(context)) -> list[dict[str, Any]]:
+    """Golden record'da kaydı olan sınıflar (filtre seçenekleri için); okunamayan sınıflar listelenmez."""
+    ctx.require("cmdb_ci", "read")
+    pres = ctx.state.presenter
+    with ctx.conn.cursor() as cur:
+        cur.execute("SELECT sys_class_name, count(*) FROM cmdb.cmdb_ci GROUP BY 1 ORDER BY 1")
+        rows = cur.fetchall()
+    return [{"name": n, "label_tr": pres.class_label(n), "count": c} for n, c in rows if ctx.grant(n, "read").allowed]

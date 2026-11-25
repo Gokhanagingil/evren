@@ -154,8 +154,11 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                              [v for att in conflicts.values() if isinstance(att, list) for _, v in att
                               if isinstance(v, str)])
     attrs = []
+    derived = {"discovery_source": "İlk keşfeden kaynak", "first_discovered": "Bağlı kaynakların ilk görülme zamanı",
+               "last_discovered": "Keşif rollerindeki kaynakların son gözlem zamanı"}
     for name in sorted(values, key=lambda n: (n != "name", n)):
-        w = winners.get(name, {})
+        w = winners.get(name) or ({"source": "Evren", "role": "Platform", "reason": f"Evren türetir: {derived[name]}"}
+                                  if name in derived else {})
         attrs.append({
             "attribute": name, "label": fields[name].get("label_tr", name), "value": values[name],
             "display": pres.display(name, values[name], refs), "source": w.get("source", "—"),
