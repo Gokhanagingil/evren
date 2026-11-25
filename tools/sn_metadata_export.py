@@ -20,6 +20,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import sys
 import urllib.parse
 import urllib.request
@@ -65,9 +66,32 @@ def _auth_header() -> str:
     raise SystemExit("Kimlik bilgisi yok: EVREN_SN_TOKEN_FILE veya EVREN_SN_USER + EVREN_SN_PASSWORD_FILE")
 
 
+_TABLE = re.compile(r"^[a-z][a-z0-9_]{1,79}$")
+
+
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    """Yönlendirme izlenmez: kimlik bilgisi başka bir adrese taşınamaz."""
+
+    def redirect_request(self, *args: Any, **kwargs: Any) -> None:
+        return None
+
+
+_OPENER = urllib.request.build_opener(_NoRedirect)
+
+
+def validated_instance(instance: str) -> str:
+    """Yalnızca ``https://<ana makine>[:port]`` kabul edilir: kullanıcı bilgisi, yol, sorgu ve parça reddedilir."""
+    parts = urllib.parse.urlsplit(instance.rstrip("/"))
+    if (parts.scheme != "https" or not parts.hostname or parts.username or parts.password
+            or parts.path or parts.query or parts.fragment):
+        raise SystemExit("EVREN_SN_INSTANCE yalnızca https://<örnek>.service-now.com biçiminde olmalı")
+    return f"https://{parts.netloc}"
+
+
 def fetch_table(instance: str, table: str, query: str, fields: Iterable[str]) -> list[dict[str, Any]]:
-    if not instance.startswith("https://"):
-        raise SystemExit("EVREN_SN_INSTANCE https:// ile başlamalı")
+    instance = validated_instance(instance)
+    if not _TABLE.match(table):
+        raise SystemExit(f"Geçersiz tablo adı: {table}")
     rows: list[dict[str, Any]] = []
     offset = 0
     header = _auth_header()
@@ -76,9 +100,10 @@ def fetch_table(instance: str, table: str, query: str, fields: Iterable[str]) ->
             "sysparm_query": query, "sysparm_fields": ",".join(fields), "sysparm_limit": PAGE,
             "sysparm_offset": offset, "sysparm_exclude_reference_link": "true", "sysparm_display_value": "false",
         })
-        req = urllib.request.Request(f"{instance}/api/now/table/{table}?{params}",  # noqa: S310 - https zorunlu
+        req = urllib.request.Request(f"{instance}/api/now/table/{table}?{params}",  # noqa: S310 - validated_instance
                                      headers={"Accept": "application/json", "Authorization": header})
-        with urllib.request.urlopen(req, timeout=60) as res:  # noqa: S310 - https zorunlu, yukarıda doğrulandı
+        # Şema https ve ana makine validated_instance ile doğrulandı; yönlendirme izlenmez.
+        with _OPENER.open(req, timeout=60) as res:  # nosec B310
             batch = json.load(res).get("result", [])
         rows.extend(batch)
         if len(batch) < PAGE:

@@ -100,7 +100,7 @@ class Host:
 
 class Gen:
     def __init__(self) -> None:
-        self.rng = random.Random(SEED)  # noqa: S311 - sentetik demo verisi, kriptografik değil
+        self.rng = random.Random(SEED)  # noqa: S311  # nosec B311 - sentetik demo verisi, kriptografik değil
 
     def hex(self, n: int = 32) -> str:
         return f"{self.rng.getrandbits(n * 4):0{n}x}"
@@ -553,7 +553,7 @@ RUN_PROFILE = {
 
 
 def build_sources(p: Pipeline, stats: dict[str, dict[str, int]]) -> tuple[list[dict[str, Any]], dict[str, str]]:
-    rng = random.Random(SEED + 7)  # noqa: S311 - sentetik demo verisi
+    rng = random.Random(SEED + 7)  # noqa: S311  # nosec B311 - sentetik demo verisi
     out, states = [], {}
     for src in p.md.data_sources:
         name = src["name"]

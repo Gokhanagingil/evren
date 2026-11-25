@@ -1,7 +1,14 @@
-# Evren çalışma zamanı bağımlılıkları (üst düzey). Kilit dosyası hash'li üretilir:
-#   pip-compile --generate-hashes --allow-unsafe -o requirements/runtime.txt requirements/runtime.in
-# Yeni bağımlılık eklemeden önce gerekçe + ADR (CLAUDE.md, Güvenlik kuralları).
+# Evren çalışma zamanı bağımlılıkları (üst düzey). Kilit dosyası hash'li üretilir (Linux, CPython 3.12):
+# Tedarik zinciri bekleme süresi: yalnızca en az 14 gün önce yayımlanmış sürümler kilitlenir (--exclude-newer).
+#   uv pip compile requirements/runtime.in --generate-hashes --python-version 3.12 --python-platform x86_64-unknown-linux-gnu --exclude-newer <bugün-14 gün> -o requirements/runtime.txt
+# Kurulum: python -m pip install --require-hashes -r requirements/runtime.txt
+# Yeni bağımlılık eklemeden önce gerekçe + ADR (CLAUDE.md, Güvenlik kuralları). Gerekçeler: ADR-0005.
 pydantic>=2.7,<3
+PyJWT>=2.10,<3            # Entra ID belirteci doğrulama (GRC Platformu ile aynı)
+cryptography>=44          # RS256 imza, Fernet ile mühürlü oturum/akış çerezi
+# services/api (F0-09)
+fastapi>=0.115,<1
+uvicorn>=0.32,<1          # ASGI sunucusu; [standard] ekleri bilinçli olarak alınmaz (yüzey küçük kalsın)
+psycopg[binary,pool]>=3.2,<4
 PyYAML>=6.0,<7
-# Faz 0 servisleri (services/api, services/reconciler) ile eklenecek — ADR-0005:
-# fastapi, uvicorn[standard], psycopg[binary,pool], PyJWT, cryptography, confluent-kafka
+# services/reconciler Kafka bağlayıcısı (confluent-kafka) F0-10'un ikinci adımında eklenecek.
