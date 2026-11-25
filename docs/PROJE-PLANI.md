@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 7/45 adım tamamlandı
+**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 8/45 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -12,7 +12,6 @@
 
 ## Sıradaki adımlar
 
-1. **F0-16** Arayüzün GRC Platformu görsel diline taşınması; Veri Kaynakları, Eşleştirme Kuyruğu, CI 360°, Kurallar ve GRC Kontrolleri önizleme ekranları (sentetik demo) — _Devam ediyor_
 1. **F0-06** CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM — _Devam ediyor_  
    Sizden gereken: GitHub Actions'ın repoda etkin olması (bulgular CI'da kapatılacak)
 1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_  
@@ -23,6 +22,8 @@
    Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
 1. **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Planlandı_  
    Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
+1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
+   Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 
 ## Sizden gerekenler (karar ve erişim)
 
@@ -56,7 +57,7 @@
 
 ## F0 · Temel ve gölge mod
 
-_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 7/16 adım
+_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 8/16 adım
 
 Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki kaynağın gölge modda eşleştirilmesi. ServiceNow'a hiçbir yazma yapılmaz.
 
@@ -67,7 +68,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [x] **F0-05** Uygulama içi Mimari Harita ve Yol Haritası sayfaları
 - [x] **F0-14** Kaynak rolleri: kurallar ürüne değil role bağlı; gölge/devir/emeklilik yaşam döngüsü (ADR-0009)
 - [x] **F0-15** Büyük resim çizimi ve adım adım proje planı
-- [ ] **F0-16** Arayüzün GRC Platformu görsel diline taşınması; Veri Kaynakları, Eşleştirme Kuyruğu, CI 360°, Kurallar ve GRC Kontrolleri önizleme ekranları (sentetik demo) — _Devam ediyor_
+- [x] **F0-16** Arayüzün GRC Platformu görsel diline taşınması; Veri Kaynakları, Eşleştirme Kuyruğu, CI 360°, Kurallar ve GRC Kontrolleri önizleme ekranları (sentetik demo)
   - Not: Demo verisi çekirdeğin gerçek hattından üretilir (tools/build_demo.py); kalıcı kararlar API ile (F0-09, F0-10).
 - [ ] **F0-06** CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM — _Devam ediyor_
   - Not: İş akışları yazıldı; GitHub'da ilk çalıştırma bekliyor.
@@ -95,7 +96,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] Örneklem denetiminde yanlış birleştirme oranı %0,5'in altında
 - [x] ServiceNow'a hiçbir yazma yapılmadı
 - [ ] CI güvenlik kapıları yeşil; yüksek veya kritik bulgu yok
-- [ ] İlk kapsam raporu KS GRC'ye kanıt olarak aktarıldı
+- [ ] İlk kapsam raporu GRC Platformu'na kanıt olarak aktarıldı
 
 **Riskler**
 

@@ -38,7 +38,7 @@ Gereksinimler: Python 3.12+, PostgreSQL 16+. Tarayıcı testleri için Playwrigh
 | [docs/05-servicenow-gecisi.md](docs/05-servicenow-gecisi.md) | Ana kaynak / replika deseni |
 | [docs/06-guvenlik.md](docs/06-guvenlik.md) | Tehdit modeli (STRIDE), denetimler, standart eşlemesi |
 | [docs/07-yetkilendirme.md](docs/07-yetkilendirme.md) | Rol–yetki matrisi, SoD |
-| [docs/08-api-ve-entegrasyon.md](docs/08-api-ve-entegrasyon.md) | REST, ServiceNow uyumlu API, olaylar, KS GRC |
+| [docs/08-api-ve-entegrasyon.md](docs/08-api-ve-entegrasyon.md) | REST, ServiceNow uyumlu API, olaylar, GRC Platformu |
 | [docs/09-mcp-sozlesmesi.md](docs/09-mcp-sozlesmesi.md) | Kurum MCP uygulaması ve Evren MCP sunucusu |
 | [docs/10-arayuz-ilkeleri.md](docs/10-arayuz-ilkeleri.md) | UX ilkeleri ve ekranlar |
 | [docs/11-yapay-zeka.md](docs/11-yapay-zeka.md) | Yapay zekâ kullanımı ve ISO/IEC 42001 yönetişimi |

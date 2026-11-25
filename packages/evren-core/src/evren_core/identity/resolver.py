@@ -153,7 +153,7 @@ class IdentityResolver:
                     return Resolution(Outcome.RULE_MATCH, ci, rule=entry.label)
                 ranked = sorted(
                     ((c, self._score(record, keys, self.index.profile(c)).probability) for c in found),
-                    key=lambda item: -item[1],
+                    key=lambda item: (-item[1], item[0]),
                 )
                 return Resolution(
                     Outcome.REVIEW, rule=entry.label, candidates=tuple(ranked),
@@ -162,7 +162,7 @@ class IdentityResolver:
 
         scored = sorted(
             ((c, self._score(record, keys, self.index.profile(c))) for c in self.index.blocking_candidates(keys, family)),
-            key=lambda item: -item[1].probability,
+            key=lambda item: (-item[1].probability, item[0]),
         )
         no_identity = ("Yalnızca kaynak içi kimlik ve/veya IP var; yeni CI için ad, FQDN, seri, UUID veya MAC gerekir",)
         if not scored:

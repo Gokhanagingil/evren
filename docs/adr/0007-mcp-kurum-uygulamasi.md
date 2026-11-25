@@ -11,10 +11,10 @@
 ## Karar
 
 - Evren kendi MCP sunucusunu sunar (`services/mcp`): salt okunur araçlar ve öneri araçları.
-- Kurum MCP uygulaması Evren'e bu sunucu üzerinden ve KS GRC'deki REST sözleşme ilkeleriyle bağlanır.
+- Kurum MCP uygulaması Evren'e bu sunucu üzerinden ve GRC Platformu'ndaki REST sözleşme ilkeleriyle bağlanır.
 - MCP veri replikasyonu için kullanılmaz. MCP üzerinden doğrudan yazma yoktur.
 
 ## Sonuçlar
 
-- **Olumlu:** Tek bir orkestrasyon katmanı (kurum MCP uygulaması) ServiceNow, Dynamics, KS GRC ve Evren'i birlikte kullanabilir.
+- **Olumlu:** Tek bir orkestrasyon katmanı (kurum MCP uygulaması) ServiceNow, Dynamics, GRC Platformu ve Evren'i birlikte kullanabilir.
 - **Risk:** İstem enjeksiyonu. CMDB içeriği veri olarak işaretlenir; MCP rolü yazamaz.

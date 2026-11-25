@@ -5,7 +5,7 @@
 Evren iki yoldan bağlanır:
 
 1. **Evren MCP sunucusu** (`services/mcp`): yapay zekâ ajanlarına araç sunar.
-2. **REST sözleşmesi:** kurum MCP uygulamasının adaptörü Evren API'sini KS GRC'deki gibi doğrudan kullanır.
+2. **REST sözleşmesi:** kurum MCP uygulamasının adaptörü Evren API'sini GRC Platformu'ndaki gibi doğrudan kullanır.
 
 ## Sınırlar
 
@@ -39,10 +39,10 @@ Evren iki yoldan bağlanır:
 
 ## Kurum MCP uygulaması için REST akışı
 
-KS GRC sözleşmesiyle aynı ilkeler geçerli:
+GRC Platformu sözleşmesiyle aynı ilkeler geçerli:
 
 1. `GET /api/v1/ci?sysparm_query=…` ile okuma. Sayfalamayı tamamla; eksik sayfa başarı sayılmaz.
-2. Sonucu KS GRC'ye yazarken `provenance.query_reference` alanına Evren sorgusunu, `collection_status` alanına Evren kaynak çalışmalarının durumunu koy.
+2. Sonucu GRC Platformu'na yazarken `provenance.query_reference` alanına Evren sorgusunu, `collection_status` alanına Evren kaynak çalışmalarının durumunu koy.
 3. Yazma gerekiyorsa `POST /api/v1/proposals` kullan; `idempotency_key` zorunlu.
 
 ## Doğrulama

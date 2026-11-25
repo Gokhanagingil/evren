@@ -6,7 +6,7 @@ Bu dosya Claude Code için proje yönergesidir. Her oturumun başında bunu ve `
 
 Evren, kurum içi ve on-prem çalışan bir CMDB platformudur. Amaç ServiceNow'dan kademeli çıkıştır: önce CMDB, sonra task tarafı.
 
-- Kaynaklar: vCenter, BMC ajanları, NNMi, Zabbix, Defender ve ServiceNow (ilk yükleme ve Change kayıtları).
+- Kaynaklar: vCenter, BMC Helix Discovery, NNMi, Zabbix, Defender ve ServiceNow (ilk yükleme ve Change kayıtları). Kaynaklar değişebilir ve bunlarla sınırlı değildir: kurallar ürüne değil **kaynak rolüne** bağlıdır (ADR-0009).
 - Ara katmanda kaynak verisi anlamlandırılır, kimliği çözülür ve uzlaştırılır.
 - Veri deseni ServiceNow CMDB ile aynıdır: `cmdb_ci` soyağacı, `sys_id`, `cmdb_rel_ci`, IRE semantiği.
 - Geçiş döneminde Evren ana kaynaktır, ServiceNow CMDB replikadır.
@@ -14,7 +14,7 @@ Evren, kurum içi ve on-prem çalışan bir CMDB platformudur. Amaç ServiceNow'
 Mimarinin tamamı uygulamanın içindedir: **Mimari Harita** sayfası. İş planı da aynı şekilde: **Yol Haritası** sayfası. İkisinin tek kaynağı:
 
 - `apps/web/content/architecture.yaml` → `python tools/build_architecture.py`
-- `apps/web/content/roadmap.json`
+- `apps/web/content/roadmap.json` → `python tools/build_plan.py` (docs/PROJE-PLANI.md) ve `python tools/build_big_picture.py`
 
 ## Çalışma biçimi (proje sahibinin beklentisi)
 
@@ -41,9 +41,10 @@ Mimarinin tamamı uygulamanın içindedir: **Mimari Harita** sayfası. İş plan
 5. **Keşif araçları yönetişim alanlarını ezemez:** sahiplik, destek grubu, yaşam döngüsü. Bu `metadata/reconciliation_rules.yaml` ile tanımlıdır.
 6. **Şema değişikliği metadata ile yapılır.** Yeni sınıf veya alan `metadata/*.yaml`'a eklenir ve `tools/load_metadata.py` ile yüklenir. Sınıf alanı için DDL yazılmaz. Üretimde değişiklik setiyle yayınlanır: taslak → onay → yayın; hazırlayan onaylayamaz.
 7. **Ad tek başına kimlik değildir.** Kural eşleşse bile seri, UUID, işletim sistemi, sınıf veya FQDN çelişkisi varsa kayıt eşleştirme kuyruğuna gider.
-8. **MCP.** Kurumun kendi MCP uygulaması Evren'e Evren MCP sunucusu ve REST sözleşmesiyle bağlanır (`docs/09-mcp-sozlesmesi.md`). ServiceNow'un yerleşik MCP'si kullanılmaz. MCP veri replikasyonu için kullanılmaz; replikasyon REST ve IRE API ile yapılır.
-9. **Yapay zekâ önerir, insan karar verir.** Yapay zekâ çıktısı doğrudan golden record'a yazılmaz. Her öneri model, girdi ve gerekçesiyle kaydedilir (ISO/IEC 42001).
-10. **ServiceNow'da business rule, ACL veya task alanı değişikliği gerektiren bir çözüm önerme.** Replika deseni bunun için var (`docs/05-servicenow-gecisi.md`).
+8. **Kurallar ürüne değil kaynak rolüne yazılır.** `reconciliation_rules.yaml` ürün adı (BMC, vCenter) içermez; doğrulayıcı reddeder. Yeni ürün aynı rolde yeni veri kaynağıdır: önce `shadow`, sonra `active`; eskisi `retiring` → `retired` (ADR-0009).
+9. **MCP.** Kurumun kendi MCP uygulaması Evren'e Evren MCP sunucusu ve REST sözleşmesiyle bağlanır (`docs/09-mcp-sozlesmesi.md`). ServiceNow'un yerleşik MCP'si kullanılmaz. MCP veri replikasyonu için kullanılmaz; replikasyon REST ve IRE API ile yapılır.
+10. **Yapay zekâ önerir, insan karar verir.** Yapay zekâ çıktısı doğrudan golden record'a yazılmaz. Her öneri model, girdi ve gerekçesiyle kaydedilir (ISO/IEC 42001).
+11. **ServiceNow'da business rule, ACL veya task alanı değişikliği gerektiren bir çözüm önerme.** Replika deseni bunun için var (`docs/05-servicenow-gecisi.md`).
 
 ## Güvenlik kuralları (kurumsal standart)
 
@@ -69,8 +70,11 @@ cd packages/evren-core && EVREN_TEST_PG=1 python -m pytest
 # Metadata doğrula / tohum SQL üret
 python tools/load_metadata.py --check
 
-# Mimari harita (YAML → SVG + JSON), JSON şemaları
+# Mimari harita (YAML → SVG + JSON), büyük resim, proje planı, arayüz demo verisi
 python tools/build_architecture.py
+python tools/build_big_picture.py
+python tools/build_plan.py          # roadmap.json → docs/PROJE-PLANI.md
+python tools/build_demo.py          # evren-core hattından sentetik demo.json
 python tools/export_schemas.py
 
 # Arayüz (yerel, 127.0.0.1) ve tarayıcı duman testi
@@ -106,16 +110,17 @@ packages/evren-core/      Saf alan mantığı + testler
   envelope.py             alım zarfı (CloudEvents) → schemas/
   connectors/             bağlayıcı sözleşmesi, YAML alan eşleme motoru
   metadata.py             sözlük yükleme/doğrulama, tohum SQL, sn.* görünümler
+  sources.py              kaynak rolleri, veri kaynağı yaşam döngüsü (ADR-0009)
   web.py                  güvenlik başlıkları (tek kaynak)
 connectors/<kaynak>/      kaynak başına eşleme dosyaları
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
-db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik
+db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri
 services/                 api, reconciler, ingest-gateway, sn-sync, mcp — sorumluluk tanımları
 deploy/                   geliştirme ortamı (compose)
 docs/                     mimari belgeler, ADR'ler
-tools/                    yükleyici, harita üretici, SN dışa aktarım, geliştirme sunucusu
+tools/                    yükleyici, harita/büyük resim/plan/demo üreticileri, SN dışa aktarım, geliştirme sunucusu
 ```
 
-## KS GRC uyumu
+## GRC Platformu uyumu
 
-`github.com/Gokhanagingil/control` ile aynı ilkeler kullanılır: Entra ID, API sözleşmesinde `idempotency_key` ve `provenance`, kısmi toplamada `inconclusive` sonucu ve aynı görsel dil. Uyum gerektiren işlerde repoyu yan klasöre klonla ve ilgili dosyayı oku.
+Belgelerdeki GRC uygulaması `github.com/Gokhanagingil/tedarik` reposundaki **GRC Platformu**dur (eski KS GRC / `control` reposu artık kullanılmıyor). Aynı ilkeler: Entra ID (`tedarik/vendor/entra_auth.py`), API sözleşmesinde `idempotency_key` ve `provenance`, kısmi toplamada `inconclusive` sonucu ve **aynı görsel dil** (`tedarik/static/app.css`: beyaz gruplu kenar menü, üst çubukta Ctrl+K arama, sağdan açılan detay paneli, kırmızı vurgu). GRC Platformu'nun CMDB modülü Evren'den beslenecek (karar 25.11.2026). Uyum gerektiren işlerde repoyu yan klasöre klonla ve ilgili dosyayı oku.

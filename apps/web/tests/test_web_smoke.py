@@ -1,4 +1,4 @@
-"""Tarayıcı duman testi: Genel Bakış, Mimari Harita ve Yol Haritası.
+"""Tarayıcı duman testi: kabuk ve tüm ekranlar.
 
 Gerçek Chromium ile, üretimle aynı güvenlik başlıklarını uygulayan yerel sunucu üzerinde çalışır.
 Konsol hatası veya CSP ihlali testi başarısız kılar.
@@ -9,6 +9,7 @@ Chromium yolu: EVREN_CHROME=/usr/bin/google-chrome (yoksa Playwright'ın kendi C
 """
 from __future__ import annotations
 
+import json
 import os
 import sys
 import threading
@@ -27,6 +28,7 @@ playwright = pytest.importorskip("playwright.sync_api")
 from dev_server import make_server  # noqa: E402
 
 SHOTS = os.environ.get("EVREN_SHOTS")
+DEMO = json.loads((REPO / "apps/web/content/demo.json").read_text(encoding="utf-8"))
 
 
 @pytest.fixture(scope="module")
@@ -68,6 +70,10 @@ def shot(pg, name):
         pg.screenshot(path=str(Path(SHOTS) / f"{name}.png"), full_page=False, timeout=20000)
 
 
+def detail_open(pg) -> bool:
+    return "open" in (pg.get_attribute("#detail", "class") or "")
+
+
 def test_security_headers_and_static_scope(base_url):
     with urllib.request.urlopen(base_url + "/") as res:  # noqa: S310 - yerel test sunucusu
         csp = res.headers["Content-Security-Policy"]
@@ -80,12 +86,123 @@ def test_security_headers_and_static_scope(base_url):
         assert err.value.code == 404, path
 
 
-def test_overview(page, base_url):
+def test_overview_and_shell(page, base_url):
     page.goto(base_url + "/")
     page.wait_for_selector("#overviewStats")
     assert page.title() == "Genel Bakış · Evren CMDB"
-    assert page.locator("#nav a[aria-current=page]").inner_text() == "Genel Bakış"
+    assert page.locator("#nav a[aria-current=page]").inner_text().strip() == "Genel Bakış"
+    pending = DEMO["summary"]["queue_review"] + DEMO["summary"]["queue_insufficient"]
+    page.wait_for_selector("#nav .nav-count")
+    assert page.locator("#nav .nav-count").inner_text() == str(pending)
+    assert page.locator(".domain").count() >= 2
     shot(page, "web_overview")
+
+    # Kenar menü grubu daraltılır ve açılır (klavyeyle erişilebilir düğme)
+    title = page.locator(".nav-title", has_text="Platform")
+    title.click()
+    assert title.get_attribute("aria-expanded") == "false"
+    title.click()
+    assert title.get_attribute("aria-expanded") == "true"
+
+    # Yardım: ? tuşu, Esc kapatır
+    page.locator("body").press("?")
+    page.wait_for_selector(".dialog")
+    assert "yardım" in page.locator("#dialogTitle").inner_text()
+    page.keyboard.press("Escape")
+    assert page.locator(".dialog").count() == 0
+
+    # Kart filtreyle CI listesini açar
+    page.click("text=İzlenmeyen sunucu")
+    page.wait_for_selector("#ciCount")
+    assert page.input_value("#ciScope") == "izlenmeyen"
+    assert page.locator("#ciCount").inner_text() == f"{DEMO['summary']['unmonitored']} kayıt"
+
+
+def test_search_palette(page, base_url):
+    page.goto(base_url + "/#/genel-bakis")
+    page.wait_for_selector("#overviewStats")
+    page.keyboard.press("Control+k")
+    page.wait_for_selector("#paletteInput")
+    page.fill("#paletteInput", "ist-db-01")
+    page.wait_for_selector(".pal-list [role=option]")
+    page.keyboard.press("Enter")
+    page.wait_for_function("location.hash.startsWith('#/ci/')")
+    page.wait_for_selector("#detail.open")
+    assert page.locator("#detailTitle").inner_text().lower() == "ist-db-01"
+
+
+def test_ci_360_provenance(page, base_url):
+    page.goto(base_url + "/#/ci")
+    page.wait_for_selector("#ciCount")
+    assert page.locator("#ciCount").inner_text() == f"{len(DEMO['cis'])} kayıt"
+    page.fill("#ciSearch", "ist-muh-03")
+    page.locator("tbody tr").first.focus()
+    page.keyboard.press("Enter")
+    page.wait_for_selector("#detail.open")
+    assert page.evaluate("document.activeElement.id") == "detailTitle"
+    body = page.locator("#detailContent")
+    assert "Yetkisiz kaynak denemesi" in body.inner_text()
+    first = page.locator("#detailContent details.attr").first
+    first.locator("summary").click()
+    assert "Gerekçe" in first.inner_text()
+    shot(page, "web_ci_detail")
+    page.keyboard.press("Escape")
+    assert not detail_open(page)
+    assert page.evaluate("location.hash") == "#/ci"
+    assert page.evaluate("document.activeElement.tagName") == "TR"
+
+
+def test_queue_review_and_decision(page, base_url):
+    review = next(q for q in DEMO["queue"] if q["kind"] == "review" and len(q["candidates"]) > 1)
+    page.goto(base_url + f"/#/kuyruk/{review['id']}")
+    page.wait_for_selector("#detail.open")
+    assert page.locator("#detailKicker").inner_text().endswith(review["id"])
+    assert page.locator("table.compare td.diff").count() >= 1 or page.locator("table.compare td.same").count() >= 1
+    assert page.locator("input[name=cand]").count() == len(review["candidates"])
+    shot(page, "web_queue_detail")
+    page.click("#mergeBtn")
+    assert not detail_open(page)
+    page.wait_for_selector("#toast.show")
+    page.click("#tab-decided")
+    assert page.locator("#view tbody tr").count() == 1
+
+
+def test_sources_breaker_and_roles(page, base_url):
+    page.goto(base_url + "/#/kaynaklar")
+    page.wait_for_selector("tbody tr")
+    assert page.locator("#view tbody tr").count() >= len(DEMO["sources"])
+    page.goto(base_url + "/#/kaynaklar/NNMi")
+    page.wait_for_selector("#detail.open")
+    text = page.locator("#detailContent").inner_text()
+    assert "karantinada" in text and "Ağ keşfi" in text
+    assert page.locator("svg.runs rect").count() >= 5
+    shot(page, "web_source_detail")
+
+
+def test_rules_grid_uses_roles_not_products(page, base_url):
+    page.goto(base_url + "/#/kurallar")
+    page.wait_for_selector("#ruleGrid")
+    headers = page.locator("#ruleGrid th.role").all_text_contents()
+    assert any(h.startswith("Keşif") and "BMC" in h for h in headers)
+    page.click("#tab-tanimlama")
+    assert page.locator("text=Evren uzantısı").count() >= 1
+
+
+def test_controls_inconclusive_principle(page, base_url):
+    page.goto(base_url + "/#/kontroller")
+    page.wait_for_selector("tbody tr")
+    assert page.locator("#view tbody tr").count() == len(DEMO["controls"])
+    page.goto(base_url + "/#/kontroller/CMDB-01")
+    page.wait_for_selector("#detail.open")
+    assert "collection_status" in page.locator("#detailContent").inner_text()
+
+
+def test_big_picture(page, base_url):
+    page.goto(base_url + "/#/buyuk-resim")
+    page.wait_for_selector(".bp-frame svg")
+    assert page.locator(".bp-frame svg text", has_text="Kaynaklar").count() >= 1
+    assert page.get_attribute("#bpExport", "download") == "Evren_Buyuk_Resim.svg"
+    shot(page, "web_big_picture")
 
 
 def test_architecture_map_interactions(page, base_url):
@@ -137,13 +254,14 @@ def test_roadmap_filters_and_links(page, base_url):
     page.wait_for_selector("#phases .phase")
     assert page.locator("#phases .phase").count() == 5
     assert page.locator(".step.current").count() == 1
+    assert page.locator("#phases .need").count() >= 5
     shot(page, "web_roadmap")
 
     page.click('[data-status="done"]')
     chips = page.locator("#phases .item .chip.st-done").count()
     assert chips > 0 and chips == page.locator("#phases .item").count()
-    page.click('[data-status="blocked"]')
-    assert "BMC" in page.locator("#phases .item").first.inner_text()
+    page.click('[data-status="in_progress"]')
+    assert page.locator("#phases .item").count() >= 1
     page.click('[data-status="all"]')
 
     page.fill("#roadmapSearch", "eşleştirme kuyruğu")
@@ -160,11 +278,16 @@ def test_mobile_layout_has_no_horizontal_overflow(browser, base_url):
     pg = context.new_page()
     errors: list[str] = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
-    for route in ("#/genel-bakis", "#/yol-haritasi"):
+    for route in ("#/genel-bakis", "#/kuyruk", "#/ci", "#/kaynaklar", "#/kurallar", "#/kontroller", "#/buyuk-resim",
+                  "#/yol-haritasi"):
         pg.goto(base_url + "/" + route)
         pg.wait_for_selector("#view > *")
+        pg.wait_for_timeout(150)
         overflow = pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth")
         assert overflow <= 1, f"{route}: yatay taşma {overflow}px"
-    shot(pg, "web_roadmap_mobile")
+    # Menü düğmesi kenar menüyü açar
+    pg.click("#menuToggle")
+    assert pg.get_attribute("#menuToggle", "aria-expanded") == "true"
+    shot(pg, "web_mobile_menu")
     context.close()
     assert not errors

@@ -18,7 +18,7 @@ chapters:
     lead: Her kaynak bir bağlayıcı ve bir eşleme dosyasıyla eklenir. Keşif aracı değişse de sonraki katmanlar etkilenmez.
     nodes:
       - {id: src_vcenter, kind: source, col: 0, row: 0, label: vCenter, sub: ["VM, ESXi, küme", "datastore"]}
-      - {id: src_bmc, kind: source, col: 1, row: 0, label: BMC ajanları, sub: ["OS, donanım,", "seri numarası"]}
+      - {id: src_bmc, kind: source, col: 1, row: 0, label: BMC Helix Discovery, sub: ["Keşif rolü: OS,", "donanım, seri"]}
       - {id: src_nnmi, kind: source, col: 2, row: 0, label: NNMi, sub: ["Ağ cihazı, arayüz,", "L2 bağlantı"]}
       - {id: src_zabbix, kind: source, col: 3, row: 0, label: Zabbix, sub: ["İzleme kapsamı,", "canlılık"]}
       - {id: src_defender, kind: source, col: 4, row: 0, label: Defender, sub: ["Koruma durumu,", "maruziyet"]}
@@ -95,7 +95,7 @@ chapters:
       - {id: event_stream, kind: engine, col: 4, row: 0, label: Olay akışı, sub: ["CloudEvents,", "imzalı webhook"]}
       - {id: evren_mcp, kind: engine, col: 5, row: 0, label: Evren MCP sunucusu, sub: ["Salt okur araçlar +", "öneri araçları"]}
       - {id: corp_mcp, kind: external, col: 5, row: 1, label: Kurum MCP uygulaması, sub: ["Sizin MCP katmanınız", "(ajan, orkestrasyon)"]}
-      - {id: grc_app, kind: external, col: 3, row: 1, span: 2, label: KS GRC, sub: ["Kontrol sonuçları, kanıt;", "ör. kaydı olmayan sunucu"]}
+      - {id: grc_app, kind: external, col: 3, row: 1, span: 2, label: GRC Platformu, sub: ["Kontrol sonuçları, kanıt;", "ör. kaydı olmayan sunucu"]}
       - {id: other_apps, kind: external, col: 1, row: 1, span: 2, label: Diğer iç uygulamalar, sub: ["Tedarik portalı, raporlama,", "otomasyon"]}
     edges:
       - {from: web_ui, to: rest_api}
@@ -156,8 +156,8 @@ details:
     security: [Salt okunur servis hesabı, Kimlik bilgisi sır kasasında]
   src_bmc:
     phase: F1
-    text: Ajan tabanlı sunucu envanteri. İşletim sistemi, donanım ve seri numarası için yetkili kaynaktır. Hangi BMC ürününün kullanıldığı açık soru; eşleme dosyası taslaktır.
-    tech: ["connectors/bmc/mapping.yaml (taslak)"]
+    text: BMC Helix Discovery (eski adıyla BMC Discovery / ADDM) Keşif rolünü doldurur; işletim sistemi, donanım ve seri numarası için yetkili kaynaktır. On-prem appliance ve Helix SaaS aynı REST API'yi kullanır. Kurallar ürüne değil role bağlı olduğundan keşif ürünü değişirse yalnızca bağlayıcı ve eşleme değişir (ADR-0009).
+    tech: ["REST /api/v1.x/data/search (Host düğümü)", "connectors/bmc_discovery/host.mapping.yaml"]
     security: [Salt okunur erişim]
   src_nnmi:
     phase: F1
@@ -181,8 +181,8 @@ details:
     security: [Ayrı entegrasyon kullanıcısı, IP kısıtı]
   connectors:
     phase: F0
-    text: Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma "tamamlandı" sayılmaz. Bu, KS GRC'deki collection_status ilkesinin aynısıdır.
-    tech: ["evren_core.connectors", "FieldMapping (YAML)"]
+    text: Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma "tamamlandı" sayılmaz; bu, GRC Platformu'ndaki collection_status ilkesinin aynısıdır. Her veri kaynağı bir kaynak rolünü (Keşif, Sanallaştırma, Ağ, İzleme, Uç nokta güvenliği, ITSM) doldurur; yeni ürün önce gölge modda çalışır, sonra devralır.
+    tech: ["evren_core.connectors", "FieldMapping (YAML)", "evren_core.sources.SourceRegistry", "metadata/data_sources.yaml"]
     security: [Bağlayıcı CMDB'ye yazamaz, Ham yük arşive yazılır]
   ingest_gateway:
     phase: F0
@@ -301,12 +301,12 @@ details:
     security: [Yedek şifreleme, Geri yükleme tatbikatı]
   web_ui:
     phase: F0
-    text: Türkçe arayüz, KS GRC ile aynı görsel dil. Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.
+    text: Türkçe arayüz, GRC Platformu ile aynı görsel dil. Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.
     tech: [Web Components, ES modülleri]
     security: ["CSP: script-src 'self'", innerHTML ile veri yazılmaz]
   rest_api:
     phase: F0
-    text: Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. KS GRC ile aynı sözleşme ilkelerini kullanır.
+    text: Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. GRC Platformu ile aynı sözleşme ilkelerini kullanır.
     tech: [Python 3.12, FastAPI, psycopg 3]
     security: [Entra OIDC, Makine hesabı için kapsamlı anahtar]
   sn_compat_api:
@@ -326,12 +326,12 @@ details:
     security: [Araç başına yetki, CMDB içeriği güvenilmeyen veri sayılır]
   corp_mcp:
     phase: F2
-    text: Kurumun kendi MCP uygulaması. Evren'e Evren MCP sunucusu ve REST sözleşmesi üzerinden bağlanır; KS GRC'deki düzenin aynısıdır. ServiceNow'un yerleşik MCP'si kullanılmaz.
+    text: Kurumun kendi MCP uygulaması. Evren'e Evren MCP sunucusu ve REST sözleşmesi üzerinden bağlanır; GRC Platformu'ndaki düzenin aynısıdır. ServiceNow'un yerleşik MCP'si kullanılmaz.
     tech: [docs/09-mcp-sozlesmesi.md]
     security: [Makine kimliği, Kapsamlı yetki]
   grc_app:
     phase: F2
-    text: "KS GRC kontrolleri Evren verisini kanıt olarak kullanır. Örnekler: CMDB'de kaydı olmayan sunucu, izlenmeyen sunucu, korumasız uç nokta. Kısmi veri inconclusive kabul edilir."
+    text: "GRC Platformu (tedarik reposu) CMDB modülünü Evren'den besler; otomatik kontroller Evren verisini kanıt olarak kullanır. Örnekler: CMDB'de kaydı olmayan sunucu, izlenmeyen sunucu, korumasız uç nokta. Kısmi veri inconclusive kabul edilir."
     tech: [REST API, Olay akışı]
     security: [Salt okunur makine hesabı]
   other_apps:
@@ -381,7 +381,7 @@ details:
     security: [Kullanıcı bağlamında yetki]
   entra:
     phase: F0
-    text: Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra gruplarından eşlenir. KS GRC ile aynı kimlik altyapısı kullanılır.
+    text: Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra gruplarından eşlenir. GRC Platformu ile aynı kimlik altyapısı kullanılır.
     tech: [Entra ID]
     security: [Koşullu erişim, Kısa ömürlü oturum]
   rbac_abac:

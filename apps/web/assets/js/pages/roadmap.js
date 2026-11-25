@@ -1,5 +1,6 @@
 // Yol Haritası: faz adımları, ilerleme, durum filtresi, çıkış kriterleri, haritaya bağlantılar.
-import { h, clear, loadJSON, statusChip, formatDate } from '../lib/dom.js';
+import { h, clear, loadJSON, metric, statusChip, formatDate } from '../lib/dom.js';
+import { setHeader } from '../lib/shell.js';
 
 const ORDER = ['done', 'in_progress', 'at_risk', 'blocked', 'planned'];
 
@@ -37,7 +38,7 @@ export async function renderRoadmap(view, param) {
     if (statusFilter !== 'all' && item.status !== statusFilter) return false;
     if (!query) return true;
     const comps = (item.components || []).map((c) => arch.nodes[c]?.label || c);
-    return [item.id, item.title, item.note || '', ...comps].join(' ').toLocaleLowerCase('tr').includes(query);
+    return [item.id, item.title, item.note || '', item.needs || '', ...comps].join(' ').toLocaleLowerCase('tr').includes(query);
   }
 
   function renderPhases() {
@@ -65,6 +66,7 @@ export async function renderRoadmap(view, param) {
                   h('div', {},
                     h('span', { class: 'title' }, it.title),
                     it.note ? h('span', { class: 'note' }, it.note) : null,
+                    it.needs && it.status !== 'done' ? h('span', { class: 'need' }, `Sizden gereken: ${it.needs}`) : null,
                     (it.components || []).length
                       ? h('div', { class: 'comps' }, it.components.map((c) => h('a', {
                           class: 'chip link', href: `#/mimari/${c}`, title: 'Mimari haritada göster',
@@ -85,7 +87,7 @@ export async function renderRoadmap(view, param) {
   const filterButtons = [['all', 'Tümü'], ...ORDER.map((s) => [s, labels[s]])].map(([value, label]) => {
     const n = value === 'all' ? all.length : all.filter((i) => i.status === value).length;
     return h('button', {
-      class: 'btn small', type: 'button', 'aria-pressed': value === statusFilter ? 'true' : 'false', dataset: { status: value },
+      class: 'btn secondary small', type: 'button', 'aria-pressed': value === statusFilter ? 'true' : 'false', dataset: { status: value },
       onclick: (ev) => {
         statusFilter = value;
         filterButtons.forEach((b) => b.setAttribute('aria-pressed', b === ev.currentTarget ? 'true' : 'false'));
@@ -93,7 +95,7 @@ export async function renderRoadmap(view, param) {
       },
     }, `${label} (${n})`);
   });
-  const search = h('input', { class: 'input', type: 'search', id: 'roadmapSearch', placeholder: 'İş kalemi veya bileşen ara',
+  const search = h('input', { class: 'searchbar', type: 'search', id: 'roadmapSearch', placeholder: 'İş kalemi veya bileşen ara',
     'aria-label': 'Yol haritasında ara' });
   search.addEventListener('input', () => { query = search.value.trim().toLocaleLowerCase('tr'); renderPhases(); });
 
@@ -110,17 +112,17 @@ export async function renderRoadmap(view, param) {
     }
   }
 
+  setHeader({
+    title: rm.title.replace('Evren CMDB yol haritası', 'Yol Haritası'),
+    sub: `Son güncelleme ${formatDate(rm.updated_at)}. Adımlar faz içinde yapılış sırasıyla; "sizden gereken" kurumdan beklenen karar veya erişimdir. Aynı plan docs/PROJE-PLANI.md dosyasındadır.`,
+    crumbs: [['Yol Haritası']],
+  });
   view.append(
-    h('div', { class: 'page-head' },
-      h('div', {},
-        h('p', { class: 'eyebrow' }, 'Evren / Yol Haritası'),
-        h('h1', {}, rm.title),
-        h('p', { class: 'lead' }, `Son güncelleme ${formatDate(rm.updated_at)}. ${rm.note}`))),
-    h('div', { class: 'grid cols-4' },
-      h('div', { class: 'card stat' }, h('b', {}, `%${overall.pct}`), h('span', {}, 'Genel ilerleme (tamamlanan iş kalemi)')),
-      h('div', { class: 'card stat' }, h('b', {}, `${current.id}`), h('span', {}, `Etkin faz: ${current.title}`)),
-      h('div', { class: 'card stat' }, h('b', {}, String(overall.prog)), h('span', {}, 'Devam eden iş kalemi')),
-      h('div', { class: 'card stat' }, h('b', {}, String(overall.blocked)), h('span', {}, 'Engelli veya riskli iş kalemi'))),
+    h('div', { class: 'cards' },
+      metric({ label: 'Genel ilerleme', value: `%${overall.pct}`, tone: 'good', foot: `${overall.done}/${overall.total} adım tamamlandı` }),
+      metric({ label: 'Etkin faz', value: current.id, foot: current.title }),
+      metric({ label: 'Devam eden', value: overall.prog, foot: 'adım' }),
+      metric({ label: 'Engelli veya riskli', value: overall.blocked, tone: overall.blocked ? 'bad' : 'good', foot: 'adım' })),
     h('nav', { class: 'stepper', 'aria-label': 'Fazlar' }, rm.phases.map((phase) => {
       const p = progress(phase.items);
       return h('button', {
@@ -135,9 +137,9 @@ export async function renderRoadmap(view, param) {
     })),
     h('div', { class: 'filters', role: 'group', 'aria-label': 'Durum filtresi' }, filterButtons, search, countLabel),
     phasesBox,
-    h('div', { class: 'grid cols-2' },
-      h('section', { class: 'card' }, h('h2', {}, 'İlkeler'), h('ul', {}, rm.principles.map((p) => h('li', {}, p)))),
-      h('section', { class: 'card' }, h('h2', {}, 'Açık sorular'), h('ul', {}, rm.open_questions.map((q) => h('li', {}, q))))),
+    h('div', { class: 'grid two' },
+      h('section', { class: 'panel' }, h('h2', {}, 'İlkeler'), h('ul', {}, rm.principles.map((p) => h('li', {}, p)))),
+      h('section', { class: 'panel' }, h('h2', {}, 'Açık sorular'), h('ul', {}, rm.open_questions.map((q) => h('li', {}, q))))),
     h('p', { class: 'footnote' }, 'Kaynak: apps/web/content/roadmap.json — DURUM.md ile birlikte güncellenir.'),
   );
   renderPhases();

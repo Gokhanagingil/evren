@@ -31,7 +31,7 @@
         {"id": "F0-05", "title": "Uygulama içi Mimari Harita ve Yol Haritası sayfaları", "status": "done", "components": ["web_ui"]},
         {"id": "F0-14", "title": "Kaynak rolleri: kurallar ürüne değil role bağlı; gölge/devir/emeklilik yaşam döngüsü (ADR-0009)", "status": "done", "components": ["reconcile", "connectors", "dictionary"]},
         {"id": "F0-15", "title": "Büyük resim çizimi ve adım adım proje planı", "status": "done", "components": ["web_ui"]},
-        {"id": "F0-16", "title": "Arayüzün GRC Platformu görsel diline taşınması; Veri Kaynakları, Eşleştirme Kuyruğu, CI 360°, Kurallar ve GRC Kontrolleri önizleme ekranları (sentetik demo)", "status": "in_progress", "note": "Demo verisi çekirdeğin gerçek hattından üretilir (tools/build_demo.py); kalıcı kararlar API ile (F0-09, F0-10).", "components": ["web_ui", "match_queue"]},
+        {"id": "F0-16", "title": "Arayüzün GRC Platformu görsel diline taşınması; Veri Kaynakları, Eşleştirme Kuyruğu, CI 360°, Kurallar ve GRC Kontrolleri önizleme ekranları (sentetik demo)", "status": "done", "note": "Demo verisi çekirdeğin gerçek hattından üretilir (tools/build_demo.py); kalıcı kararlar API ile (F0-09, F0-10).", "components": ["web_ui", "match_queue"]},
         {"id": "F0-06", "title": "CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM", "status": "in_progress", "note": "İş akışları yazıldı; GitHub'da ilk çalıştırma bekliyor.", "components": ["supply_chain"], "needs": "GitHub Actions'ın repoda etkin olması (bulgular CI'da kapatılacak)"},
         {"id": "F0-07", "title": "ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması", "status": "planned", "components": ["dictionary"], "needs": "ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma"},
         {"id": "F0-09", "title": "API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi", "status": "planned", "components": ["rest_api", "entra"], "needs": "Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı"},
@@ -47,7 +47,7 @@
         {"text": "Örneklem denetiminde yanlış birleştirme oranı %0,5'in altında", "met": false},
         {"text": "ServiceNow'a hiçbir yazma yapılmadı", "met": true},
         {"text": "CI güvenlik kapıları yeşil; yüksek veya kritik bulgu yok", "met": false},
-        {"text": "İlk kapsam raporu KS GRC'ye kanıt olarak aktarıldı", "met": false}
+        {"text": "İlk kapsam raporu GRC Platformu'na kanıt olarak aktarıldı", "met": false}
       ],
       "risks": ["BMC Helix Discovery kurulum tipi (on-prem/SaaS) ve API erişiminin zamanında açılması", "ServiceNow örneğindeki sınıf/alan farkları", "Kaynak sistemlere salt okunur servis hesabı erişimlerinin zamanında açılması"]
     },

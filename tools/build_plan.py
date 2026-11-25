@@ -34,7 +34,7 @@ def render(rm: dict) -> str:
     out = [
         "# Evren CMDB — proje planı",
         "",
-        f"> Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle "
+        "> Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle "
         "düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari "
         "Harita** sayfalarındadır.",
         "",

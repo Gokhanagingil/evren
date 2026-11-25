@@ -1,6 +1,27 @@
 # 04 · Kaynak sistemler
 
-Her kaynak için: neyi sağlar, hangi tanımlayıcılarla gelir, neye yetkilidir, tuzakları nelerdir. Eşleme dosyaları `connectors/<kaynak>/`. Yeni kaynak eklemek için `/yeni-baglayici` komutunu kullan.
+Her kaynak için: neyi sağlar, hangi tanımlayıcılarla gelir, neye yetkilidir, tuzakları nelerdir. Eşleme dosyaları `connectors/<bağlayıcı>/`. Yeni kaynak eklemek için `/yeni-baglayici` komutunu kullan.
+
+## Kaynak rolleri: ürün değişebilir, kurallar değişmez (ADR-0009)
+
+Kaynak sistemler değişebilir ve bu listeyle sınırlı değildir. Bu yüzden uzlaştırma ve veri tazeleme kuralları ürün adını değil **kaynak rolünü** bilir. Kaynak kaydı: `metadata/data_sources.yaml`.
+
+| Rol | Görev | Bugünkü ürün |
+| --- | --- | --- |
+| `Discovery` | İşletim sistemi, donanım, seri numarası, yazılım envanteri | BMC Helix Discovery |
+| `Virtualization` | Sanal makine, hipervizör, küme; VM kaynakları | VMware vCenter |
+| `Network` | Ağ cihazları, arayüzler, L2/L3 topoloji | OpenText NNMi |
+| `Monitoring` | İzleme kapsamı ve canlılık (envanterde düşük öncelik) | Zabbix |
+| `EndpointSecurity` | Koruma durumu, cihaz kimliği, kısıtlı güvenlik duruşu | Microsoft Defender for Endpoint |
+| `ITSM` | Geçiş dönemindeki eski CMDB; yönetişim alanları | ServiceNow CMDB |
+| `ChangeManagement` | Onaylı değişiklik pencereleri (CI özniteliği yazmaz) | ServiceNow Change |
+| `Manual`, `Platform` | Elle giriş; eskime önerileri | Evren |
+
+**Yaşam döngüsü:** `active` (yazar, CI açar) · `shadow` (yalnızca karşılaştırır) · `retiring` (yazar, CI açmaz) · `retired` (yok sayılır). Aynı rolde yazan iki kaynağın sırası `role_rank` ile belirlenir.
+
+**Ürün değişimi yordamı:** (1) yeni bağlayıcı + eşleme + sentetik örnek ve test, (2) aynı rolde yeni veri kaynağı `shadow`: kapsam ve değer farkı raporlanır, golden record değişmez, (3) devir: yeni kaynak `active` + `role_rank: 1`, eskisi `retiring` + `role_rank: 2`, (4) eskisi `retired`. Kurallar, CI'lar ve sys_id'ler değişmez; mevcut CI'lar seri, UUID ve FQDN kurallarıyla yeni ürünün kayıtlarına bağlanır.
+
+**Yeni kaynak türü** (bulut hesapları, Kubernetes, yedekleme, PAM…): mevcut bir rolü dolduruyorsa yalnızca kaynak kaydı ve eşleme; yeni bir görevse yeni rol + o rolün yazabileceği alanlar için uzlaştırma kuralı.
 
 ## vCenter (F0)
 
@@ -22,7 +43,8 @@ Her kaynak için: neyi sağlar, hangi tanımlayıcılarla gelir, neye yetkilidir
 - **Tuzaklar:**
   - Görünen ad (`name`) serbest metindir; teknik ad (`host`) kullanılır.
   - Envanter alanları çoğunlukla boştur.
-  - Host adı olarak IP girilmiş kayıtlar ad kimliği sayılmaz.
+  - Host adı olarak IP girilmiş kayıtlar ad kimliği sayılmaz. MAC veya seri de yoksa kayıt yeni CI açmaz; "kimlik verisi yetersiz" olarak park edilir.
+  - Host grubu adları Türkçe olabilir ("Ağ cihazları"); sınıf kuralları `ğ` harfini de kabul eder.
 - **CMDB'ye girmez:** metrik ve alarm. Yalnızca "izleniyor mu" ve "son canlılık" özetleri girer.
 
 ## Microsoft Defender for Endpoint (F1)
@@ -36,18 +58,24 @@ Her kaynak için: neyi sağlar, hangi tanımlayıcılarla gelir, neye yetkilidir
 ## NNMi (F1)
 
 - **Veri:** ağ düğümleri, arayüzler, L2 bağlantıları, yönetim IP'leri.
-- **Tanımlayıcılar:** düğüm `uuid`, `systemName` (sysName), `longName`, `systemObjectId`.
+- **Tanımlayıcılar:** düğüm `uuid`, `systemName` (sysName), `longName`. `systemObjectId` kimlik **değildir**: modeli tanımlar, aynı modeldeki tüm cihazlarda aynıdır.
 - **Yetkili olduğu alanlar:** ağ cihazı sınıflarında ad, IP, seri numarası, firmware.
 - **Tuzaklar:**
   - HSRP/VRRP sanal MAC'leri paylaşılır; zayıf olarak işaretlenir.
   - L3 switch'ler (`switchrouter`) switch sınıfında kalır.
   - API sürüme göre değişir (SOAP/REST); alan adları doğrulanmalı.
 
-## BMC ajanları (F1 — engelli)
+## BMC Helix Discovery (F1) — Keşif rolü
 
-- **Açık soru:** hangi ürün? BMC Discovery/ADDM, Client Management ya da Helix Discovery.
-- Eşleme dosyası BMC Discovery "Host" düğümü varsayımıyla yazılmış bir taslaktır.
-- Hedef: işletim sistemi, donanım ve seri numarası için yetkili kaynak.
+- **Ürün:** BMC Helix Discovery (eski adıyla BMC Discovery / ADDM). On-prem appliance ve Helix SaaS aynı REST API'yi sunar; fark ağ yolu (SaaS'ta outpost) ve kimlik bilgisidir. Kurum kurulum tipini doğrulayacak (açık soru).
+- **Çekme:** `GET /api/v1.x/data/search` ile `search Host show …` sorgusu, `format=object`, sayfalama tamamlanmadan çalışma tamamlandı sayılmaz. Sorgu ve alanlar `connectors/bmc_discovery/host.mapping.yaml` başında.
+- **Tanımlayıcılar:** düğüm `key`, `hostname`, `local_fqdn`, `serial`, `uuid`; MAC ve IP listeleri.
+- **Yetkili olduğu alanlar (Keşif rolü):** işletim sistemi, ad ve ağ kimliği; fiziksel sunucularda donanım.
+- **Tuzaklar:**
+  - Sanal sunucularda `serial` VMware biçimindedir (`VMware-42 1a …`); BIOS UUID'ye bağlanır ve vCenter misafir sunucusuyla aynı CI'a eşleşir.
+  - `ram` MB, `processor_speed` MHz döner; sanal sunucuda işletim sisteminin gördüğü bellek vCenter değerinden biraz azdır (vCenter önceliklidir).
+  - `host_type` "… Desktop" olan düğümler kapsam dışıdır.
+- Alan adları kurum örneğinde doğrulanınca eşlemedeki `verify: true` kaldırılır (F1-01).
 
 ## ServiceNow (F0 ilk yükleme, F1 çekme, F1 Change)
 

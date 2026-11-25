@@ -2,7 +2,7 @@
   "title": "Evren CMDB",
   "heading": "Konfigürasyon evreni — kaynaktan karara",
   "width": 1280,
-  "height": 2479,
+  "height": 2498,
   "generated_from": "apps/web/content/architecture.yaml",
   "chapters": [
     {
@@ -11,14 +11,14 @@
       "title": "Kaynaklar ve alım",
       "lead": "Her kaynak bir bağlayıcı ve bir eşleme dosyasıyla eklenir. Keşif aracı değişse de sonraki katmanlar etkilenmez.",
       "y": 186,
-      "height": 417
+      "height": 436
     },
     {
       "id": "sense",
       "number": "02",
       "title": "Anlamlandırma — ara katman",
       "lead": "Milyonlarca gözlem değişmeyenler elenerek süzülür. Kimlik çözülür, öznitelikler kurallarla uzlaştırılır, şüpheli olan insana sorulur.",
-      "y": 621,
+      "y": 640,
       "height": 352
     },
     {
@@ -26,7 +26,7 @@
       "number": "03",
       "title": "Kayıt sistemi",
       "lead": "ServiceNow veri deseniyle aynı yüzey, daha güçlü bir motor. Her değerin kaynağı ve gerekçesi saklanır.",
-      "y": 991,
+      "y": 1010,
       "height": 352
     },
     {
@@ -34,7 +34,7 @@
       "number": "04",
       "title": "Tüketim ve entegrasyon",
       "lead": "Tek API, iki dil — yerel REST ve ServiceNow uyumlu uç noktalar. Yapay zekâ ajanları kurumun kendi MCP katmanından bağlanır.",
-      "y": 1361,
+      "y": 1380,
       "height": 352
     },
     {
@@ -42,7 +42,7 @@
       "number": "05",
       "title": "ServiceNow ile geçiş deseni",
       "lead": "Evren ana kaynaktır, ServiceNow CMDB replikadır. Task kayıtları SN'deki CI'ları göstermeye devam eder; business rule değişmez.",
-      "y": 1731,
+      "y": 1750,
       "height": 352
     },
     {
@@ -50,7 +50,7 @@
       "number": "06",
       "title": "Güvenlik ve yönetişim",
       "lead": "Varsayılan reddet, en az yetki, her değişiklik iz bırakır. Yapay zekâ önerir, insan karar verir.",
-      "y": 2101,
+      "y": 2120,
       "height": 352
     }
   ],
@@ -76,18 +76,19 @@
       ]
     },
     "src_bmc": {
-      "label": "BMC ajanları",
+      "label": "BMC Helix Discovery",
       "sub": [
-        "OS, donanım,",
-        "seri numarası"
+        "Keşif rolü: OS,",
+        "donanım, seri"
       ],
       "kind": "source",
       "kind_label": "Kaynak sistem",
       "chapter": "sources",
       "phase": "F1",
-      "text": "Ajan tabanlı sunucu envanteri. İşletim sistemi, donanım ve seri numarası için yetkili kaynaktır. Hangi BMC ürününün kullanıldığı açık soru; eşleme dosyası taslaktır.",
+      "text": "BMC Helix Discovery (eski adıyla BMC Discovery / ADDM) Keşif rolünü doldurur; işletim sistemi, donanım ve seri numarası için yetkili kaynaktır. On-prem appliance ve Helix SaaS aynı REST API'yi kullanır. Kurallar ürüne değil role bağlı olduğundan keşif ürünü değişirse yalnızca bağlayıcı ve eşleme değişir (ADR-0009).",
       "tech": [
-        "connectors/bmc/mapping.yaml (taslak)"
+        "REST /api/v1.x/data/search (Host düğümü)",
+        "connectors/bmc_discovery/host.mapping.yaml"
       ],
       "security": [
         "Salt okunur erişim"
@@ -180,10 +181,12 @@
       "kind_label": "Evren bileşeni",
       "chapter": "sources",
       "phase": "F0",
-      "text": "Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma \"tamamlandı\" sayılmaz. Bu, KS GRC'deki collection_status ilkesinin aynısıdır.",
+      "text": "Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma \"tamamlandı\" sayılmaz; bu, GRC Platformu'ndaki collection_status ilkesinin aynısıdır. Her veri kaynağı bir kaynak rolünü (Keşif, Sanallaştırma, Ağ, İzleme, Uç nokta güvenliği, ITSM) doldurur; yeni ürün önce gölge modda çalışır, sonra devralır.",
       "tech": [
         "evren_core.connectors",
-        "FieldMapping (YAML)"
+        "FieldMapping (YAML)",
+        "evren_core.sources.SourceRegistry",
+        "metadata/data_sources.yaml"
       ],
       "security": [
         "Bağlayıcı CMDB'ye yazamaz",
@@ -618,7 +621,7 @@
       "kind_label": "İnsan kararı / arayüz",
       "chapter": "consume",
       "phase": "F0",
-      "text": "Türkçe arayüz, KS GRC ile aynı görsel dil. Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.",
+      "text": "Türkçe arayüz, GRC Platformu ile aynı görsel dil. Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.",
       "tech": [
         "Web Components",
         "ES modülleri"
@@ -638,7 +641,7 @@
       "kind_label": "Evren bileşeni",
       "chapter": "consume",
       "phase": "F0",
-      "text": "Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. KS GRC ile aynı sözleşme ilkelerini kullanır.",
+      "text": "Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. GRC Platformu ile aynı sözleşme ilkelerini kullanır.",
       "tech": [
         "Python 3.12",
         "FastAPI",
@@ -718,7 +721,7 @@
       "kind_label": "Dış sistem",
       "chapter": "consume",
       "phase": "F2",
-      "text": "Kurumun kendi MCP uygulaması. Evren'e Evren MCP sunucusu ve REST sözleşmesi üzerinden bağlanır; KS GRC'deki düzenin aynısıdır. ServiceNow'un yerleşik MCP'si kullanılmaz.",
+      "text": "Kurumun kendi MCP uygulaması. Evren'e Evren MCP sunucusu ve REST sözleşmesi üzerinden bağlanır; GRC Platformu'ndaki düzenin aynısıdır. ServiceNow'un yerleşik MCP'si kullanılmaz.",
       "tech": [
         "docs/09-mcp-sozlesmesi.md"
       ],
@@ -728,7 +731,7 @@
       ]
     },
     "grc_app": {
-      "label": "KS GRC",
+      "label": "GRC Platformu",
       "sub": [
         "Kontrol sonuçları, kanıt;",
         "ör. kaydı olmayan sunucu"
@@ -737,7 +740,7 @@
       "kind_label": "Dış sistem",
       "chapter": "consume",
       "phase": "F2",
-      "text": "KS GRC kontrolleri Evren verisini kanıt olarak kullanır. Örnekler: CMDB'de kaydı olmayan sunucu, izlenmeyen sunucu, korumasız uç nokta. Kısmi veri inconclusive kabul edilir.",
+      "text": "GRC Platformu (tedarik reposu) CMDB modülünü Evren'den besler; otomatik kontroller Evren verisini kanıt olarak kullanır. Örnekler: CMDB'de kaydı olmayan sunucu, izlenmeyen sunucu, korumasız uç nokta. Kısmi veri inconclusive kabul edilir.",
       "tech": [
         "REST API",
         "Olay akışı"
@@ -909,7 +912,7 @@
       "kind_label": "Güvenlik denetimi",
       "chapter": "security",
       "phase": "F0",
-      "text": "Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra gruplarından eşlenir. KS GRC ile aynı kimlik altyapısı kullanılır.",
+      "text": "Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra gruplarından eşlenir. GRC Platformu ile aynı kimlik altyapısı kullanılır.",
       "tech": [
         "Entra ID"
       ],

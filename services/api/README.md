@@ -5,7 +5,7 @@
 - `/api/v1/*` yerel REST API, OpenAPI 3.1 ile belgelenir.
 - `/api/now/table/{table}` ve `/api/now/identifyreconcile`: ServiceNow uyumlu uç noktalar (F2-05). `evren_core.encoded_query` kullanılır.
 - `apps/web` statik dosyalarını `evren_core.web.SECURITY_HEADERS` ile sunar. HSTS TLS sonlandırıcıda eklenir.
-- Kimlik doğrulama: Entra ID OIDC + PKCE. KS GRC'deki `entra_auth.py` deseni, `__Host-` önekli çerez.
+- Kimlik doğrulama: Entra ID OIDC + PKCE. GRC Platformu'ndaki `tedarik/vendor/entra_auth.py` deseni, `__Host-` önekli çerez.
 - Makine hesapları: kapsamlı API anahtarı veya istemci sertifikası. Her anahtar tek bir `data_source` veya tek bir uygulamaya bağlıdır.
 
 ## Yazma ilkesi
@@ -19,7 +19,7 @@ API **golden record'a yazmaz.** CI düzenleme isteği şöyle işlenir:
 
 Bu sayede elle girilen her değer de kaynak bilgisi, kural ve denetim izinden geçer.
 
-## Sözleşme ilkeleri (KS GRC ile ortak)
+## Sözleşme ilkeleri (GRC Platformu ile ortak)
 
 - `idempotency_key`: aynı anahtar ve aynı içerik → aynı sonuç (`200`, `replayed: true`). Aynı anahtar ve farklı içerik → `409`.
 - `provenance`: kaynak sistem, sorgu referansı ve `collection_status`. `partial` veya `error` verisi kesin sonuç sayılmaz.

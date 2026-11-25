@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Evren CMDB: kaynak sistemlerden gelen gözlemleri anlamlandıran, kimliği çözen ve uzlaştıran konfigürasyon yönetim platformu">
   <title>Evren CMDB</title>
   <link rel="icon" href="/assets/evren.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/assets/css/evren.css">
@@ -11,33 +12,40 @@
 </head>
 <body>
   <a class="skip-link" href="#main">İçeriğe geç</a>
-  <div class="shell">
-    <aside class="sidebar" aria-label="Ana menü">
-      <div class="brand">
-        <span class="brand-mark" aria-hidden="true">E</span>
-        <span class="brand-text"><strong>Evren</strong><small>Konfigürasyon yönetimi</small></span>
-      </div>
-      <nav>
-        <ul class="nav" id="nav">
-          <li><a href="#/genel-bakis" data-route="genel-bakis">Genel Bakış</a></li>
-          <li><a href="#/mimari" data-route="mimari">Mimari Harita</a></li>
-          <li><a href="#/yol-haritasi" data-route="yol-haritasi">Yol Haritası</a></li>
-        </ul>
-        <p class="nav-heading">Yol haritasıyla gelecek</p>
-        <ul class="nav nav-soon">
-          <li><span aria-disabled="true">Konfigürasyon öğeleri <em>F1</em></span></li>
-          <li><span aria-disabled="true">Eşleştirme kuyruğu <em>F0</em></span></li>
-          <li><span aria-disabled="true">Veri kaynakları <em>F0</em></span></li>
-          <li><span aria-disabled="true">CMDB sağlığı <em>F1</em></span></li>
-          <li><span aria-disabled="true">Şema ve yetkiler <em>F1</em></span></li>
-        </ul>
-      </nav>
-      <p class="sidebar-foot">Geliştirme önizlemesi · v0.1</p>
-    </aside>
-    <main id="main" class="main" tabindex="-1">
-      <noscript><p class="notice">Evren arayüzü için JavaScript gereklidir.</p></noscript>
-      <div id="view" aria-live="polite"></div>
-    </main>
-  </div>
+  <aside id="sidebar" aria-label="Ana menü">
+    <div class="brand">
+      <span class="mark" aria-hidden="true" id="brandMark"></span>
+      <span>Evren CMDB<small>Konfigürasyon evreni</small></span>
+    </div>
+    <nav id="nav" aria-label="Sayfalar"></nav>
+    <div class="nav-bottom">
+      <span class="avatar" aria-hidden="true">E</span>
+      <div class="identity"><strong>Yerel önizleme</strong><span>Kimlik doğrulama: F0-09 (Entra ID)</span></div>
+    </div>
+  </aside>
+  <main id="main" tabindex="-1">
+    <div id="topbar">
+      <button id="menuToggle" type="button" aria-label="Menüyü aç" aria-controls="sidebar" aria-expanded="false"></button>
+      <div id="crumbs"></div>
+      <span class="demo-flag" title="Ekranlardaki CI, kaynak çalışması ve kuyruk kayıtları sentetiktir">Sentetik demo verisi</span>
+      <button id="searchOpen" type="button" aria-label="Ara (Ctrl+K)"><span>CI, kaynak veya sayfa ara…</span><kbd>Ctrl K</kbd></button>
+      <button id="helpOpen" type="button" aria-label="Bu ekranın yardımı (?)" title="Bu ekranın yardımı (?)"></button>
+    </div>
+    <header id="topline">
+      <div><h1 id="pageTitle">Yükleniyor…</h1><div id="pageSub"></div></div>
+      <div id="topActions"></div>
+    </header>
+    <noscript><p class="notice">Evren arayüzü için JavaScript gereklidir.</p></noscript>
+    <div id="view" aria-live="polite"></div>
+  </main>
+  <aside id="detail" aria-label="Kayıt ayrıntısı" aria-hidden="true" inert>
+    <header class="detail-head">
+      <div><div id="detailKicker"></div><h2 id="detailTitle" tabindex="-1">Kayıt</h2></div>
+      <button class="btn secondary small" id="closeDetail" type="button" aria-label="Paneli kapat">Kapat ✕</button>
+    </header>
+    <div id="detailContent" class="detail-content"></div>
+    <footer id="detailFooter" class="detail-footer"></footer>
+  </aside>
+  <div id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

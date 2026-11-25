@@ -1,6 +1,6 @@
 # 10 · Arayüz ilkeleri
 
-Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini açıklayan ve Türkçe bir arayüz. KS GRC ile aynı görsel dil kullanılır; iki uygulama ileride tek uygulama gibi davranabilir.
+Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini açıklayan ve Türkçe bir arayüz. GRC Platformu ile aynı görsel dil kullanılır; iki uygulama ileride tek uygulama gibi davranabilir.
 
 ## İlkeler
 
@@ -25,15 +25,26 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
 
 | Ekran | Faz | Öz |
 | --- | --- | --- |
-| Genel Bakış | F0 ✓ | Durum, bekleyen kararlar, rehber sayfalar |
+| Genel Bakış | F0 ✓ | Karar bekleyenler, kapsam, kaynak sağlığı, GRC Platformu'na giden kontroller |
+| Eşleştirme kuyruğu | F0 ◐ | Yan yana karşılaştırma, kanıtlar (log-odds), birleştir/yeni CI/ertele; önizlemede kararlar oturumluk, kalıcı kayıt API ile |
+| Konfigürasyon öğeleri (liste + CI 360°) | F0 ◐ | Arama, sınıf/kaynak/kapsam filtresi; öznitelik başına kaynak, kural gerekçesi, ezilen değerler, yetkisiz deneme; ilişkiler; kaynak kayıtları |
+| GRC Kontrolleri | F0 ◐ | Kontrol sonucu, provenance, kanıt; kısmi toplamada "kesin değil" |
+| Veri kaynakları | F0 ✓ | Rol → ürün, yaşam döngüsü, devre kesici ve gerekçesi, çalışma geçmişi, ürün değişimi yordamı |
+| Kurallar | F0 ✓ | Uzlaştırma (sınıf × rol öncelik ızgarası), tanımlama (IRE), veri tazeleme ve eskime |
+| Büyük Resim | F0 ✓ | Tek sayfalık mimari özet |
 | Mimari Harita | F0 ✓ | Bölümlü harita, arama, detay paneli, yol haritası bağlantısı, SVG indirme |
-| Yol Haritası | F0 ✓ | Fazlar, ilerleme, filtre, çıkış kriterleri, haritaya bağlantı |
-| Eşleştirme kuyruğu | F0 | Yan yana karşılaştırma, kanıtlar, kabul/ret/yeni CI, toplu karar (aynı kural kümesi) |
-| Veri kaynakları | F0 | Son çalışmalar, kayıt/değişim/hata trendi, devre kesici durumu ve gerekçesi |
-| Konfigürasyon öğeleri (liste + CI 360°) | F1 | Küresel arama (Ctrl+K), filtre, CI ekranı: öznitelik + kaynak, ilişki grafiği, zaman çizgisi (değişiklik + Change), kaynak kapsamı rozetleri |
+| Yol Haritası | F0 ✓ | Fazlar, adımlar, "sizden gereken", çıkış kriterleri |
 | CMDB sağlığı | F1 | Tamlık, doğruluk (mükerrer, yetim, eski), uyum, kapsam; sınıf ve destek grubu kırılımı |
 | Şema ve yetkiler | F1 | Sınıf ağacı, alan düzenleyici, değişiklik setleri; rol × kaynak × işlem matrisi |
-| Kurallar | F1 | Tanımlama ve uzlaştırma kuralları (öznitelik × kaynak öncelik ızgarası), etki önizlemesi |
+
+◐: ekran önizlemede sentetik veriyle çalışır (`tools/build_demo.py`, evren-core hattından üretilir); kalıcı işlemler API (F0-09) ve uzlaştırıcı (F0-10) ile gelir.
+
+## Kabuk (GRC Platformu ile aynı)
+
+- Beyaz, gruplu ve daraltılabilir kenar menü; kırmızı vurgu; etkin sayfada sol çizgi.
+- Üst çubukta sayfa izi, "Sentetik demo verisi" işareti, **Ctrl+K** arama paleti (CI, kaynak, kuyruk kaydı, sayfa) ve **?** yardım.
+- Sayfa başlığı + açıklama + eylemler; metrik kartları sol renk şeridiyle durumu gösterir.
+- Kayıt ayrıntısı **sağdan açılan panelde**; Esc kapatır, odak açan satıra döner; derin bağlantı (`#/ci/<sys_id>`, `#/kuyruk/<id>`, `#/kaynaklar/<ad>`).
 
 ## Teknik yaklaşım
 
@@ -41,7 +52,7 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
 - `lib/dom.js` güvenli eleman üretimi sağlar. Metin her zaman `textContent` ile yazılır; `innerHTML` yasaktır.
 - Grafikler satır içi SVG ile çizilir: mimari harita, ilerleme çubukları, ileride ilişki grafiği.
 - Durum yönetimi sayfa başına yereldir. Paylaşılan veriler `fetch` ve kısa ömürlü önbellek üzerinden gelir.
-- Her ekran için Playwright duman testi yazılır. Konsol hatası ve CSP ihlali testi başarısız kılar.
+- Her ekran için Playwright duman testi yazılır. Konsol hatası ve CSP ihlali testi başarısız kılar. Mobil (390 px) yatay taşma tüm ekranlarda denetlenir.
 
 ## İçerik kuralları
 

@@ -15,5 +15,5 @@ Ortak kurallar:
 - Sağlık uç noktası: `/healthz` (canlılık) ve `/readyz` (bağımlılıklar).
 - Yapılandırılmış JSON log; kişisel veri ve sır içermez.
 - Kapanışta yarım işi bırakmaz.
-- Konteyner: root olmayan kullanıcı, salt okunur kök dosya sistemi, `cap_drop: ALL`, `no-new-privileges`. KS GRC Dockerfile deseni.
+- Konteyner: root olmayan kullanıcı, salt okunur kök dosya sistemi, `cap_drop: ALL`, `no-new-privileges`. GRC Platformu (tedarik) Dockerfile deseni.
 - Yapılandırma ortam değişkeninden okunur; sırlar dosya yolundan (`*_FILE`).

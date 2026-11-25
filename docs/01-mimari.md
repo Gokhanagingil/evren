@@ -19,7 +19,7 @@ Hedef ölçek: 40.000 sunucu ve 100.000 ağ cihazı. Türev kayıtlarla birlikte
 | 01 | Kaynaklar ve alım | Bağlayıcılar + YAML eşleme, alım geçidi, Kafka, ham yük arşivi | Keşif aracı değişirse yalnızca bağlayıcı ve eşleme değişir |
 | 02 | Anlamlandırma | Değişim süzgeci, normalizasyon, kimlik çözümleme, uzlaştırma, devre kesici, eşleştirme kuyruğu, yetkisiz değişiklik, trend/anomali | Ara katmanın asıl değeri |
 | 03 | Kayıt sistemi | PostgreSQL golden record (hibrit şema), ilişkiler, metadata sözlüğü, kaynak bilgisi, denetim izi, outbox; OpenSearch dizini; Valkey | Arama dizini ve önbellek kayıt sistemi değildir |
-| 04 | Tüketim | Arayüz, REST API, ServiceNow uyumlu API, olay akışı, Evren MCP sunucusu | Kurumun MCP uygulaması, KS GRC ve diğer uygulamalar |
+| 04 | Tüketim | Arayüz, REST API, ServiceNow uyumlu API, olay akışı, Evren MCP sunucusu | Kurumun MCP uygulaması, GRC Platformu ve diğer uygulamalar |
 | 05 | ServiceNow geçişi | sn-sync → IRE API → SN CMDB replika; değişiklik çekme; CI seçici | Task alanları ve business rule'lar değişmez |
 | 06 | Güvenlik ve yönetişim | Entra ID, RBAC+ABAC, SoD, şema setleri, sır kasası, mTLS, DB rolleri, SIEM, tedarik zinciri, yapay zekâ yönetişimi | `docs/06`, `docs/07` |
 
@@ -57,13 +57,13 @@ vCenter API ──► bağlayıcı (sayfalama tamam) ──► eşleme (ServiceN
 
 | Alan | Seçim | Gerekçe |
 | --- | --- | --- |
-| Dil | Python 3.12 | KS GRC ve tedarik ile aynı; veri işleme ekosistemi |
+| Dil | Python 3.12 | GRC Platformu (tedarik) ile aynı; veri işleme ekosistemi |
 | API | FastAPI + psycopg 3 + Pydantic v2 | Asenkron G/Ç, OpenAPI, tip doğrulama |
 | Kayıt sistemi | PostgreSQL 16+ | Olgun, lisanssız; JSONB, bölümleme, rol tabanlı güvenlik |
 | Olay omurgası | Apache Kafka (KRaft) | Yeniden oynatma, bölüm başına sıra, Apache 2.0 |
 | Arama/analiz | OpenSearch | Bulanık arama, toplama, Apache 2.0 anomali tespiti (RCF) |
 | Önbellek/kilit | Valkey | BSD lisanslı Redis çatalı |
-| Kimlik | Entra ID (OIDC) | KS GRC ile ortak |
+| Kimlik | Entra ID (OIDC) | GRC Platformu ile ortak |
 | Arayüz | ES modülleri + Web API'leri | Derleme yok, tedarik zinciri riski yok, CSP uyumlu |
 
 ## Ölçek özeti

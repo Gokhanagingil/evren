@@ -77,11 +77,14 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
 
 ## 4. Uzlaştırma
 
-- (sınıf, öznitelik) için kural varsa yalnızca yetkili kaynaklar yazar. Öncelik numarası küçük olan kazanır.
-- Kurallar alt sınıflara kalıtılır. Alt sınıfta aynı öznitelik için kural varsa en özel seviye kazanır; örneğin ağ cihazlarında NNMi.
-- **Veri tazeleme:** yüksek öncelikli kaynağın verisi süreyi aştıysa (ör. vCenter 3 gün) sıradaki taze kaynak kabul edilir.
+- Kurallar **kaynak rolüne** yazılır (`Discovery`, `Virtualization`, `Network`…); ürün adı kurala girmez (ADR-0009). Veri kaynağı → rol eşlemesi `metadata/data_sources.yaml`, kod `evren_core.sources.SourceRegistry`.
+- (sınıf, öznitelik) için kural varsa yalnızca yetkili rollerdeki kaynaklar yazar. Öncelik numarası küçük olan kazanır; aynı roldeki kaynaklar `role_rank` ile sıralanır.
+- Kurallar alt sınıflara kalıtılır. Alt sınıfta aynı öznitelik için kural varsa en özel seviye kazanır; örneğin ağ cihazlarında ağ keşfi rolü (NNMi).
+- **Veri tazeleme:** yüksek öncelikli rolün verisi süreyi aştıysa (ör. sanallaştırma 3 gün) sıradaki taze kaynak kabul edilir.
+- **Gölge kaynak** (`lifecycle: shadow`) karar vermez; değeri karşılaştırma için `AttributeDecision.shadow` içinde döner. Emekli kaynak yok sayılır.
+- **Yetkisiz deneme:** yetkili hiçbir kaynak değer vermediğinde reddedilen değer kaybolmaz; `Reconciler.reconcile_report().rejected` ile raporlanır (CI 360° ekranında görünür).
 - Kural yoksa en güncel gözlem kazanır. `null` hiçbir zaman değer silmez.
-- **Yönetişim alanları** (destek grubu, sahip, yaşam döngüsü) yalnızca Manual ve geçiş döneminde ServiceNow tarafından yazılır.
+- **Yönetişim alanları** (destek grubu, sahip, yaşam döngüsü) yalnızca Manual ve geçiş döneminde ITSM rolü (ServiceNow) tarafından yazılır.
 - **Keşif sahipli alanlarda Manual en düşük önceliktedir (900):** elle girilen değer yalnızca keşif kaynağı yoksa geçerlidir.
 
 ## 5. Devre kesici ve eskime
@@ -103,4 +106,4 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
 - Golden record'da izlenen bir öznitelik değişti (RAM, CPU, OS, seri), **ve**
 - CI için o zaman aralığında onaylı bir Change kaydı (`ref.sn_change_request` + `ref.sn_task_ci`) yok.
 
-Bu kayıt KS GRC'de "yetkisiz değişiklik" kontrolüne kanıt olur.
+Bu kayıt GRC Platformu'nda "yetkisiz değişiklik" kontrolüne kanıt olur.

@@ -4,20 +4,20 @@
 
 | Arayüz | Kim kullanır | Nerede |
 | --- | --- | --- |
-| Yerel REST `/api/v1` | Evren arayüzü, KS GRC, tedarik portalı, otomasyonlar | `services/api` |
+| Yerel REST `/api/v1` | Evren arayüzü, GRC Platformu (tedarik), otomasyonlar | `services/api` |
 | ServiceNow uyumlu `/api/now/table/{table}`, `/api/now/identifyreconcile` | SN Table API'ye yazılmış eski betikler, SN IRE biçiminde veri üreten araçlar | `services/api` (F2-05) |
 | Olay akışı (CloudEvents + imzalı webhook) | Değişikliğe tepki veren uygulamalar | Kafka `cmdb.ci.changed`, webhook |
 | MCP | Kurumun kendi MCP uygulaması ve yapay zekâ ajanları | `services/mcp`, docs/09 |
 
 Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 
-## Sözleşme ilkeleri (KS GRC ile ortak)
+## Sözleşme ilkeleri (GRC Platformu ile ortak)
 
 - **Tekrar güvenliği:** yazma isteklerinde `idempotency_key`.
   - Aynı anahtar + aynı içerik → `200` ve `replayed: true`.
   - Aynı anahtar + farklı içerik → `409`.
 - **Kaynak bilgisi (`provenance`):** `source_system`, `query_reference`, `collection_status` (`complete`/`partial`/`error`).
-  - KS GRC'ye giden CMDB tabanlı kontrol sonuçları bu alanı taşır.
+  - GRC Platformu'na giden CMDB tabanlı kontrol sonuçları bu alanı taşır.
   - `partial` veya `error` verisi `inconclusive` dışında bir sonuç üretemez.
 - **Zaman:** saat dilimli ISO 8601, UTC saklama.
 - **Hata gövdesi:** `{"error": {"code", "message" (Türkçe), "details"}}`.
@@ -54,9 +54,9 @@ GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_
 - `data`: sınıf, değişen öznitelikler (eski → yeni), kaynak, gerekçe, korelasyon (çalışma, Change numarası).
 - Webhook imzası: `X-Evren-Signature: sha256=<HMAC>` + zaman damgası (tekrar saldırısına karşı 5 dakika penceresi).
 
-## KS GRC entegrasyonu (F2-08)
+## GRC Platformu (tedarik) entegrasyonu (F2-08)
 
-Örnek otomatik kontroller (kurum MCP uygulaması veya KS GRC zamanlayıcısı çalıştırır):
+Örnek otomatik kontroller (kurum MCP uygulaması veya GRC Platformu zamanlayıcısı çalıştırır):
 
 | Kontrol | Evren sorgusu | Sonuç |
 | --- | --- | --- |
@@ -66,4 +66,4 @@ GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_
 | Yetkisiz değişiklik | `insight.anomaly kind=unauthorized_change` (dönem) | fail + Change referansı |
 | Sahipsiz kritik CI | `busines_criticality` yüksek ve `owned_by` boş | fail/pass |
 
-Kaynak çalışması devre kesicide `WARN` veya `OPEN` ise `collection_status=partial` gönderilir ve KS GRC sonucu `inconclusive` olur.
+Kaynak çalışması devre kesicide `WARN` veya `OPEN` ise `collection_status=partial` gönderilir ve GRC Platformu sonucu `inconclusive` olur.

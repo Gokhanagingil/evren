@@ -1,5 +1,6 @@
 // Mimari Harita: bölümlü SVG, sığdır/yakınlaştır, bileşen arama, detay paneli, SVG indirme.
 import { h, append, clear, loadJSON, loadSVG, phaseChip, statusChip } from '../lib/dom.js';
+import { setHeader } from '../lib/shell.js';
 
 const MIN_ZOOM = 0.4;
 const MAX_ZOOM = 2.5;
@@ -26,11 +27,11 @@ export async function renderArchitecture(view, param) {
 
   const scroll = h('div', { class: 'map-scroll', id: 'mapScroll' });
   scroll.append(svg);
-  const panel = h('aside', { class: 'card detail', id: 'mapDetail', 'aria-live': 'polite', 'aria-label': 'Bileşen ayrıntısı' });
+  const panel = h('aside', { class: 'panel map-detail', id: 'mapDetail', 'aria-live': 'polite', 'aria-label': 'Bileşen ayrıntısı' });
   const layout = h('div', { class: 'map-layout no-panel' });
   const zoomLabel = h('span', { class: 'muted', id: 'zoomLabel' }, '%100');
   const search = h('input', {
-    class: 'input', type: 'search', id: 'mapSearch', placeholder: 'Bileşen ara (ör. kimlik, Kafka, IRE)',
+    class: 'searchbar', type: 'search', id: 'mapSearch', placeholder: 'Bileşen ara (ör. kimlik, Kafka, IRE)',
     'aria-label': 'Haritada bileşen ara',
   });
 
@@ -81,7 +82,7 @@ export async function renderArchitecture(view, param) {
     const chapter = data.chapters.find((c) => c.id === node.chapter);
     const items = roadmapByComponent.get(nodeId) || [];
     append(clear(panel), [
-      h('button', { class: 'btn small close', type: 'button', onclick: closePanel, 'aria-label': 'Ayrıntıyı kapat' }, 'Kapat'),
+      h('button', { class: 'btn secondary small close', type: 'button', onclick: closePanel, 'aria-label': 'Ayrıntıyı kapat' }, 'Kapat'),
       h('div', { class: 'meta' },
         phaseChip(node.phase, data.phases[node.phase]),
         h('span', { class: 'kind' }, `${node.kind_label} · ${chapter ? `${chapter.number} ${chapter.title}` : ''}`)),
@@ -147,29 +148,24 @@ export async function renderArchitecture(view, param) {
       onclick: () => scroll.scrollTo({ top: Math.max(0, c.y * zoom - 8), left: 0 }),
     }, h('b', {}, c.number), c.title)));
 
-  const toolbar = h('div', { class: 'toolbar', role: 'toolbar', 'aria-label': 'Harita araçları' },
+  const toolbar = h('div', { class: 'map-toolbar', role: 'toolbar', 'aria-label': 'Harita araçları' },
     search,
     h('span', { class: 'sep', 'aria-hidden': 'true' }),
-    h('button', { class: 'btn small', type: 'button', id: 'mapFit', onclick: fit }, 'Sığdır'),
-    h('button', { class: 'btn small', type: 'button', id: 'mapZoomOut', 'aria-label': 'Uzaklaştır',
+    h('button', { class: 'btn secondary small', type: 'button', id: 'mapFit', onclick: fit }, 'Sığdır'),
+    h('button', { class: 'btn secondary small', type: 'button', id: 'mapZoomOut', 'aria-label': 'Uzaklaştır',
       onclick: () => applyZoom(zoom / 1.2, { x: scroll.clientWidth / 2, y: scroll.clientHeight / 2 }) }, '− Uzaklaştır'),
-    h('button', { class: 'btn small', type: 'button', id: 'mapZoomIn', 'aria-label': 'Yakınlaştır',
+    h('button', { class: 'btn secondary small', type: 'button', id: 'mapZoomIn', 'aria-label': 'Yakınlaştır',
       onclick: () => applyZoom(zoom * 1.2, { x: scroll.clientWidth / 2, y: scroll.clientHeight / 2 }) }, '+ Yakınlaştır'),
     zoomLabel,
     h('span', { class: 'sep', 'aria-hidden': 'true' }),
-    h('a', { class: 'btn small', id: 'mapExport', href: '/content/architecture.svg', download: 'Evren_Mimari_Harita.svg' }, 'SVG indir'));
+    h('a', { class: 'btn secondary small', id: 'mapExport', href: '/content/architecture.svg', download: 'Evren_Mimari_Harita.svg' }, 'SVG indir'));
 
-  view.append(
-    h('div', { class: 'page-head' },
-      h('div', {},
-        h('p', { class: 'eyebrow' }, 'Evren / Mimari'),
-        h('h1', {}, 'Mimari Harita'),
-        h('p', { class: 'lead' },
-          'Kaynaktan karara veri akışı, kayıt sistemi, ServiceNow geçiş deseni ve güvenlik denetimleri. ',
-          'Bir kutuya tıklayın veya Tab ile gelip Enter\'a basın; ayrıntı ve yol haritası bağlantısı sağda açılır.')),
-      toolbar),
-    layout,
-  );
+  setHeader({
+    title: 'Mimari Harita',
+    sub: 'Kaynaktan karara veri akışı, kayıt sistemi, ServiceNow geçiş deseni ve güvenlik denetimleri. Bir kutuya tıklayın veya Tab ile gelip Enter\'a basın; ayrıntı ve yol haritası bağlantısı açılır.',
+    crumbs: [['Mimari Harita']],
+  });
+  view.append(toolbar, layout);
   layout.append(h('div', { class: 'map-frame' }, chapterNav, scroll), panel);
 
   // İlk yerleşim: sayfa genişliğine sığdır
