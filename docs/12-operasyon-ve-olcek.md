@@ -53,13 +53,49 @@
 
 ## Dağıtım
 
-- Hedef ortam açık soru: Kubernetes/OpenShift mi, VM üzerinde Docker mı? İki durumda da:
+- Hedef ortam açık soru: Kubernetes/OpenShift mi, VM üzerinde Docker mı? (Proje sahibi en son paylaşacak; U10.) İki durumda da:
   - imaj imzalı ve taranmış;
   - root olmayan kullanıcı, salt okunur kök dosya sistemi;
   - sırlar dosya olarak bağlanır;
   - ağ politikaları servis bazında tanımlanır.
 - Migrasyonlar sürüm kontrollü ve geri alınabilir yazılır. Yıkıcı değişiklikler iki adımda yapılır: önce genişlet, sonra daralt.
 - Ortamlar: geliştirme → test → ön üretim → üretim. Ön üretimde anonimleştirilmiş veri kullanılır.
+
+### Bugün hazır olan (U1, ADR-0016)
+
+Üretim dağıtım biçimi hedef ortamla birlikte yazılacak. Aşağıdaki sözleşme o biçimden bağımsızdır ve CI'da her değişiklikte sınanır.
+
+| Parça | Ne | Nerede |
+| --- | --- | --- |
+| İmaj | Tek Evren imajı; komut servisi seçer: `api`, `worker`, `migrate`, `demo`, `healthcheck api\|worker`. uid 10001, hash'li bağımlılıklar, temel görüntü özetle sabit | `deploy/Dockerfile`, `deploy/evren.py` |
+| Göç | Bir kez çalışan iş. Göçler `meta.schema_migration` defterine (sürüm + SHA-256) yazılır; içeriği değişmiş göçte durur. Metadata tohumu ve servis giriş rolleri de bu işte | `tools/migrate.py` |
+| Veritabanı bağlantısı | Servis başına giriş rolü (`evren_api_svc`, `evren_worker_svc` …), NOINHERIT, yalnızca kendi grup rolü | ADR-0016 madde 4 |
+| Sırlar | `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE` (+ Entra'da istemci sırrı dosyası); servis başına parola dosyası `<dizin>/<giriş rolü>` | kurum sır kasası → dosya |
+| Sağlık | API: `/readyz` (veritabanı erişimi), `/healthz`. Çalışan: nabız dosyası (`EVREN_WORKER_HEALTH_FILE`) + `ingest.worker_heartbeat` | `deploy/evren.py healthcheck` |
+| Kafka | KRaft; otomatik konu açma kapalı; konular, bölüm sayısı ve saklama süresi `deploy/kafka/topics.txt`'te | U2'de kullanılmaya başlar |
+| OpenSearch | Tek düğüm (geliştirme) | U3'te kullanılmaya başlar |
+
+Geliştirme yığını (yalnızca 127.0.0.1):
+
+```bash
+python tools/dev_stack.py up --demo    # sırlar → imaj → göç → demo verisi → Kafka konuları → servisler
+python tools/dev_stack.py smoke        # uçtan uca duman testi (CI "Yığın" işiyle aynı)
+python tools/dev_stack.py status       # servis durumları; logs [servis] ile günlükler
+python tools/dev_stack.py down         # durdur; --volumes veriyi de siler
+```
+
+| Adres | Servis |
+| --- | --- |
+| http://127.0.0.1:8088 | Evren arayüzü ve API (dev oturumu) |
+| 127.0.0.1:55432 | PostgreSQL (`evren`; parola `deploy/secrets/pg_owner_password`) |
+| 127.0.0.1:59092 | Kafka (dış dinleyici) |
+| http://127.0.0.1:59200 | OpenSearch |
+
+- **TLS denetimli kurumsal vekil sunucu arkasında derleme:** `EVREN_BUILD_CA_FILE=/yol/kurum-ca.pem python tools/dev_stack.py up`. CA yalnızca bağımlılık kurulum adımına derleme sırrı olarak bağlanır; imaja yazılmaz.
+- **Debian güvenlik güncellemeleri** derlemede zorunludur; depoya erişilemezse derleme durur. Debian deposuna erişimi olmayan geliştirme makinesinde: `EVREN_BUILD_OS_UPDATES=0` (yalnızca geliştirme; CI'daki Trivy imaj kapısı bu imajı kabul etmeyebilir).
+- **Görüntü güncelleme:** `python tools/dev_stack.py digests --pull` sabit özetle bugünkü özeti karşılaştırır. Yeni özet tek değişiklik olarak yazılır ve incelenir.
+- **Psql ile kurulmuş mevcut veritabanı:** `python tools/migrate.py --baseline` mevcut göçleri bir kez deftere alır; sonrasında `python tools/migrate.py` yalnızca yeni göçleri uygular.
+- **Geliştirme kolaylıkları üretimde yoktur:** dev oturumu (`EVREN_DEV_CONTAINER`), Kafka düz metin, OpenSearch güvenlik eklentisi kapalı. Üretimde Entra, Kafka SASL/TLS + konu ACL'leri, OpenSearch güvenlik eklentisi + TLS zorunludur.
 
 ## Yük testi (F0 sonu)
 

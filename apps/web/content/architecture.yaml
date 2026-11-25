@@ -192,7 +192,7 @@ details:
   kafka:
     phase: F0
     text: Kaynaklar ile işleyiciler birbirinden bağımsızlaşır. Kayıtlar yeniden oynatılabilir; bir kural değişikliğinden sonra geçmiş yeniden işlenebilir.
-    tech: [Apache Kafka (KRaft), Konu başına ACL]
+    tech: [Apache Kafka (KRaft), Konu başına ACL, "deploy/kafka/topics.txt (otomatik konu açma kapalı)"]
     security: [SASL/mTLS, Konu bazlı yetki]
   raw_archive:
     phase: F1
@@ -401,8 +401,8 @@ details:
     security: [Etki analizi, Hazırlayan onaylayamaz (API + kısıt + tetikleyici), SHA-256 değişiklik dosyası]
   secrets:
     phase: F0
-    text: Repoda ve imajda hiçbir sır bulunmaz. Kimlik bilgileri kurum sır kasasından çalışma zamanında okunur ve döndürülebilir.
-    tech: [Kurum sır kasası, gitleaks]
+    text: Repoda ve imajda hiçbir sır bulunmaz. Kimlik bilgileri kurum sır kasasından çalışma zamanında okunur ve döndürülebilir. Servisler sırları yalnızca dosyadan okur (*_FILE); ortam değişkeni veya komut satırı kullanılmaz.
+    tech: [Kurum sır kasası, "compose secrets (geliştirme)", gitleaks]
     security: []
   ai_governance:
     phase: F3
@@ -416,8 +416,8 @@ details:
     security: []
   db_roles:
     phase: F0
-    text: Her servisin ayrı veritabanı rolü vardır. Golden record'a yalnızca uzlaştırıcı yazar. Arayüzdeki elle düzenlemeler bile Manual kaynak kaydı olarak uzlaştırmadan geçer.
-    tech: ["db/migrations/0003_security.sql"]
+    text: Her servisin ayrı veritabanı rolü vardır. Golden record'a yalnızca uzlaştırıcı yazar. Arayüzdeki elle düzenlemeler bile Manual kaynak kaydı olarak uzlaştırmadan geçer. Her servis kendi giriş rolüyle bağlanır (NOINHERIT) ve yalnızca kendi grup rolünü üstlenir.
+    tech: ["db/migrations/0003_security.sql", "tools/migrate.py (izlenen göçler, servis giriş rolleri)"]
     security: [Test edilmiş yetki sınırları]
   siem:
     phase: F1
@@ -426,8 +426,8 @@ details:
     security: []
   supply_chain:
     phase: F0
-    text: Bağımlılıklar hash ile kilitlenir, imaj taranır ve SBOM üretilir. CI eylemleri commit SHA ile sabitlenir. Sır taraması ve SAST her değişiklikte çalışır.
-    tech: [pip --require-hashes, Trivy, gitleaks, bandit, pip-audit]
+    text: Bağımlılıklar hash ile kilitlenir, imaj taranır ve SBOM üretilir. CI eylemleri commit SHA ile, dış konteyner görüntüleri özetle (digest) sabitlenir. Evren tek imajdır; root olmayan kullanıcı ve salt okunur kökle çalışır. Sır taraması ve SAST her değişiklikte çalışır.
+    tech: [pip --require-hashes, Trivy, gitleaks, bandit, pip-audit, "deploy/Dockerfile"]
     security: []
   threat_model:
     phase: F0

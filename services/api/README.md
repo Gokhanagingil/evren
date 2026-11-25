@@ -6,6 +6,7 @@
 
 ```bash
 EVREN_AUTH_MODE=dev EVREN_DATABASE_URL=postgresql://... uvicorn --factory evren_api:create_app --host 127.0.0.1 --port 8090
+python tools/dev_stack.py up --demo      # veya konteynerde, tüm yığınla (ADR-0016): http://127.0.0.1:8088
 ```
 
 | Uç nokta | Durum |
@@ -21,7 +22,7 @@ EVREN_AUTH_MODE=dev EVREN_DATABASE_URL=postgresql://... uvicorn --factory evren_
 | Makine hesapları, ilişki düzenleme | Sırada |
 | `/api/now/table/*`, `/api/now/identifyreconcile` | F2-05 |
 
-Ortam değişkenleri: `EVREN_AUTH_MODE` (`dev` | `entra`, zorunlu), `EVREN_DATABASE_URL` veya `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE`, `EVREN_COOKIE_SECURE`, `EVREN_ENTRA_*`. Sırlar dosya yolundan okunur; `dev` modu yalnızca 127.0.0.1'de açılır.
+Ortam değişkenleri: `EVREN_AUTH_MODE` (`dev` | `entra`, zorunlu), `EVREN_DATABASE_URL` veya `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE`, `EVREN_COOKIE_SECURE`, `EVREN_ENTRA_*`. Sırlar dosya yolundan okunur; `dev` modu yalnızca 127.0.0.1'de açılır. Konteynerde `EVREN_DEV_CONTAINER=1` ile 0.0.0.0'a bağlanır ve yalnızca loopback/özel ağdan gelen istekleri kabul eder (Entra modunda yok sayılır). Konteynerde veritabanına `evren_api_svc` giriş rolüyle bağlanır.
 
 ## Sorumluluk
 

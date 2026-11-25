@@ -14,9 +14,9 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 0/10 adım tamamlandı
+**İzlek ilerlemesi:** 1/10 adım tamamlandı
 
-- [ ] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Devam ediyor_ (ilgili: F0-10)
+- [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [ ] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Planlandı_ (ilgili: F0-10)
 - [ ] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Planlandı_ (ilgili: F1-08)
 - [ ] **U4** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04)

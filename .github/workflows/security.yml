@@ -55,7 +55,7 @@ jobs:
           done
       - name: SAST (bandit)
         run: |
-          bandit -r packages tools services -x '*/tests/*' -f json -o verification/security/bandit.json --exit-zero
+          bandit -r packages tools services deploy -x '*/tests/*' -f json -o verification/security/bandit.json --exit-zero
           python - <<'PY'
           import json
           report = json.load(open('verification/security/bandit.json'))

@@ -19,6 +19,8 @@ known-first-party = ["evren_core", "evren_reconciler", "evren_api", "_bootstrap"
 "**/tests/**" = ["S603", "S607", "S608"]
 # Üretilmiş genişlik tablosu
 "tools/_font_metrics.py" = ["E501"]
+# Geliştirme yığını yardımcısı: yalnızca sabit "docker compose" komutları (kabuk yok) ve sabit 127.0.0.1 adresleri
+"tools/dev_stack.py" = ["S310", "S603", "S607"]
 # Tohum SQL üreticisi: tüm değerler _q() ile kaçışlanır, tanımlayıcılar doğrulayıcıdaki
 # düzenli ifadelerden geçer; çıktı yalnızca geliştirici/DBA tarafından uygulanır.
 "packages/evren-core/src/evren_core/metadata.py" = ["S608"]

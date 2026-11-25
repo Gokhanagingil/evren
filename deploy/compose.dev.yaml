@@ -1,9 +1,15 @@
-# Evren — YEREL GELİŞTİRME ortamı. Üretim dağıtımı değildir (docs/12-operasyon-ve-olcek.md).
-# Tüm portlar yalnızca 127.0.0.1'e bağlanır. Parolalar .env dosyasından gelir (git'e girmez).
-# TODO(F0-06): imaj etiketlerini digest (@sha256:...) ile sabitle.
+# Evren — YEREL GELİŞTİRME yığını (U1, ADR-0016). Üretim dağıtımı değildir (docs/12-operasyon-ve-olcek.md).
 #
-#   cp .env.example .env   # değerleri doldurun
-#   docker compose -f deploy/compose.dev.yaml up -d
+#   python tools/dev_stack.py up --demo   # sırlar → imaj → göç → demo verisi → Kafka konuları → servisler
+#   python tools/dev_stack.py smoke       # uçtan uca duman testi (CI "Yığın" işiyle aynı)
+#   python tools/dev_stack.py down        # durdur (--volumes: veriyi de sil)
+#   tarayıcı: http://127.0.0.1:8088
+#
+# Dış görüntüler özetle (digest) sabittir; yeni özet: python tools/dev_stack.py digests --pull (tek değişiklik).
+# Tüm portlar yalnızca 127.0.0.1'e yayınlanır. Sırlar dosyadan okunur (compose secrets), ortam değişkenine
+# veya imaja yazılmaz. Evren servisleri: root olmayan kullanıcı, salt okunur kök dosya sistemi, yetenek yok.
+# Geliştirme kolaylıkları (yalnız burada): API dev oturumu (EVREN_DEV_CONTAINER, yalnız özel ağdan istek),
+# Kafka ve OpenSearch şifresiz/düz metin. Üretimde: Entra, Kafka SASL/TLS, OpenSearch güvenlik eklentisi.
 name: evren-dev
 
 x-hardening: &hardening
@@ -11,62 +17,163 @@ x-hardening: &hardening
     - no-new-privileges:true
   restart: unless-stopped
 
+x-evren: &evren
+  <<: *hardening
+  image: evren:dev
+  build:
+    context: ..
+    dockerfile: deploy/Dockerfile
+  read_only: true
+  tmpfs: ["/tmp"]
+  cap_drop: [ALL]
+
 services:
   postgres:
     <<: *hardening
-    image: postgres:16
+    image: postgres:16@sha256:07abc3f43c9395b0bdbbab36bc25ddb0e8d83cd4fcafb5fb7d6abe14ff156dd8
     environment:
       POSTGRES_USER: evren_owner
-      POSTGRES_PASSWORD: ${EVREN_PG_PASSWORD:?.env içinde EVREN_PG_PASSWORD tanımlayın}
+      POSTGRES_PASSWORD_FILE: /run/secrets/pg_owner_password
       POSTGRES_DB: evren
       POSTGRES_INITDB_ARGS: "--data-checksums"
+    secrets: [pg_owner_password]
     ports: ["127.0.0.1:55432:5432"]
     volumes:
       - pg_data:/var/lib/postgresql/data
-      - ../db/migrations:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U evren_owner -d evren"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 20
+
+  # Tek seferlik: göçler (izlenen), metadata tohumu, servis giriş rolleri (tools/migrate.py)
+  migrate:
+    <<: *evren
+    restart: "no"
+    command: ["migrate", "--service-roles", "/run/secrets"]
+    environment:
+      EVREN_DATABASE_URL_FILE: /run/secrets/owner_dsn
+    secrets: [owner_dsn, evren_api_svc, evren_worker_svc]
+    depends_on:
+      postgres: {condition: service_healthy}
+
+  # İsteğe bağlı: sentetik demo verisi (boş veritabanına bir kez)
+  demo:
+    <<: *evren
+    restart: "no"
+    profiles: [demo]
+    command: ["demo"]
+    environment:
+      EVREN_ALLOW_DEMO: "1"
+      EVREN_DATABASE_URL_FILE: /run/secrets/owner_dsn
+    secrets: [owner_dsn]
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  api:
+    <<: *evren
+    command: ["api"]
+    environment:
+      EVREN_AUTH_MODE: dev
+      EVREN_DEV_CONTAINER: "1"
+      EVREN_HOST: 0.0.0.0
+      EVREN_PORT: "8088"
+      EVREN_DEV_USER: gelistirici
+      EVREN_DEV_NAME: Geliştirici
+      EVREN_DEV_ROLES: evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer
+      EVREN_DATABASE_URL_FILE: /run/secrets/api_dsn
+      EVREN_SESSION_KEY_FILE: /run/secrets/session_key
+    secrets: [api_dsn, session_key]
+    ports: ["127.0.0.1:8088:8088"]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "api"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
+  worker:
+    <<: *evren
+    command: ["worker"]
+    environment:
+      EVREN_DATABASE_URL_FILE: /run/secrets/worker_dsn
+      EVREN_WORKER_POLL_SECONDS: "15"
+      EVREN_WORKER_HEALTH_FILE: /tmp/worker.alive
+    secrets: [worker_dsn]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "worker"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
 
   kafka:
     <<: *hardening
-    image: apache/kafka:4.0.0
+    image: apache/kafka:4.0.0@sha256:3f7b939115cd4872e9cee9369d80bd69712fde55f9902f46d793f64848dedc75
     environment:
       KAFKA_NODE_ID: "1"
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:59092
+      KAFKA_LISTENERS: INTERNAL://:9092,EXTERNAL://:9094,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:9092,EXTERNAL://127.0.0.1:59092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: "1"
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: "1"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-    ports: ["127.0.0.1:59092:9092"]
+    ports: ["127.0.0.1:59092:9094"]
     volumes:
       - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 10s
+      retries: 18
+      start_period: 15s
+
+  # Tek seferlik: Kafka konuları (otomatik konu açma kapalı). Ad ve bölüm sayısı deploy/kafka/topics.txt'te.
+  kafka-init:
+    <<: *hardening
+    image: apache/kafka:4.0.0@sha256:3f7b939115cd4872e9cee9369d80bd69712fde55f9902f46d793f64848dedc75
+    restart: "no"
+    entrypoint: ["/bin/bash", "/topics/create-topics.sh", "kafka:9092"]
+    volumes:
+      - ./kafka:/topics:ro
+    depends_on:
+      kafka: {condition: service_healthy}
 
   opensearch:
     <<: *hardening
-    image: opensearchproject/opensearch:2
+    image: opensearchproject/opensearch:2.19.1@sha256:72fe2fc84be8295906b8efca020b46c58ed45c8da60cd9b8b49e1991e38e89a4
     environment:
       discovery.type: single-node
-      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?.env içinde tanımlayın}
-      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
-    ulimits:
-      memlock: {soft: -1, hard: -1}
-      nofile: {soft: 65536, hard: 65536}
+      plugins.security.disabled: "true"      # yalnızca yerel geliştirme; üretimde güvenlik eklentisi + TLS
+      DISABLE_INSTALL_DEMO_CONFIG: "true"
+      OPENSEARCH_JAVA_OPTS: "-Xms512m -Xmx512m"
     ports: ["127.0.0.1:59200:9200"]
     volumes:
       - os_data:/usr/share/opensearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:9200/_cluster/health?wait_for_status=yellow\\&timeout=5s >/dev/null"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 20s
 
-  valkey:
-    <<: *hardening
-    image: valkey/valkey:8
-    command: ["valkey-server", "--requirepass", "${EVREN_VALKEY_PASSWORD:?.env içinde tanımlayın}", "--appendonly", "no"]
-    ports: ["127.0.0.1:56379:6379"]
-    read_only: true
-    tmpfs: ["/data"]
+secrets:
+  pg_owner_password: {file: ./secrets/pg_owner_password}
+  owner_dsn: {file: ./secrets/owner_dsn}
+  api_dsn: {file: ./secrets/api_dsn}
+  worker_dsn: {file: ./secrets/worker_dsn}
+  evren_api_svc: {file: ./secrets/evren_api_svc}
+  evren_worker_svc: {file: ./secrets/evren_worker_svc}
+  session_key: {file: ./secrets/session_key}
 
 volumes:
   pg_data:

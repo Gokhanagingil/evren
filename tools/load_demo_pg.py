@@ -22,7 +22,7 @@ from typing import Any
 import psycopg
 import yaml
 
-from _bootstrap import REPO_ROOT
+from _bootstrap import REPO_ROOT, database_url
 
 sys.path.insert(0, str(REPO_ROOT / "services" / "reconciler"))
 
@@ -173,7 +173,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--role", default="evren_app_reconciler", help="SET ROLE (boş: bağlantı kullanıcısı)")
     args = parser.parse_args(argv)
-    with psycopg.connect(autocommit=True) as conn:
+    with psycopg.connect(database_url(), autocommit=True) as conn:
         with conn.cursor() as cur:
             cur.execute("SELECT count(*) FROM cmdb.cmdb_ci")
             if cur.fetchone()[0]:  # type: ignore[index]

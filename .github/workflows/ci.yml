@@ -26,8 +26,9 @@ jobs:
           python -m pip install --require-hashes -r requirements/dev.txt
       - name: Derleme ve lint
         run: |
-          python -m compileall -q packages services tools apps/web/tests
-          ruff check packages services tools apps/web/tests
+          python -m compileall -q packages services tools deploy apps/web/tests
+          ruff check packages services tools deploy apps/web/tests
+          bash -n deploy/kafka/create-topics.sh
           for f in $(find apps/web/assets/js -name '*.js'); do node --check "$f"; done
       - name: Metadata, şemalar ve mimari harita güncel mi
         run: |
@@ -78,9 +79,9 @@ jobs:
           python tools/load_metadata.py --sql build/seed.sql
           psql -v ON_ERROR_STOP=1 -q -f build/seed.sql
           psql -v ON_ERROR_STOP=1 -q -f build/seed.sql
-      - name: Entegrasyon testleri
+      - name: Entegrasyon testleri (+ göç aracı, kendi geçici veritabanlarında)
         working-directory: packages/evren-core
-        run: python -m pytest -q tests/test_postgres.py
+        run: python -m pytest -q tests/test_postgres.py tests/test_migrate_pg.py
       - name: Uzlaştırıcı (en az yetkili rolle, gerçek PostgreSQL)
         run: python -m pytest -q services/reconciler/tests
       - name: Demo envanteri uzlaştırıcıyla yüklenir
@@ -91,6 +92,73 @@ jobs:
         run: |
           python -m playwright install --with-deps chromium
           python -m pytest -q apps/web/tests/test_web_api.py
+
+  stack:
+    # U1 (ADR-0016): tek imaj + compose yığını gerçekten ayağa kalkıyor mu; geliştiricinin çalıştırdığı komutların
+    # aynısı (tools/dev_stack.py). Sırlar bu çalıştırmada üretilir ve iş sonunda birimlerle birlikte silinir.
+    name: Yığın (imaj + compose — PostgreSQL, Kafka, OpenSearch, Evren)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Compose yapılandırması geçerli, dış görüntüler özetle (digest) sabit mi
+        run: |
+          python3 tools/dev_secrets.py
+          docker compose -f deploy/compose.dev.yaml config -q
+          docker compose version
+          python3 tools/dev_stack.py digests
+      - name: Yığını kur (imaj, göç, demo verisi, Kafka konuları, servisler)
+        run: python3 tools/dev_stack.py up --demo
+      - name: İmaj taraması (Trivy; düzeltmesi olan YÜKSEK/KRİTİK zafiyet veya sır varsa durur) ve imaj SBOM'u
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/tools" verification/stack
+          (cd "$RUNNER_TEMP/tools"
+           curl -fsSLo trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v0.76.2/trivy_0.76.2_Linux-64bit.tar.gz
+           echo 'bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf  trivy.tgz' | sha256sum -c -
+           tar -xzf trivy.tgz trivy)
+          "$RUNNER_TEMP/tools/trivy" image --scanners vuln,secret --severity HIGH,CRITICAL --ignore-unfixed \
+            --exit-code 1 --format json --output verification/stack/trivy-image.json evren:dev \
+            || { "$RUNNER_TEMP/tools/trivy" convert --format table verification/stack/trivy-image.json; exit 1; }
+          "$RUNNER_TEMP/tools/trivy" image --format cyclonedx --output verification/stack/sbom-image.cdx.json evren:dev
+          docker image inspect --format 'evren:dev {{.Id}} {{.Size}} bayt' evren:dev
+      - name: Göç aracı ikinci kez (idempotent; bekleyen göç kalmaz)
+        run: |
+          set -eu
+          docker compose -f deploy/compose.dev.yaml run --rm --no-deps migrate
+          status=$(docker compose -f deploy/compose.dev.yaml run --rm --no-deps migrate migrate --status)
+          echo "$status"
+          ! echo "$status" | grep -q bekliyor
+      - name: Uçtan uca duman testi
+        run: python3 tools/dev_stack.py smoke
+      - name: Güvenlik sıkılaştırması yerinde mi (root değil, salt okunur kök, yetenek yok)
+        run: |
+          set -eu
+          for svc in api worker; do
+            cid=$(docker compose -f deploy/compose.dev.yaml ps -q "$svc")
+            test "$(docker inspect -f '{{.Config.User}}' "$cid")" = "10001"
+            test "$(docker inspect -f '{{.HostConfig.ReadonlyRootfs}}' "$cid")" = "true"
+            docker inspect -f '{{.HostConfig.CapDrop}}' "$cid" | grep -q ALL
+            docker inspect -f '{{json .HostConfig.PortBindings}}' "$cid" | python3 -c "
+          import json, sys
+          b = json.load(sys.stdin) or {}
+          assert all(h['HostIp'] == '127.0.0.1' for v in b.values() for h in v), b"
+          done
+          echo "api ve worker: uid 10001, salt okunur kök, cap_drop ALL, port yalnızca 127.0.0.1"
+      - name: Günlükler
+        if: failure()
+        run: python3 tools/dev_stack.py logs
+      - name: Kapat ve sil
+        if: always()
+        run: python3 tools/dev_stack.py down --volumes
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: stack-verification-${{ github.run_id }}
+          path: verification/stack/
+          retention-days: 30
 
   web:
     name: Arayüz duman testi (Chromium)

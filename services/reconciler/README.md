@@ -37,6 +37,9 @@ python -m evren_reconciler.worker --once          # bekleyen istekleri bir tur u
 | `EVREN_DB_ROLE` | `evren_app_reconciler` | Bağlantıdan sonra geçilen rol (en az yetki) |
 | `EVREN_WORKER_POLL_SECONDS` | `30` | Bildirim kaçarsa tarama aralığı (1–3600) |
 | `EVREN_LOG_LEVEL` | `INFO` | Günlük düzeyi |
+| `EVREN_WORKER_HEALTH_FILE` | — | Her turda dokunulan nabız dosyası; konteyner sağlık denetimi (`evren healthcheck worker`) bunu okur |
+
+Konteynerde: `python tools/dev_stack.py up` ile `worker` servisi `evren_worker_svc` giriş rolüyle çalışır (ADR-0016).
 
 - SIGTERM/SIGINT: elindeki turu bitirir, nabza `stopped_at` yazar, çıkar (en geç ~1 sn).
 - Birden fazla örnek güvenle çalışır (`FOR UPDATE SKIP LOCKED`).

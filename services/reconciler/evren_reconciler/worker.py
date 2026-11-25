@@ -59,6 +59,7 @@ class WorkerConfig:
     batch: int = 100
     worker_id: str = field(default_factory=lambda: f"{socket.gethostname()}:{os.getpid()}")
     metadata_dir: Path = REPO_ROOT / "metadata"
+    health_file: str | None = None
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None, **overrides: Any) -> WorkerConfig:
@@ -75,7 +76,8 @@ class WorkerConfig:
             raise ConfigError("EVREN_WORKER_POLL_SECONDS 1–3600 aralığında olmalı")
         values: dict[str, Any] = {
             "conninfo": conninfo, "role": env.get("EVREN_DB_ROLE", "evren_app_reconciler"), "poll_seconds": poll,
-            "metadata_dir": Path(env.get("EVREN_METADATA_DIR", str(REPO_ROOT / "metadata")))}
+            "metadata_dir": Path(env.get("EVREN_METADATA_DIR", str(REPO_ROOT / "metadata"))),
+            "health_file": env.get("EVREN_WORKER_HEALTH_FILE") or None}
         values.update(overrides)
         return cls(**values)
 
@@ -116,6 +118,9 @@ class Worker:
                 break
             if done == 0:  # pragma: no cover - savunma
                 break
+        if self.config.health_file:
+            # Konteyner sağlık denetimi: dosyanın değişme zamanı son turu gösterir (tools/../deploy/evren.py).
+            Path(self.config.health_file).touch()
         handled = totals["manual"] + totals["decision"] + totals["split"]
         self.processed += handled
         self.failed += totals["failed"]

@@ -1,0 +1,17 @@
+# Konteyner bağlamına yalnızca çalışma zamanı dosyaları girer (sır, test çıktısı, git geçmişi girmez).
+.git
+.github
+**/__pycache__
+**/*.pyc
+**/.pytest_cache
+.ruff_cache
+build
+dist
+deploy/secrets
+secrets
+.env
+**/tests
+apps/web/tests
+docs
+*.md
+!README.md

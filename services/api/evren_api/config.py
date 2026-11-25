@@ -2,7 +2,10 @@
 
 Güvenli varsayılanlar:
 * ``EVREN_AUTH_MODE`` zorunludur; anonim erişim yoktur.
-* ``dev`` modu yalnızca geri döngü adresinde (127.0.0.1, ::1) çalışır ve oturum açtırmaz.
+* ``dev`` modu yalnızca geri döngü adresinde (127.0.0.1, ::1) çalışır ve oturum açtırmaz. Geliştirme yığınında
+  (compose) konteyner içinden yayın için ``EVREN_DEV_CONTAINER=1`` açıkça verilir: o zaman tüm arayüzlerde dinler
+  ama yalnızca geri döngü ve özel ağ adreslerinden gelen isteklere yanıt verir; compose portu ana makinede
+  yalnızca 127.0.0.1'e yayınlar (ADR-0016).
 * ``entra`` modu HTTPS çerezi (``EVREN_COOKIE_SECURE=1``) ve dosyadan okunan oturum anahtarı ister.
 """
 from __future__ import annotations
@@ -57,6 +60,7 @@ class Settings:
     dev_roles: tuple[str, ...] = DEFAULT_DEV_ROLES
     web_root: Path = REPO_ROOT / "apps" / "web"
     entra: EntraConfig | None = None
+    dev_container: bool = False
 
     @property
     def session_cookie(self) -> str:
@@ -69,9 +73,14 @@ class Settings:
             raise ConfigError("EVREN_AUTH_MODE zorunlu: dev veya entra")
         host = env.get("EVREN_HOST", "127.0.0.1")
         secure = env.get("EVREN_COOKIE_SECURE") == "1"
+        dev_container = env.get("EVREN_DEV_CONTAINER") == "1"
+        if dev_container and mode != "dev":
+            raise ConfigError("EVREN_DEV_CONTAINER yalnızca dev modunda geçerlidir")
         if mode == "dev":
-            if not _loopback(host):
-                raise ConfigError("dev modu yalnızca geri döngü adresinde çalışır (EVREN_HOST=127.0.0.1)")
+            # Tüm arayüzler yalnızca açıkça istenen geliştirme konteynerinde; istemci adresi süzgeci app.py'de.
+            if not _loopback(host) and not (dev_container and host in ("0.0.0.0", "::")):  # noqa: S104
+                raise ConfigError("dev modu yalnızca geri döngü adresinde çalışır (EVREN_HOST=127.0.0.1); "
+                                  "geliştirme konteynerinde EVREN_DEV_CONTAINER=1 ve EVREN_HOST=0.0.0.0")
             if any(k.startswith("EVREN_ENTRA_") and v for k, v in env.items()):
                 raise ConfigError("Entra yapılandırması için EVREN_AUTH_MODE=entra gerekir")
             key = (_read_secret(env, "EVREN_SESSION_KEY") or Fernet.generate_key().decode()).encode()
@@ -97,5 +106,5 @@ class Settings:
             cookie_secure=secure, session_key=key,
             session_hours=int(env.get("EVREN_SESSION_HOURS", "8")),
             dev_user=env.get("EVREN_DEV_USER", "dev"), dev_name=env.get("EVREN_DEV_NAME", "Geliştirici"),
-            dev_roles=roles, entra=entra,
+            dev_roles=roles, entra=entra, dev_container=dev_container,
         )

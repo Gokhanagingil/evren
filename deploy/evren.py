@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""Evren konteyner giriş noktası (U1, ADR-0016) — tek imaj, birden çok servis:
+
+    evren api          REST API + arayüz (uvicorn)
+    evren worker       uzlaştırıcı çalışanı (insan istekleri; U2'de Kafka tüketicisi)
+    evren migrate      göçler + metadata tohumu + servis giriş rolleri (tek seferlik iş)
+    evren demo         sentetik demo verisini yükle (yalnızca EVREN_ALLOW_DEMO=1; boş geliştirme veritabanı)
+    evren healthcheck  api|worker — konteyner sağlık denetimi
+
+Sırlar dosyadan okunur (``*_FILE`` ortam değişkenleri); hiçbir sır komut satırına veya günlüğe yazılmaz.
+"""
+from __future__ import annotations
+
+import os
+import sys
+import time
+import urllib.request
+from pathlib import Path
+
+APP = Path(__file__).resolve().parents[1]
+for p in ("packages/evren-core/src", "services/api", "services/reconciler", "tools"):
+    sys.path.insert(0, str(APP / p))
+
+
+def api() -> int:
+    import uvicorn
+
+    from evren_api import create_app
+    from evren_api.config import ConfigError, Settings
+
+    try:
+        settings = Settings.from_env(os.environ)
+    except ConfigError as exc:
+        print(f"Yapılandırma hatası: {exc}", file=sys.stderr)
+        return 2
+    uvicorn.run(create_app(settings), host=settings.host, port=settings.port, server_header=False,
+                proxy_headers=False, log_level=os.environ.get("EVREN_LOG_LEVEL", "info").lower())
+    return 0
+
+
+def worker(args: list[str]) -> int:
+    from evren_reconciler.worker import main
+
+    return main(args)
+
+
+def migrate(args: list[str]) -> int:
+    import migrate as m
+
+    return m.main(args)
+
+
+def demo() -> int:
+    if os.environ.get("EVREN_ALLOW_DEMO") != "1":
+        print("Demo verisi yalnızca EVREN_ALLOW_DEMO=1 ile ve boş geliştirme veritabanına yüklenir.", file=sys.stderr)
+        return 2
+    import load_demo_pg
+
+    return load_demo_pg.main([])
+
+
+def healthcheck(target: str) -> int:
+    if target == "api":
+        try:
+            port = int(os.environ.get("EVREN_PORT", "8088"))  # yalnızca sayı: URL sabit şema + loopback
+            with urllib.request.urlopen(f"http://127.0.0.1:{port}/readyz", timeout=3) as r:  # nosec B310
+                return 0 if r.status == 200 else 1
+        except (OSError, ValueError):
+            return 1
+    if target == "worker":
+        path = os.environ.get("EVREN_WORKER_HEALTH_FILE")
+        poll = int(os.environ.get("EVREN_WORKER_POLL_SECONDS", "30"))
+        if not path or not Path(path).exists():
+            return 1
+        return 0 if time.time() - Path(path).stat().st_mtime < 3 * poll + 10 else 1
+    print("Kullanım: evren healthcheck api|worker", file=sys.stderr)
+    return 2
+
+
+def main(argv: list[str]) -> int:
+    if not argv:
+        print(__doc__, file=sys.stderr)
+        return 2
+    cmd, rest = argv[0], argv[1:]
+    if cmd == "api":
+        return api()
+    if cmd == "worker":
+        return worker(rest)
+    if cmd == "migrate":
+        return migrate(rest)
+    if cmd == "demo":
+        return demo()
+    if cmd == "healthcheck" and rest:
+        return healthcheck(rest[0])
+    print(__doc__, file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

@@ -52,6 +52,11 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | T | Metadata'nın denetimsiz değişmesi | Yayın yalnızca değişiklik dosyası üretir (SHA-256); dağıtım PR + CI doğrulaması (`load_metadata --check`) ile | ADR-0015 |
 | R | Yetki reddinin denetim kaydının işlemle birlikte geri alınması | Ret olayı istek işlemi içindeyse ayrı bağlantıyla yazılır; ret testlerle denetim izinde doğrulanır | `evren_api/deps.py`, test_split |
 | E | Grup üyeliği yoluyla görevler ayrılığı çatışması | Girişte uygulama rolü + grup ataması birleşimi `iam.sod_constraint` ile denetlenir; çatışmada giriş reddedilir ve denetime yazılır | `routers/auth.py` |
+| S | Konteyner içinde dev oturumunun dışarıya açılması | Dev modu 0.0.0.0'a yalnızca açık `EVREN_DEV_CONTAINER=1` ile bağlanır; bu modda loopback ve özel ağ dışından gelen her istek 403; Entra modunda bayrak yok sayılır; compose portları yalnızca 127.0.0.1 (CI denetler) | `evren_api/app.py`, test_dev_container |
+| E | Bir servisin ele geçirilmesiyle başka servisin yetkisine erişim | Servis başına LOGIN rolü, `NOINHERIT`, yalnızca kendi grup rolü, bağlantı sınırı; sahip rolü yalnızca göç işinde | `tools/migrate.py`, test_migrate_pg |
+| T | Uygulanmış göçün değiştirilmesi veya eski imajın yeni şemaya karşı çalışması | Göç defteri (sürüm + SHA-256); içerik farkı veya bilinmeyen sürümde kurulum durur | `tools/migrate.py`, test_migrate_pg |
+| T | Konteyner imajına veya tedarik zincirine müdahale; bilinen zafiyetle yayın | Temel ve dış görüntüler özetle sabit (CI denetler); bağımlılıklar `--require-hashes --no-deps`; derleme anında zorunlu Debian güvenlik güncellemesi; Trivy imaj kapısı (düzeltmesi olan YÜKSEK/KRİTİK, sır) + imaj SBOM'u; uid 10001, salt okunur kök, `cap_drop: ALL`, `no-new-privileges` (CI denetler); kurumsal CA yalnızca derleme sırrı. İmzalama hedef ortamla (U10) | `deploy/`, ADR-0016 |
+| I | Sırların imaja, ortam değişkenine veya günlüğe sızması | Sırlar yalnızca dosyadan (`*_FILE`, compose `secrets`); `.dockerignore` sır dizinini dışlar; göç aracı psycopg hatalarında yalnızca sınıf yazar; geliştirme sırları rastgele ve git dışı | `tools/dev_secrets.py`, `tools/migrate.py` |
 
 ## Uygulanan denetimler (bu depoda, testli)
 
@@ -67,8 +72,9 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
   - `.gitleaks.toml` istisnası yalnızca genel anahtar kuralı ve sentetik `source_key` değerleriyle sınırlıdır; iş akışındaki olumsuz test, istisnanın gerçek bir belirteci gizlemediğini her çalıştırmada doğrular (yol bazlı istisna bu nedenle reddedildi).
   - Bağımlılıklar hash'li ve 14 günlük tedarik zinciri bekleme süresiyle kilitlenir (ADR-0005).
 - API (`services/api`, ADR-0010): her bağlantı `evren_app_api` rolüne geçer; sorgu zaman aşımı; tüm dinamik SQL `psycopg.sql` ile kurulur; Swagger/ReDoc (dış CDN) kapalı.
-  - `services/api/tests`: 67 test — yetki reddi ve denetimi, CSRF, idempotency, sütun düzeyi yetki, Entra akışının olumsuz senaryoları (tekrar, MFA bağlamı yok, yanlış kiracı/düzenleyen/hedef kitle, sahte imza, HS256'ya algoritma değişimi, kurcalanmış çerez, SoD).
+  - `services/api/tests`: 68 test — yetki reddi ve denetimi, CSRF, idempotency, sütun düzeyi yetki, Entra akışının olumsuz senaryoları (tekrar, MFA bağlamı yok, yanlış kiracı/düzenleyen/hedef kitle, sahte imza, HS256'ya algoritma değişimi, kurcalanmış çerez, SoD).
 - Uzlaştırıcı (`services/reconciler`): `evren_app_reconciler` rolüyle; denetim izini okuyamaz, CI ve kimlik anahtarı silemez (testli).
+- Yığın (`.github/workflows/ci.yml` → "Yığın", ADR-0016): imaj derlenir, compose yığını açılır, uçtan uca duman testi (API → uzlaştırıcı → golden record, Kafka konuları, OpenSearch) ve konteyner sıkılaştırması (uid, salt okunur kök, yetenekler, port bağlama) ve Trivy imaj taraması her değişiklikte çalışır.
 
 ## Ağ ve platform
 

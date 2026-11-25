@@ -1,6 +1,7 @@
 """Uygulama fabrikası: API + statik arayüz, tek güvenlik başlığı kaynağı (``evren_core.web``)."""
 from __future__ import annotations
 
+import ipaddress
 import logging
 import posixpath
 from contextlib import asynccontextmanager
@@ -27,6 +28,15 @@ from .rules_view import build_rules_view
 from .security import SessionCodec
 
 __all__ = ["create_app"]
+
+
+def _private_client(request: Request) -> bool:
+    host = request.client.host if request.client else ""
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        return host in ("testclient", "localhost")
+    return ip.is_loopback or ip.is_private
 log = logging.getLogger("evren.api")
 
 
@@ -62,6 +72,10 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
 
     @app.middleware("http")
     async def headers(request: Request, call_next: Any) -> Response:
+        if settings.dev_container and not _private_client(request):
+            # Geliştirme konteyneri kimlik doğrulamasızdır: yalnızca ana makine/özel ağdan gelen istekler.
+            return JSONResponse({"error": {"code": "erisim_yok", "message": "Geliştirme yığınına yalnızca yerel "
+                                           "ağdan erişilebilir.", "details": []}}, status_code=403)
         response = await call_next(request)
         for k, v in SECURITY_HEADERS.items():
             response.headers.setdefault(k, v)

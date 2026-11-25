@@ -6,6 +6,8 @@ import uuid
 import psycopg
 import pytest
 
+from evren_api import create_app
+from evren_api.config import Settings
 from evren_core.metadata import load_metadata
 from evren_reconciler import ReconcilerStore
 
@@ -151,3 +153,25 @@ def test_api_db_role_cannot_write_golden_record_or_links():
                      "UPDATE ingest.match_candidate SET kind = 'review'"):
             with pytest.raises(psycopg.errors.InsufficientPrivilege):
                 conn.execute(stmt)
+
+
+def test_dev_container_mode_is_explicit_and_filters_clients():
+    """ADR-0016: geliştirme konteyneri yalnızca açıkça istenirse tüm arayüzlerde dinler; genel adresten gelen
+    istekler reddedilir (compose portu zaten yalnız 127.0.0.1'e yayınlar)."""
+    from evren_api.config import ConfigError
+
+    all_interfaces = "0.0.0.0"  # noqa: S104 - sınanan yapılandırma
+    with pytest.raises(ConfigError):
+        Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_HOST": all_interfaces})
+    with pytest.raises(ConfigError):
+        Settings.from_env({"EVREN_AUTH_MODE": "entra", "EVREN_DEV_CONTAINER": "1"})
+    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_CONTAINER": "1", "EVREN_HOST": all_interfaces,
+                                  "EVREN_DB_POOL_SIZE": "1"})
+    assert settings.dev_container is True
+    from fastapi.testclient import TestClient
+
+    with TestClient(create_app(settings), client=("8.8.8.8", 50000)) as public:
+        r = public.get("/healthz")
+        assert r.status_code == 403 and r.json()["error"]["code"] == "erisim_yok"
+    with TestClient(create_app(settings), client=("172.18.0.1", 50000)) as bridge:  # compose köprü ağı (ana makine)
+        assert bridge.get("/healthz").status_code == 200
