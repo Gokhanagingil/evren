@@ -154,6 +154,8 @@ def test_segregation_of_duties_enforced():
         ("evren_app_ingest", "SELECT * FROM cmdb.cmdb_ci"),
         ("evren_app_mcp", "INSERT INTO ingest.match_candidate (data_source, source_key, reason) VALUES ('X','y','z')"),
         ("evren_auditor_ro", "UPDATE meta.sys_dictionary SET label_tr = 'x'"),
+        ("evren_app_api", "UPDATE ingest.data_source SET lifecycle = 'retired' WHERE name = 'BMC'"),
+        ("evren_app_ingest", "INSERT INTO meta.source_role (name, label_tr, kind) VALUES ('X', 'x', 'discovery')"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -171,7 +173,38 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_api", "SELECT count(*) FROM cmdb.cmdb_ci"),          # evren_readonly'den devralınır
         ("evren_app_mcp", "SELECT count(*) FROM sn.cmdb_ci_netgear"),    # evren_readonly'den devralınır
         ("evren_app_api", "INSERT INTO audit.security_event (principal, action, decision) VALUES ('t', 'login', 'allow')"),
+        ("evren_readonly", "SELECT count(*) FROM meta.source_role"),
+        ("evren_app_ingest", "SELECT role, lifecycle FROM ingest.data_source"),
     ],
 )
 def test_allowed_paths_work(role, statement):
     psql(f"SET ROLE {role}; {statement}")
+
+
+def test_source_roles_seeded_and_rules_reference_roles_not_products():
+    """ADR-0009: kurallar role bağlı; ürün değişimi kural tablolarına dokunmaz."""
+    assert psql("SELECT role || ':' || lifecycle FROM ingest.data_source WHERE name = 'BMC'") == "Discovery:active"
+    assert psql("SELECT kind FROM ingest.data_source WHERE name = 'Zabbix'") == "monitoring"
+    assert psql("SELECT count(*) FROM meta.cmdb_reconciliation_definition") != "0"
+    assert psql("SELECT count(*) FROM meta.cmdb_reconciliation_definition r "
+                "JOIN ingest.data_source d ON d.name = r.role WHERE d.name <> 'Manual'") == "0"
+    with pytest.raises(SqlError, match="foreign key"):
+        psql("INSERT INTO meta.cmdb_reconciliation_definition (applies_to, role, priority) VALUES ('cmdb_ci', 'BMC', 1)")
+    with pytest.raises(SqlError, match="foreign key"):
+        psql("INSERT INTO meta.cmdb_datasource_refresh (applies_to, role, effective_duration) "
+             "VALUES ('cmdb_ci', 'vCenter', interval '1 day')")
+
+
+def test_product_swap_lifecycle_constraints():
+    # Aynı rolde aynı sırayla yazan ikinci ürün reddedilir (uzlaştırma sırası belirsiz kalırdı)
+    with pytest.raises(SqlError, match="data_source_role_rank_writer"):
+        psql("INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank) "
+             "VALUES ('YeniKesif', 'Yeni keşif', 'discovery', 'Discovery', 1)")
+    # Gölge modda aynı sıra serbest; rolsüz veya geçersiz yaşam döngüsü reddedilir
+    psql("BEGIN; INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank, lifecycle) "
+         "VALUES ('YeniKesif', 'Yeni keşif', 'discovery', 'Discovery', 1, 'shadow'); ROLLBACK;")
+    with pytest.raises(SqlError, match="not-null|null value"):
+        psql("INSERT INTO ingest.data_source (name, label_tr, kind) VALUES ('Rolsuz', 'x', 'discovery')")
+    with pytest.raises(SqlError, match="check constraint"):
+        psql("INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank, lifecycle) "
+             "VALUES ('Hatali', 'x', 'discovery', 'Discovery', 5, 'paused')")

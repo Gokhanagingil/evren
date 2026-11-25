@@ -1,0 +1,62 @@
+# BMC Helix Discovery (eski adıyla BMC Discovery / ADDM) — Host düğümü → Evren alım kaydı
+#
+# Ürün: on-prem appliance ve Helix SaaS aynı REST API'yi sunar; fark yalnızca adres, ağ yolu
+# (SaaS'ta outpost) ve kimlik bilgisidir. Bağlayıcı bu dosyayı iki kurulum için de kullanır.
+#
+# Çekme: GET /api/v1.x/data/search?format=object&limit=…&offset=…  (sayfalama tamamlanmadan
+# çalışma completed=true bildirmez). Sorgu (Discovery sorgu dili):
+#
+#   search Host
+#     show key, name, hostname, local_fqdn, dns_domain, os, os_type, os_class, os_version, os_edition,
+#          serial, uuid, vendor, model, num_processors, cores_per_processor, num_logical_processors,
+#          processor_type, processor_speed, ram, virtual, host_type, last_update_success,
+#          __all_ip_addrs as 'ip_addrs',
+#          #DeviceWithInterface:DeviceInterface:InterfaceOfDevice:NetworkInterface.mac_addr as 'mac_addrs'
+#
+# Tuzaklar:
+#   * "name" görünen addır ve çoğunlukla hostname ile aynıdır; kimlik için hostname önce gelir.
+#   * Sanal sunucularda "serial" VMware biçimindedir (VMware-42 1a …) → BIOS UUID'ye bağlanır;
+#     böylece vCenter misafir sunucusuyla aynı CI'a eşleşir.
+#   * "ram" MB, "processor_speed" MHz döner.
+#   * Hypervisor host_type'lı düğümler ESXi'dir; sınıfı sanallaştırma rolü (vCenter) belirler.
+#
+# verify: true → alan adları kurum örneğindeki API çıktısıyla doğrulanınca kaldırılır (F1-01).
+description: BMC Helix Discovery Host düğümleri — sunucu işletim sistemi, donanım ve seri numarası
+verify: true
+data_source: BMC
+source_key: key
+class: cmdb_ci_server
+include_when:
+  - {from: host_type, matches: "(?i)server|hypervisor|mainframe"}   # "Windows Desktop", "Linux Desktop" kapsam dışı
+class_rules:
+  - when: {from: host_type, matches: "(?i)hypervisor"}
+    class: cmdb_ci_esx_server
+  - when: {from: os_type, matches: "(?i)windows"}
+    class: cmdb_ci_win_server
+  - when: {from: os_type, matches: "(?i)linux"}
+    class: cmdb_ci_linux_server
+  - when: {from: os_type, matches: "(?i)aix"}
+    class: cmdb_ci_aix_server
+  - when: {from: os_type, matches: "(?i)solaris"}
+    class: cmdb_ci_solaris_server
+attributes:
+  name: {from: hostname, fallback: name, transform: strip}
+  fqdn: {from: local_fqdn, transform: lower}
+  dns_domain: {from: dns_domain, transform: lower}
+  serial_number: {from: serial, transform: strip}
+  bios_uuid: {from: uuid, transform: lower}
+  manufacturer: {from: vendor, transform: strip}
+  os: {from: os}
+  os_version: {from: os_version}
+  cpu_count: {from: num_processors, transform: int}
+  cpu_core_count: {from: cores_per_processor, transform: int}
+  cpu_type: {from: processor_type, transform: strip}
+  cpu_speed: {from: processor_speed, transform: int}
+  ram: {from: ram, transform: int}
+  virtual: {from: virtual, transform: bool}
+  ip_address: {from: "ip_addrs[0]"}
+lookup:
+  ip_addresses: {from: "ip_addrs[*]"}
+  mac_addresses: {from: "mac_addrs[*]"}
+external_ids:
+  bmc_discovery_key: {from: key}

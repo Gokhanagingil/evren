@@ -3,75 +3,80 @@
 # öznitelik için alt sınıfta kural varsa ata sınıfın kuralı uygulanmaz.
 # Kural tanımlanmamış öznitelikte en güncel gözlem kazanır.
 #
+# ÜRÜN BAĞIMSIZLIĞI (ADR-0009): "priorities" ve "data_refresh" anahtarları ürün adı değil,
+# KAYNAK ROLÜDÜR (metadata/data_sources.yaml → source_roles). Keşif ürünü değişirse bu dosya
+# değişmez; yeni ürün aynı rolü dolduran yeni bir veri kaynağı olarak eklenir.
+# Aynı rolde birden fazla yazan kaynak varsa sıra role_rank ile belirlenir.
+#
 # İLKE 1: Keşif/izleme araçları yönetişim özniteliklerini (sahiplik, destek grubu,
 # yaşam döngüsü) ASLA ezemez. Bu alanlar yalnızca Manual (Evren arayüzü) ve
-# geçiş döneminde ServiceNow tarafından yazılır.
+# geçiş döneminde ITSM (ServiceNow) tarafından yazılır.
 # İLKE 2: Keşif sahipli özniteliklerde Manual en düşük önceliktedir (900): elle
 # girilen değer yalnızca hiçbir keşif kaynağı değer vermiyorsa geçerli olur.
 # İLKE 3: "*" (tüm öznitelikler) kök dışındaki sınıflarda kullanılmaz; yönetişim
 # kurallarını gölgeler. Doğrulayıcı bunu hata olarak raporlar.
-version: 1
+version: 2
 rules:
   - applies_to: cmdb_ci
     description: Yönetişim öznitelikleri
     attributes: [support_group, assignment_group, change_control, owned_by, managed_by, assigned_to,
                  used_for, location, company, department, short_description, comments,
                  life_cycle_stage, life_cycle_stage_status, category, subcategory, asset_tag]
-    priorities: {Manual: 10, ServiceNow: 50}
+    priorities: {Manual: 10, ITSM: 50}
 
   - applies_to: cmdb_ci
     description: Durum alanları — kaynaklar doğrudan yazamaz; Evren eskime kuralı öneri üretir
     attributes: [operational_status, install_status]
-    priorities: {Manual: 10, ServiceNow: 50, Evren: 90}
+    priorities: {Manual: 10, ITSM: 50, Platform: 90}
 
   - applies_to: cmdb_ci_computer
     description: Ad ve ağ kimliği (sunucular)
     attributes: [name, fqdn, dns_domain, ip_address, mac_address, host_name]
-    priorities: {BMC: 100, vCenter: 150, Defender: 200, Zabbix: 300, ServiceNow: 400, Manual: 900}
+    priorities: {Discovery: 100, Virtualization: 150, EndpointSecurity: 200, Monitoring: 300, ITSM: 400, Manual: 900}
 
   - applies_to: cmdb_ci_computer
-    description: Donanım kaynakları — sanal sunucularda vCenter en doğru kaynaktır
+    description: Donanım kaynakları — sanal sunucularda sanallaştırma platformu en doğru kaynaktır
     attributes: [cpu_count, cpu_core_count, cpu_speed, cpu_type, ram, disk_space, virtual]
-    priorities: {vCenter: 100, BMC: 200, Defender: 400, Zabbix: 500, ServiceNow: 600, Manual: 900}
+    priorities: {Virtualization: 100, Discovery: 200, EndpointSecurity: 400, Monitoring: 500, ITSM: 600, Manual: 900}
 
   - applies_to: cmdb_ci_computer
     description: İşletim sistemi — ajan tabanlı kaynaklar önce
     attributes: [os, os_version, os_service_pack, os_domain]
-    priorities: {BMC: 100, Defender: 150, vCenter: 200, Zabbix: 400, ServiceNow: 500, Manual: 900}
+    priorities: {Discovery: 100, EndpointSecurity: 150, Virtualization: 200, Monitoring: 400, ITSM: 500, Manual: 900}
 
   - applies_to: cmdb_ci_hardware
     description: Donanım kimliği
     attributes: [serial_number, manufacturer, model_id, firmware_version]
-    priorities: {BMC: 100, NNMi: 100, vCenter: 150, Defender: 300, ServiceNow: 400, Manual: 900}
+    priorities: {Discovery: 100, Network: 100, Virtualization: 150, EndpointSecurity: 300, ITSM: 400, Manual: 900}
 
   - applies_to: cmdb_ci_netgear
-    description: Ağ cihazları — NNMi yetkili kaynak (ata sınıf kurallarını geçersiz kılar)
+    description: Ağ cihazları — ağ keşfi yetkili kaynak (ata sınıf kurallarını geçersiz kılar)
     attributes: [name, fqdn, dns_domain, ip_address, serial_number, manufacturer, model_id, firmware_version,
                  can_route, can_switch, can_partitionvlans, physical_interface_count]
-    priorities: {NNMi: 100, Zabbix: 300, ServiceNow: 400, Manual: 900}
+    priorities: {Network: 100, Monitoring: 300, ITSM: 400, Manual: 900}
 
-  # Sanallaştırma nesneleri: teknik öznitelikler yalnızca vCenter'dan; yönetişim alanları
+  # Sanallaştırma nesneleri: teknik öznitelikler yalnızca sanallaştırma platformundan; yönetişim alanları
   # cmdb_ci kuralında kalır. ServiceNow semantiğine uygun olarak her kural yalnızca kendi
   # sınıfının (ve atalarının) alanlarını listeler.
   - applies_to: cmdb_ci_vm_object
     description: VMware nesne kimliği
     attributes: [name, ip_address, fqdn, correlation_id, object_id]
-    priorities: {vCenter: 100, Manual: 900}
+    priorities: {Virtualization: 100, Manual: 900}
 
   - applies_to: cmdb_ci_vm_instance
     description: VM kaynakları
     attributes: [cpus, memory, disks, disks_size, nics, state]
-    priorities: {vCenter: 100}
+    priorities: {Virtualization: 100}
 
   - applies_to: cmdb_ci_vmware_instance
     description: VMware'e özgü alanlar
     attributes: [vcenter_ref, vcenter_uuid, bios_uuid, guest_id, template, image_path]
-    priorities: {vCenter: 100}
+    priorities: {Virtualization: 100}
 
 data_refresh:
-  - {applies_to: cmdb_ci_computer, data_source: vCenter, effective_days: 3}
-  - {applies_to: cmdb_ci_computer, data_source: BMC, effective_days: 7}
-  - {applies_to: cmdb_ci_netgear, data_source: NNMi, effective_days: 3}
+  - {applies_to: cmdb_ci_computer, role: Virtualization, effective_days: 3}
+  - {applies_to: cmdb_ci_computer, role: Discovery, effective_days: 7}
+  - {applies_to: cmdb_ci_netgear, role: Network, effective_days: 3}
 
 # Eskime (staleness): hiçbir yetkili kaynak CI'ı belirtilen sürede görmezse.
 # Devre kesici OK değilse (kaynak kısmi/anormal veri verdiyse) eskime işletilmez.

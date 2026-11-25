@@ -1,60 +1,148 @@
-# Veri kaynakları. `name`, uzlaştırma kurallarında ve discovery_source değerinde kullanılır.
-# kind: discovery | monitoring | security | itsm | manual | platform
-version: 1
+# Kaynak rolleri ve veri kaynakları — ürün bağımsızlığı (ADR-0009).
+#
+# KAYNAK ROLÜ (source_roles): Kaynağın CMDB'deki görevi. Uzlaştırma ve veri tazeleme kuralları
+#   YALNIZCA rol adını kullanır (Discovery, Virtualization, Network…). Ürün adı kurallara girmez.
+# VERİ KAYNAĞI (data_sources): Bir rolü dolduran somut ürün kurulumu. Adı kaynak kayıtlarının,
+#   kimlik bağlarının ve discovery_source değerinin anahtarıdır; kurulduktan sonra değiştirilmez.
+#
+# Ürün değişimi (ör. BMC Helix Discovery → başka bir keşif ürünü):
+#   1. Yeni bağlayıcı + eşleme dosyası (connectors/<bağlayıcı>/).
+#   2. Yeni veri kaynağı: aynı rol, lifecycle: shadow. Kimlik çözümlenir ama öznitelik yazmaz ve CI açmaz;
+#      kapsam ve değer farkları raporlanır.
+#   3. Terfi: yeni kaynak active, eskisi retiring (her ikisi yazar; role_rank küçük olan önce gelir).
+#   4. Emeklilik: eskisi retired. Kurallar, CI'lar ve sys_id'ler değişmez.
+#
+# lifecycle: active | shadow | retiring | retired
+# role_rank: aynı roldeki kaynaklar arasında sıra (küçük olan önce). Aynı rolde yazan iki kaynağın
+#   rank değeri aynı olamaz.
+version: 2
+
+source_roles:
+  - name: Discovery
+    label_tr: Keşif (sunucu envanteri)
+    kind: discovery
+    description_tr: Ajanlı veya ajansız tarama ile işletim sistemi, donanım, seri numarası ve yazılım envanteri.
+  - name: Virtualization
+    label_tr: Sanallaştırma platformu
+    kind: discovery
+    description_tr: Sanal makineler, hipervizörler, kümeler ve sanal makine kaynakları.
+  - name: Network
+    label_tr: Ağ keşfi
+    kind: discovery
+    description_tr: Ağ cihazları, arayüzler ve L2/L3 bağlantı topolojisi.
+  - name: Monitoring
+    label_tr: İzleme
+    kind: monitoring
+    description_tr: İzleme kapsamı ve canlılık özeti. Envanterde düşük öncelikli. Metrik ve alarm CMDB'ye girmez.
+  - name: EndpointSecurity
+    label_tr: Uç nokta güvenliği
+    kind: security
+    description_tr: Koruma durumu, cihaz kimliği ve kısıtlı güvenlik duruşu verisi.
+  - name: ITSM
+    label_tr: ITSM / mevcut CMDB
+    kind: itsm
+    description_tr: Geçiş dönemindeki eski CMDB; ilk yükleme ve yönetişim öznitelikleri.
+  - name: ChangeManagement
+    label_tr: Değişiklik kayıtları
+    kind: itsm
+    ci_attribute_source: false
+    description_tr: Onaylı değişiklik pencereleri. CI özniteliği yazmaz; yetkisiz değişiklik tespitine girdi verir.
+  - name: Manual
+    label_tr: Elle giriş
+    kind: manual
+    description_tr: Evren arayüzünde elle girilen değerler; yönetişim alanlarında en yüksek öncelik.
+  - name: Platform
+    label_tr: Evren platform kuralları
+    kind: platform
+    description_tr: Eskime ve yaşam döngüsü kurallarının ürettiği durum önerileri.
+
 data_sources:
   - name: vCenter
     label_tr: VMware vCenter
-    kind: discovery
+    role: Virtualization
+    role_rank: 1
+    lifecycle: active
+    product: {vendor: Broadcom (VMware), name: vCenter Server, interface: "vSphere Automation REST + VIM (property collector)"}
     connector: vcenter
+    mappings: [connectors/vcenter/vm_instance.mapping.yaml, connectors/vcenter/guest_server.mapping.yaml]
     schedule: "0 */4 * * *"
     authoritative_for_tr: VM örnekleri, ESXi hostlar, kümeler, datastore'lar; VM donanım kaynakları
   - name: BMC
-    label_tr: BMC ajanları
-    kind: discovery
-    connector: bmc
+    label_tr: BMC Helix Discovery
+    role: Discovery
+    role_rank: 1
+    lifecycle: active
+    product: {vendor: BMC, name: Helix Discovery (eski adıyla BMC Discovery / ADDM), interface: "REST /api/v1.x/data/search (on-prem ve SaaS aynı API)"}
+    connector: bmc_discovery
+    mappings: [connectors/bmc_discovery/host.mapping.yaml]
     schedule: "30 2 * * *"
     authoritative_for_tr: Sunucu işletim sistemi, donanım envanteri, seri numaraları
-    open_question: Hangi BMC ürünü (Discovery/ADDM, Client Management, Helix)? docs/12'ye bakın
+    open_question: Kurulum on-prem appliance mı, Helix SaaS mı? API aynı; ağ yolu ve kimlik bilgisi farklı.
   - name: NNMi
     label_tr: OpenText NNMi
-    kind: discovery
+    role: Network
+    role_rank: 1
+    lifecycle: active
+    product: {vendor: OpenText (Micro Focus), name: Network Node Manager i, interface: "SOAP/REST web servisleri (sürüme göre)"}
     connector: nnmi
+    mappings: [connectors/nnmi/mapping.yaml]
     schedule: "0 3 * * *"
     authoritative_for_tr: Ağ cihazları, arayüzler, L2 bağlantıları
   - name: Zabbix
     label_tr: Zabbix
-    kind: monitoring
+    role: Monitoring
+    role_rank: 1
+    lifecycle: active
+    product: {vendor: Zabbix, name: Zabbix Server, interface: "JSON-RPC API (host.get, hostinterface.get)"}
     connector: zabbix
+    mappings: [connectors/zabbix/mapping.yaml]
     schedule: "15 */2 * * *"
     authoritative_for_tr: İzleme kapsamı ve canlılık; envanter için düşük öncelik
   - name: Defender
     label_tr: Microsoft Defender for Endpoint
-    kind: security
+    role: EndpointSecurity
+    role_rank: 1
+    lifecycle: active
+    product: {vendor: Microsoft, name: Defender for Endpoint, interface: "REST /api/machines"}
     connector: defender
+    mappings: [connectors/defender/mapping.yaml]
     schedule: "45 */6 * * *"
     authoritative_for_tr: Uç nokta koruma durumu, risk/maruziyet, yazılım envanteri
   - name: ServiceNow
     label_tr: ServiceNow CMDB (ilk yükleme ve SN'de elle yapılan değişiklikler)
-    kind: itsm
+    role: ITSM
+    role_rank: 1
+    lifecycle: active
+    product: {vendor: ServiceNow, name: CMDB, interface: "Table API (salt okunur)"}
     connector: servicenow_cmdb
+    mappings: []
     schedule: "*/15 * * * *"
     authoritative_for_tr: Yönetişim öznitelikleri (geçiş döneminde), referans veriler
   - name: ServiceNowChange
     label_tr: ServiceNow değişiklik kayıtları
-    kind: itsm
+    role: ChangeManagement
+    role_rank: 1
+    lifecycle: active
+    product: {vendor: ServiceNow, name: Change Management, interface: "Table API: change_request + task_ci"}
     connector: servicenow_change
+    mappings: []
     schedule: "*/10 * * * *"
-    ci_attribute_source: false
     authoritative_for_tr: Yetkili değişiklik penceresi (yetkisiz değişiklik tespiti için)
   - name: Manual
     label_tr: Evren arayüzünde elle giriş
-    kind: manual
+    role: Manual
+    role_rank: 1
+    lifecycle: active
     connector: null
+    mappings: []
     schedule: null
     authoritative_for_tr: Sahiplik, destek grubu, iş kritikliği gibi yönetişim öznitelikleri
   - name: Evren
     label_tr: Evren platform kuralları (eskime, yaşam döngüsü)
-    kind: platform
+    role: Platform
+    role_rank: 1
+    lifecycle: active
     connector: null
+    mappings: []
     schedule: null
     authoritative_for_tr: Eskime tabanlı durum önerileri

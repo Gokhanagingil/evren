@@ -39,7 +39,7 @@ def test_validator_catches_common_mistakes(metadata):
     assert "geçersiz tip money" in errors
     assert "fiziksel kolon yalnızca cmdb_ci" in errors
     assert "gölgeler" in errors
-    assert "veri kaynağı tanımsız Nope" in errors
+    assert "kaynak rolü tanımsız Nope" in errors
 
 
 def test_json_schemas_are_in_sync_with_models(repo_root):

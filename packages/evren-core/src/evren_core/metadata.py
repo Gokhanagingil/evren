@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
@@ -20,6 +21,7 @@ import yaml
 
 from .classes import ClassHierarchy
 from .identity.rules import ATTRIBUTE_KEY_TYPES
+from .sources import SourceRegistry, SourceRegistryError
 
 __all__ = [
     "CORE_COLUMNS",
@@ -44,11 +46,9 @@ CORE_COLUMNS: tuple[str, ...] = (
 )
 SYSTEM_COLUMNS = ("sys_created_on", "sys_created_by", "sys_updated_on", "sys_updated_by", "sys_mod_count")
 VALID_TYPES = {"string", "integer", "decimal", "boolean", "glide_date_time", "glide_date", "reference"}
-VALID_KINDS = {"discovery", "monitoring", "security", "itsm", "manual", "platform"}
 VALID_SENSITIVITY = {"public", "internal", "confidential", "restricted"}
 _NAME = re.compile(r"^[a-z][a-z0-9_]{1,79}$")
 _ELEMENT = re.compile(r"^[a-z][a-z0-9_]{0,79}$")
-_SOURCE = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{1,63}$")
 
 _CASTS = {
     "integer": "::bigint",
@@ -80,10 +80,16 @@ class Metadata:
     data_sources: list[dict[str, Any]]
     identification: list[dict[str, Any]]
     reconciliation: dict[str, Any]
+    source_roles: list[dict[str, Any]] = field(default_factory=list)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
         self.hierarchy = ClassHierarchy.from_metadata(self.classes)
+
+    @property
+    def sources(self) -> SourceRegistry:
+        """Kaynak rolleri ve veri kaynakları (ADR-0009)."""
+        return SourceRegistry.from_metadata({"source_roles": self.source_roles, "data_sources": self.data_sources})
 
     @property
     def class_map(self) -> dict[str, dict[str, Any]]:
@@ -107,12 +113,14 @@ def _read(path: Path) -> dict[str, Any]:
 def load_metadata(directory: str | Path) -> Metadata:
     d = Path(directory)
     classes = _read(d / "classes.yaml")
+    sources = _read(d / "data_sources.yaml")
     return Metadata(
         classes=classes.get("classes", []),
         reference_tables=classes.get("reference_tables", []),
         relationship_types=_read(d / "relationship_types.yaml").get("relationship_types", []),
         choices=_read(d / "choices.yaml").get("choices", []),
-        data_sources=_read(d / "data_sources.yaml").get("data_sources", []),
+        data_sources=sources.get("data_sources", []),
+        source_roles=sources.get("source_roles", []),
         identification=_read(d / "identification_rules.yaml").get("rules", []),
         reconciliation=_read(d / "reconciliation_rules.yaml"),
     )
@@ -217,16 +225,25 @@ def validate(md: Metadata) -> ValidationReport:
         if not re.fullmatch(r"[^:]+::[^:]+", t):
             r.errors.append(f"İlişki tipi 'ebeveyn::çocuk' biçiminde olmalı: {t}")
 
-    # Veri kaynakları
+    # Kaynak rolleri ve veri kaynakları (ADR-0009)
     sources = [s["name"] for s in md.data_sources]
+    role_names = [r["name"] for r in md.source_roles]
     if len(sources) != len(set(sources)):
         r.errors.append("Tekrarlanan veri kaynağı")
+    if len(role_names) != len(set(role_names)):
+        r.errors.append("Tekrarlanan kaynak rolü")
+    if set(sources) & set(role_names) - {"Manual"}:
+        r.errors.append(f"Veri kaynağı ve rol adı çakışıyor: {sorted(set(sources) & set(role_names) - {'Manual'})}")
     for s in md.data_sources:
-        if not _SOURCE.match(s["name"]):
-            r.errors.append(f"Geçersiz veri kaynağı adı: {s['name']}")
-        if s.get("kind") not in VALID_KINDS:
-            r.errors.append(f"{s['name']}: geçersiz kind {s.get('kind')}")
-    source_set = set(sources)
+        if s.get("role") not in role_names:
+            r.errors.append(f"{s['name']}: tanımsız kaynak rolü {s.get('role')}")
+        if "kind" in s:
+            r.errors.append(f"{s['name']}: kind veri kaynağında değil rolde tanımlanır")
+    try:
+        r.errors.extend(md.sources.validate())
+    except SourceRegistryError as exc:
+        r.errors.append(str(exc))
+    role_set = set(role_names)
 
     # Tanımlama kuralları
     applies = [i["applies_to"] for i in md.identification]
@@ -264,13 +281,14 @@ def validate(md: Metadata) -> ValidationReport:
             for a in attrs:
                 if a not in available:
                     r.errors.append(f"{where}: '{a}' bu sınıfta veya atalarında yok")
-        for src, prio in (rule.get("priorities") or {}).items():
-            if src not in source_set:
-                r.errors.append(f"{where}: veri kaynağı tanımsız {src}")
+        for role, prio in (rule.get("priorities") or {}).items():
+            if role not in role_set:
+                hint = " (ürün/veri kaynağı adı değil, kaynak rolü yazılır)" if role in sources else ""
+                r.errors.append(f"{where}: kaynak rolü tanımsız {role}{hint}")
             if not isinstance(prio, int) or prio <= 0:
-                r.errors.append(f"{where}: öncelik pozitif tam sayı olmalı ({src})")
+                r.errors.append(f"{where}: öncelik pozitif tam sayı olmalı ({role})")
     for d in rec.get("data_refresh", []):
-        if d["applies_to"] not in known or d["data_source"] not in source_set:
+        if d["applies_to"] not in known or d.get("role") not in role_set:
             r.errors.append(f"Veri tazeleme kuralı geçersiz: {d}")
         if float(d["effective_days"]) <= 0:
             r.errors.append(f"Veri tazeleme süresi pozitif olmalı: {d}")
@@ -314,13 +332,29 @@ def generate_seed_sql(md: Metadata) -> str:
     out: list[str] = ["-- Bu dosya tools/load_metadata.py tarafından üretilir. Elle düzenlemeyin.", "BEGIN;",
                       "SET LOCAL client_min_messages = warning;", "SET CONSTRAINTS ALL DEFERRED;"]
 
+    out.append("\n-- Kaynak rolleri (ADR-0009)")
+    roles = {r["name"]: r for r in md.source_roles}
+    for role in md.source_roles:
+        out.append(
+            "INSERT INTO meta.source_role (name, label_tr, kind, ci_attribute_source, description) VALUES "
+            f"({_q(role['name'])}, {_q(role['label_tr'])}, {_q(role['kind'])}, "
+            f"{_q(bool(role.get('ci_attribute_source', True)))}, {_q(role.get('description_tr'))}) "
+            "ON CONFLICT (name) DO UPDATE SET label_tr = EXCLUDED.label_tr, kind = EXCLUDED.kind, "
+            "ci_attribute_source = EXCLUDED.ci_attribute_source, description = EXCLUDED.description;"
+        )
+
     out.append("\n-- Veri kaynakları ve kaynak kaydı bölümleri")
     for s in md.data_sources:
+        role = roles[s["role"]]
+        product = json.dumps(s.get("product") or {}, ensure_ascii=False, sort_keys=True)
         out.append(
-            "INSERT INTO ingest.data_source (name, label_tr, kind, connector, schedule, ci_attribute_source, notes) VALUES "
-            f"({_q(s['name'])}, {_q(s['label_tr'])}, {_q(s['kind'])}, {_q(s.get('connector'))}, {_q(s.get('schedule'))}, "
-            f"{_q(bool(s.get('ci_attribute_source', True)))}, {_q(s.get('open_question'))}) "
-            "ON CONFLICT (name) DO UPDATE SET label_tr = EXCLUDED.label_tr, kind = EXCLUDED.kind, "
+            "INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank, lifecycle, product, connector, "
+            "schedule, ci_attribute_source, notes) VALUES "
+            f"({_q(s['name'])}, {_q(s['label_tr'])}, {_q(role['kind'])}, {_q(s['role'])}, {int(s.get('role_rank', 1))}, "
+            f"{_q(s.get('lifecycle', 'active'))}, {_q(product)}::jsonb, {_q(s.get('connector'))}, {_q(s.get('schedule'))}, "
+            f"{_q(bool(role.get('ci_attribute_source', True)))}, {_q(s.get('open_question'))}) "
+            "ON CONFLICT (name) DO UPDATE SET label_tr = EXCLUDED.label_tr, kind = EXCLUDED.kind, role = EXCLUDED.role, "
+            "role_rank = EXCLUDED.role_rank, lifecycle = EXCLUDED.lifecycle, product = EXCLUDED.product, "
             "connector = EXCLUDED.connector, schedule = EXCLUDED.schedule, "
             "ci_attribute_source = EXCLUDED.ci_attribute_source, notes = EXCLUDED.notes;"
         )
@@ -413,17 +447,17 @@ def generate_seed_sql(md: Metadata) -> str:
     rec = md.reconciliation
     for idx, rule in enumerate(rec.get("rules", [])):
         attrs = None if rule.get("attributes", "*") == "*" else list(rule["attributes"])
-        for src, prio in rule["priorities"].items():
+        for role, prio in rule["priorities"].items():
             out.append(
-                "INSERT INTO meta.cmdb_reconciliation_definition (sys_id, applies_to, data_source, priority, attributes, description) "
-                f"VALUES ({_q(sys_id_for('recon', str(idx), rule['applies_to'], src))}, {_q(rule['applies_to'])}, {_q(src)}, "
+                "INSERT INTO meta.cmdb_reconciliation_definition (sys_id, applies_to, role, priority, attributes, description) "
+                f"VALUES ({_q(sys_id_for('recon', str(idx), rule['applies_to'], role))}, {_q(rule['applies_to'])}, {_q(role)}, "
                 f"{prio}, {_arr(attrs)}, {_q(rule.get('description'))});"
             )
     out.append("DELETE FROM meta.cmdb_datasource_refresh;")
     for d in rec.get("data_refresh", []):
         out.append(
-            "INSERT INTO meta.cmdb_datasource_refresh (applies_to, data_source, effective_duration) VALUES ("
-            f"{_q(d['applies_to'])}, {_q(d['data_source'])}, interval {_q(str(d['effective_days']) + ' days')});"
+            "INSERT INTO meta.cmdb_datasource_refresh (applies_to, role, effective_duration) VALUES ("
+            f"{_q(d['applies_to'])}, {_q(d['role'])}, interval {_q(str(d['effective_days']) + ' days')});"
         )
     out.append("DELETE FROM meta.cmdb_staleness_rule;")
     for s in rec.get("staleness", []):

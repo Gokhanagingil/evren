@@ -99,11 +99,43 @@ def test_nnmi_l3_switch_classified_as_switch(repo_root, now):
     assert rec.attributes["name"] == "IST-DC1-CORE-SW01"
 
 
-def test_end_to_end_three_sources_one_ci(repo_root, engine, now):
-    """vCenter misafir sunucu + Zabbix + Defender aynı makineyi farklı adlarla bildirir → tek CI."""
+def test_bmc_discovery_host_mapping(repo_root, now):
+    m = mapping(repo_root, "bmc_discovery/host.mapping.yaml")
+    rec = m.apply(fixture("bmc_discovery_host.json"), run_id=RUN, observed_at=now)
+    assert rec.data_source == "BMC"
+    assert rec.class_hint == "cmdb_ci_win_server"
+    assert rec.attributes["name"] == "ABC_1"
+    assert rec.attributes["fqdn"] == "abc_1.corp.sirket.local"
+    assert rec.attributes["ram"] == 16384 and rec.attributes["cpu_speed"] == 2500
+    assert rec.attributes["virtual"] is True
+    assert rec.lookup.mac_addresses == ["00:50:56:AB:CD:EF"]
+    assert rec.external_ids == {"bmc_discovery_key": "a1b2c3d4e5f60718293a4b5c6d7e8f90/Host"}
+    # Kapsam: masaüstü düğümleri sunucu CMDB'sine girmez
+    assert m.apply(fixture("bmc_discovery_workstation.json"), run_id=RUN, observed_at=now) is None
+
+
+def test_every_data_source_mapping_file_exists_and_matches(repo_root, metadata):
+    """Kaynak kaydı (data_sources.yaml) ile eşleme dosyaları tutarlı: ürün değişiminde unutulan dosya kalmaz."""
+    referenced = set()
+    for src in metadata.data_sources:
+        for rel in src.get("mappings") or []:
+            path = repo_root / rel
+            assert path.is_file(), f"{src['name']}: {rel} yok"
+            m = FieldMapping.from_dict(yaml.safe_load(path.read_text(encoding="utf-8")))
+            assert m.data_source == src["name"], f"{rel}: data_source {m.data_source} ≠ {src['name']}"
+            assert rel.startswith(f"connectors/{src['connector']}/"), f"{rel}: bağlayıcı klasörü {src['connector']} değil"
+            referenced.add(path.resolve())
+    orphans = {p.resolve() for p in all_mapping_files(repo_root)} - referenced
+    assert not orphans, f"Hiçbir veri kaynağına bağlı olmayan eşleme dosyaları: {sorted(map(str, orphans))}"
+
+
+def test_end_to_end_four_sources_one_ci(repo_root, engine, now):
+    """vCenter misafir sunucu + BMC Discovery + Zabbix + Defender aynı makineyi farklı adlarla bildirir → tek CI."""
     raw_vm = fixture("vcenter_vm.json")
     records = [
         mapping(repo_root, "vcenter/guest_server.mapping.yaml").apply(raw_vm, run_id=RUN, observed_at=now),
+        mapping(repo_root, "bmc_discovery/host.mapping.yaml").apply(fixture("bmc_discovery_host.json"), run_id=RUN,
+                                                                     observed_at=now),
         mapping(repo_root, "zabbix/mapping.yaml").apply(fixture("zabbix_host.json"), run_id=RUN, observed_at=now),
         mapping(repo_root, "defender/mapping.yaml").apply(fixture("defender_machine.json"), run_id=RUN, observed_at=now),
     ]
