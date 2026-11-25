@@ -1,0 +1,30 @@
+# vCenter VirtualMachine → misafir işletim sistemi sunucusu (cmdb_ci_server, virtual=true)
+# Yalnızca VMware Tools çalışıyor ve hostName raporlanıyorsa üretilir (include_when).
+# Seri numarası BIOS UUID'den türetilir: "VMware-42 1a ..." — işletim sisteminin bildirdiği
+# seri numarasıyla (BMC/Defender) eşleşir ve VM ↔ sunucu bağını güçlü kurar.
+description: VMware misafir sunucuları
+verify: true
+data_source: vCenter
+source_key: {from: config.instanceUuid}
+class: cmdb_ci_server
+include_when:
+  - {from: guest.hostName, matches: "."}
+class_rules:
+  - when: {from: config.guestFullName, matches: "(?i)windows"}
+    class: cmdb_ci_win_server
+  - when: {from: config.guestFullName, matches: "(?i)linux|red ?hat|ubuntu|suse|centos|oracle linux|rocky|alma"}
+    class: cmdb_ci_linux_server
+attributes:
+  name: {from: guest.hostName, transform: strip}
+  ip_address: {from: guest.ipAddress}
+  os: {from: config.guestFullName}
+  bios_uuid: {from: config.uuid, transform: lower}
+  serial_number: {from: _derived.vmwareSerial}
+  cpu_count: {from: config.hardware.numCPU, transform: int}
+  ram: {from: config.hardware.memoryMB, transform: int}
+  virtual: {const: true}
+lookup:
+  ip_addresses: {from: "guest.net[*].ipAddress[*]"}
+  mac_addresses: {from: "guest.net[*].macAddress"}
+relations:
+  - {type: "Virtualized by::Virtualizes", direction: parent, target: config.instanceUuid, target_class: cmdb_ci_vmware_instance}

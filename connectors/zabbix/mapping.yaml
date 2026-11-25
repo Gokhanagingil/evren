@@ -1,0 +1,30 @@
+# Zabbix host.get → Evren alım kaydı
+# API: JSON-RPC host.get (selectInterfaces, selectInventory, selectHostGroups, selectTags)
+# Zabbix'te "host" teknik addır, "name" görünen addır; kimlik için teknik ad kullanılır.
+description: Zabbix izlenen host'ları — izleme kapsamı ve canlılık; envanter için düşük öncelikli kaynak
+data_source: Zabbix
+source_key: hostid
+class: cmdb_ci_server
+class_rules:
+  - when: {from: "hostgroups[*].name", matches: "(?i)network|switch|router|firewall|ag cihaz"}
+    class: cmdb_ci_netgear
+  - when: {from: inventory.os_full, matches: "(?i)windows"}
+    class: cmdb_ci_win_server
+  - when: {from: inventory.os, matches: "(?i)windows"}
+    class: cmdb_ci_win_server
+  - when: {from: inventory.os_full, matches: "(?i)linux|red ?hat|ubuntu|suse|centos|oracle linux"}
+    class: cmdb_ci_linux_server
+  - when: {from: inventory.os, matches: "(?i)linux|red ?hat|ubuntu|suse|centos|oracle linux"}
+    class: cmdb_ci_linux_server
+attributes:
+  name: {from: host, transform: strip}
+  ip_address: {from: "interfaces[0].ip"}
+  serial_number: {from: inventory.serialno_a, transform: strip}
+  asset_tag: {from: inventory.asset_tag, transform: strip}
+  os: {from: inventory.os_full, fallback: inventory.os}
+  mac_address: {from: inventory.macaddress_a}
+lookup:
+  ip_addresses: {from: "interfaces[*].ip"}
+  mac_addresses: {from: inventory.macaddress_a, split: ","}
+external_ids:
+  zabbix_hostid: {from: hostid}

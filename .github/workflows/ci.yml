@@ -1,0 +1,103 @@
+name: Evren CI
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: evren-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    name: Çekirdek, metadata ve içerik
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Hash kilitli bağımlılıklar
+        run: |
+          test -f requirements/dev.txt || { echo "requirements/dev.txt yok: DURUM.md 'Sıradaki adımlar' 1"; exit 1; }
+          python -m pip install --require-hashes -r requirements/dev.txt
+      - name: Derleme ve lint
+        run: |
+          python -m compileall -q packages tools apps/web/tests
+          ruff check packages tools apps/web/tests
+          for f in $(find apps/web/assets/js -name '*.js'); do node --check "$f"; done
+      - name: Metadata, şemalar ve mimari harita güncel mi
+        run: |
+          python tools/load_metadata.py --check
+          python tools/build_architecture.py --check
+      - name: Birim testleri
+        working-directory: packages/evren-core
+        run: python -m pytest -q
+
+  postgres:
+    name: PostgreSQL entegrasyonu
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    services:
+      postgres:
+        # TODO(F0-06): imajı digest ile sabitle
+        image: postgres:16
+        env:
+          POSTGRES_USER: evren_owner
+          POSTGRES_PASSWORD: ci-only-not-a-secret
+          POSTGRES_DB: evren
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U evren_owner" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGPORT: "5432"
+      PGUSER: evren_owner
+      PGPASSWORD: ci-only-not-a-secret
+      PGDATABASE: evren
+      EVREN_TEST_PG: "1"
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --require-hashes -r requirements/dev.txt
+      - name: Migrasyonlar ve tohum (iki kez — idempotentlik)
+        run: |
+          for f in db/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -q -f "$f"; done
+          python tools/load_metadata.py --sql build/seed.sql
+          psql -v ON_ERROR_STOP=1 -q -f build/seed.sql
+          psql -v ON_ERROR_STOP=1 -q -f build/seed.sql
+      - name: Entegrasyon testleri
+        working-directory: packages/evren-core
+        run: python -m pytest -q tests/test_postgres.py
+
+  web:
+    name: Arayüz duman testi (Chromium)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - run: |
+          python -m pip install --require-hashes -r requirements/dev.txt
+          python -m playwright install --with-deps chromium
+      - name: Duman testi ve ekran görüntüleri
+        run: |
+          mkdir -p verification
+          EVREN_SHOTS=verification python -m pytest -q apps/web/tests
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: web-verification-${{ github.run_id }}
+          path: verification/
+          retention-days: 14

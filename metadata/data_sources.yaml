@@ -1,0 +1,60 @@
+# Veri kaynakları. `name`, uzlaştırma kurallarında ve discovery_source değerinde kullanılır.
+# kind: discovery | monitoring | security | itsm | manual | platform
+version: 1
+data_sources:
+  - name: vCenter
+    label_tr: VMware vCenter
+    kind: discovery
+    connector: vcenter
+    schedule: "0 */4 * * *"
+    authoritative_for_tr: VM örnekleri, ESXi hostlar, kümeler, datastore'lar; VM donanım kaynakları
+  - name: BMC
+    label_tr: BMC ajanları
+    kind: discovery
+    connector: bmc
+    schedule: "30 2 * * *"
+    authoritative_for_tr: Sunucu işletim sistemi, donanım envanteri, seri numaraları
+    open_question: Hangi BMC ürünü (Discovery/ADDM, Client Management, Helix)? docs/12'ye bakın
+  - name: NNMi
+    label_tr: OpenText NNMi
+    kind: discovery
+    connector: nnmi
+    schedule: "0 3 * * *"
+    authoritative_for_tr: Ağ cihazları, arayüzler, L2 bağlantıları
+  - name: Zabbix
+    label_tr: Zabbix
+    kind: monitoring
+    connector: zabbix
+    schedule: "15 */2 * * *"
+    authoritative_for_tr: İzleme kapsamı ve canlılık; envanter için düşük öncelik
+  - name: Defender
+    label_tr: Microsoft Defender for Endpoint
+    kind: security
+    connector: defender
+    schedule: "45 */6 * * *"
+    authoritative_for_tr: Uç nokta koruma durumu, risk/maruziyet, yazılım envanteri
+  - name: ServiceNow
+    label_tr: ServiceNow CMDB (ilk yükleme ve SN'de elle yapılan değişiklikler)
+    kind: itsm
+    connector: servicenow_cmdb
+    schedule: "*/15 * * * *"
+    authoritative_for_tr: Yönetişim öznitelikleri (geçiş döneminde), referans veriler
+  - name: ServiceNowChange
+    label_tr: ServiceNow değişiklik kayıtları
+    kind: itsm
+    connector: servicenow_change
+    schedule: "*/10 * * * *"
+    ci_attribute_source: false
+    authoritative_for_tr: Yetkili değişiklik penceresi (yetkisiz değişiklik tespiti için)
+  - name: Manual
+    label_tr: Evren arayüzünde elle giriş
+    kind: manual
+    connector: null
+    schedule: null
+    authoritative_for_tr: Sahiplik, destek grubu, iş kritikliği gibi yönetişim öznitelikleri
+  - name: Evren
+    label_tr: Evren platform kuralları (eskime, yaşam döngüsü)
+    kind: platform
+    connector: null
+    schedule: null
+    authoritative_for_tr: Eskime tabanlı durum önerileri

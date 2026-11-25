@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="referrer" content="no-referrer">
+  <title>Evren CMDB</title>
+  <link rel="icon" href="/assets/evren.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/assets/css/evren.css">
+  <script type="module" src="/assets/js/app.js"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">İçeriğe geç</a>
+  <div class="shell">
+    <aside class="sidebar" aria-label="Ana menü">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">E</span>
+        <span class="brand-text"><strong>Evren</strong><small>Konfigürasyon yönetimi</small></span>
+      </div>
+      <nav>
+        <ul class="nav" id="nav">
+          <li><a href="#/genel-bakis" data-route="genel-bakis">Genel Bakış</a></li>
+          <li><a href="#/mimari" data-route="mimari">Mimari Harita</a></li>
+          <li><a href="#/yol-haritasi" data-route="yol-haritasi">Yol Haritası</a></li>
+        </ul>
+        <p class="nav-heading">Yol haritasıyla gelecek</p>
+        <ul class="nav nav-soon">
+          <li><span aria-disabled="true">Konfigürasyon öğeleri <em>F1</em></span></li>
+          <li><span aria-disabled="true">Eşleştirme kuyruğu <em>F0</em></span></li>
+          <li><span aria-disabled="true">Veri kaynakları <em>F0</em></span></li>
+          <li><span aria-disabled="true">CMDB sağlığı <em>F1</em></span></li>
+          <li><span aria-disabled="true">Şema ve yetkiler <em>F1</em></span></li>
+        </ul>
+      </nav>
+      <p class="sidebar-foot">Geliştirme önizlemesi · v0.1</p>
+    </aside>
+    <main id="main" class="main" tabindex="-1">
+      <noscript><p class="notice">Evren arayüzü için JavaScript gereklidir.</p></noscript>
+      <div id="view" aria-live="polite"></div>
+    </main>
+  </div>
+</body>
+</html>

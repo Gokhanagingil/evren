@@ -1,0 +1,18 @@
+# cmdb_rel_type tohumları — "ebeveyn tanımlayıcı::çocuk tanımlayıcı" biçiminde.
+# Kesin liste ServiceNow örneğinden (cmdb_rel_type) içe aktarılmalıdır.
+version: 1
+relationship_types:
+  - {name: "Depends on::Used by", label_tr: "Bağımlı::Kullanılır"}
+  - {name: "Runs on::Runs", label_tr: "Üzerinde çalışır::Çalıştırır"}
+  - {name: "Hosted on::Hosts", label_tr: "Barındırılır::Barındırır"}
+  - {name: "Virtualized by::Virtualizes", label_tr: "Sanallaştırılır::Sanallaştırır"}
+  - {name: "Contains::Contained by", label_tr: "İçerir::İçinde"}
+  - {name: "Members::Member of", label_tr: "Üyeleri::Üyesi"}
+  - {name: "Cluster of::Cluster", label_tr: "Kümesi::Küme"}
+  - {name: "Connects to::Connected by", label_tr: "Bağlanır::Bağlanılır"}
+  - {name: "IP Connection::IP Connection", label_tr: "IP bağlantısı::IP bağlantısı"}
+  - {name: "Uses::Used by", label_tr: "Kullanır::Kullanılır"}
+  - {name: "Consumes::Consumed by", label_tr: "Tüketir::Tüketilir"}
+  - {name: "Owns::Owned by", label_tr: "Sahibidir::Sahiplenilir"}
+  - {name: "Sends data to::Receives data from", label_tr: "Veri gönderir::Veri alır"}
+  - {name: "Registered on::Has registered", label_tr: "Kayıtlı::Kayıtlı barındırır", verify: true}

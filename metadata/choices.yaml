@@ -1,0 +1,49 @@
+# sys_choice tohumları. Değerler ServiceNow'un temel değerleridir; kurum örneğinde
+# özelleştirilmiş olabilir — `tools/sn_metadata_export.py` ile doğrulayın.
+version: 1
+choices:
+  - table: cmdb_ci
+    element: operational_status
+    values:
+      - {value: "1", label: Operational, label_tr: Çalışıyor}
+      - {value: "2", label: Non-Operational, label_tr: Çalışmıyor}
+      - {value: "3", label: Repair in Progress, label_tr: Onarımda}
+      - {value: "4", label: DR Standby, label_tr: Felaket kurtarma beklemede}
+      - {value: "5", label: Ready, label_tr: Hazır}
+      - {value: "6", label: Retired, label_tr: Emekli}
+      - {value: "7", label: Pipeline, label_tr: Planlanan}
+      - {value: "8", label: Catalog, label_tr: Katalog}
+  - table: cmdb_ci
+    element: install_status
+    values:
+      - {value: "1", label: Installed, label_tr: Kurulu}
+      - {value: "2", label: On Order, label_tr: Siparişte}
+      - {value: "3", label: In Maintenance, label_tr: Bakımda}
+      - {value: "4", label: Pending Install, label_tr: Kurulum bekliyor}
+      - {value: "5", label: Pending Repair, label_tr: Onarım bekliyor}
+      - {value: "6", label: In Stock, label_tr: Stokta}
+      - {value: "7", label: Retired, label_tr: Emekli}
+      - {value: "8", label: Stolen, label_tr: Çalıntı}
+      - {value: "100", label: Absent, label_tr: Bulunamıyor}
+  - table: cmdb_ci
+    element: used_for
+    values:
+      - {value: Production, label: Production, label_tr: Üretim}
+      - {value: Staging, label: Staging, label_tr: Ön üretim}
+      - {value: QA, label: QA, label_tr: Kalite güvence}
+      - {value: Test, label: Test, label_tr: Test}
+      - {value: Development, label: Development, label_tr: Geliştirme}
+      - {value: Demonstration, label: Demonstration, label_tr: Demo}
+      - {value: Training, label: Training, label_tr: Eğitim}
+      - {value: Disaster recovery, label: Disaster recovery, label_tr: Felaket kurtarma}
+  - table: cmdb_ci
+    element: discovery_source
+    values:
+      - {value: Evren, label: Evren, label_tr: Evren}
+      - {value: vCenter, label: vCenter, label_tr: vCenter}
+      - {value: BMC, label: BMC, label_tr: BMC}
+      - {value: NNMi, label: NNMi, label_tr: NNMi}
+      - {value: Zabbix, label: Zabbix, label_tr: Zabbix}
+      - {value: Defender, label: Microsoft Defender, label_tr: Microsoft Defender}
+      - {value: ServiceNow, label: ServiceNow, label_tr: ServiceNow}
+      - {value: Manual, label: Manual Entry, label_tr: Elle giriş}

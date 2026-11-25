@@ -1,0 +1,344 @@
+# ServiceNow CMDB sınıf hiyerarşisinin çekirdek alt kümesi (Evren tohum verisi).
+#
+# ÖNEMLİ: Bu dosya bir başlangıç noktasıdır. Kesin kaynak sizin ServiceNow
+# örneğinizdir. `tools/sn_metadata_export.py` ile sys_db_object / sys_dictionary /
+# sys_choice dışa aktarılır, `metadata/imported/` altına yazılır ve bu dosyayla
+# karşılaştırılır. `verify: true` işaretli sınıf/alanlar örnekten mutlaka
+# doğrulanmalıdır (sürüme ve eklentilere göre farklılık gösterebilir).
+#
+# Alan depolama:
+#   storage: column  → cmdb.cmdb_ci tablosunda fiziksel kolon (yalnızca cmdb_ci alanları)
+#   (varsayılan)     → cmdb.cmdb_ci.class_attributes JSONB içinde; metadata sözlüğü tip
+#                      ve doğrulamayı uygular, sık sorgulanan alanlar için ifade indeksi açılır.
+#
+# Tipler: string, integer, decimal, boolean, glide_date_time, glide_date, reference
+# choice: true → değerler sys_choice'tan (choices.yaml) gelir.
+version: 1
+classes:
+  - name: cmdb_ci
+    label: Configuration Item
+    label_tr: Konfigürasyon Öğesi
+    extends: null
+    fields:
+      - {name: name, type: string, max_length: 255, label_tr: Ad, storage: column}
+      - {name: short_description, type: string, max_length: 1000, label_tr: Kısa açıklama, storage: column}
+      - {name: serial_number, type: string, max_length: 255, label_tr: Seri numarası, storage: column}
+      - {name: asset_tag, type: string, max_length: 255, label_tr: Varlık etiketi, storage: column}
+      - {name: ip_address, type: string, max_length: 255, label_tr: IP adresi, storage: column}
+      - {name: mac_address, type: string, max_length: 255, label_tr: MAC adresi, storage: column}
+      - {name: fqdn, type: string, max_length: 255, label_tr: FQDN, storage: column}
+      - {name: dns_domain, type: string, max_length: 255, label_tr: DNS alanı, storage: column}
+      - {name: operational_status, type: integer, choice: true, label_tr: Operasyonel durum, storage: column}
+      - {name: install_status, type: integer, choice: true, label_tr: Kurulum durumu, storage: column}
+      - {name: used_for, type: string, max_length: 40, choice: true, label_tr: Kullanım amacı, storage: column}
+      - {name: discovery_source, type: string, max_length: 40, choice: true, label_tr: Keşif kaynağı, storage: column}
+      - {name: first_discovered, type: glide_date_time, label_tr: İlk keşif, storage: column}
+      - {name: last_discovered, type: glide_date_time, label_tr: Son keşif, storage: column}
+      - {name: manufacturer, type: reference, reference: core_company, label_tr: Üretici, storage: column}
+      - {name: model_id, type: reference, reference: cmdb_model, label_tr: Model, storage: column}
+      - {name: location, type: reference, reference: cmn_location, label_tr: Konum, storage: column}
+      - {name: company, type: reference, reference: core_company, label_tr: Şirket, storage: column}
+      - {name: department, type: reference, reference: cmn_department, label_tr: Departman, storage: column}
+      - {name: support_group, type: reference, reference: sys_user_group, label_tr: Destek grubu, storage: column}
+      - {name: assignment_group, type: reference, reference: sys_user_group, label_tr: Atama grubu, storage: column}
+      - {name: change_control, type: reference, reference: sys_user_group, label_tr: Onay grubu, storage: column}
+      - {name: managed_by, type: reference, reference: sys_user, label_tr: Yöneten, storage: column}
+      - {name: owned_by, type: reference, reference: sys_user, label_tr: Sahibi, storage: column}
+      - {name: assigned_to, type: reference, reference: sys_user, label_tr: Atanan kişi, storage: column}
+      - {name: duplicate_of, type: reference, reference: cmdb_ci, label_tr: Mükerrer kaydı, storage: column}
+      - {name: correlation_id, type: string, max_length: 512, label_tr: Korelasyon kimliği, storage: column}
+      - {name: object_id, type: string, max_length: 512, label_tr: Nesne kimliği, storage: column}
+      - {name: category, type: string, max_length: 100, label_tr: Kategori, storage: column}
+      - {name: subcategory, type: string, max_length: 100, label_tr: Alt kategori, storage: column}
+      - {name: install_date, type: glide_date_time, label_tr: Kurulum tarihi, storage: column}
+      - {name: warranty_expiration, type: glide_date, label_tr: Garanti bitişi, storage: column}
+      # CSDM 5 yaşam döngüsü alanları. ServiceNow'da life_cycle_stage /
+      # life_cycle_stage_status tablolarına referanstır; Evren'de ilk sürümde metin.
+      - {name: life_cycle_stage, type: string, max_length: 100, label_tr: Yaşam döngüsü aşaması, storage: column, verify: true}
+      - {name: life_cycle_stage_status, type: string, max_length: 100, label_tr: Aşama durumu, storage: column, verify: true}
+      - {name: comments, type: string, max_length: 4000, label_tr: Yorumlar, storage: column}
+
+  # --- Donanım ------------------------------------------------------------
+  - name: cmdb_ci_hardware
+    label: Hardware
+    label_tr: Donanım
+    extends: cmdb_ci
+    fields:
+      - {name: hardware_status, type: string, max_length: 40, label_tr: Donanım durumu}
+      - {name: default_gateway, type: string, max_length: 255, label_tr: Varsayılan ağ geçidi}
+      - {name: firmware_version, type: string, max_length: 100, label_tr: Firmware sürümü}
+
+  - name: cmdb_ci_computer
+    label: Computer
+    label_tr: Bilgisayar
+    extends: cmdb_ci_hardware
+    fields:
+      - {name: host_name, type: string, max_length: 255, label_tr: Host adı}
+      - {name: os, type: string, max_length: 255, label_tr: İşletim sistemi}
+      - {name: os_version, type: string, max_length: 100, label_tr: OS sürümü}
+      - {name: os_service_pack, type: string, max_length: 100, label_tr: OS service pack}
+      - {name: os_domain, type: string, max_length: 255, label_tr: OS alanı}
+      - {name: cpu_count, type: integer, label_tr: CPU sayısı, indexed: true}
+      - {name: cpu_core_count, type: integer, label_tr: Çekirdek sayısı}
+      - {name: cpu_speed, type: integer, label_tr: CPU hızı (MHz)}
+      - {name: cpu_type, type: string, max_length: 255, label_tr: CPU tipi}
+      - {name: ram, type: integer, label_tr: RAM (MB), indexed: true}
+      - {name: disk_space, type: decimal, label_tr: Disk alanı (GB)}
+      - {name: virtual, type: boolean, label_tr: Sanal, indexed: true}
+      - {name: form_factor, type: string, max_length: 40, label_tr: Form faktörü}
+
+  - name: cmdb_ci_server
+    label: Server
+    label_tr: Sunucu
+    extends: cmdb_ci_computer
+    fields: []
+
+  - name: cmdb_ci_linux_server
+    label: Linux Server
+    label_tr: Linux sunucu
+    extends: cmdb_ci_server
+    fields: []
+
+  - name: cmdb_ci_win_server
+    label: Windows Server
+    label_tr: Windows sunucu
+    extends: cmdb_ci_server
+    fields: []
+
+  - name: cmdb_ci_unix_server
+    label: UNIX Server
+    label_tr: UNIX sunucu
+    extends: cmdb_ci_server
+    fields: []
+
+  - name: cmdb_ci_aix_server
+    label: AIX Server
+    label_tr: AIX sunucu
+    extends: cmdb_ci_unix_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_solaris_server
+    label: Solaris Server
+    label_tr: Solaris sunucu
+    extends: cmdb_ci_unix_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_esx_server
+    label: ESX Server
+    label_tr: ESXi host
+    extends: cmdb_ci_server
+    verify: true
+    fields: []
+
+  # --- Ağ cihazları -------------------------------------------------------
+  - name: cmdb_ci_netgear
+    label: Network Gear
+    label_tr: Ağ cihazı
+    extends: cmdb_ci_hardware
+    fields:
+      - {name: can_route, type: boolean, label_tr: Yönlendirme yapabilir}
+      - {name: can_switch, type: boolean, label_tr: Anahtarlama yapabilir}
+      - {name: can_partitionvlans, type: boolean, label_tr: VLAN bölümleyebilir}
+      - {name: physical_interface_count, type: integer, label_tr: Fiziksel arayüz sayısı}
+
+  - name: cmdb_ci_ip_switch
+    label: IP Switch
+    label_tr: Switch
+    extends: cmdb_ci_netgear
+    fields: []
+
+  - name: cmdb_ci_ip_router
+    label: IP Router
+    label_tr: Router
+    extends: cmdb_ci_netgear
+    fields: []
+
+  - name: cmdb_ci_ip_firewall
+    label: IP Firewall
+    label_tr: Güvenlik duvarı
+    extends: cmdb_ci_netgear
+    fields: []
+
+  - name: cmdb_ci_lb
+    label: Load Balancer
+    label_tr: Yük dengeleyici
+    extends: cmdb_ci_netgear
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_wap_network
+    label: Wireless Access Point
+    label_tr: Kablosuz erişim noktası
+    extends: cmdb_ci_netgear
+    verify: true
+    fields: []
+
+  # --- Sanallaştırma (VMware) --------------------------------------------
+  - name: cmdb_ci_vm_object
+    label: Virtual Machine Object
+    label_tr: Sanal makine nesnesi
+    extends: cmdb_ci
+    fields: []
+
+  - name: cmdb_ci_vm_instance
+    label: Virtual Machine Instance
+    label_tr: Sanal makine örneği
+    extends: cmdb_ci_vm_object
+    fields:
+      - {name: cpus, type: integer, label_tr: vCPU}
+      - {name: memory, type: integer, label_tr: Bellek (MB)}
+      - {name: disks, type: integer, label_tr: Disk sayısı}
+      - {name: disks_size, type: decimal, label_tr: Disk boyutu (GB)}
+      - {name: nics, type: integer, label_tr: Ağ kartı sayısı}
+      - {name: state, type: string, max_length: 40, label_tr: Durum}
+
+  - name: cmdb_ci_vmware_instance
+    label: VMware Virtual Machine Instance
+    label_tr: VMware sanal makine
+    extends: cmdb_ci_vm_instance
+    fields:
+      - {name: vcenter_ref, type: reference, reference: cmdb_ci_vcenter, label_tr: vCenter}
+      - {name: vcenter_uuid, type: string, max_length: 100, label_tr: vCenter UUID, indexed: true}
+      - {name: bios_uuid, type: string, max_length: 100, label_tr: BIOS UUID, indexed: true}
+      - {name: guest_id, type: string, max_length: 100, label_tr: Misafir OS kimliği, verify: true}
+      - {name: template, type: boolean, label_tr: Şablon}
+      - {name: image_path, type: string, max_length: 1000, label_tr: VMX yolu}
+
+  - name: cmdb_ci_vcenter
+    label: VMware vCenter Instance
+    label_tr: vCenter
+    extends: cmdb_ci_vm_object
+    verify: true
+    fields:
+      - {name: url, type: string, max_length: 1000, label_tr: Adres}
+      - {name: instance_uuid, type: string, max_length: 100, label_tr: Örnek UUID, verify: true}
+
+  - name: cmdb_ci_vcenter_datacenter
+    label: VMware vCenter Datacenter
+    label_tr: vCenter veri merkezi
+    extends: cmdb_ci_vm_object
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_vcenter_cluster
+    label: VMware vCenter Cluster
+    label_tr: vCenter kümesi
+    extends: cmdb_ci_vm_object
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_vcenter_datastore
+    label: VMware vCenter Datastore
+    label_tr: vCenter datastore
+    extends: cmdb_ci_vm_object
+    verify: true
+    fields: []
+
+  # --- Ağ arayüzü ve IP --------------------------------------------------
+  - name: cmdb_ci_network_adapter
+    label: Network Adapter
+    label_tr: Ağ adaptörü
+    extends: cmdb_ci
+    fields:
+      - {name: cmdb_ci, type: reference, reference: cmdb_ci, label_tr: Bağlı olduğu CI, indexed: true}
+      - {name: netmask, type: string, max_length: 100, label_tr: Ağ maskesi}
+      - {name: dhcp_enabled, type: boolean, label_tr: DHCP}
+
+  - name: cmdb_ci_ip_address
+    label: IP Address
+    label_tr: IP adresi
+    extends: cmdb_ci
+    fields:
+      - {name: ip_version, type: integer, label_tr: IP sürümü}
+      - {name: netmask, type: string, max_length: 100, label_tr: Ağ maskesi}
+      - {name: nic, type: reference, reference: cmdb_ci_network_adapter, label_tr: Ağ adaptörü}
+
+  # --- Uygulama ve servis (CSDM) ------------------------------------------
+  - name: cmdb_ci_appl
+    label: Application
+    label_tr: Uygulama
+    extends: cmdb_ci
+    fields:
+      - {name: version, type: string, max_length: 100, label_tr: Sürüm}
+      - {name: edition, type: string, max_length: 100, label_tr: Sürüm tipi}
+      - {name: install_directory, type: string, max_length: 1000, label_tr: Kurulum dizini}
+      - {name: tcp_port, type: string, max_length: 100, label_tr: TCP port}
+
+  - name: cmdb_ci_db_instance
+    label: Database Instance
+    label_tr: Veritabanı örneği
+    extends: cmdb_ci_appl
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_db_mssql_instance
+    label: MSSQL Instance
+    label_tr: MSSQL örneği
+    extends: cmdb_ci_db_instance
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_db_ora_instance
+    label: Oracle Instance
+    label_tr: Oracle örneği
+    extends: cmdb_ci_db_instance
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_service
+    label: Service
+    label_tr: Servis
+    extends: cmdb_ci
+    fields:
+      - {name: service_classification, type: string, max_length: 40, label_tr: Servis sınıflandırması}
+      # ServiceNow'daki yazımıyla (tek "s"): busines_criticality
+      - {name: busines_criticality, type: string, max_length: 40, label_tr: İş kritikliği}
+
+  - name: cmdb_ci_service_business
+    label: Business Service
+    label_tr: İş servisi
+    extends: cmdb_ci_service
+    fields: []
+
+  - name: cmdb_ci_service_technical
+    label: Technical Service
+    label_tr: Teknik servis
+    extends: cmdb_ci_service
+    fields: []
+
+  - name: cmdb_ci_service_auto
+    label: Application Service
+    label_tr: Uygulama servisi
+    extends: cmdb_ci_service
+    fields: []
+
+  - name: cmdb_ci_service_discovered
+    label: Mapped Application Service
+    label_tr: Haritalanmış uygulama servisi
+    extends: cmdb_ci_service_auto
+    verify: true
+    fields: []
+
+  - name: service_offering
+    label: Service Offering
+    label_tr: Servis sunumu
+    extends: cmdb_ci_service
+    fields: []
+
+  - name: cmdb_ci_business_app
+    label: Business Application
+    label_tr: İş uygulaması
+    extends: cmdb_ci
+    verify: true
+    fields: []
+
+# CMDB dışı referans tabloları (ServiceNow'dan aynı sys_id'lerle yansıtılır).
+reference_tables:
+  - {name: sys_user, label_tr: Kullanıcı, display: name}
+  - {name: sys_user_group, label_tr: Grup, display: name}
+  - {name: cmn_location, label_tr: Konum, display: name}
+  - {name: core_company, label_tr: Şirket, display: name}
+  - {name: cmn_department, label_tr: Departman, display: name}
+  - {name: cmdb_model, label_tr: Model, display: display_name}

@@ -1,0 +1,26 @@
+# vCenter VirtualMachine → cmdb_ci_vmware_instance
+# Bağlayıcı her VM için iki kayıt üretir: VM örneği (bu dosya) ve misafir sunucu
+# (guest_server.mapping.yaml). ServiceNow modelinde bunlar ayrı CI'lardır:
+#   <sunucu> --Virtualized by::Virtualizes--> <VM örneği> --Registered on::Has registered--> <ESXi host>
+# Bağlayıcı ham JSON'a vCenter örnek UUID'sini `_vcenter.instanceUuid` olarak ekler.
+description: VMware sanal makine örnekleri
+verify: true
+data_source: vCenter
+source_key: config.instanceUuid
+class: cmdb_ci_vmware_instance
+attributes:
+  name: {from: name, transform: strip}
+  correlation_id: {from: config.instanceUuid, transform: lower}
+  object_id: {from: _moId}
+  vcenter_uuid: {from: _vcenter.instanceUuid, transform: lower}
+  bios_uuid: {from: config.uuid, transform: lower}
+  cpus: {from: config.hardware.numCPU, transform: int}
+  memory: {from: config.hardware.memoryMB, transform: int}
+  template: {from: config.template, transform: bool}
+  guest_id: {from: config.guestId}
+  image_path: {from: config.files.vmPathName}
+  state: {from: runtime.powerState, map: {poweredOn: "on", poweredOff: "off", suspended: "paused"}}
+lookup:
+  mac_addresses: {from: "guest.net[*].macAddress"}
+relations:
+  - {type: "Registered on::Has registered", direction: parent, target: runtime.host, target_class: cmdb_ci_esx_server}

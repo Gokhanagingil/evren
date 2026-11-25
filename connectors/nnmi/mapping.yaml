@@ -1,0 +1,32 @@
+# OpenText (Micro Focus) NNMi — Node
+# NNMi API'si sürüme göre değişir (SOAP NodeBeanService / REST). Alan adları kurumdaki
+# sürümle doğrulanmalıdır (verify). Arayüzler ve L2 bağlantıları ayrı eşleme dosyalarıyla
+# (interface.mapping.yaml, l2_connection.mapping.yaml) eklenecektir — DURUM.md backlog.
+description: Ağ cihazları (switch, router, firewall, yük dengeleyici, kablosuz)
+verify: true
+data_source: NNMi
+source_key: uuid
+class: cmdb_ci_netgear
+include_when:
+  - {from: deviceCategory, matches: "(?i)switch|router|firewall|loadbalancer|wireless|chassis"}
+class_rules:
+  - when: {from: deviceCategory, matches: "(?i)firewall"}
+    class: cmdb_ci_ip_firewall
+  - when: {from: deviceCategory, matches: "(?i)loadbalancer"}
+    class: cmdb_ci_lb
+  - when: {from: deviceCategory, matches: "(?i)wireless"}
+    class: cmdb_ci_wap_network
+  # L3 switch'ler (switchrouter) ServiceNow'daki gibi switch sınıfında kalır; can_route ile işaretlenir.
+  - when: {from: deviceCategory, matches: "(?i)switch"}
+    class: cmdb_ci_ip_switch
+  - when: {from: deviceCategory, matches: "(?i)router"}
+    class: cmdb_ci_ip_router
+attributes:
+  name: {from: systemName, fallback: name, transform: strip}
+  fqdn: {from: longName, transform: lower}
+  ip_address: {from: managementAddress}
+  serial_number: {from: serialNumber, transform: strip}
+  firmware_version: {from: systemDescription}
+external_ids:
+  nnmi_uuid: {from: uuid}
+  snmp_sysobjectid: {from: systemObjectId}

@@ -1,0 +1,27 @@
+# Microsoft Defender for Endpoint — Machine varlığı (GET /api/machines)
+# Kapsam: yalnızca sunucu işletim sistemleri (iş istasyonları bu fazın dışında).
+# Güvenlik öznitelikleri (riskScore, exposureLevel) cmdb_key_value'ya ve insight katmanına
+# gider; sözlükte sensitivity: restricted olarak işaretlenir (docs/07).
+description: Uç nokta koruma kapsamı ve güvenlik duruşu
+data_source: Defender
+source_key: id
+class: cmdb_ci_server
+include_when:
+  - {from: osPlatform, matches: "(?i)server|linux|rhel|ubuntu|centos|suse|debian|oracle"}
+class_rules:
+  - when: {from: osPlatform, matches: "(?i)windows"}
+    class: cmdb_ci_win_server
+  - when: {from: osPlatform, matches: "(?i)linux|rhel|ubuntu|centos|suse|debian|oracle"}
+    class: cmdb_ci_linux_server
+attributes:
+  name: {from: computerDnsName, transform: strip}
+  fqdn: {from: computerDnsName, transform: lower}
+  ip_address: {from: lastIpAddress}
+  os: {from: osPlatform}
+  os_version: {from: version}
+lookup:
+  ip_addresses: {from: "ipAddresses[*].ipAddress"}
+  mac_addresses: {from: "ipAddresses[*].macAddress"}
+external_ids:
+  defender_machine_id: {from: id}
+  aad_device_id: {from: aadDeviceId}

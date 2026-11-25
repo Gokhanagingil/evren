@@ -1,0 +1,150 @@
+{
+  "title": "Evren CMDB yol haritası",
+  "updated_at": "2026-11-25",
+  "note": "Tek kaynak bu dosyadır. Uygulamadaki Yol Haritası sayfası ve DURUM.md buradan beslenir. Takvim önerisi, ekip kapasitesine göre güncellenmelidir.",
+  "statuses": {
+    "done": "Tamamlandı",
+    "in_progress": "Devam ediyor",
+    "planned": "Planlandı",
+    "blocked": "Engelli",
+    "at_risk": "Riskli"
+  },
+  "principles": [
+    "Önce gölge mod: ServiceNow'a yazmadan önce ölç, karşılaştır, kanıtla.",
+    "Golden record'a tek yazan uzlaştırıcıdır; elle düzenleme de kurallardan geçer.",
+    "Her faz bir çıkış kriteriyle kapanır; kriter karşılanmadan sonraki faza geçilmez.",
+    "Güvenlik kapıları her değişiklikte çalışır; yüksek/kritik bulgu ile yayın yapılmaz."
+  ],
+  "phases": [
+    {
+      "id": "F0",
+      "number": "00",
+      "title": "Temel ve gölge mod",
+      "window": "Ay 0–3 · Ara 2026 – Şub 2027 (öneri)",
+      "goal": "Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki kaynağın gölge modda eşleştirilmesi. ServiceNow'a hiçbir yazma yapılmaz.",
+      "items": [
+        {"id": "F0-01", "title": "Proje iskeleti, Claude Code yönergeleri ve durum dosyası", "status": "done", "components": []},
+        {"id": "F0-02", "title": "Çekirdek kütüphane: normalizasyon, kimlik çözümleme, uzlaştırma, devre kesici (testli)", "status": "done", "components": ["normalize", "identity", "reconcile", "breaker"]},
+        {"id": "F0-03", "title": "PostgreSQL şeması, metadata sözlüğü ve sn.* görünümleri", "status": "done", "components": ["cmdb_ci", "cmdb_rel_ci", "dictionary", "sn_views"]},
+        {"id": "F0-04", "title": "Veritabanı güvenlik temeli: en az yetkili roller, salt ekleme denetim izi, görevler ayrılığı", "status": "done", "components": ["db_roles", "audit_trail", "sod"]},
+        {"id": "F0-05", "title": "Uygulama içi Mimari Harita ve Yol Haritası sayfaları", "status": "done", "components": ["web_ui"]},
+        {"id": "F0-06", "title": "CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM", "status": "in_progress", "note": "İş akışları yazıldı; GitHub'da ilk çalıştırma bekliyor.", "components": ["supply_chain"]},
+        {"id": "F0-07", "title": "ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması", "status": "planned", "components": ["dictionary"]},
+        {"id": "F0-08", "title": "ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur)", "status": "planned", "components": ["src_servicenow"]},
+        {"id": "F0-09", "title": "API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi", "status": "planned", "components": ["rest_api", "entra"]},
+        {"id": "F0-10", "title": "Alım geçidi, Kafka ve uzlaştırıcı servisi", "status": "planned", "components": ["ingest_gateway", "kafka", "change_filter"]},
+        {"id": "F0-11", "title": "vCenter ve Zabbix bağlayıcıları", "status": "planned", "components": ["src_vcenter", "src_zabbix", "connectors"]},
+        {"id": "F0-12", "title": "Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)", "status": "planned", "components": ["match_queue"]},
+        {"id": "F0-13", "title": "Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları", "status": "planned", "components": ["analytics"]}
+      ],
+      "exit_criteria": [
+        {"text": "ServiceNow CMDB aynı sys_id'lerle yüklendi; sınıf bazında kayıt sayıları eşit", "met": false},
+        {"text": "vCenter ve Zabbix kayıtlarının en az %95'i otomatik eşleşti", "met": false},
+        {"text": "Örneklem denetiminde yanlış birleştirme oranı %0,5'in altında", "met": false},
+        {"text": "ServiceNow'a hiçbir yazma yapılmadı", "met": true},
+        {"text": "CI güvenlik kapıları yeşil; yüksek veya kritik bulgu yok", "met": false},
+        {"text": "İlk kapsam raporu KS GRC'ye kanıt olarak aktarıldı", "met": false}
+      ],
+      "risks": [
+        "Kullanılan BMC ürünü belirsiz (bağlayıcı taslak)",
+        "ServiceNow örneğindeki sınıf/alan farkları",
+        "Kaynak sistemlere salt okunur servis hesabı erişimlerinin zamanında açılması"
+      ]
+    },
+    {
+      "id": "F1",
+      "number": "01",
+      "title": "Tüm kaynaklar ve uzlaştırma",
+      "window": "Ay 3–6 · Mar – May 2027 (öneri)",
+      "goal": "Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.",
+      "items": [
+        {"id": "F1-01", "title": "BMC bağlayıcısı (ürün netleştikten sonra)", "status": "blocked", "note": "Açık soru: hangi BMC ürünü?", "components": ["src_bmc"]},
+        {"id": "F1-02", "title": "Defender bağlayıcısı; kısıtlı güvenlik duruşu tablosu", "status": "planned", "components": ["src_defender", "security_posture"]},
+        {"id": "F1-03", "title": "NNMi: düğüm, arayüz ve L2 bağlantıları", "status": "planned", "components": ["src_nnmi"]},
+        {"id": "F1-04", "title": "ServiceNow Change bağlayıcısı ve yetkisiz değişiklik tespiti", "status": "planned", "components": ["unauthorized"]},
+        {"id": "F1-05", "title": "Uzlaştırma kuralları ve \"bu değer nereden geldi?\" görünümü", "status": "planned", "components": ["reconcile", "provenance"]},
+        {"id": "F1-06", "title": "Devre kesici ve eskime işletimi; tatbikat", "status": "planned", "components": ["breaker"]},
+        {"id": "F1-07", "title": "Bağımlı CI kimliği (uygulama, ağ adaptörü)", "status": "planned", "components": ["dependent_ids"]},
+        {"id": "F1-08", "title": "OpenSearch araması ve CI 360° ekranı", "status": "planned", "components": ["search_index"]},
+        {"id": "F1-09", "title": "CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam", "status": "planned", "components": ["analytics"]},
+        {"id": "F1-10", "title": "Rol–yetki matrisi ekranı (RBAC + ABAC)", "status": "planned", "components": ["rbac_abac"]},
+        {"id": "F1-11", "title": "Şema tasarımcısı ve değişiklik setleri", "status": "planned", "components": ["schema_sets"]},
+        {"id": "F1-12", "title": "ServiceNow'da elle yapılan değişikliklerin çekilmesi", "status": "planned", "components": ["sn_pull", "sn_edits"]}
+      ],
+      "exit_criteria": [
+        {"text": "Beş kaynak üretimde; her biri için devre kesici taban çizgisi oluştu", "met": false},
+        {"text": "Devre kesici tatbikatı yapıldı (kısmi çalışma hiçbir CI'ı emekliye ayırmadı)", "met": false},
+        {"text": "Sağlık metrikleri haftalık raporlanıyor", "met": false},
+        {"text": "Rol–yetki matrisi süreç sahipleri ve iç denetim tarafından onaylandı", "met": false}
+      ],
+      "risks": ["Kaynak API hız sınırları", "NNMi API sürüm farkları", "Yönetişim alanlarının sahipliği konusunda organizasyonel uzlaşı"]
+    },
+    {
+      "id": "F2",
+      "number": "02",
+      "title": "Evren ana kaynak, ServiceNow replika",
+      "window": "Ay 6–9 · Haz – Ağu 2027 (öneri)",
+      "goal": "Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.",
+      "items": [
+        {"id": "F2-01", "title": "sn-sync servisi; sınıf ve alan kapsamı", "status": "planned", "components": ["sn_sync", "evren_master"]},
+        {"id": "F2-02", "title": "ServiceNow tarafında \"Evren\" veri kaynağı ve uzlaştırma kuralı", "status": "planned", "components": ["sn_ire", "sn_cmdb"]},
+        {"id": "F2-03", "title": "ServiceNow'a doğrudan yazan eski entegrasyonların kapatılması", "status": "planned", "components": ["sn_cmdb"]},
+        {"id": "F2-04", "title": "ITOM abonelik birimi sayımının ServiceNow ile teyidi", "status": "planned", "components": []},
+        {"id": "F2-05", "title": "ServiceNow uyumlu API: /api/now/table ve /identifyreconcile", "status": "planned", "components": ["sn_compat_api"]},
+        {"id": "F2-06", "title": "Olay akışı ve imzalı webhook", "status": "planned", "components": ["event_stream", "outbox"]},
+        {"id": "F2-07", "title": "Evren MCP sunucusu ve kurum MCP uygulaması sözleşmesi", "status": "planned", "components": ["evren_mcp", "corp_mcp"]},
+        {"id": "F2-08", "title": "KS GRC entegrasyonu: CMDB tabanlı otomatik kontroller", "status": "planned", "components": ["grc_app"]}
+      ],
+      "exit_criteria": [
+        {"text": "30 gün kesintisiz eşleme", "met": false},
+        {"text": "Kapsamdaki sınıflarda ServiceNow CMDB ile Evren arasındaki fark %0,1'in altında", "met": false},
+        {"text": "ServiceNow'da hiçbir business rule, ACL veya atama kuralı değişmedi", "met": false},
+        {"text": "Geri dönüş planı test edildi", "met": false}
+      ],
+      "risks": ["ServiceNow IRE API kapasitesi", "Lisans sayımı belirsizliği", "Geçiş döneminde çift yönetim alışkanlıkları"]
+    },
+    {
+      "id": "F3",
+      "number": "03",
+      "title": "CI seçici ve yapay zekâ",
+      "window": "Ay 9–12 · Eyl – Kas 2027 (öneri)",
+      "goal": "ServiceNow formlarında CI seçimi Evren aramasıyla yapılır. Yapay zekâ önerileri insan onayıyla, ISO/IEC 42001 uyumlu biçimde devreye alınır.",
+      "items": [
+        {"id": "F3-01", "title": "ServiceNow formlarında Evren araması (MID Server / API ağ geçidi)", "status": "planned", "components": ["ci_picker"]},
+        {"id": "F3-02", "title": "Doğal dil ile CI sorgulama", "status": "planned", "components": ["evren_mcp"]},
+        {"id": "F3-03", "title": "Eşleşme açıklama ve öneri asistanı", "status": "planned", "components": ["match_queue", "ai_governance"]},
+        {"id": "F3-04", "title": "Anomali açıklamaları ve kök neden ipuçları", "status": "planned", "components": ["analytics", "ai_governance"]},
+        {"id": "F3-05", "title": "Yapay zekâ etki değerlendirmesi ve ISO/IEC 42001 kontrol eşlemesi", "status": "planned", "components": ["ai_governance"]}
+      ],
+      "exit_criteria": [
+        {"text": "CI seçici için kullanıcı kabul testi imzalandı", "met": false},
+        {"text": "İnsan onayı olmadan yapay zekâ kaynaklı hiçbir yazma yok (denetim izinden doğrulanır)", "met": false},
+        {"text": "Öneri kabul oranı ve hata oranı ölçülüyor", "met": false}
+      ],
+      "risks": ["Model seçimi ve veri yerleşimi kararı", "SN tarafında MID Server kapasitesi"]
+    },
+    {
+      "id": "F4",
+      "number": "04",
+      "title": "Task tarafına hazırlık",
+      "window": "Ay 12+ · 2028 (öneri)",
+      "goal": "Aynı kimlik motoruyla olay–CI bağlama. ServiceNow task desenine uygun veri modeli ve Incident/Change pilotunun tasarımı.",
+      "items": [
+        {"id": "F4-01", "title": "Olay → CI bağlama (event management) için kimlik motorunun kullanımı", "status": "planned", "components": ["identity"]},
+        {"id": "F4-02", "title": "Task veri modeli tasarımı (ServiceNow task deseni)", "status": "planned", "components": []},
+        {"id": "F4-03", "title": "Incident/Change pilot kapsamı ve ServiceNow lisans çıkış planı", "status": "planned", "components": []}
+      ],
+      "exit_criteria": [
+        {"text": "Pilot kapsamı ve başarı ölçütleri yönetim tarafından onaylandı", "met": false}
+      ],
+      "risks": ["Task tarafının iş akışı karmaşıklığı (SLA, onay, bildirim)"]
+    }
+  ],
+  "open_questions": [
+    "Kurumda hangi BMC ürünü kullanılıyor (Discovery/ADDM, Client Management, Helix)?",
+    "ServiceNow örneği SaaS mı; MID Server mevcut mu?",
+    "Hedef çalışma ortamı: Kubernetes/OpenShift mi, sanal makine üzerinde Docker mı?",
+    "Kurumun sır kasası ve SIEM ürünü hangisi?",
+    "Yapay zekâ için onaylı model ve veri yerleşimi politikası nedir?"
+  ]
+}

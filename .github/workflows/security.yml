@@ -1,0 +1,66 @@
+name: Evren güvenlik kapıları
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+
+# Tarayıcı sürümleri ve SHA-256 değerleri KS GRC (control) deposundaki doğrulanmış
+# güvenlik iş akışıyla aynıdır. Güncellerken yeni sürümün özetini resmi yayından doğrulayın.
+jobs:
+  scan:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.12'
+      - name: Sabitlenmiş tarayıcıları hazırla
+        run: |
+          set -eu
+          mkdir -p "$RUNNER_TEMP/tools" verification/security
+          cd "$RUNNER_TEMP/tools"
+          curl -fsSLo trivy.tgz https://github.com/aquasecurity/trivy/releases/download/v0.76.2/trivy_0.76.2_Linux-64bit.tar.gz
+          echo 'bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf  trivy.tgz' | sha256sum -c -
+          tar -xzf trivy.tgz trivy
+          curl -fsSLo gitleaks.tgz https://github.com/gitleaks/gitleaks/releases/download/v8.30.1/gitleaks_8.30.1_linux_x64.tar.gz
+          echo '551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb  gitleaks.tgz' | sha256sum -c -
+          tar -xzf gitleaks.tgz gitleaks
+          echo "$RUNNER_TEMP/tools" >> "$GITHUB_PATH"
+          python -m pip install bandit==1.9.4 pip-audit==2.10.1
+      - name: Geçmişte sır taraması
+        run: gitleaks git --redact=100 --report-format json --report-path verification/security/gitleaks.json .
+      - name: Kilitli bağımlılık denetimi
+        run: |
+          for f in requirements/runtime.txt requirements/dev.txt; do
+            test -f "$f" || { echo "$f yok (F0-06)"; exit 1; }
+            pip-audit --no-deps --disable-pip -r "$f" -f json -o "verification/security/pip-audit-$(basename "$f" .txt).json"
+          done
+      - name: SAST (bandit)
+        run: |
+          bandit -r packages tools services -x '*/tests/*' -f json -o verification/security/bandit.json --exit-zero
+          python - <<'PY'
+          import json
+          report = json.load(open('verification/security/bandit.json'))
+          bad = [i for i in report['results'] if i['issue_severity'] == 'HIGH'
+                 or (i['issue_severity'] == 'MEDIUM' and i['issue_confidence'] == 'HIGH')]
+          if report['errors'] or bad:
+              raise SystemExit(f'SAST eşiği aşıldı: {len(bad)} bulgu; raporu inceleyin')
+          PY
+      - name: Çalışma ağacı taraması ve SBOM
+        run: |
+          trivy fs --skip-dirs verification --scanners misconfig,secret,vuln --severity HIGH,CRITICAL --exit-code 1 \
+            --format json --output verification/security/trivy-fs.json .
+          trivy fs --skip-dirs verification --format cyclonedx --output verification/security/sbom.cdx.json .
+      - name: Arayüz güvenlik denetimi (CSP ve tehlikeli API)
+        run: |
+          ! grep -rnE 'innerHTML|outerHTML|insertAdjacentHTML|document\.write|eval\(|new Function' apps/web/assets/js
+          ! grep -nE '<script>|style=|<style' apps/web/index.html
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        if: always()
+        with:
+          name: security-${{ github.run_id }}
+          path: verification/security/
+          retention-days: 30

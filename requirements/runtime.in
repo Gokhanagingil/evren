@@ -1,0 +1,7 @@
+# Evren çalışma zamanı bağımlılıkları (üst düzey). Kilit dosyası hash'li üretilir:
+#   pip-compile --generate-hashes --allow-unsafe -o requirements/runtime.txt requirements/runtime.in
+# Yeni bağımlılık eklemeden önce gerekçe + ADR (CLAUDE.md, Güvenlik kuralları).
+pydantic>=2.7,<3
+PyYAML>=6.0,<7
+# Faz 0 servisleri (services/api, services/reconciler) ile eklenecek — ADR-0005:
+# fastapi, uvicorn[standard], psycopg[binary,pool], PyJWT, cryptography, confluent-kafka

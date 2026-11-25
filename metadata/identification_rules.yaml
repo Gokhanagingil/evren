@@ -1,0 +1,40 @@
+# Tanımlama kuralları (ServiceNow cmdb_identifier / cmdb_identifier_entry semantiği).
+# Öncelik numarası küçük olan önce denenir. Kural alt sınıflara kalıtılır.
+#
+# evren_extension: true → ServiceNow temel kural setinde olmayan, Evren'in eklediği girdi.
+# Tüm kural eşleşmeleri ayrıca çelişki kontrolünden geçer (seri/UUID/OS/sınıf/FQDN);
+# çelişki varsa otomatik birleştirme yapılmaz, kayıt eşleştirme kuyruğuna düşer.
+version: 1
+rules:
+  - applies_to: cmdb_ci_hardware
+    independent: true
+    description: Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı
+    entries:
+      - {priority: 100, search_table: cmdb_serial_number, attributes: [serial_number, serial_number_type]}
+      - {priority: 150, attributes: [bios_uuid], evren_extension: true}
+      - {priority: 200, attributes: [serial_number]}
+      - {priority: 280, attributes: [fqdn], evren_extension: true}
+      - {priority: 300, attributes: [name]}
+      - {priority: 400, search_table: cmdb_ci_network_adapter, attributes: [mac_address, name]}
+
+  - applies_to: cmdb_ci_vm_instance
+    independent: true
+    description: Sanal makine örneği (vCenter nesnesi)
+    verify: true
+    entries:
+      - {priority: 100, attributes: [correlation_id]}
+      - {priority: 200, attributes: [vcenter_uuid, object_id]}
+
+  - applies_to: cmdb_ci_appl
+    independent: false
+    description: Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır
+    parent_relation: {type: "Runs on::Runs", parent_class: cmdb_ci_hardware}
+    entries:
+      - {priority: 100, attributes: [name]}
+
+  - applies_to: cmdb_ci_network_adapter
+    independent: false
+    description: Ağ adaptörü — bağlı olduğu CI (cmdb_ci alanı) bağlamında MAC ile tanımlanır
+    parent_reference: cmdb_ci
+    entries:
+      - {priority: 100, attributes: [mac_address]}

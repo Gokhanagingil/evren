@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.egg-info/
+.venv/
+.env
+*.pem
+*.key
+secrets/
+metadata/imported/raw.json
+verification/

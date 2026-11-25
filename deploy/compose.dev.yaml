@@ -1,0 +1,74 @@
+# Evren — YEREL GELİŞTİRME ortamı. Üretim dağıtımı değildir (docs/12-operasyon-ve-olcek.md).
+# Tüm portlar yalnızca 127.0.0.1'e bağlanır. Parolalar .env dosyasından gelir (git'e girmez).
+# TODO(F0-06): imaj etiketlerini digest (@sha256:...) ile sabitle.
+#
+#   cp .env.example .env   # değerleri doldurun
+#   docker compose -f deploy/compose.dev.yaml up -d
+name: evren-dev
+
+x-hardening: &hardening
+  security_opt:
+    - no-new-privileges:true
+  restart: unless-stopped
+
+services:
+  postgres:
+    <<: *hardening
+    image: postgres:16
+    environment:
+      POSTGRES_USER: evren_owner
+      POSTGRES_PASSWORD: ${EVREN_PG_PASSWORD:?.env içinde EVREN_PG_PASSWORD tanımlayın}
+      POSTGRES_DB: evren
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    ports: ["127.0.0.1:55432:5432"]
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ../db/migrations:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U evren_owner -d evren"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  kafka:
+    <<: *hardening
+    image: apache/kafka:4.0.0
+    environment:
+      KAFKA_NODE_ID: "1"
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://127.0.0.1:59092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: "1"
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+    ports: ["127.0.0.1:59092:9092"]
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  opensearch:
+    <<: *hardening
+    image: opensearchproject/opensearch:2
+    environment:
+      discovery.type: single-node
+      OPENSEARCH_INITIAL_ADMIN_PASSWORD: ${OPENSEARCH_INITIAL_ADMIN_PASSWORD:?.env içinde tanımlayın}
+      OPENSEARCH_JAVA_OPTS: "-Xms1g -Xmx1g"
+    ulimits:
+      memlock: {soft: -1, hard: -1}
+      nofile: {soft: 65536, hard: 65536}
+    ports: ["127.0.0.1:59200:9200"]
+    volumes:
+      - os_data:/usr/share/opensearch/data
+
+  valkey:
+    <<: *hardening
+    image: valkey/valkey:8
+    command: ["valkey-server", "--requirepass", "${EVREN_VALKEY_PASSWORD:?.env içinde tanımlayın}", "--appendonly", "no"]
+    ports: ["127.0.0.1:56379:6379"]
+    read_only: true
+    tmpfs: ["/data"]
+
+volumes:
+  pg_data:
+  kafka_data:
+  os_data:

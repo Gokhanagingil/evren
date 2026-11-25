@@ -1,0 +1,153 @@
+{
+  "$defs": {
+    "RunSummary": {
+      "additionalProperties": false,
+      "properties": {
+        "completed": {
+          "title": "Completed",
+          "type": "boolean"
+        },
+        "data_source": {
+          "pattern": "^[A-Za-z][A-Za-z0-9_.-]{1,63}$",
+          "title": "Data Source",
+          "type": "string"
+        },
+        "error_count": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Error Count",
+          "type": "integer"
+        },
+        "finished_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Finished At"
+        },
+        "mode": {
+          "enum": [
+            "snapshot",
+            "delta"
+          ],
+          "title": "Mode",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "record_count": {
+          "minimum": 0,
+          "title": "Record Count",
+          "type": "integer"
+        },
+        "run_id": {
+          "format": "uuid",
+          "title": "Run Id",
+          "type": "string"
+        },
+        "started_at": {
+          "format": "date-time",
+          "title": "Started At",
+          "type": "string"
+        }
+      },
+      "required": [
+        "data_source",
+        "run_id",
+        "mode",
+        "completed",
+        "record_count",
+        "started_at"
+      ],
+      "title": "RunSummary",
+      "type": "object"
+    }
+  },
+  "$id": "urn:evren:schema:RunEnvelope:v1",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "data": {
+      "$ref": "#/$defs/RunSummary"
+    },
+    "datacontenttype": {
+      "const": "application/json",
+      "default": "application/json",
+      "title": "Datacontenttype",
+      "type": "string"
+    },
+    "id": {
+      "maxLength": 256,
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "source": {
+      "examples": [
+        "urn:evren:connector:zabbix:dc1"
+      ],
+      "maxLength": 512,
+      "minLength": 1,
+      "title": "Source",
+      "type": "string"
+    },
+    "specversion": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Specversion",
+      "type": "string"
+    },
+    "subject": {
+      "anyOf": [
+        {
+          "maxLength": 512,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Subject"
+    },
+    "time": {
+      "format": "date-time",
+      "title": "Time",
+      "type": "string"
+    },
+    "type": {
+      "enum": [
+        "evren.ingest.run.started.v1",
+        "evren.ingest.run.completed.v1"
+      ],
+      "title": "Type",
+      "type": "string"
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "time",
+    "type",
+    "data"
+  ],
+  "title": "RunEnvelope",
+  "type": "object"
+}

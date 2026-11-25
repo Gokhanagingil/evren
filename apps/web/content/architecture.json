@@ -1,0 +1,1118 @@
+{
+  "title": "Evren CMDB",
+  "heading": "Konfigürasyon evreni — kaynaktan karara",
+  "width": 1280,
+  "height": 2479,
+  "generated_from": "apps/web/content/architecture.yaml",
+  "chapters": [
+    {
+      "id": "sources",
+      "number": "01",
+      "title": "Kaynaklar ve alım",
+      "lead": "Her kaynak bir bağlayıcı ve bir eşleme dosyasıyla eklenir. Keşif aracı değişse de sonraki katmanlar etkilenmez.",
+      "y": 186,
+      "height": 417
+    },
+    {
+      "id": "sense",
+      "number": "02",
+      "title": "Anlamlandırma — ara katman",
+      "lead": "Milyonlarca gözlem değişmeyenler elenerek süzülür. Kimlik çözülür, öznitelikler kurallarla uzlaştırılır, şüpheli olan insana sorulur.",
+      "y": 621,
+      "height": 352
+    },
+    {
+      "id": "store",
+      "number": "03",
+      "title": "Kayıt sistemi",
+      "lead": "ServiceNow veri deseniyle aynı yüzey, daha güçlü bir motor. Her değerin kaynağı ve gerekçesi saklanır.",
+      "y": 991,
+      "height": 352
+    },
+    {
+      "id": "consume",
+      "number": "04",
+      "title": "Tüketim ve entegrasyon",
+      "lead": "Tek API, iki dil — yerel REST ve ServiceNow uyumlu uç noktalar. Yapay zekâ ajanları kurumun kendi MCP katmanından bağlanır.",
+      "y": 1361,
+      "height": 352
+    },
+    {
+      "id": "servicenow",
+      "number": "05",
+      "title": "ServiceNow ile geçiş deseni",
+      "lead": "Evren ana kaynaktır, ServiceNow CMDB replikadır. Task kayıtları SN'deki CI'ları göstermeye devam eder; business rule değişmez.",
+      "y": 1731,
+      "height": 352
+    },
+    {
+      "id": "security",
+      "number": "06",
+      "title": "Güvenlik ve yönetişim",
+      "lead": "Varsayılan reddet, en az yetki, her değişiklik iz bırakır. Yapay zekâ önerir, insan karar verir.",
+      "y": 2101,
+      "height": 352
+    }
+  ],
+  "nodes": {
+    "src_vcenter": {
+      "label": "vCenter",
+      "sub": [
+        "VM, ESXi, küme",
+        "datastore"
+      ],
+      "kind": "source",
+      "kind_label": "Kaynak sistem",
+      "chapter": "sources",
+      "phase": "F0",
+      "text": "VMware vCenter'dan VM örnekleri, ESXi hostlar, kümeler ve datastore'lar çekilir. Her VM iki kayıt üretir. Birincisi VM örneğidir (cmdb_ci_vmware_instance). İkincisi misafir işletim sistemi sunucusudur (cmdb_ci_server, virtual=true). İkisi \"Virtualized by::Virtualizes\" ilişkisiyle bağlanır; bu ServiceNow modeliyle aynıdır.",
+      "tech": [
+        "vSphere API",
+        "connectors/vcenter/*.mapping.yaml"
+      ],
+      "security": [
+        "Salt okunur servis hesabı",
+        "Kimlik bilgisi sır kasasında"
+      ]
+    },
+    "src_bmc": {
+      "label": "BMC ajanları",
+      "sub": [
+        "OS, donanım,",
+        "seri numarası"
+      ],
+      "kind": "source",
+      "kind_label": "Kaynak sistem",
+      "chapter": "sources",
+      "phase": "F1",
+      "text": "Ajan tabanlı sunucu envanteri. İşletim sistemi, donanım ve seri numarası için yetkili kaynaktır. Hangi BMC ürününün kullanıldığı açık soru; eşleme dosyası taslaktır.",
+      "tech": [
+        "connectors/bmc/mapping.yaml (taslak)"
+      ],
+      "security": [
+        "Salt okunur erişim"
+      ]
+    },
+    "src_nnmi": {
+      "label": "NNMi",
+      "sub": [
+        "Ağ cihazı, arayüz,",
+        "L2 bağlantı"
+      ],
+      "kind": "source",
+      "kind_label": "Kaynak sistem",
+      "chapter": "sources",
+      "phase": "F1",
+      "text": "Ağ cihazları, arayüzler ve L2 bağlantıları. Ağ cihazı sınıflarında ad, IP ve seri numarası için yetkili kaynaktır. L3 switch'ler ServiceNow'daki gibi switch sınıfında kalır.",
+      "tech": [
+        "NNMi API",
+        "connectors/nnmi/mapping.yaml"
+      ],
+      "security": [
+        "Salt okunur erişim"
+      ]
+    },
+    "src_zabbix": {
+      "label": "Zabbix",
+      "sub": [
+        "İzleme kapsamı,",
+        "canlılık"
+      ],
+      "kind": "source",
+      "kind_label": "Kaynak sistem",
+      "chapter": "sources",
+      "phase": "F0",
+      "text": "İzleme kapsamı ve canlılık sinyali. Envanter için düşük öncelikli kaynaktır. Metrik ve alarm verisi CMDB'ye taşınmaz; yalnızca \"izleniyor mu\" ve \"en son ne zaman canlıydı\" gibi özetler gelir.",
+      "tech": [
+        "Zabbix JSON-RPC host.get",
+        "connectors/zabbix/mapping.yaml"
+      ],
+      "security": [
+        "API belirteci sır kasasında"
+      ]
+    },
+    "src_defender": {
+      "label": "Defender",
+      "sub": [
+        "Koruma durumu,",
+        "maruziyet"
+      ],
+      "kind": "source",
+      "kind_label": "Kaynak sistem",
+      "chapter": "sources",
+      "phase": "F1",
+      "text": "Microsoft Defender for Endpoint. Uç nokta koruma durumu ve maruziyet bilgisi. Kapsam sunucularla sınırlıdır. Güvenlik verisi ayrı ve kısıtlı tabloda tutulur.",
+      "tech": [
+        "Defender Machines API",
+        "connectors/defender/mapping.yaml"
+      ],
+      "security": [
+        "Kısıtlı veri sınıfı",
+        "Yalnızca güvenlik rolleri okur"
+      ]
+    },
+    "src_servicenow": {
+      "label": "ServiceNow",
+      "sub": [
+        "CMDB ilk yükleme,",
+        "Change kayıtları"
+      ],
+      "kind": "servicenow",
+      "kind_label": "ServiceNow",
+      "chapter": "sources",
+      "phase": "F0",
+      "text": "Geçişin başında ServiceNow CMDB aynı sys_id'lerle Evren'e yüklenir. Change kayıtları, yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar.",
+      "tech": [
+        "Table API",
+        "sys_updated_on ile artımlı çekme"
+      ],
+      "security": [
+        "Ayrı entegrasyon kullanıcısı",
+        "IP kısıtı"
+      ]
+    },
+    "connectors": {
+      "label": "Bağlayıcılar + eşleme dosyaları",
+      "sub": [
+        "Çekme, sayfalama, kimlik doğrulama · kaynak JSON → ServiceNow alan adları"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "sources",
+      "phase": "F0",
+      "text": "Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma \"tamamlandı\" sayılmaz. Bu, KS GRC'deki collection_status ilkesinin aynısıdır.",
+      "tech": [
+        "evren_core.connectors",
+        "FieldMapping (YAML)"
+      ],
+      "security": [
+        "Bağlayıcı CMDB'ye yazamaz",
+        "Ham yük arşive yazılır"
+      ]
+    },
+    "ingest_gateway": {
+      "label": "Alım geçidi",
+      "sub": [
+        "mTLS · şema doğrulama ·",
+        "kaynak başına yetki"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "sources",
+      "phase": "F0",
+      "text": "Bağlayıcılardan gelen CloudEvents zarfları burada doğrulanır. Şema dışı alan reddedilir. Her bağlayıcı yalnızca kendi data_source değeriyle yazabilir.",
+      "tech": [
+        "schemas/ingest-envelope.schema.json",
+        "mTLS"
+      ],
+      "security": [
+        "İstemci sertifikası",
+        "Kaynak başına hız sınırı"
+      ]
+    },
+    "kafka": {
+      "label": "Olay omurgası (Kafka)",
+      "sub": [
+        "ingest.record · ingest.run",
+        "yeniden oynatılabilir"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "sources",
+      "phase": "F0",
+      "text": "Kaynaklar ile işleyiciler birbirinden bağımsızlaşır. Kayıtlar yeniden oynatılabilir; bir kural değişikliğinden sonra geçmiş yeniden işlenebilir.",
+      "tech": [
+        "Apache Kafka (KRaft)",
+        "Konu başına ACL"
+      ],
+      "security": [
+        "SASL/mTLS",
+        "Konu bazlı yetki"
+      ]
+    },
+    "raw_archive": {
+      "label": "Ham yük arşivi",
+      "sub": [
+        "Saklama politikası,",
+        "raw_ref ile izlenir"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "sources",
+      "phase": "F1",
+      "text": "Ham kaynak yükleri sorun analizi ve yeniden işleme için saklanır. Saklama süresi veri sınıflandırmasına göre belirlenir.",
+      "tech": [
+        "Kurum nesne deposu"
+      ],
+      "security": [
+        "Şifreli depolama",
+        "Saklama politikası"
+      ]
+    },
+    "change_filter": {
+      "label": "Değişim süzgeci",
+      "sub": [
+        "İçerik özeti aynıysa",
+        "işlem yok"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "sense",
+      "phase": "F0",
+      "text": "Her kaynak kaydının normalleştirilmiş içerik özeti tutulur. Değişmeyen kayıtlar uzlaştırmaya girmez. Günlük hacmin büyük kısmı böylece maliyetsiz geçer.",
+      "tech": [
+        "ingest.source_record.content_hash"
+      ],
+      "security": []
+    },
+    "normalize": {
+      "label": "Normalizasyon",
+      "sub": [
+        "abc_1 · abc-1 · abc_1@local",
+        "→ abc-1"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "sense",
+      "phase": "F0",
+      "text": "Hostname, seri numarası, MAC, UUID ve IP normalleştirilir. Türkçe İ/ı doğru işlenir. Çöp değerler kimlik sayılmaz: O.E.M. seri numarası, sıfır UUID, HSRP/VRRP sanal MAC.",
+      "tech": [
+        "evren_core.normalize"
+      ],
+      "security": []
+    },
+    "identity": {
+      "label": "Kimlik çözümleme",
+      "sub": [
+        "IRE kuralları + olasılıksal skor",
+        "+ çelişki denetimi"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "sense",
+      "phase": "F0",
+      "text": "Önce ServiceNow IRE semantiğindeki tanımlama kuralları denenir, sonra olasılıksal skor. Ad eşleşse bile seri, UUID, işletim sistemi, sınıf veya FQDN çelişiyorsa otomatik birleştirme yapılmaz. \"srv-01\" ile \"srv-02\" ayrı cihazdır.",
+      "tech": [
+        "evren_core.identity",
+        "metadata/identification_rules.yaml"
+      ],
+      "security": [
+        "Birleştirme bağlantıdır",
+        "geri alınabilir"
+      ]
+    },
+    "reconcile": {
+      "label": "Uzlaştırma",
+      "sub": [
+        "Öncelik · veri tazeleme",
+        "· eskime"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "sense",
+      "phase": "F1",
+      "text": "Her özniteliğin hangi kaynaktan geleceğini öncelik kuralları belirler. Keşif araçları yönetişim alanlarını ezemez. Yüksek öncelikli kaynak eskidiyse tazeleme kuralı devreye girer.",
+      "tech": [
+        "evren_core.reconcile",
+        "metadata/reconciliation_rules.yaml"
+      ],
+      "security": [
+        "Golden record'a tek yazan bileşen"
+      ]
+    },
+    "breaker": {
+      "label": "Devre kesici",
+      "sub": [
+        "Kısmi çalışma",
+        "CI emekliye ayırmaz"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "sense",
+      "phase": "F1",
+      "text": "Kısmi bir vCenter çalışması binlerce CI'ı emekliye ayıramaz. Taban çizgisinden sapan, tamamlanmamış veya hatalı çalışma karantinaya alınır.",
+      "tech": [
+        "evren_core.circuit_breaker",
+        "Medyan + MAD"
+      ],
+      "security": [
+        "Yıkıcı işlem yalnızca OK durumunda"
+      ]
+    },
+    "match_queue": {
+      "label": "Eşleştirme kuyruğu",
+      "sub": [
+        "Yan yana karşılaştırma, açıklama",
+        "birleştir / ayır (geri alınabilir)"
+      ],
+      "kind": "human",
+      "kind_label": "İnsan kararı / arayüz",
+      "chapter": "sense",
+      "phase": "F0",
+      "text": "Emin olunamayan eşleşmeler insana sorulur. Adaylar yan yana karşılaştırılır, kanıtlar Türkçe açıklanır. Kararlar geri alınabilir; skor ağırlıkları bu kararlarla kalibre edilir.",
+      "tech": [
+        "ingest.match_candidate"
+      ],
+      "security": [
+        "Eşleştirme analisti rolü",
+        "Her karar denetim izinde"
+      ]
+    },
+    "unauthorized": {
+      "label": "Yetkisiz değişiklik",
+      "sub": [
+        "Sapma ↔ onaylı Change",
+        "penceresi"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "sense",
+      "phase": "F1",
+      "text": "Gözlenen konfigürasyon sapması (RAM, OS, yazılım) onaylı bir Change penceresiyle eşleşmiyorsa anomali kaydı açılır. GRC kontrollerine doğrudan beslenebilir.",
+      "tech": [
+        "ref.sn_change_request",
+        "insight.anomaly"
+      ],
+      "security": []
+    },
+    "analytics": {
+      "label": "Trend ve anomali",
+      "sub": [
+        "OpenSearch RCF,",
+        "sağlık metrikleri"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "sense",
+      "phase": "F1",
+      "text": "Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0).",
+      "tech": [
+        "OpenSearch Anomaly Detection",
+        "insight.health_metric"
+      ],
+      "security": []
+    },
+    "dependent_ids": {
+      "label": "Bağımlı CI kimliği",
+      "sub": [
+        "Uygulama, adaptör: üst CI",
+        "bağlamında tanımlanır"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "sense",
+      "phase": "F1",
+      "text": "Uygulama ve ağ adaptörü gibi bağımlı CI'lar yalnızca üst CI bağlamında tanımlanır. Bu uygulanana kadar küresel ad eşleştirmesi yapılmaz; bu bilinçli bir güvenli varsayılandır.",
+      "tech": [
+        "identification_rules.yaml · independent false"
+      ],
+      "security": []
+    },
+    "cmdb_ci": {
+      "label": "cmdb_ci · golden record",
+      "sub": [
+        "Çekirdek kolonlar + JSONB sınıf alanları",
+        "PostgreSQL · sys_id korunur"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F0",
+      "text": "Golden record. Ortak alanlar fiziksel kolondur, sınıfa özgü alanlar JSONB'dedir. Sözlük dışı alan veya yanlış tip veritabanı tetikleyicisiyle reddedilir. ServiceNow kökenli CI'lar aynı sys_id'yi korur.",
+      "tech": [
+        "PostgreSQL 16+",
+        "db/migrations/0001_core.sql"
+      ],
+      "security": [
+        "Fiziksel silme yok",
+        "Yaşam döngüsü durumu"
+      ]
+    },
+    "cmdb_rel_ci": {
+      "label": "cmdb_rel_ci",
+      "sub": [
+        "İlişkiler, bağımlılık",
+        "haritası"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F0",
+      "text": "CI ilişkileri ServiceNow'daki cmdb_rel_ci ve cmdb_rel_type yapısıyla aynıdır. Etki analizi ve bağımlılık haritası buradan beslenir.",
+      "tech": [
+        "cmdb.cmdb_rel_ci",
+        "cmdb.cmdb_rel_type"
+      ],
+      "security": []
+    },
+    "dictionary": {
+      "label": "Metadata sözlüğü",
+      "sub": [
+        "sys_db_object,",
+        "sys_dictionary, sys_choice"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F0",
+      "text": "Sınıf ve alan tanımları veri olarak tutulur; yeni tablo veya alan eklemek DDL gerektirmez. Kurumdaki ServiceNow örneğinden dışa aktarılarak doğrulanır.",
+      "tech": [
+        "metadata/*.yaml",
+        "tools/sn_metadata_export.py"
+      ],
+      "security": [
+        "Değişiklik yalnızca onaylı şema setiyle"
+      ]
+    },
+    "provenance": {
+      "label": "Kaynak bilgisi",
+      "sub": [
+        "Öznitelik → kaynak,",
+        "zaman, gerekçe"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F1",
+      "text": "Arayüzdeki \"bu değer nereden geldi?\" sorusunun cevabı burada. Kazanan kaynak, gözlem zamanı, uygulanan kural ve ezilen değerler saklanır.",
+      "tech": [
+        "cmdb.ci_reconciliation_state"
+      ],
+      "security": []
+    },
+    "audit_trail": {
+      "label": "Denetim izi",
+      "sub": [
+        "Salt ekleme,",
+        "aylık bölümler"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "store",
+      "phase": "F0",
+      "text": "Her öznitelik değişikliği kim, ne zaman, hangi kaynak ve hangi gerekçeyle bilgisiyle yazılır. UPDATE, DELETE ve TRUNCATE tetikleyiciyle engellenir.",
+      "tech": [
+        "audit.ci_change",
+        "audit.security_event"
+      ],
+      "security": [
+        "Salt ekleme",
+        "SIEM'e aktarım"
+      ]
+    },
+    "sn_views": {
+      "label": "sn.* görünümler",
+      "sub": [
+        "sn.cmdb_ci_server",
+        "gibi sorgulanır"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F0",
+      "text": "Her sınıf için ServiceNow tablo adıyla bir görünüm üretilir (ör. sn.cmdb_ci_linux_server). Raporlama ve SQL kullanıcıları alışık oldukları adlarla sorgular.",
+      "tech": [
+        "tools/load_metadata.py"
+      ],
+      "security": [
+        "Salt okunur rol"
+      ]
+    },
+    "search_index": {
+      "label": "Arama dizini",
+      "sub": [
+        "OpenSearch · CI",
+        "seçici, bulanık arama"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F1",
+      "text": "CI seçici ve küresel arama için bulanık ve hızlı arama dizini. Kayıt sistemi değildir; outbox olaylarıyla güncellenir.",
+      "tech": [
+        "OpenSearch"
+      ],
+      "security": [
+        "Alan hassasiyetine göre dizinleme"
+      ]
+    },
+    "cache": {
+      "label": "Valkey",
+      "sub": [
+        "Önbellek, CI kilidi,",
+        "hız sınırı"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F1",
+      "text": "Önbellek, aynı CI üzerinde eşzamanlı uzlaştırmayı önleyen kilit ve API hız sınırı için kullanılır. Kayıt sistemi değildir.",
+      "tech": [
+        "Valkey (BSD lisanslı Redis çatalı)"
+      ],
+      "security": [
+        "Parolalı/TLS bağlantı"
+      ]
+    },
+    "outbox": {
+      "label": "Outbox",
+      "sub": [
+        "İşlemsel olay yayını",
+        "→ Kafka"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F0",
+      "text": "CI değişikliği ile olay yayını aynı işlemde yazılır. Olay kaybı veya hayalet olay oluşmaz.",
+      "tech": [
+        "events.outbox → Kafka"
+      ],
+      "security": []
+    },
+    "security_posture": {
+      "label": "Güvenlik duruşu",
+      "sub": [
+        "KISITLI tablo,",
+        "ayrı yetki"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "store",
+      "phase": "F1",
+      "text": "Defender kaynaklı maruziyet, risk ve zafiyet sayıları ayrı tabloda tutulur. Genel okuyucu rolü bu tabloyu göremez.",
+      "tech": [
+        "cmdb.ci_security_posture"
+      ],
+      "security": [
+        "Kısıtlı sınıf",
+        "Okuma denetim izinde"
+      ]
+    },
+    "backup_dr": {
+      "label": "Yedek ve DR",
+      "sub": [
+        "Şifreli yedek,",
+        "RPO/RTO hedefleri"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "store",
+      "phase": "F1",
+      "text": "Şifreli, test edilmiş yedekler. RPO ve RTO hedefleri iş etki analiziyle belirlenir (ISO 22301).",
+      "tech": [
+        "PostgreSQL PITR"
+      ],
+      "security": [
+        "Yedek şifreleme",
+        "Geri yükleme tatbikatı"
+      ]
+    },
+    "web_ui": {
+      "label": "Evren arayüzü",
+      "sub": [
+        "Türkçe, derlemesiz,",
+        "sıkı CSP"
+      ],
+      "kind": "human",
+      "kind_label": "İnsan kararı / arayüz",
+      "chapter": "consume",
+      "phase": "F0",
+      "text": "Türkçe arayüz, KS GRC ile aynı görsel dil. Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.",
+      "tech": [
+        "Web Components",
+        "ES modülleri"
+      ],
+      "security": [
+        "CSP: script-src 'self'",
+        "innerHTML ile veri yazılmaz"
+      ]
+    },
+    "rest_api": {
+      "label": "Evren REST API",
+      "sub": [
+        "/api/v1 · OpenAPI 3.1 ·",
+        "idempotency_key · provenance"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "consume",
+      "phase": "F0",
+      "text": "Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. KS GRC ile aynı sözleşme ilkelerini kullanır.",
+      "tech": [
+        "Python 3.12",
+        "FastAPI",
+        "psycopg 3"
+      ],
+      "security": [
+        "Entra OIDC",
+        "Makine hesabı için kapsamlı anahtar"
+      ]
+    },
+    "sn_compat_api": {
+      "label": "SN uyumlu API",
+      "sub": [
+        "/api/now/table",
+        "/identifyreconcile"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "consume",
+      "phase": "F2",
+      "text": "ServiceNow Table API'yi (sysparm_query, sysparm_fields, sysparm_limit) ve IRE payload biçimini kabul eden uç noktalar. Mevcut betik ve entegrasyonlar minimum değişiklikle Evren'e yönlenir.",
+      "tech": [
+        "evren_core.encoded_query"
+      ],
+      "security": [
+        "javascript ile başlayan değerler reddedilir",
+        "Alan adları sözlükten çözülür"
+      ]
+    },
+    "event_stream": {
+      "label": "Olay akışı",
+      "sub": [
+        "CloudEvents,",
+        "imzalı webhook"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "consume",
+      "phase": "F2",
+      "text": "CI değişiklikleri CloudEvents olarak yayınlanır. Dış uygulamalar HMAC imzalı webhook ile abone olur.",
+      "tech": [
+        "Kafka cmdb.ci.changed",
+        "Webhook"
+      ],
+      "security": [
+        "HMAC imza",
+        "Abonelik başına kapsam"
+      ]
+    },
+    "evren_mcp": {
+      "label": "Evren MCP sunucusu",
+      "sub": [
+        "Salt okur araçlar +",
+        "öneri araçları"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "consume",
+      "phase": "F2",
+      "text": "Evren'in kendi MCP sunucusu. Araçlar CI arama, etki analizi, eşleşme açıklaması ve sağlık raporu sunar. Yazma araçları doğrudan yazmaz, onaya düşen öneri üretir.",
+      "tech": [
+        "MCP (streamable HTTP)",
+        "Entra OAuth"
+      ],
+      "security": [
+        "Araç başına yetki",
+        "CMDB içeriği güvenilmeyen veri sayılır"
+      ]
+    },
+    "corp_mcp": {
+      "label": "Kurum MCP uygulaması",
+      "sub": [
+        "Sizin MCP katmanınız",
+        "(ajan, orkestrasyon)"
+      ],
+      "kind": "external",
+      "kind_label": "Dış sistem",
+      "chapter": "consume",
+      "phase": "F2",
+      "text": "Kurumun kendi MCP uygulaması. Evren'e Evren MCP sunucusu ve REST sözleşmesi üzerinden bağlanır; KS GRC'deki düzenin aynısıdır. ServiceNow'un yerleşik MCP'si kullanılmaz.",
+      "tech": [
+        "docs/09-mcp-sozlesmesi.md"
+      ],
+      "security": [
+        "Makine kimliği",
+        "Kapsamlı yetki"
+      ]
+    },
+    "grc_app": {
+      "label": "KS GRC",
+      "sub": [
+        "Kontrol sonuçları, kanıt;",
+        "ör. kaydı olmayan sunucu"
+      ],
+      "kind": "external",
+      "kind_label": "Dış sistem",
+      "chapter": "consume",
+      "phase": "F2",
+      "text": "KS GRC kontrolleri Evren verisini kanıt olarak kullanır. Örnekler: CMDB'de kaydı olmayan sunucu, izlenmeyen sunucu, korumasız uç nokta. Kısmi veri inconclusive kabul edilir.",
+      "tech": [
+        "REST API",
+        "Olay akışı"
+      ],
+      "security": [
+        "Salt okunur makine hesabı"
+      ]
+    },
+    "other_apps": {
+      "label": "Diğer iç uygulamalar",
+      "sub": [
+        "Tedarik portalı, raporlama,",
+        "otomasyon"
+      ],
+      "kind": "external",
+      "kind_label": "Dış sistem",
+      "chapter": "consume",
+      "phase": "F2",
+      "text": "Tedarik portalı, raporlama ve otomasyonlar aynı API'yi kullanır. ServiceNow Table API'ye yazılmış eski betikler uyumlu uç noktaya yönlenebilir.",
+      "tech": [
+        "REST",
+        "SN uyumlu API"
+      ],
+      "security": []
+    },
+    "evren_master": {
+      "label": "Evren (ana kaynak)",
+      "sub": [
+        "Golden record,",
+        "kapsam kuralları"
+      ],
+      "kind": "store",
+      "kind_label": "Veri deposu",
+      "chapter": "servicenow",
+      "phase": "F2",
+      "text": "Gölge fazından sonra Evren ana kaynak olur. Hangi sınıfın ve alanın ServiceNow'a gideceğini sync.sn_sync_scope belirler.",
+      "tech": [
+        "sync.sn_sync_scope",
+        "sync.sn_ci_map"
+      ],
+      "security": []
+    },
+    "sn_sync": {
+      "label": "sn-sync",
+      "sub": [
+        "Sınıf/alan kapsamı,",
+        "yeniden deneme"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "servicenow",
+      "phase": "F2",
+      "text": "Kapsamdaki CI'ları ServiceNow'a iter. Başarısız denemeler sıraya alınır, aynı içerik tekrar gönderilmez.",
+      "tech": [
+        "IRE API",
+        "Yeniden deneme + özet karşılaştırma"
+      ],
+      "security": [
+        "Ayrı SN entegrasyon kullanıcısı"
+      ]
+    },
+    "sn_ire": {
+      "label": "SN IRE API",
+      "sub": [
+        "/api/now/",
+        "identifyreconcile"
+      ],
+      "kind": "servicenow",
+      "kind_label": "ServiceNow",
+      "chapter": "servicenow",
+      "phase": "F2",
+      "text": "ServiceNow'un Identification and Reconciliation API'si. Mükerrer CI oluşmasını engeller ve yalnızca yetkili kaynakların güncelleme yapmasına izin verir. SN tarafında \"Evren\" veri kaynağı en yüksek önceliği alır.",
+      "tech": [
+        "/api/now/identifyreconcile"
+      ],
+      "security": []
+    },
+    "sn_cmdb": {
+      "label": "SN CMDB (replika)",
+      "sub": [
+        "Yalnızca süreç sınıfları",
+        "(sunucu, ağ, servis)"
+      ],
+      "kind": "servicenow",
+      "kind_label": "ServiceNow",
+      "chapter": "servicenow",
+      "phase": "F2",
+      "text": "Replika yalnızca süreçlerin ihtiyaç duyduğu sınıfları taşır. Port ve yazılım kurulumu gibi yüksek hacimli kayıtlar gönderilmez.",
+      "tech": [
+        "ServiceNow CMDB"
+      ],
+      "security": []
+    },
+    "sn_task": {
+      "label": "task.cmdb_ci",
+      "sub": [
+        "Incident, Change, Problem — alanlar",
+        "ve business rule'lar değişmez"
+      ],
+      "kind": "servicenow",
+      "kind_label": "ServiceNow",
+      "chapter": "servicenow",
+      "phase": "F2",
+      "text": "Incident, Change ve Problem kayıtlarındaki cmdb_ci alanları ServiceNow CMDB'yi göstermeye devam eder. Business rule, ACL ve atama kuralları değişmez.",
+      "tech": [
+        "task.cmdb_ci"
+      ],
+      "security": []
+    },
+    "sn_pull": {
+      "label": "Değişiklik çekme",
+      "sub": [
+        "sys_updated_on ile;",
+        "\"ServiceNow\" kaynağı"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "servicenow",
+      "phase": "F1",
+      "text": "ServiceNow'da elle yapılan değişiklikler sys_updated_on ile çekilir ve \"ServiceNow\" kaynak kaydı olarak uzlaştırmaya girer. ServiceNow tarafında business rule gerekmez.",
+      "tech": [
+        "Table API",
+        "Artımlı çekme"
+      ],
+      "security": []
+    },
+    "sn_edits": {
+      "label": "SN'de elle düzenleme",
+      "sub": [
+        "Geçiş döneminde",
+        "yönetişim alanları"
+      ],
+      "kind": "servicenow",
+      "kind_label": "ServiceNow",
+      "chapter": "servicenow",
+      "phase": "F1",
+      "text": "Geçiş döneminde kullanıcılar bazı yönetişim alanlarını ServiceNow'da düzenlemeye devam edebilir. Hangi alanın nerede yönetileceği uzlaştırma kurallarıyla belirlenir.",
+      "tech": [
+        "reconciliation_rules.yaml"
+      ],
+      "security": []
+    },
+    "ci_picker": {
+      "label": "CI seçici (Faz 3)",
+      "sub": [
+        "SN formunda Evren araması →",
+        "replikadaki sys_id"
+      ],
+      "kind": "human",
+      "kind_label": "İnsan kararı / arayüz",
+      "chapter": "servicenow",
+      "phase": "F3",
+      "text": "ServiceNow formlarındaki CI seçimi Evren'in aramasını kullanır, seçim replikadaki sys_id'ye çözülür. ServiceNow SaaS ise SN'den Evren'e çağrılar için MID Server veya API ağ geçidi gerekir.",
+      "tech": [
+        "SN UI bileşeni",
+        "MID Server / API ağ geçidi"
+      ],
+      "security": [
+        "Kullanıcı bağlamında yetki"
+      ]
+    },
+    "entra": {
+      "label": "Entra ID",
+      "sub": [
+        "OIDC + PKCE,",
+        "koşullu erişim"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F0",
+      "text": "Kimlik doğrulama Entra ID ile yapılır (OIDC, PKCE). Roller Entra gruplarından eşlenir. KS GRC ile aynı kimlik altyapısı kullanılır.",
+      "tech": [
+        "Entra ID"
+      ],
+      "security": [
+        "Koşullu erişim",
+        "Kısa ömürlü oturum"
+      ]
+    },
+    "rbac_abac": {
+      "label": "RBAC + ABAC",
+      "sub": [
+        "Rol × sınıf × alan ×",
+        "hassasiyet × koşul"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F1",
+      "text": "İzin rol, sınıf, işlem, alan, hassasiyet ve koşul boyutlarıyla tanımlanır. Örnek koşul \"yalnızca destek grubu olduğum CI'lar\". Matris arayüzde düzenlenir.",
+      "tech": [
+        "iam.permission",
+        "db/migrations/0002_iam_seed.sql"
+      ],
+      "security": [
+        "Varsayılan reddet"
+      ]
+    },
+    "sod": {
+      "label": "Görevler ayrılığı",
+      "sub": [
+        "Hazırlayan onaylayamaz,",
+        "kendine yetki yok"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F0",
+      "text": "Çatışan roller aynı kişiye atanamaz; veritabanı tetikleyicisi bunu uygular. Kimse kendine yetki veremez. Şema setini hazırlayan kişi onaylayamaz.",
+      "tech": [
+        "iam.sod_constraint"
+      ],
+      "security": [
+        "Atamalar denetim izinde"
+      ]
+    },
+    "schema_sets": {
+      "label": "Şema değişiklik setleri",
+      "sub": [
+        "Taslak → onay → yayın,",
+        "etki analizi"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F1",
+      "text": "Tablo veya alan ekleme, kaldırma ve değiştirme işlemleri değişiklik setiyle yapılır. Akış taslak → inceleme → onay → yayın şeklindedir. Silme önce kullanımdan kaldırma ve gizleme adımlarından geçer.",
+      "tech": [
+        "meta.schema_change_set"
+      ],
+      "security": [
+        "Etki analizi",
+        "Onay zorunlu"
+      ]
+    },
+    "secrets": {
+      "label": "Sır kasası",
+      "sub": [
+        "Repoda sır yok,",
+        "döndürülebilir anahtar"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F0",
+      "text": "Repoda ve imajda hiçbir sır bulunmaz. Kimlik bilgileri kurum sır kasasından çalışma zamanında okunur ve döndürülebilir.",
+      "tech": [
+        "Kurum sır kasası",
+        "gitleaks"
+      ],
+      "security": []
+    },
+    "ai_governance": {
+      "label": "Yapay zekâ yönetişimi",
+      "sub": [
+        "ISO/IEC 42001 uyumlu",
+        "öneri–onay, kayıt"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F3",
+      "text": "Yapay zekâ önerir, insan karar verir. Her öneri açıklama, model ve girdi kaydıyla saklanır. Kurallar ISO/IEC 42001 kontrolleriyle eşleştirilir.",
+      "tech": [
+        "insight.anomaly.explanation",
+        "ingest.match_candidate.ai_suggestion"
+      ],
+      "security": [
+        "Kurum içi/onaylı model",
+        "Veri sınıflandırması"
+      ]
+    },
+    "mtls": {
+      "label": "mTLS ve ağ",
+      "sub": [
+        "Servisler arası TLS,",
+        "bölütleme"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F1",
+      "text": "Servisler arası trafik karşılıklı TLS ile şifrelenir. ServiceNow'a açılan yollar ayrı bir ağ bölütündedir.",
+      "tech": [
+        "mTLS",
+        "Ağ bölütleme"
+      ],
+      "security": []
+    },
+    "db_roles": {
+      "label": "En az yetkili DB rolleri",
+      "sub": [
+        "Golden record'a tek",
+        "yazan: uzlaştırıcı"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F0",
+      "text": "Her servisin ayrı veritabanı rolü vardır. Golden record'a yalnızca uzlaştırıcı yazar. Arayüzdeki elle düzenlemeler bile Manual kaynak kaydı olarak uzlaştırmadan geçer.",
+      "tech": [
+        "db/migrations/0003_security.sql"
+      ],
+      "security": [
+        "Test edilmiş yetki sınırları"
+      ]
+    },
+    "siem": {
+      "label": "SIEM aktarımı",
+      "sub": [
+        "Denetim ve güvenlik",
+        "olayları"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F1",
+      "text": "Denetim ve güvenlik olayları kurum SIEM sistemine aktarılır.",
+      "tech": [
+        "audit.security_event"
+      ],
+      "security": []
+    },
+    "supply_chain": {
+      "label": "Tedarik zinciri güvenliği",
+      "sub": [
+        "Hash kilitli bağımlılık, SBOM, imaj tarama,",
+        "gitleaks, SAST, sabitlenmiş CI eylemleri"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F0",
+      "text": "Bağımlılıklar hash ile kilitlenir, imaj taranır ve SBOM üretilir. CI eylemleri commit SHA ile sabitlenir. Sır taraması ve SAST her değişiklikte çalışır.",
+      "tech": [
+        "pip --require-hashes",
+        "Trivy",
+        "gitleaks",
+        "bandit",
+        "pip-audit"
+      ],
+      "security": []
+    },
+    "threat_model": {
+      "label": "Tehdit modeli",
+      "sub": [
+        "STRIDE, OWASP",
+        "ASVS L2 hedefi"
+      ],
+      "kind": "security",
+      "kind_label": "Güvenlik denetimi",
+      "chapter": "security",
+      "phase": "F0",
+      "text": "STRIDE tehdit modeli tutulur ve OWASP ASVS Seviye 2 hedeflenir. CMDB, saldırgan için altyapı haritası değeri taşıdığından yüksek değerli varlık olarak ele alınır.",
+      "tech": [
+        "docs/06-guvenlik.md"
+      ],
+      "security": []
+    }
+  },
+  "kinds": {
+    "source": "Kaynak sistem",
+    "servicenow": "ServiceNow",
+    "engine": "Evren bileşeni",
+    "store": "Veri deposu",
+    "human": "İnsan kararı / arayüz",
+    "security": "Güvenlik denetimi",
+    "external": "Dış sistem"
+  },
+  "phases": {
+    "F0": "Faz 0",
+    "F1": "Faz 1",
+    "F2": "Faz 2",
+    "F3": "Faz 3",
+    "F4": "Faz 4"
+  }
+}

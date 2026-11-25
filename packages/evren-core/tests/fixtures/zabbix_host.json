@@ -1,0 +1,18 @@
+{
+  "hostid": "10501",
+  "host": "ABC_1",
+  "name": "ABC 1 - Muhasebe Uygulama Sunucusu",
+  "status": "0",
+  "interfaces": [
+    {"interfaceid": "31", "type": "1", "ip": "10.20.30.41", "dns": "", "main": "1"},
+    {"interfaceid": "32", "type": "2", "ip": "10.20.31.41", "dns": "", "main": "0"}
+  ],
+  "inventory": {
+    "os": "Windows",
+    "os_full": "Microsoft Windows Server 2019 Datacenter",
+    "serialno_a": "CZ1234ABCD",
+    "macaddress_a": "00-50-56-AB-CD-EF, 02-42-AC-11-00-02",
+    "asset_tag": ""
+  },
+  "hostgroups": [{"groupid": "4", "name": "Sunucular/Windows"}]
+}

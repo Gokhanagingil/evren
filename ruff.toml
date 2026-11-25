@@ -1,0 +1,19 @@
+# Tüm Python kodu için tek lint yapılandırması (CI: ruff check packages tools apps/web/tests)
+line-length = 140
+target-version = "py312"
+
+[lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "RUF"]
+# RUF001-003: Türkçe metinlerdeki karakterler; S101: testlerde assert
+ignore = ["RUF001", "RUF002", "RUF003", "S101"]
+
+[lint.isort]
+known-first-party = ["evren_core", "_bootstrap", "_font_metrics", "build_architecture", "export_schemas", "dev_server", "sn_metadata_export"]
+
+[lint.per-file-ignores]
+"**/tests/**" = ["S603", "S607", "S608"]
+# Üretilmiş genişlik tablosu
+"tools/_font_metrics.py" = ["E501"]
+# Tohum SQL üreticisi: tüm değerler _q() ile kaçışlanır, tanımlayıcılar doğrulayıcıdaki
+# düzenli ifadelerden geçer; çıktı yalnızca geliştirici/DBA tarafından uygulanır.
+"packages/evren-core/src/evren_core/metadata.py" = ["S608"]

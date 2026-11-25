@@ -1,0 +1,40 @@
+# services/reconciler — Uzlaştırıcı (F0-10)
+
+Golden record'un **tek yazarı**dır.
+
+## Akış
+
+Kafka `ingest.record` mesajları kaynak nesne anahtarına göre bölümlenir, böylece aynı nesnenin sırası korunur. Her kayıt için:
+
+1. **Değişim süzgeci:** normalleştirilmiş içerik özeti `ingest.source_record.content_hash` ile aynıysa yalnızca `last_seen` güncellenir.
+2. **Kimlik:** `evren_core.identity.IdentityResolver`. Aday dizininin üretim uygulaması iki kaynağı kullanır:
+   - Kesin anahtarlar için PostgreSQL: seri numarası, UUID, MAC, FQDN, ad.
+   - Bulanık ad adayları için OpenSearch.
+3. **Karar:**
+   - `rule_match`, `score_match`, `linked` → `ingest.identity_link`.
+   - `review` → `ingest.match_candidate`.
+   - `insufficient` → kayıt park edilir.
+4. **Uzlaştırma:** CI'ın tüm etkin kaynak kayıtları `evren_core.reconcile.Reconciler`'dan geçer. Değişen öznitelikler yazılır:
+   - `cmdb.cmdb_ci`
+   - `cmdb.ci_reconciliation_state`
+   - `audit.ci_change`
+   - `events.outbox`
+   Hepsi tek işlemde.
+5. **Eşzamanlılık:** aynı CI için Valkey kilidi veya `pg_advisory_xact_lock(hashtext(sys_id))`.
+
+## Çalışma sonu
+
+`ingest.run.completed` olayında:
+
+1. `evren_core.circuit_breaker.evaluate_run` çalışır. Taban çizgisi aynı kaynağın son başarılı çalışmalarıdır.
+2. Yalnızca `OK` ise görülmeyen kaynak kayıtları `missing` olur. Eskime kuralları (`meta.cmdb_staleness_rule`) **tüm** yetkili kaynaklar CI'ı görmüyorsa durum önerisi üretir.
+3. `WARN` veya `OPEN` → `insight.anomaly` kaydı açılır ve bildirim gider.
+
+## Yeniden işleme
+
+Kural değişikliğinden sonra etkilenen sınıfların CI'ları yeniden uzlaştırılabilir. Gerekirse ham olaylar Kafka'dan yeniden oynatılır.
+
+## Performans hedefleri
+
+- Normal günlük değişim (%1–5): dakikada en az 5.000 kayıt.
+- İlk yükleme: tetikleyici açık, toplu işlem, 3 milyon CI için saatler mertebesi.

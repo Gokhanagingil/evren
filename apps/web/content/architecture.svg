@@ -1,0 +1,583 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" id="architectureMap" viewBox="0 0 1280 2479" width="1280" height="2479" role="group" aria-labelledby="mapTitle mapDescription" font-family="DejaVu Sans, Arial, sans-serif">
+<title id="mapTitle">Evren CMDB · Mimari Harita</title>
+<desc id="mapDescription">Konfigürasyon evreni — kaynaktan karara. 01 Kaynaklar ve alım. 02 Anlamlandırma — ara katman. 03 Kayıt sistemi. 04 Tüketim ve entegrasyon. 05 ServiceNow ile geçiş deseni. 06 Güvenlik ve yönetişim.</desc>
+<defs><marker id="arrow" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0 0 7 3.5 0 7z" fill="#637b89"/></marker></defs>
+<rect x="0" y="0" width="1280" height="2479" fill="#f3f6f8"/>
+<rect x="0" y="0" width="1280" height="168" fill="#183349"/>
+<text x="51.0" y="33.0" fill="#9edbd1" font-size="15" font-weight="700" text-anchor="start">EVREN CMDB   /   MİMARİ HARİTA</text>
+<text x="50.0" y="72.0" fill="#ffffff" font-size="34" font-weight="700" text-anchor="start">Konfigürasyon evreni — kaynaktan karara</text>
+<text x="52.0" y="100.0" fill="#d2e5ef" font-size="14" font-weight="400" text-anchor="start">Düz ok  veri akışı     •     Kesikli ok  geçiş dönemi veya planlanan     •     Faz etiketi  yol haritasındaki ilk teslim</text>
+<rect x="52" y="120" width="18" height="18" rx="4" fill="#e9f2f7" stroke="#2a617d" stroke-width="1.5"/>
+<text x="77.0" y="134.0" fill="#d2e5ef" font-size="13" font-weight="400" text-anchor="start">Kaynak sistem</text>
+<rect x="193.965" y="120" width="18" height="18" rx="4" fill="#eaf5ee" stroke="#2f7d4f" stroke-width="1.5"/>
+<text x="219.0" y="134.0" fill="#d2e5ef" font-size="13" font-weight="400" text-anchor="start">ServiceNow</text>
+<rect x="317.3244" y="120" width="18" height="18" rx="4" fill="#183349" stroke="#9edbd1" stroke-width="1.5"/>
+<text x="342.3" y="134.0" fill="#d2e5ef" font-size="13" font-weight="400" text-anchor="start">Evren bileşeni</text>
+<rect x="456.04330000000004" y="120" width="18" height="18" rx="4" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.5"/>
+<text x="481.0" y="134.0" fill="#d2e5ef" font-size="13" font-weight="400" text-anchor="start">Veri deposu</text>
+<rect x="580.4921" y="120" width="18" height="18" rx="4" fill="#fff6e6" stroke="#b07a1f" stroke-width="1.5"/>
+<text x="605.5" y="134.0" fill="#d2e5ef" font-size="13" font-weight="400" text-anchor="start">İnsan kararı / arayüz</text>
+<rect x="761.1126" y="120" width="18" height="18" rx="4" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.5"/>
+<text x="786.1" y="134.0" fill="#d2e5ef" font-size="13" font-weight="400" text-anchor="start">Güvenlik denetimi</text>
+<rect x="926.7116000000001" y="120" width="18" height="18" rx="4" fill="#ffffff" stroke="#637b89" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="951.7" y="134.0" fill="#d2e5ef" font-size="13" font-weight="400" text-anchor="start">Dış sistem</text>
+<rect x="1041.1491" y="120" width="30" height="18" rx="9" fill="#2a617d" stroke="#ffffff" stroke-width="1"/>
+<text x="1056.1" y="133.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<rect x="1077.1491" y="120" width="30" height="18" rx="9" fill="#3f7f5f" stroke="#ffffff" stroke-width="1"/>
+<text x="1092.1" y="133.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<rect x="1113.1491" y="120" width="30" height="18" rx="9" fill="#6a4fa0" stroke="#ffffff" stroke-width="1"/>
+<text x="1128.1" y="133.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<rect x="1149.1491" y="120" width="30" height="18" rx="9" fill="#a85a22" stroke="#ffffff" stroke-width="1"/>
+<text x="1164.1" y="133.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F3</text>
+<g id="ch-sources" data-chapter="sources">
+<rect x="26" y="186.0" width="1228" height="417.0" rx="14" fill="#ffffff" stroke="#c6d4dd"/>
+<rect x="48" y="209.0" width="41" height="31" rx="8" fill="#2a617d"/>
+<text x="68.5" y="230.0" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">01</text>
+<text x="104.0" y="232.0" fill="#172e42" font-size="26" font-weight="700" text-anchor="start">Kaynaklar ve alım</text>
+<text x="105.0" y="258.0" fill="#4d6474" font-size="15" font-weight="400" text-anchor="start">Her kaynak bir bağlayıcı ve bir eşleme dosyasıyla eklenir. Keşif aracı değişse de sonraki katmanlar etkilenmez.</text>
+<path data-edge="src_vcenter:connectors" d="M214.0 357.0V377.0H266.0V397.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="src_bmc:connectors" d="M340.0 357.0V397.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="src_nnmi:connectors" d="M540.0 357.0V397.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="src_zabbix:connectors" d="M740.0 357.0V397.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="src_defender:connectors" d="M940.0 357.0V397.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="src_servicenow:connectors" d="M1066.0 357.0V377.0H1014.0V397.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="connectors:ingest_gateway" d="M614.0 460.0V500.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="ingest_gateway:kafka" d="M630.0 539.5H650.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="kafka:raw_archive" d="M1030.0 539.5H1050.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g class="node" id="n-src_vcenter" data-node="src_vcenter" data-chapter="sources" tabindex="0" role="button" aria-label="vCenter: VM, ESXi, küme datastore">
+<rect x="50.0" y="278.0" width="180.0" height="79.0" rx="10" fill="#e9f2f7" stroke="#2a617d" stroke-width="1.6"/>
+<rect x="190.0" y="287.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="205.0" y="300.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="64.0" y="304.0" fill="#173a52" font-size="15" font-weight="700" text-anchor="start">vCenter</text>
+<text x="64.0" y="322.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">VM, ESXi, küme</text>
+<text x="64.0" y="338.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">datastore</text>
+</g>
+<g class="node" id="n-src_bmc" data-node="src_bmc" data-chapter="sources" tabindex="0" role="button" aria-label="BMC ajanları: OS, donanım, seri numarası">
+<rect x="250.0" y="278.0" width="180.0" height="79.0" rx="10" fill="#e9f2f7" stroke="#2a617d" stroke-width="1.6"/>
+<rect x="390.0" y="287.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="405.0" y="300.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="264.0" y="304.0" fill="#173a52" font-size="15" font-weight="700" text-anchor="start">BMC ajanları</text>
+<text x="264.0" y="322.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">OS, donanım,</text>
+<text x="264.0" y="338.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">seri numarası</text>
+</g>
+<g class="node" id="n-src_nnmi" data-node="src_nnmi" data-chapter="sources" tabindex="0" role="button" aria-label="NNMi: Ağ cihazı, arayüz, L2 bağlantı">
+<rect x="450.0" y="278.0" width="180.0" height="79.0" rx="10" fill="#e9f2f7" stroke="#2a617d" stroke-width="1.6"/>
+<rect x="590.0" y="287.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="605.0" y="300.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="464.0" y="304.0" fill="#173a52" font-size="15" font-weight="700" text-anchor="start">NNMi</text>
+<text x="464.0" y="322.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">Ağ cihazı, arayüz,</text>
+<text x="464.0" y="338.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">L2 bağlantı</text>
+</g>
+<g class="node" id="n-src_zabbix" data-node="src_zabbix" data-chapter="sources" tabindex="0" role="button" aria-label="Zabbix: İzleme kapsamı, canlılık">
+<rect x="650.0" y="278.0" width="180.0" height="79.0" rx="10" fill="#e9f2f7" stroke="#2a617d" stroke-width="1.6"/>
+<rect x="790.0" y="287.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="805.0" y="300.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="664.0" y="304.0" fill="#173a52" font-size="15" font-weight="700" text-anchor="start">Zabbix</text>
+<text x="664.0" y="322.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">İzleme kapsamı,</text>
+<text x="664.0" y="338.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">canlılık</text>
+</g>
+<g class="node" id="n-src_defender" data-node="src_defender" data-chapter="sources" tabindex="0" role="button" aria-label="Defender: Koruma durumu, maruziyet">
+<rect x="850.0" y="278.0" width="180.0" height="79.0" rx="10" fill="#e9f2f7" stroke="#2a617d" stroke-width="1.6"/>
+<rect x="990.0" y="287.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="1005.0" y="300.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="864.0" y="304.0" fill="#173a52" font-size="15" font-weight="700" text-anchor="start">Defender</text>
+<text x="864.0" y="322.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">Koruma durumu,</text>
+<text x="864.0" y="338.0" fill="#3d5a6c" font-size="12" font-weight="400" text-anchor="start">maruziyet</text>
+</g>
+<g class="node" id="n-src_servicenow" data-node="src_servicenow" data-chapter="sources" tabindex="0" role="button" aria-label="ServiceNow: CMDB ilk yükleme, Change kayıtları">
+<rect x="1050.0" y="278.0" width="180.0" height="79.0" rx="10" fill="#eaf5ee" stroke="#2f7d4f" stroke-width="1.6"/>
+<rect x="1190.0" y="287.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="1205.0" y="300.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="1064.0" y="304.0" fill="#1d4d31" font-size="15" font-weight="700" text-anchor="start">ServiceNow</text>
+<text x="1064.0" y="322.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">CMDB ilk yükleme,</text>
+<text x="1064.0" y="338.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">Change kayıtları</text>
+</g>
+<g class="node" id="n-connectors" data-node="connectors" data-chapter="sources" tabindex="0" role="button" aria-label="Bağlayıcılar + eşleme dosyaları: Çekme, sayfalama, kimlik doğrulama · kaynak JSON → ServiceNow alan adları">
+<rect x="250.0" y="397.0" width="780.0" height="63.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="990.0" y="406.0" width="30" height="18" rx="9" fill="#2a617d" stroke="#ffffff" stroke-width="1"/>
+<text x="1005.0" y="419.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="264.0" y="423.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Bağlayıcılar + eşleme dosyaları</text>
+<text x="264.0" y="441.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Çekme, sayfalama, kimlik doğrulama · kaynak JSON → ServiceNow alan adları</text>
+</g>
+<g class="node" id="n-ingest_gateway" data-node="ingest_gateway" data-chapter="sources" tabindex="0" role="button" aria-label="Alım geçidi: mTLS · şema doğrulama · kaynak başına yetki">
+<rect x="250.0" y="500.0" width="380.0" height="79.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="590.0" y="509.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="605.0" y="522.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="264.0" y="526.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">Alım geçidi</text>
+<text x="264.0" y="544.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">mTLS · şema doğrulama ·</text>
+<text x="264.0" y="560.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">kaynak başına yetki</text>
+</g>
+<g class="node" id="n-kafka" data-node="kafka" data-chapter="sources" tabindex="0" role="button" aria-label="Olay omurgası (Kafka): ingest.record · ingest.run yeniden oynatılabilir">
+<rect x="650.0" y="500.0" width="380.0" height="79.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="990.0" y="509.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="1005.0" y="522.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="664.0" y="526.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">Olay omurgası (Kafka)</text>
+<text x="664.0" y="544.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">ingest.record · ingest.run</text>
+<text x="664.0" y="560.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">yeniden oynatılabilir</text>
+</g>
+<g class="node" id="n-raw_archive" data-node="raw_archive" data-chapter="sources" tabindex="0" role="button" aria-label="Ham yük arşivi: Saklama politikası, raw_ref ile izlenir">
+<rect x="1050.0" y="500.0" width="180.0" height="79.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="1190.0" y="509.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="1205.0" y="522.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="1064.0" y="526.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">Ham yük arşivi</text>
+<text x="1064.0" y="544.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Saklama politikası,</text>
+<text x="1064.0" y="560.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">raw_ref ile izlenir</text>
+</g>
+</g>
+<g id="ch-sense" data-chapter="sense">
+<rect x="26" y="621.0" width="1228" height="352.0" rx="14" fill="#ffffff" stroke="#c6d4dd"/>
+<rect x="48" y="644.0" width="41" height="31" rx="8" fill="#2a617d"/>
+<text x="68.5" y="665.0" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">02</text>
+<text x="104.0" y="667.0" fill="#172e42" font-size="26" font-weight="700" text-anchor="start">Anlamlandırma — ara katman</text>
+<text x="105.0" y="693.0" fill="#4d6474" font-size="15" font-weight="400" text-anchor="start">Milyonlarca gözlem değişmeyenler elenerek süzülür. Kimlik çözülür, öznitelikler kurallarla uzlaştırılır, şüpheli olan insana sorulur.</text>
+<path data-edge="change_filter:normalize" d="M230.0 762.0H250.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="normalize:identity" d="M430.0 762.0H450.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="identity:reconcile" d="M830.0 762.0H850.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="breaker:reconcile" d="M1050.0 762.0H1030.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="identity:match_queue" d="M640.0 811.0V851.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="reconcile:unauthorized" d="M940.0 811.0V851.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="reconcile:analytics" d="M1014.0 811.0V831.0H1066.0V851.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="dependent_ids:match_queue" d="M430.0 900.0H450.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="6 5"/>
+<g class="node" id="n-change_filter" data-node="change_filter" data-chapter="sense" tabindex="0" role="button" aria-label="Değişim süzgeci: İçerik özeti aynıysa işlem yok">
+<rect x="50.0" y="713.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="190.0" y="722.0" width="30" height="18" rx="9" fill="#2a617d" stroke="#ffffff" stroke-width="1"/>
+<text x="205.0" y="735.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="64.0" y="739.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">Değişim</text>
+<text x="64.0" y="758.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">süzgeci</text>
+<text x="64.0" y="776.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">İçerik özeti aynıysa</text>
+<text x="64.0" y="792.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">işlem yok</text>
+</g>
+<g class="node" id="n-normalize" data-node="normalize" data-chapter="sense" tabindex="0" role="button" aria-label="Normalizasyon: abc_1 · abc-1 · abc_1@local → abc-1">
+<rect x="250.0" y="713.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="390.0" y="722.0" width="30" height="18" rx="9" fill="#2a617d" stroke="#ffffff" stroke-width="1"/>
+<text x="405.0" y="735.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="264.0" y="739.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">Normalizasyon</text>
+<text x="264.0" y="757.0" fill="#c9dceb" font-size="11" font-weight="400" text-anchor="start">abc_1 · abc-1 · abc_1@local</text>
+<text x="264.0" y="773.0" fill="#c9dceb" font-size="11" font-weight="400" text-anchor="start">→ abc-1</text>
+</g>
+<g class="node" id="n-identity" data-node="identity" data-chapter="sense" tabindex="0" role="button" aria-label="Kimlik çözümleme: IRE kuralları + olasılıksal skor + çelişki denetimi">
+<rect x="450.0" y="713.0" width="380.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="790.0" y="722.0" width="30" height="18" rx="9" fill="#2a617d" stroke="#ffffff" stroke-width="1"/>
+<text x="805.0" y="735.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="464.0" y="739.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Kimlik çözümleme</text>
+<text x="464.0" y="757.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">IRE kuralları + olasılıksal skor</text>
+<text x="464.0" y="773.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">+ çelişki denetimi</text>
+</g>
+<g class="node" id="n-reconcile" data-node="reconcile" data-chapter="sense" tabindex="0" role="button" aria-label="Uzlaştırma: Öncelik · veri tazeleme · eskime">
+<rect x="850.0" y="713.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="990.0" y="722.0" width="30" height="18" rx="9" fill="#3f7f5f" stroke="#ffffff" stroke-width="1"/>
+<text x="1005.0" y="735.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="864.0" y="739.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Uzlaştırma</text>
+<text x="864.0" y="757.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Öncelik · veri tazeleme</text>
+<text x="864.0" y="773.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">· eskime</text>
+</g>
+<g class="node" id="n-breaker" data-node="breaker" data-chapter="sense" tabindex="0" role="button" aria-label="Devre kesici: Kısmi çalışma CI emekliye ayırmaz">
+<rect x="1050.0" y="713.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="1190.0" y="722.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="1205.0" y="735.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="1064.0" y="739.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">Devre kesici</text>
+<text x="1064.0" y="757.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Kısmi çalışma</text>
+<text x="1064.0" y="773.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">CI emekliye ayırmaz</text>
+</g>
+<g class="node" id="n-match_queue" data-node="match_queue" data-chapter="sense" tabindex="0" role="button" aria-label="Eşleştirme kuyruğu: Yan yana karşılaştırma, açıklama birleştir / ayır (geri alınabilir)">
+<rect x="450.0" y="851.0" width="380.0" height="98.0" rx="10" fill="#fff6e6" stroke="#b07a1f" stroke-width="1.6"/>
+<rect x="790.0" y="860.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="805.0" y="873.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="464.0" y="877.0" fill="#5c3f0c" font-size="15" font-weight="700" text-anchor="start">Eşleştirme kuyruğu</text>
+<text x="464.0" y="895.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">Yan yana karşılaştırma, açıklama</text>
+<text x="464.0" y="911.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">birleştir / ayır (geri alınabilir)</text>
+</g>
+<g class="node" id="n-unauthorized" data-node="unauthorized" data-chapter="sense" tabindex="0" role="button" aria-label="Yetkisiz değişiklik: Sapma ↔ onaylı Change penceresi">
+<rect x="850.0" y="851.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="990.0" y="860.0" width="30" height="18" rx="9" fill="#3f7f5f" stroke="#ffffff" stroke-width="1"/>
+<text x="1005.0" y="873.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="864.0" y="877.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">Yetkisiz</text>
+<text x="864.0" y="896.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">değişiklik</text>
+<text x="864.0" y="914.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Sapma ↔ onaylı Change</text>
+<text x="864.0" y="930.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">penceresi</text>
+</g>
+<g class="node" id="n-analytics" data-node="analytics" data-chapter="sense" tabindex="0" role="button" aria-label="Trend ve anomali: OpenSearch RCF, sağlık metrikleri">
+<rect x="1050.0" y="851.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="1190.0" y="860.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="1205.0" y="873.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="1064.0" y="877.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">Trend ve</text>
+<text x="1064.0" y="896.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">anomali</text>
+<text x="1064.0" y="914.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">OpenSearch RCF,</text>
+<text x="1064.0" y="930.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">sağlık metrikleri</text>
+</g>
+<g class="node" id="n-dependent_ids" data-node="dependent_ids" data-chapter="sense" tabindex="0" role="button" aria-label="Bağımlı CI kimliği: Uygulama, adaptör: üst CI bağlamında tanımlanır">
+<rect x="50.0" y="851.0" width="380.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="390.0" y="860.0" width="30" height="18" rx="9" fill="#3f7f5f" stroke="#ffffff" stroke-width="1"/>
+<text x="405.0" y="873.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="64.0" y="877.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Bağımlı CI kimliği</text>
+<text x="64.0" y="895.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Uygulama, adaptör: üst CI</text>
+<text x="64.0" y="911.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">bağlamında tanımlanır</text>
+</g>
+</g>
+<g id="ch-store" data-chapter="store">
+<rect x="26" y="991.0" width="1228" height="352.0" rx="14" fill="#ffffff" stroke="#c6d4dd"/>
+<rect x="48" y="1014.0" width="41" height="31" rx="8" fill="#2a617d"/>
+<text x="68.5" y="1035.0" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">03</text>
+<text x="104.0" y="1037.0" fill="#172e42" font-size="26" font-weight="700" text-anchor="start">Kayıt sistemi</text>
+<text x="105.0" y="1063.0" fill="#4d6474" font-size="15" font-weight="400" text-anchor="start">ServiceNow veri deseniyle aynı yüzey, daha güçlü bir motor. Her değerin kaynağı ve gerekçesi saklanır.</text>
+<path data-edge="cmdb_ci:sn_views" d="M214.0 1181.0V1221.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="cmdb_ci:search_index" d="M266.0 1181.0V1221.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="cmdb_ci:outbox" d="M414.0 1181.0V1201.0H666.0V1221.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="cmdb_rel_ci:cmdb_ci" d="M450.0 1132.0H430.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g class="node" id="n-cmdb_ci" data-node="cmdb_ci" data-chapter="store" tabindex="0" role="button" aria-label="cmdb_ci · golden record: Çekirdek kolonlar + JSONB sınıf alanları PostgreSQL · sys_id korunur">
+<rect x="50.0" y="1083.0" width="380.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="390.0" y="1092.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="405.0" y="1105.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="64.0" y="1109.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">cmdb_ci · golden record</text>
+<text x="64.0" y="1127.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Çekirdek kolonlar + JSONB sınıf alanları</text>
+<text x="64.0" y="1143.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">PostgreSQL · sys_id korunur</text>
+</g>
+<g class="node" id="n-cmdb_rel_ci" data-node="cmdb_rel_ci" data-chapter="store" tabindex="0" role="button" aria-label="cmdb_rel_ci: İlişkiler, bağımlılık haritası">
+<rect x="450.0" y="1083.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="590.0" y="1092.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="605.0" y="1105.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="464.0" y="1109.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">cmdb_rel_ci</text>
+<text x="464.0" y="1127.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">İlişkiler, bağımlılık</text>
+<text x="464.0" y="1143.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">haritası</text>
+</g>
+<g class="node" id="n-dictionary" data-node="dictionary" data-chapter="store" tabindex="0" role="button" aria-label="Metadata sözlüğü: sys_db_object, sys_dictionary, sys_choice">
+<rect x="650.0" y="1083.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="790.0" y="1092.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="805.0" y="1105.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="664.0" y="1109.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">Metadata</text>
+<text x="664.0" y="1128.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">sözlüğü</text>
+<text x="664.0" y="1146.0" fill="#4a5684" font-size="11" font-weight="400" text-anchor="start">sys_db_object,</text>
+<text x="664.0" y="1162.0" fill="#4a5684" font-size="11" font-weight="400" text-anchor="start">sys_dictionary, sys_choice</text>
+</g>
+<g class="node" id="n-provenance" data-node="provenance" data-chapter="store" tabindex="0" role="button" aria-label="Kaynak bilgisi: Öznitelik → kaynak, zaman, gerekçe">
+<rect x="850.0" y="1083.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="990.0" y="1092.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="1005.0" y="1105.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="864.0" y="1109.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">Kaynak bilgisi</text>
+<text x="864.0" y="1127.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Öznitelik → kaynak,</text>
+<text x="864.0" y="1143.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">zaman, gerekçe</text>
+</g>
+<g class="node" id="n-audit_trail" data-node="audit_trail" data-chapter="store" tabindex="0" role="button" aria-label="Denetim izi: Salt ekleme, aylık bölümler">
+<rect x="1050.0" y="1083.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="1190.0" y="1092.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="1205.0" y="1105.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="1064.0" y="1109.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">Denetim izi</text>
+<text x="1064.0" y="1127.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Salt ekleme,</text>
+<text x="1064.0" y="1143.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">aylık bölümler</text>
+</g>
+<g class="node" id="n-sn_views" data-node="sn_views" data-chapter="store" tabindex="0" role="button" aria-label="sn.* görünümler: sn.cmdb_ci_server gibi sorgulanır">
+<rect x="50.0" y="1221.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="190.0" y="1230.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="205.0" y="1243.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="64.0" y="1247.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">sn.*</text>
+<text x="64.0" y="1266.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">görünümler</text>
+<text x="64.0" y="1284.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">sn.cmdb_ci_server</text>
+<text x="64.0" y="1300.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">gibi sorgulanır</text>
+</g>
+<g class="node" id="n-search_index" data-node="search_index" data-chapter="store" tabindex="0" role="button" aria-label="Arama dizini: OpenSearch · CI seçici, bulanık arama">
+<rect x="250.0" y="1221.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="390.0" y="1230.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="405.0" y="1243.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="264.0" y="1247.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">Arama dizini</text>
+<text x="264.0" y="1265.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">OpenSearch · CI</text>
+<text x="264.0" y="1281.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">seçici, bulanık arama</text>
+</g>
+<g class="node" id="n-cache" data-node="cache" data-chapter="store" tabindex="0" role="button" aria-label="Valkey: Önbellek, CI kilidi, hız sınırı">
+<rect x="450.0" y="1221.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="590.0" y="1230.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="605.0" y="1243.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="464.0" y="1247.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">Valkey</text>
+<text x="464.0" y="1265.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Önbellek, CI kilidi,</text>
+<text x="464.0" y="1281.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">hız sınırı</text>
+</g>
+<g class="node" id="n-outbox" data-node="outbox" data-chapter="store" tabindex="0" role="button" aria-label="Outbox: İşlemsel olay yayını → Kafka">
+<rect x="650.0" y="1221.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="790.0" y="1230.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="805.0" y="1243.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="664.0" y="1247.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">Outbox</text>
+<text x="664.0" y="1265.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">İşlemsel olay yayını</text>
+<text x="664.0" y="1281.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">→ Kafka</text>
+</g>
+<g class="node" id="n-security_posture" data-node="security_posture" data-chapter="store" tabindex="0" role="button" aria-label="Güvenlik duruşu: KISITLI tablo, ayrı yetki">
+<rect x="850.0" y="1221.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="990.0" y="1230.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="1005.0" y="1243.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="864.0" y="1247.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">Güvenlik</text>
+<text x="864.0" y="1266.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">duruşu</text>
+<text x="864.0" y="1284.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">KISITLI tablo,</text>
+<text x="864.0" y="1300.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">ayrı yetki</text>
+</g>
+<g class="node" id="n-backup_dr" data-node="backup_dr" data-chapter="store" tabindex="0" role="button" aria-label="Yedek ve DR: Şifreli yedek, RPO/RTO hedefleri">
+<rect x="1050.0" y="1221.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="1190.0" y="1230.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="1205.0" y="1243.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="1064.0" y="1247.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">Yedek ve DR</text>
+<text x="1064.0" y="1265.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Şifreli yedek,</text>
+<text x="1064.0" y="1281.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">RPO/RTO hedefleri</text>
+</g>
+</g>
+<g id="ch-consume" data-chapter="consume">
+<rect x="26" y="1361.0" width="1228" height="352.0" rx="14" fill="#ffffff" stroke="#c6d4dd"/>
+<rect x="48" y="1384.0" width="41" height="31" rx="8" fill="#2a617d"/>
+<text x="68.5" y="1405.0" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">04</text>
+<text x="104.0" y="1407.0" fill="#172e42" font-size="26" font-weight="700" text-anchor="start">Tüketim ve entegrasyon</text>
+<text x="105.0" y="1433.0" fill="#4d6474" font-size="15" font-weight="400" text-anchor="start">Tek API, iki dil — yerel REST ve ServiceNow uyumlu uç noktalar. Yapay zekâ ajanları kurumun kendi MCP katmanından bağlanır.</text>
+<path data-edge="web_ui:rest_api" d="M230.0 1502.0H250.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="corp_mcp:evren_mcp" d="M1140.0 1591.0V1551.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="grc_app:rest_api" d="M666.0 1591.0V1571.0H614.0V1551.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="event_stream:grc_app" d="M940.0 1551.0V1591.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="other_apps:rest_api" d="M440.0 1591.0V1551.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g class="node" id="n-web_ui" data-node="web_ui" data-chapter="consume" tabindex="0" role="button" aria-label="Evren arayüzü: Türkçe, derlemesiz, sıkı CSP">
+<rect x="50.0" y="1453.0" width="180.0" height="98.0" rx="10" fill="#fff6e6" stroke="#b07a1f" stroke-width="1.6"/>
+<rect x="190.0" y="1462.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="205.0" y="1475.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="64.0" y="1479.0" fill="#5c3f0c" font-size="14" font-weight="700" text-anchor="start">Evren arayüzü</text>
+<text x="64.0" y="1497.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">Türkçe, derlemesiz,</text>
+<text x="64.0" y="1513.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">sıkı CSP</text>
+</g>
+<g class="node" id="n-rest_api" data-node="rest_api" data-chapter="consume" tabindex="0" role="button" aria-label="Evren REST API: /api/v1 · OpenAPI 3.1 · idempotency_key · provenance">
+<rect x="250.0" y="1453.0" width="380.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="590.0" y="1462.0" width="30" height="18" rx="9" fill="#2a617d" stroke="#ffffff" stroke-width="1"/>
+<text x="605.0" y="1475.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="264.0" y="1479.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Evren REST API</text>
+<text x="264.0" y="1497.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">/api/v1 · OpenAPI 3.1 ·</text>
+<text x="264.0" y="1513.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">idempotency_key · provenance</text>
+</g>
+<g class="node" id="n-sn_compat_api" data-node="sn_compat_api" data-chapter="consume" tabindex="0" role="button" aria-label="SN uyumlu API: /api/now/table /identifyreconcile">
+<rect x="650.0" y="1453.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="790.0" y="1462.0" width="30" height="18" rx="9" fill="#6a4fa0" stroke="#ffffff" stroke-width="1"/>
+<text x="805.0" y="1475.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="664.0" y="1479.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">SN uyumlu API</text>
+<text x="664.0" y="1497.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">/api/now/table</text>
+<text x="664.0" y="1513.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">/identifyreconcile</text>
+</g>
+<g class="node" id="n-event_stream" data-node="event_stream" data-chapter="consume" tabindex="0" role="button" aria-label="Olay akışı: CloudEvents, imzalı webhook">
+<rect x="850.0" y="1453.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="990.0" y="1462.0" width="30" height="18" rx="9" fill="#6a4fa0" stroke="#ffffff" stroke-width="1"/>
+<text x="1005.0" y="1475.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="864.0" y="1479.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Olay akışı</text>
+<text x="864.0" y="1497.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">CloudEvents,</text>
+<text x="864.0" y="1513.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">imzalı webhook</text>
+</g>
+<g class="node" id="n-evren_mcp" data-node="evren_mcp" data-chapter="consume" tabindex="0" role="button" aria-label="Evren MCP sunucusu: Salt okur araçlar + öneri araçları">
+<rect x="1050.0" y="1453.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="1190.0" y="1462.0" width="30" height="18" rx="9" fill="#6a4fa0" stroke="#ffffff" stroke-width="1"/>
+<text x="1205.0" y="1475.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="1064.0" y="1479.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">Evren MCP</text>
+<text x="1064.0" y="1498.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">sunucusu</text>
+<text x="1064.0" y="1516.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Salt okur araçlar +</text>
+<text x="1064.0" y="1532.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">öneri araçları</text>
+</g>
+<g class="node" id="n-corp_mcp" data-node="corp_mcp" data-chapter="consume" tabindex="0" role="button" aria-label="Kurum MCP uygulaması: Sizin MCP katmanınız (ajan, orkestrasyon)">
+<rect x="1050.0" y="1591.0" width="180.0" height="98.0" rx="10" fill="#ffffff" stroke="#637b89" stroke-width="1.6" stroke-dasharray="5 4"/>
+<rect x="1190.0" y="1600.0" width="30" height="18" rx="9" fill="#6a4fa0"/>
+<text x="1205.0" y="1613.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="1064.0" y="1617.0" fill="#2b3f4c" font-size="14" font-weight="700" text-anchor="start">Kurum MCP</text>
+<text x="1064.0" y="1636.0" fill="#2b3f4c" font-size="14" font-weight="700" text-anchor="start">uygulaması</text>
+<text x="1064.0" y="1654.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">Sizin MCP katmanınız</text>
+<text x="1064.0" y="1670.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">(ajan, orkestrasyon)</text>
+</g>
+<g class="node" id="n-grc_app" data-node="grc_app" data-chapter="consume" tabindex="0" role="button" aria-label="KS GRC: Kontrol sonuçları, kanıt; ör. kaydı olmayan sunucu">
+<rect x="650.0" y="1591.0" width="380.0" height="98.0" rx="10" fill="#ffffff" stroke="#637b89" stroke-width="1.6" stroke-dasharray="5 4"/>
+<rect x="990.0" y="1600.0" width="30" height="18" rx="9" fill="#6a4fa0"/>
+<text x="1005.0" y="1613.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="664.0" y="1617.0" fill="#2b3f4c" font-size="15" font-weight="700" text-anchor="start">KS GRC</text>
+<text x="664.0" y="1635.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">Kontrol sonuçları, kanıt;</text>
+<text x="664.0" y="1651.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">ör. kaydı olmayan sunucu</text>
+</g>
+<g class="node" id="n-other_apps" data-node="other_apps" data-chapter="consume" tabindex="0" role="button" aria-label="Diğer iç uygulamalar: Tedarik portalı, raporlama, otomasyon">
+<rect x="250.0" y="1591.0" width="380.0" height="98.0" rx="10" fill="#ffffff" stroke="#637b89" stroke-width="1.6" stroke-dasharray="5 4"/>
+<rect x="590.0" y="1600.0" width="30" height="18" rx="9" fill="#6a4fa0"/>
+<text x="605.0" y="1613.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="264.0" y="1617.0" fill="#2b3f4c" font-size="15" font-weight="700" text-anchor="start">Diğer iç uygulamalar</text>
+<text x="264.0" y="1635.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">Tedarik portalı, raporlama,</text>
+<text x="264.0" y="1651.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">otomasyon</text>
+</g>
+</g>
+<g id="ch-servicenow" data-chapter="servicenow">
+<rect x="26" y="1731.0" width="1228" height="352.0" rx="14" fill="#ffffff" stroke="#c6d4dd"/>
+<rect x="48" y="1754.0" width="41" height="31" rx="8" fill="#2a617d"/>
+<text x="68.5" y="1775.0" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">05</text>
+<text x="104.0" y="1777.0" fill="#172e42" font-size="26" font-weight="700" text-anchor="start">ServiceNow ile geçiş deseni</text>
+<text x="105.0" y="1803.0" fill="#4d6474" font-size="15" font-weight="400" text-anchor="start">Evren ana kaynaktır, ServiceNow CMDB replikadır. Task kayıtları SN&#x27;deki CI&#x27;ları göstermeye devam eder; business rule değişmez.</text>
+<path data-edge="evren_master:sn_sync" d="M230.0 1872.0H250.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="sn_sync:sn_ire" d="M430.0 1872.0H450.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="sn_ire:sn_cmdb" d="M630.0 1872.0H650.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="sn_cmdb:sn_task" d="M830.0 1872.0H850.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="sn_edits:sn_pull" d="M650.0 2010.0H430.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="sn_pull:evren_master" d="M266.0 1961.0V1941.0H214.0V1921.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="ci_picker:sn_task" d="M1040.0 1961.0V1921.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="6 5"/>
+<g class="node" id="n-evren_master" data-node="evren_master" data-chapter="servicenow" tabindex="0" role="button" aria-label="Evren (ana kaynak): Golden record, kapsam kuralları">
+<rect x="50.0" y="1823.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
+<rect x="190.0" y="1832.0" width="30" height="18" rx="9" fill="#6a4fa0"/>
+<text x="205.0" y="1845.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="64.0" y="1849.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">Evren (ana</text>
+<text x="64.0" y="1868.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">kaynak)</text>
+<text x="64.0" y="1886.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Golden record,</text>
+<text x="64.0" y="1902.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">kapsam kuralları</text>
+</g>
+<g class="node" id="n-sn_sync" data-node="sn_sync" data-chapter="servicenow" tabindex="0" role="button" aria-label="sn-sync: Sınıf/alan kapsamı, yeniden deneme">
+<rect x="250.0" y="1823.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="390.0" y="1832.0" width="30" height="18" rx="9" fill="#6a4fa0" stroke="#ffffff" stroke-width="1"/>
+<text x="405.0" y="1845.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="264.0" y="1849.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">sn-sync</text>
+<text x="264.0" y="1867.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Sınıf/alan kapsamı,</text>
+<text x="264.0" y="1883.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">yeniden deneme</text>
+</g>
+<g class="node" id="n-sn_ire" data-node="sn_ire" data-chapter="servicenow" tabindex="0" role="button" aria-label="SN IRE API: /api/now/ identifyreconcile">
+<rect x="450.0" y="1823.0" width="180.0" height="98.0" rx="10" fill="#eaf5ee" stroke="#2f7d4f" stroke-width="1.6"/>
+<rect x="590.0" y="1832.0" width="30" height="18" rx="9" fill="#6a4fa0"/>
+<text x="605.0" y="1845.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="464.0" y="1849.0" fill="#1d4d31" font-size="15" font-weight="700" text-anchor="start">SN IRE API</text>
+<text x="464.0" y="1867.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">/api/now/</text>
+<text x="464.0" y="1883.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">identifyreconcile</text>
+</g>
+<g class="node" id="n-sn_cmdb" data-node="sn_cmdb" data-chapter="servicenow" tabindex="0" role="button" aria-label="SN CMDB (replika): Yalnızca süreç sınıfları (sunucu, ağ, servis)">
+<rect x="650.0" y="1823.0" width="180.0" height="98.0" rx="10" fill="#eaf5ee" stroke="#2f7d4f" stroke-width="1.6"/>
+<rect x="790.0" y="1832.0" width="30" height="18" rx="9" fill="#6a4fa0"/>
+<text x="805.0" y="1845.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="664.0" y="1849.0" fill="#1d4d31" font-size="14" font-weight="700" text-anchor="start">SN CMDB</text>
+<text x="664.0" y="1868.0" fill="#1d4d31" font-size="14" font-weight="700" text-anchor="start">(replika)</text>
+<text x="664.0" y="1886.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">Yalnızca süreç sınıfları</text>
+<text x="664.0" y="1902.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">(sunucu, ağ, servis)</text>
+</g>
+<g class="node" id="n-sn_task" data-node="sn_task" data-chapter="servicenow" tabindex="0" role="button" aria-label="task.cmdb_ci: Incident, Change, Problem — alanlar ve business rule&#x27;lar değişmez">
+<rect x="850.0" y="1823.0" width="380.0" height="98.0" rx="10" fill="#eaf5ee" stroke="#2f7d4f" stroke-width="1.6"/>
+<rect x="1190.0" y="1832.0" width="30" height="18" rx="9" fill="#6a4fa0"/>
+<text x="1205.0" y="1845.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
+<text x="864.0" y="1849.0" fill="#1d4d31" font-size="15" font-weight="700" text-anchor="start">task.cmdb_ci</text>
+<text x="864.0" y="1867.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">Incident, Change, Problem — alanlar</text>
+<text x="864.0" y="1883.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">ve business rule&#x27;lar değişmez</text>
+</g>
+<g class="node" id="n-sn_pull" data-node="sn_pull" data-chapter="servicenow" tabindex="0" role="button" aria-label="Değişiklik çekme: sys_updated_on ile; &quot;ServiceNow&quot; kaynağı">
+<rect x="250.0" y="1961.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="390.0" y="1970.0" width="30" height="18" rx="9" fill="#3f7f5f" stroke="#ffffff" stroke-width="1"/>
+<text x="405.0" y="1983.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="264.0" y="1987.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">Değişiklik</text>
+<text x="264.0" y="2006.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">çekme</text>
+<text x="264.0" y="2024.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">sys_updated_on ile;</text>
+<text x="264.0" y="2040.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">&quot;ServiceNow&quot; kaynağı</text>
+</g>
+<g class="node" id="n-sn_edits" data-node="sn_edits" data-chapter="servicenow" tabindex="0" role="button" aria-label="SN&#x27;de elle düzenleme: Geçiş döneminde yönetişim alanları">
+<rect x="650.0" y="1961.0" width="180.0" height="98.0" rx="10" fill="#eaf5ee" stroke="#2f7d4f" stroke-width="1.6"/>
+<rect x="790.0" y="1970.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="805.0" y="1983.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="664.0" y="1987.0" fill="#1d4d31" font-size="14" font-weight="700" text-anchor="start">SN&#x27;de elle</text>
+<text x="664.0" y="2006.0" fill="#1d4d31" font-size="14" font-weight="700" text-anchor="start">düzenleme</text>
+<text x="664.0" y="2024.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">Geçiş döneminde</text>
+<text x="664.0" y="2040.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">yönetişim alanları</text>
+</g>
+<g class="node" id="n-ci_picker" data-node="ci_picker" data-chapter="servicenow" tabindex="0" role="button" aria-label="CI seçici (Faz 3): SN formunda Evren araması → replikadaki sys_id">
+<rect x="850.0" y="1961.0" width="380.0" height="98.0" rx="10" fill="#fff6e6" stroke="#b07a1f" stroke-width="1.6"/>
+<rect x="1190.0" y="1970.0" width="30" height="18" rx="9" fill="#a85a22"/>
+<text x="1205.0" y="1983.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F3</text>
+<text x="864.0" y="1987.0" fill="#5c3f0c" font-size="15" font-weight="700" text-anchor="start">CI seçici (Faz 3)</text>
+<text x="864.0" y="2005.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">SN formunda Evren araması →</text>
+<text x="864.0" y="2021.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">replikadaki sys_id</text>
+</g>
+</g>
+<g id="ch-security" data-chapter="security">
+<rect x="26" y="2101.0" width="1228" height="352.0" rx="14" fill="#ffffff" stroke="#c6d4dd"/>
+<rect x="48" y="2124.0" width="41" height="31" rx="8" fill="#2a617d"/>
+<text x="68.5" y="2145.0" fill="#ffffff" font-size="16" font-weight="700" text-anchor="middle">06</text>
+<text x="104.0" y="2147.0" fill="#172e42" font-size="26" font-weight="700" text-anchor="start">Güvenlik ve yönetişim</text>
+<text x="105.0" y="2173.0" fill="#4d6474" font-size="15" font-weight="400" text-anchor="start">Varsayılan reddet, en az yetki, her değişiklik iz bırakır. Yapay zekâ önerir, insan karar verir.</text>
+<path data-edge="entra:rbac_abac" d="M230.0 2242.0H250.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="rbac_abac:sod" d="M430.0 2242.0H450.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="sod:schema_sets" d="M630.0 2242.0H650.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="db_roles:siem" d="M430.0 2380.0H450.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<g class="node" id="n-entra" data-node="entra" data-chapter="security" tabindex="0" role="button" aria-label="Entra ID: OIDC + PKCE, koşullu erişim">
+<rect x="50.0" y="2193.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="190.0" y="2202.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="205.0" y="2215.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="64.0" y="2219.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">Entra ID</text>
+<text x="64.0" y="2237.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">OIDC + PKCE,</text>
+<text x="64.0" y="2253.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">koşullu erişim</text>
+</g>
+<g class="node" id="n-rbac_abac" data-node="rbac_abac" data-chapter="security" tabindex="0" role="button" aria-label="RBAC + ABAC: Rol × sınıf × alan × hassasiyet × koşul">
+<rect x="250.0" y="2193.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="390.0" y="2202.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="405.0" y="2215.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="264.0" y="2219.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">RBAC + ABAC</text>
+<text x="264.0" y="2237.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Rol × sınıf × alan ×</text>
+<text x="264.0" y="2253.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">hassasiyet × koşul</text>
+</g>
+<g class="node" id="n-sod" data-node="sod" data-chapter="security" tabindex="0" role="button" aria-label="Görevler ayrılığı: Hazırlayan onaylayamaz, kendine yetki yok">
+<rect x="450.0" y="2193.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="590.0" y="2202.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="605.0" y="2215.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="464.0" y="2219.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">Görevler</text>
+<text x="464.0" y="2238.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">ayrılığı</text>
+<text x="464.0" y="2256.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Hazırlayan onaylayamaz,</text>
+<text x="464.0" y="2272.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">kendine yetki yok</text>
+</g>
+<g class="node" id="n-schema_sets" data-node="schema_sets" data-chapter="security" tabindex="0" role="button" aria-label="Şema değişiklik setleri: Taslak → onay → yayın, etki analizi">
+<rect x="650.0" y="2193.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="790.0" y="2202.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="805.0" y="2215.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="664.0" y="2219.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">Şema</text>
+<text x="664.0" y="2238.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">değişiklik setleri</text>
+<text x="664.0" y="2256.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Taslak → onay → yayın,</text>
+<text x="664.0" y="2272.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">etki analizi</text>
+</g>
+<g class="node" id="n-secrets" data-node="secrets" data-chapter="security" tabindex="0" role="button" aria-label="Sır kasası: Repoda sır yok, döndürülebilir anahtar">
+<rect x="850.0" y="2193.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="990.0" y="2202.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="1005.0" y="2215.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="864.0" y="2219.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">Sır kasası</text>
+<text x="864.0" y="2237.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Repoda sır yok,</text>
+<text x="864.0" y="2253.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">döndürülebilir anahtar</text>
+</g>
+<g class="node" id="n-ai_governance" data-node="ai_governance" data-chapter="security" tabindex="0" role="button" aria-label="Yapay zekâ yönetişimi: ISO/IEC 42001 uyumlu öneri–onay, kayıt">
+<rect x="1050.0" y="2193.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="1190.0" y="2202.0" width="30" height="18" rx="9" fill="#a85a22"/>
+<text x="1205.0" y="2215.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F3</text>
+<text x="1064.0" y="2219.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">Yapay zekâ</text>
+<text x="1064.0" y="2238.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">yönetişimi</text>
+<text x="1064.0" y="2256.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">ISO/IEC 42001 uyumlu</text>
+<text x="1064.0" y="2272.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">öneri–onay, kayıt</text>
+</g>
+<g class="node" id="n-mtls" data-node="mtls" data-chapter="security" tabindex="0" role="button" aria-label="mTLS ve ağ: Servisler arası TLS, bölütleme">
+<rect x="50.0" y="2331.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="190.0" y="2340.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="205.0" y="2353.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="64.0" y="2357.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">mTLS ve ağ</text>
+<text x="64.0" y="2375.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Servisler arası TLS,</text>
+<text x="64.0" y="2391.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">bölütleme</text>
+</g>
+<g class="node" id="n-db_roles" data-node="db_roles" data-chapter="security" tabindex="0" role="button" aria-label="En az yetkili DB rolleri: Golden record&#x27;a tek yazan: uzlaştırıcı">
+<rect x="250.0" y="2331.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="390.0" y="2340.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="405.0" y="2353.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="264.0" y="2357.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">En az yetkili</text>
+<text x="264.0" y="2376.0" fill="#5e1c1c" font-size="14" font-weight="700" text-anchor="start">DB rolleri</text>
+<text x="264.0" y="2394.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Golden record&#x27;a tek</text>
+<text x="264.0" y="2410.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">yazan: uzlaştırıcı</text>
+</g>
+<g class="node" id="n-siem" data-node="siem" data-chapter="security" tabindex="0" role="button" aria-label="SIEM aktarımı: Denetim ve güvenlik olayları">
+<rect x="450.0" y="2331.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="590.0" y="2340.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="605.0" y="2353.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="464.0" y="2357.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">SIEM aktarımı</text>
+<text x="464.0" y="2375.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Denetim ve güvenlik</text>
+<text x="464.0" y="2391.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">olayları</text>
+</g>
+<g class="node" id="n-supply_chain" data-node="supply_chain" data-chapter="security" tabindex="0" role="button" aria-label="Tedarik zinciri güvenliği: Hash kilitli bağımlılık, SBOM, imaj tarama, gitleaks, SAST, sabitlenmiş CI eylemleri">
+<rect x="650.0" y="2331.0" width="380.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="990.0" y="2340.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="1005.0" y="2353.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="664.0" y="2357.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">Tedarik zinciri güvenliği</text>
+<text x="664.0" y="2375.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">Hash kilitli bağımlılık, SBOM, imaj tarama,</text>
+<text x="664.0" y="2391.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">gitleaks, SAST, sabitlenmiş CI eylemleri</text>
+</g>
+<g class="node" id="n-threat_model" data-node="threat_model" data-chapter="security" tabindex="0" role="button" aria-label="Tehdit modeli: STRIDE, OWASP ASVS L2 hedefi">
+<rect x="1050.0" y="2331.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>
+<rect x="1190.0" y="2340.0" width="30" height="18" rx="9" fill="#2a617d"/>
+<text x="1205.0" y="2353.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
+<text x="1064.0" y="2357.0" fill="#5e1c1c" font-size="15" font-weight="700" text-anchor="start">Tehdit modeli</text>
+<text x="1064.0" y="2375.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">STRIDE, OWASP</text>
+<text x="1064.0" y="2391.0" fill="#7d3a3a" font-size="12" font-weight="400" text-anchor="start">ASVS L2 hedefi</text>
+</g>
+</g>
+</svg>
