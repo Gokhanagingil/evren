@@ -37,3 +37,37 @@ def make_review_item() -> tuple[str, str, str]:
     return item, a, f"z-{tag}"
 
 
+
+
+def make_wrong_merge() -> tuple[str, dict[str, str], str]:
+    """Kendi yanlış birleştirme senaryosu: keşif ve sanallaştırma kaydı aynı seriyle tek CI'a bağlanır.
+
+    Döner: (CI sys_id, {kaynak: bağ sys_id}, etiket). Sanallaştırma kaydı bellek ve CPU bildirir (yalnız o).
+    """
+    md = load_metadata(REPO / "metadata")
+    tag = uuid.uuid4().hex[:8]
+    now = datetime.now(UTC)
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        store = ReconcilerStore(conn, md)
+        bmc = store.start_run(uuid.uuid4(), "BMC")
+        ci = store.apply(IngestRecord(data_source="BMC", run_id=bmc, source_key=f"wm-b-{tag}",
+                                      class_hint="cmdb_ci_linux_server", observed_at=now,
+                                      attributes={"name": f"wm-{tag}", "serial_number": f"CZW{tag}",
+                                                  "os": "RHEL 9.4"})).ci_sys_id
+        vc = store.start_run(uuid.uuid4(), "vCenter")
+        res = store.apply(IngestRecord(data_source="vCenter", run_id=vc, source_key=f"wm-v-{tag}",
+                                       class_hint="cmdb_ci_linux_server", observed_at=now,
+                                       attributes={"name": f"wm-{tag}", "serial_number": f"CZW{tag}", "ram": 16384}))
+        assert res.ci_sys_id == ci, res
+        links = dict(conn.execute("SELECT data_source, sys_id FROM ingest.identity_link WHERE ci_sys_id = %s AND active",
+                                  (ci,)).fetchall())
+    return ci, links, tag
+
+
+def apply_pending_splits() -> list[str]:
+    """Uzlaştırıcıyı bir tur çalıştırır (üretimde sürekli çalışan servis); sonuç CI'larını döner."""
+    md = load_metadata(REPO / "metadata")
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        return [r.ci_sys_id for r in ReconcilerStore(conn, md).apply_splits() if r.outcome == "split"]

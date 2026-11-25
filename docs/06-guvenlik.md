@@ -41,6 +41,8 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | T | Aynı kararın tekrar gönderilmesi | `idempotency_key`: aynı içerik → kayıtlı yanıt; farklı içerik → 409 | `api.idempotency` |
 | I | Yetki dışı alanların yanıtta görünmesi | Rol izninin en yüksek hassasiyeti üstündeki alanlar yanıta hiç konmaz (arayüzde gizlemek yeterli sayılmaz) | `evren_api/authz.py` |
 | I | Doğrulama hatasında girdinin yansıtılması | Hata gövdesi yalnızca alan konumu ve hata türü içerir | `evren_api/errors.py` |
+| T | Ayırma (split) ile kimlik dizininin bozulması veya CI kimliğinin kaybı | API yalnızca istek yazar; uzlaştırıcı yeniden doğrular (bağ değişti mi, tek kayıt mı, ilk yükleme kaydı mı); anahtar silme yalnızca tek CI için `SECURITY DEFINER` işlevle (sabit `search_path`), genel DELETE yok | `0007_split.sql`, test_split_pg |
+| R | Yetki reddinin denetim kaydının işlemle birlikte geri alınması | Ret olayı istek işlemi içindeyse ayrı bağlantıyla yazılır; ret testlerle denetim izinde doğrulanır | `evren_api/deps.py`, test_split |
 | E | Grup üyeliği yoluyla görevler ayrılığı çatışması | Girişte uygulama rolü + grup ataması birleşimi `iam.sod_constraint` ile denetlenir; çatışmada giriş reddedilir ve denetime yazılır | `routers/auth.py` |
 
 ## Uygulanan denetimler (bu depoda, testli)
@@ -57,7 +59,7 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
   - `.gitleaks.toml` istisnası yalnızca genel anahtar kuralı ve sentetik `source_key` değerleriyle sınırlıdır; iş akışındaki olumsuz test, istisnanın gerçek bir belirteci gizlemediğini her çalıştırmada doğrular (yol bazlı istisna bu nedenle reddedildi).
   - Bağımlılıklar hash'li ve 14 günlük tedarik zinciri bekleme süresiyle kilitlenir (ADR-0005).
 - API (`services/api`, ADR-0010): her bağlantı `evren_app_api` rolüne geçer; sorgu zaman aşımı; tüm dinamik SQL `psycopg.sql` ile kurulur; Swagger/ReDoc (dış CDN) kapalı.
-  - `services/api/tests`: 26 test — yetki reddi ve denetimi, CSRF, idempotency, sütun düzeyi yetki, Entra akışının olumsuz senaryoları (tekrar, MFA bağlamı yok, yanlış kiracı/düzenleyen/hedef kitle, sahte imza, HS256'ya algoritma değişimi, kurcalanmış çerez, SoD).
+  - `services/api/tests`: 34 test — yetki reddi ve denetimi, CSRF, idempotency, sütun düzeyi yetki, Entra akışının olumsuz senaryoları (tekrar, MFA bağlamı yok, yanlış kiracı/düzenleyen/hedef kitle, sahte imza, HS256'ya algoritma değişimi, kurcalanmış çerez, SoD).
 - Uzlaştırıcı (`services/reconciler`): `evren_app_reconciler` rolüyle; denetim izini okuyamaz, CI ve kimlik anahtarı silemez (testli).
 
 ## Ağ ve platform

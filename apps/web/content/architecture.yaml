@@ -226,8 +226,8 @@ details:
     security: [Yıkıcı işlem yalnızca OK durumunda]
   match_queue:
     phase: F0
-    text: Emin olunamayan eşleşmeler insana sorulur. Adaylar yan yana karşılaştırılır, kanıtlar Türkçe açıklanır. Kararlar geri alınabilir; skor ağırlıkları bu kararlarla kalibre edilir.
-    tech: [ingest.match_candidate]
+    text: Emin olunamayan eşleşmeler insana sorulur. Adaylar yan yana karşılaştırılır, kanıtlar Türkçe açıklanır. Yanlış birleştirme CI panelinden ayrılır (split); kimlik profili yeniden kurulur, iki CI yeniden uzlaştırılır. Skor ağırlıkları bu kararlarla kalibre edilir.
+    tech: [ingest.match_candidate, ingest.split_request]
     security: [Eşleştirme analisti rolü, Her karar denetim izinde]
   unauthorized:
     phase: F1

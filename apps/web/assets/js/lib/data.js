@@ -17,6 +17,7 @@ export const CONTROL = { pass: ['Başarılı', 'good'], fail: ['Başarısız', '
 export const OUTCOME = {
   linked: 'Bağlı', rule_match: 'Kuralla eşleşti', score_match: 'Skorla eşleşti', new: 'Yeni CI', review: 'İncelemede',
   insufficient: 'Kimlik yetersiz', import: 'İlk yükleme', manual: 'İnsan kararı', rule: 'Kural', score: 'Skor',
+  split: 'Ayrıldı (insan kararı)',
 };
 
 /** Kaynak rozeti: renk rolü, metin veri kaynağını gösterir (ürün değişse de renk aynı kalır). */
@@ -127,6 +128,13 @@ export async function decide(item, body) {
 }
 
 export function undoDemoDecision(id) { demoDecisions.delete(id); }
+
+/** Birleştirmeyi ayırma isteği (yalnızca API modu): uzlaştırıcı uygular; yanıt 202 + istek kimliği. */
+export async function splitCi(ciId, linkId, note) {
+  return api(`/api/v1/ci/${encodeURIComponent(ciId)}/split`, {
+    method: 'POST', body: JSON.stringify({ link_id: linkId, note: note || null, idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
 
 const SCOPE_TEST = {
   izlenmeyen: (c) => c.server && !c.coverage.monitoring,

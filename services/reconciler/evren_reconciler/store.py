@@ -36,7 +36,7 @@ from evren_core.identity.index import CandidateProfile
 from evren_core.metadata import CORE_COLUMNS, Metadata
 from evren_core.reconcile import Reconciler, SourceValues
 
-from .pg_identity import PostgresCandidateIndex, PostgresLinkStore
+from .pg_identity import PostgresCandidateIndex, PostgresLinkStore, keys_from_json
 
 __all__ = ["ApplyResult", "ReconcilerStore"]
 
@@ -73,6 +73,14 @@ class _Run:
     records: int = 0
     changed: int = 0   # önceden var olan ve içeriği değişen kayıt (eşleme hatası belirtisi)
     new: int = 0       # ilk kez görülen kayıt (ilk yükleme veya yeni kaynakta doğal olarak yüksek)
+
+
+def _record_from_row(row: dict[str, Any]) -> IngestRecord:
+    """``ingest.source_record`` satırından (sözlük) kaynak kaydını yeniden kurar."""
+    return IngestRecord(
+        data_source=row["data_source"], run_id=row["last_run"] or UUID(int=0), source_key=row["source_key"],
+        class_hint=row["class_hint"], attributes=row["attributes"], lookup=row["lookup"],
+        external_ids=row["external_ids"], relations=row["relations"], observed_at=row["last_seen"])
 
 
 def content_hash(record: IngestRecord) -> str:
@@ -356,7 +364,13 @@ class ReconcilerStore:
         except (TypeError, ValueError):
             return None
 
-    def _reconcile(self, cur: psycopg.Cursor[Any], ci: str, run_id: UUID | None) -> list[dict[str, Any]]:
+    def _reconcile(self, cur: psycopg.Cursor[Any], ci: str, run_id: UUID | None, *,
+                   released: str | None = None) -> list[dict[str, Any]]:
+        """CI'ın etkin bağlı kaynak kayıtlarını uzlaştırır.
+
+        ``released``: ayırmada CI'dan çıkan veri kaynağı. Önceki kazananı bu kaynak olan ve artık hiçbir kalan
+        kaynağın bildirmediği öznitelikler temizlenir (değer başka bir varlığa aitti); denetimde neden ``split``.
+        """
         cur.execute(
             """SELECT sr.data_source, sr.attributes, sr.last_seen, sr.content_hash, sr.first_seen
                  FROM ingest.identity_link l
@@ -369,7 +383,7 @@ class ReconcilerStore:
         with self.conn.cursor(row_factory=dict_row) as dcur:
             dcur.execute("SELECT * FROM cmdb.cmdb_ci WHERE sys_id = %s FOR UPDATE", (ci,))
             current = dcur.fetchone()
-            dcur.execute("SELECT input_hash FROM cmdb.ci_reconciliation_state WHERE ci_sys_id = %s", (ci,))
+            dcur.execute("SELECT input_hash, winners FROM cmdb.ci_reconciliation_state WHERE ci_sys_id = %s", (ci,))
             state = dcur.fetchone()
         if current is None:
             raise LookupError(f"CI yok: {ci}")
@@ -411,6 +425,20 @@ class ReconcilerStore:
                     columns[name] = value
                 else:
                     attrs[name] = value
+        if released and state:
+            for name, prev in (state["winners"] or {}).items():
+                if prev.get("source") != released or name in report.decisions:
+                    continue
+                in_column = name in CORE_COLUMNS
+                old = current.get(name) if in_column else attrs.get(name)
+                if old is None:
+                    continue
+                if in_column:
+                    columns[name] = None
+                else:
+                    attrs.pop(name, None)
+                changes.append({"attribute": name, "old": _jsonable(old), "new": None, "source": released,
+                                "reason": "split"})
         if cls != current["sys_class_name"]:
             columns["sys_class_name"] = cls
         discovered = [r[2] for r in rows if self.registry.role_of(r[0]) in DISCOVERY_ROLES]
@@ -455,12 +483,20 @@ class ReconcilerStore:
     # ------------------------------------------------------------------ ilişkiler
     def _resolve_relations(self, cur: psycopg.Cursor[Any], run_id: UUID, data_source: str) -> None:
         """Çalışmadaki kayıtların ilişkilerini, iki uç da CI'a bağlıysa ``cmdb_rel_ci``'a yazar."""
-        cur.execute(
+        self._write_relations(cur, data_source, sql.SQL("sr.last_run = %s"), run_id)
+
+    def _resolve_relations_of(self, cur: psycopg.Cursor[Any], data_source: str, source_key: str) -> None:
+        """Tek kaynak kaydının ilişkileri (ayırmadan sonra yeni CI'a). Asıl CI'da kalan eski ilişki satırları
+        silinmez; yıkıcı işlem olduğu için eskime kuralına bırakılır (CLAUDE.md kural 4)."""
+        self._write_relations(cur, data_source, sql.SQL("sr.source_key = %s"), source_key)
+
+    def _write_relations(self, cur: psycopg.Cursor[Any], data_source: str, where: sql.Composable, value: Any) -> None:
+        cur.execute(sql.SQL(
             """SELECT sr.source_key, sr.relations, l.ci_sys_id, sr.last_seen
                  FROM ingest.source_record sr
                  JOIN ingest.identity_link l ON l.data_source = sr.data_source AND l.source_key = sr.source_key AND l.active
-                WHERE sr.data_source = %s AND sr.last_run = %s AND jsonb_array_length(sr.relations) > 0""",
-            (data_source, run_id))
+                WHERE sr.data_source = %s AND {} AND jsonb_array_length(sr.relations) > 0""").format(where),
+            (data_source, value))
         for _key, relations, ci, seen in cur.fetchall():
             for rel in relations:
                 target = PostgresLinkStore(cur).get(rel.get("target_data_source") or data_source,
@@ -498,11 +534,7 @@ class ReconcilerStore:
                 if row is None:
                     break
                 with self.conn.cursor() as cur:
-                    record = IngestRecord(
-                        data_source=row["data_source"], run_id=row["last_run"] or UUID(int=0),
-                        source_key=row["source_key"], class_hint=row["class_hint"], attributes=row["attributes"],
-                        lookup=row["lookup"], external_ids=row["external_ids"], relations=row["relations"],
-                        observed_at=row["last_seen"])
+                    record = _record_from_row(row)
                     result = ApplyResult("decision_rejected", None, [], "Kaynakta düzeltilecek")
                     if row["status"] in ("accepted", "created_new"):
                         ci = row["decision_ci"] if row["status"] == "accepted" else self._create_ci(cur, record)
@@ -522,6 +554,112 @@ class ReconcilerStore:
                                 (row["sys_id"],))
                 results.append(result)
         return results
+
+    # ------------------------------------------------------------------ birleştirmeyi ayırma (split)
+    def apply_splits(self, limit: int = 100) -> list[ApplyResult]:
+        """API'nin kaydettiği ayırma isteklerini uygular (CLAUDE.md kural 3: birleştirme geri alınabilir).
+
+        1. Bağ sonlandırılır (``active = false``, ``end_reason``); geçmiş kalır.
+        2. Kaynak kaydı yeni CI'a (veya istenen CI'a) ``split`` yöntemiyle, isteyen kişinin adıyla bağlanır.
+           Bağ kalıcı olduğu için sonraki çalışmalarda kayıt asıl CI'a otomatik geri birleşmez.
+        3. Asıl CI'ın kimlik profili kalan kaynak kayıtlarından yeniden kurulur (ayrılan kaydın seri, UUID, IP…
+           anahtarları artık bu CI'a aday üretmez).
+        4. İki CI yeniden uzlaştırılır; asıl CI'da yalnızca ayrılan kaynaktan gelen değerler temizlenir.
+
+        İstek güvenle reddedilir: bağ istekten sonra değiştiyse, kayıt CI'ın ilk yükleme kaydıysa (sys_id o
+        kayıttan gelir), CI'ın tek kaynak kaydıysa veya kaynak yeni CI açamıyorsa (gölge/devir) ve hedef yoksa.
+        """
+        results: list[ApplyResult] = []
+        for _ in range(limit):
+            with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as dcur:
+                dcur.execute(
+                    """SELECT sys_id, link_sys_id, ci_sys_id, data_source, source_key, target_ci, requested_by, note
+                         FROM ingest.split_request WHERE status = 'pending'
+                        ORDER BY requested_at, sys_id LIMIT 1 FOR UPDATE SKIP LOCKED""")
+                req = dcur.fetchone()
+                if req is None:
+                    break
+                ds, key, ci = req["data_source"], req["source_key"], req["ci_sys_id"]
+                with self.conn.cursor() as cur:
+                    # _process ile aynı kilit: aynı kaynak kaydı aynı anda alımdan da geçmesin.
+                    cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))", (f"{ds}:{key}",))
+                    reason = self._split_blocker(cur, req)
+                    if reason:
+                        cur.execute(
+                            """UPDATE ingest.split_request SET status = 'rejected', result_note = %s, applied_at = now()
+                                WHERE sys_id = %s""", (reason, req["sys_id"]))
+                        results.append(ApplyResult("split_rejected", ci, [], reason))
+                        continue
+                    dcur.execute(
+                        """SELECT data_source, source_key, class_hint, attributes, lookup, external_ids, relations,
+                                  last_seen, last_run
+                             FROM ingest.source_record WHERE data_source = %s AND source_key = %s""", (ds, key))
+                    record = _record_from_row(dcur.fetchone())
+                    by = req["requested_by"]
+                    cur.execute(
+                        """UPDATE ingest.identity_link SET active = false, ended_at = now(), end_reason = %s
+                            WHERE sys_id = %s""", (f"ayrıldı: {by}"[:500], req["link_sys_id"]))
+                    target = req["target_ci"] or self._create_ci(cur, record)
+                    index = PostgresCandidateIndex(cur)
+                    resolver = IdentityResolver(self.rules, index, PostgresLinkStore(cur))
+                    keys = extract_keys(source_record_from_ingest(record))
+                    actor = self.actor
+                    self.actor = by  # bağın ve CI değişiminin karar vereni insan
+                    try:
+                        self._attach(cur, index, resolver, record, keys, target, method="split",
+                                     rule=f"ayırma:{req['sys_id']}", resolution=None)
+                    finally:
+                        self.actor = actor
+                    self._rebuild_profile(cur, index, resolver, ci)
+                    changes = self._reconcile(cur, ci, None, released=ds) + self._reconcile(cur, target, None)
+                    self._resolve_relations_of(cur, ds, key)
+                    self._outbox(cur, ci, "evren.ci.split.v1", {
+                        "sys_id": ci, "new_ci": target, "created": req["target_ci"] is None, "data_source": ds,
+                        "source_key": key, "by": by, "request": req["sys_id"]})
+                    cur.execute(
+                        """UPDATE ingest.split_request SET status = 'applied', result_ci = %s, applied_at = now(),
+                                  result_note = %s
+                            WHERE sys_id = %s""",
+                        (target, "Yeni CI açıldı" if req["target_ci"] is None else "Seçilen CI'a bağlandı",
+                         req["sys_id"]))
+                results.append(ApplyResult("split", target, changes, "Ayırma uygulandı"))
+        return results
+
+    def _split_blocker(self, cur: psycopg.Cursor[Any], req: dict[str, Any]) -> str | None:
+        cur.execute("SELECT active, ci_sys_id, method FROM ingest.identity_link WHERE sys_id = %s FOR UPDATE",
+                    (req["link_sys_id"],))
+        link = cur.fetchone()
+        if link is None or not link[0] or link[1] != req["ci_sys_id"]:
+            return "Bağ istekten sonra değişti; ayırma uygulanmadı"
+        if link[2] == "import":
+            return "Bu CI'ın sys_id'si bu kaynak kaydından geliyor (ilk yükleme); diğer kayıtları ayırın"
+        cur.execute("SELECT count(*) FROM ingest.identity_link WHERE ci_sys_id = %s AND active AND sys_id <> %s",
+                    (req["ci_sys_id"], req["link_sys_id"]))
+        if cur.fetchone()[0] == 0:  # type: ignore[index]
+            return "CI'ın tek kaynak kaydı ayrılamaz"
+        if req["target_ci"] is None and not self.registry.may_create_ci(req["data_source"]):
+            return "Bu kaynak yeni CI açamaz (gölge/devir); hedef CI seçin"
+        return None
+
+    def _rebuild_profile(self, cur: psycopg.Cursor[Any], index: PostgresCandidateIndex, resolver: IdentityResolver,
+                         ci: str) -> None:
+        """Kimlik profilini CI'ın kalan etkin kaynak kayıtlarından sıfırdan kurar."""
+        with self.conn.cursor(row_factory=dict_row) as dcur:
+            dcur.execute(
+                """SELECT sr.data_source, sr.source_key, sr.class_hint, sr.attributes, sr.lookup, sr.external_ids,
+                          sr.relations, sr.last_seen, sr.last_run
+                     FROM ingest.identity_link l JOIN ingest.source_record sr USING (data_source, source_key)
+                    WHERE l.ci_sys_id = %s AND l.active ORDER BY sr.data_source, sr.source_key""", (ci,))
+            rows = dcur.fetchall()
+        cur.execute("SELECT sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = %s", (ci,))
+        cls = cur.fetchone()[0]  # type: ignore[index]
+        keys = None
+        for row in rows:
+            k = extract_keys(source_record_from_ingest(_record_from_row(row)))
+            keys = k if keys is None else keys.merged(k)
+        if keys is None:  # _split_blocker en az bir kalan bağ olmasını sağlar; yine de boş profil güvenlidir
+            keys = keys_from_json({})
+        index.replace(CandidateProfile(ci, cls, resolver.family(cls), keys))
 
     # ------------------------------------------------------------------ toplu yardımcı
     def apply_all(self, records: Iterable[IngestRecord]) -> list[ApplyResult]:

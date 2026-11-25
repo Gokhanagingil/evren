@@ -1,17 +1,25 @@
-"""Konfigürasyon öğeleri: arama/listeleme (imleçli), CI 360° (kaynak bilgisiyle), değişim geçmişi."""
+"""Konfigürasyon öğeleri: arama/listeleme (imleçli), CI 360° (kaynak bilgisiyle), değişim geçmişi, ayırma.
+
+Ayırma (split) isteği ``ingest.split_request``'e yazılır; bağı uzlaştırıcı sonlandırır (göç 0007, ADR-0010).
+"""
 from __future__ import annotations
 
 import base64
 import json
 from typing import Any
 
+import psycopg
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import JSONResponse
 from psycopg import sql
+from psycopg.types.json import Jsonb
+from pydantic import BaseModel, ConfigDict, Field
 
 from evren_core.metadata import CORE_COLUMNS
 
-from ..deps import Ctx, context
+from ..deps import Ctx, context, require_csrf
 from ..errors import ApiError
+from ..idempotency import remember, replay, request_hash
 from ..present import COVERAGE_ROLES
 from .platform import _SERVER, _and, _coverage_sql, _not
 
@@ -28,6 +36,33 @@ _COVERAGE_CASE = sql.SQL(" ").join(
     sql.SQL("WHEN d.role IN ({}) THEN {}").format(sql.SQL(", ").join(sql.Literal(r) for r in roles), sql.Literal(flag))
     for flag, roles in COVERAGE_ROLES.items())
 _SYSID_LEN = 32
+_SYSID = r"^[0-9a-f]{32}$"
+SPLIT_STATUS = {"pending": "Uygulanmayı bekliyor", "applied": "Uygulandı", "rejected": "Reddedildi"}
+
+
+class SplitRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    link_id: str = Field(pattern=_SYSID)
+    target_ci: str | None = Field(default=None, pattern=_SYSID)
+    note: str | None = Field(default=None, max_length=2000)
+    idempotency_key: str = Field(pattern=r"^[A-Za-z0-9._:-]{8,128}$")
+
+
+def _split_blocker(method: str, others: int, may_create: bool, has_target: bool) -> tuple[int, str, str] | None:
+    """Ayırmayı engelleyen durum (HTTP kodu, hata kodu, Türkçe ileti). Uzlaştırıcı aynı denetimi yeniden yapar."""
+    if method == "import":
+        return (422, "ilk_yukleme_bagi",
+                "Bu CI'ın sys_id'si bu kaynak kaydından geliyor (ilk yükleme); bunun yerine diğer kayıtları ayırın.")
+    if others == 0:
+        return 409, "tek_kaynak", "CI'ın tek kaynak kaydı ayrılamaz."
+    if not has_target and not may_create:
+        return 422, "kaynak_ci_acamaz", "Bu kaynak yeni CI açamaz (gölge/devir); hedef CI seçin."
+    return None
+
+
+def _valid_sysid(sys_id: str) -> None:
+    if len(sys_id) != _SYSID_LEN or not all(c in "0123456789abcdef" for c in sys_id):
+        raise ApiError(400, "gecersiz_sys_id", "sys_id 32 haneli küçük harf onaltılık olmalı.")
 
 
 def _cursor_encode(name: str, sys_id: str) -> str:
@@ -113,8 +148,7 @@ def list_cis(ctx: Ctx = Depends(context), q: str | None = Query(None, max_length
 
 @router.get("/ci/{sys_id}")
 def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
-    if len(sys_id) != _SYSID_LEN or not all(c in "0123456789abcdef" for c in sys_id):
-        raise ApiError(400, "gecersiz_sys_id", "sys_id 32 haneli küçük harf onaltılık olmalı.")
+    _valid_sysid(sys_id)
     md = ctx.state.metadata
     pres = ctx.state.presenter
     with ctx.conn.cursor() as cur:
@@ -130,12 +164,22 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         winners, conflicts = st
         cur.execute(
             """SELECT l.data_source, l.source_key, l.method, l.rule_ref, l.probability, l.decided_by, l.decided_at,
-                      sr.last_seen, sr.status, d.role
+                      sr.last_seen, sr.status, d.role, l.sys_id,
+                      EXISTS (SELECT 1 FROM ingest.split_request s WHERE s.link_sys_id = l.sys_id AND s.status = 'pending')
                  FROM ingest.identity_link l
                  JOIN ingest.source_record sr USING (data_source, source_key)
                  JOIN ingest.data_source d ON d.name = l.data_source
                 WHERE l.ci_sys_id = %s AND l.active ORDER BY l.data_source, l.source_key""", (sys_id,))
         links = cur.fetchall()
+        cur.execute(
+            """SELECT sys_id, status, data_source, source_key, requested_by, requested_at, result_ci, result_note,
+                      applied_at, CASE WHEN ci_sys_id = %s THEN 'source' ELSE 'result' END, ci_sys_id
+                 FROM ingest.split_request WHERE ci_sys_id = %s OR result_ci = %s
+                ORDER BY requested_at DESC LIMIT 20""", (sys_id, sys_id, sys_id))
+        splits = [{"id": i, "status": st, "status_label": SPLIT_STATUS[st], "data_source": ds, "source_key": key,
+                   "requested_by": by, "requested_at": at.isoformat(), "result_ci": res, "note": note,
+                   "applied_at": done.isoformat() if done else None, "side": side, "ci_sys_id": src_ci}
+                  for i, st, ds, key, by, at, res, note, done, side, src_ci in cur.fetchall()]
         cur.execute(
             """SELECT t.name, 'parent', r.child, c.name FROM cmdb.cmdb_rel_ci r JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type
                  JOIN cmdb.cmdb_ci c ON c.sys_id = r.child WHERE r.parent = %s
@@ -161,6 +205,7 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                                   if name in derived else {})
         attrs.append({
             "attribute": name, "label": fields[name].get("label_tr", name), "value": values[name],
+            "type": fields[name].get("type", "string"),
             "display": pres.display(name, values[name], refs), "source": w.get("source", "—"),
             "role": w.get("role", ""), "reason": w.get("reason", "Uzlaştırma kaydı yok (ilk yükleme öncesi değer)"),
             "observed_at": w.get("observed_at"),
@@ -173,6 +218,14 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                 for a, att in sorted(conflicts.items()) if a != "_dropped" and grant.can_see(
                     fields.get(a, {}).get("sensitivity", "internal"))]
     roles = {r[0]: r[9] for r in links}
+    reg = md.sources
+    can_split = ctx.grant(cls, "split").allowed
+
+    def split_state(method: str, ds: str, pending: bool) -> dict[str, Any]:
+        blocker = _split_blocker(method, len(links) - 1, ds in reg.sources and reg.may_create_ci(ds), False)
+        return {"allowed": can_split and not pending and blocker is None, "pending": pending,
+                "reason": "Ayırma isteği uygulanmayı bekliyor" if pending else blocker[2] if blocker else None}
+
     coverage = {flag: any(role in rs for role in roles.values()) for flag, rs in COVERAGE_ROLES.items()}
     return {
         "sys_id": sys_id, "class": cls, "class_label": pres.class_label(cls), "name": doc.get("name") or "(adsız)",
@@ -184,13 +237,83 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         "sources": sorted(roles), "attributes": attrs, "rejected": rejected, "relations": relations,
         "links": [{"data_source": ds, "role": role, "source_key": key, "outcome": method,
                    "summary": f"{method}" + (f" · {rule}" if rule else "") + (f" · %{float(prob) * 100:.1f}" if prob else "")
-                              + (f" · karar: {by}" if method == "manual" else ""),
-                   "observed_at": seen.isoformat(), "status": status}
-                  for ds, key, method, rule, prob, by, _at, seen, status, role in links],
+                              + (f" · karar: {by}" if method in ("manual", "split") else ""),
+                   "observed_at": seen.isoformat(), "status": status, "id": link_id, "method": method,
+                   "split": split_state(method, ds, pending)}
+                  for ds, key, method, rule, prob, by, _at, seen, status, role, link_id, pending in links],
+        "can_split": can_split, "splits": splits,
         "server": cls in md.hierarchy and "cmdb_ci_server" in md.hierarchy.ancestors(cls),
         "coverage": coverage, "unauthorized_count": len(rejected),
         "golden_version": doc.get("golden_version"), "sys_updated_on": doc.get("sys_updated_on"),
     }
+
+
+@router.post("/ci/{sys_id}/split", dependencies=[Depends(require_csrf)], status_code=202)
+def split_ci(sys_id: str, body: SplitRequest, ctx: Ctx = Depends(context)) -> JSONResponse:
+    """Yanlış birleştirilmiş kaynak kaydını CI'dan ayırma isteği (202: uzlaştırıcı uygular)."""
+    _valid_sysid(sys_id)
+    p = ctx.principal
+    md = ctx.state.metadata
+    digest = request_hash(sys_id, body.model_dump(exclude={"idempotency_key"}))
+    # Yetki denetimleri işlem dışında: ret kaydı işlemle birlikte geri alınmasın.
+    row = ctx.conn.execute("SELECT sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = %s", (sys_id,)).fetchone()
+    if row is None:
+        raise ApiError(404, "bulunamadi", "CI bulunamadı.")
+    ctx.require(row[0], "split")
+    target_cls = None
+    if body.target_ci and body.target_ci != sys_id:
+        trow = ctx.conn.execute("SELECT sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = %s",
+                                (body.target_ci,)).fetchone()
+        if trow is None:
+            raise ApiError(422, "hedef_yok", "Hedef CI bulunamadı.")
+        target_cls = trow[0]
+        ctx.require(target_cls, "merge")
+    with ctx.conn.transaction(), ctx.conn.cursor() as cur:
+        if (prior := replay(cur, p.audit_id, body.idempotency_key, digest)) is not None:
+            return prior
+        cur.execute(
+            """SELECT l.ci_sys_id, l.active, l.method, l.data_source, l.source_key, sr.class_hint,
+                      (SELECT count(*) FROM ingest.identity_link o WHERE o.ci_sys_id = l.ci_sys_id AND o.active
+                          AND o.sys_id <> l.sys_id)
+                 FROM ingest.identity_link l JOIN ingest.source_record sr USING (data_source, source_key)
+                WHERE l.sys_id = %s""", (body.link_id,))
+        link = cur.fetchone()
+        if link is None or link[0] != sys_id or not link[1]:
+            raise ApiError(422, "bag_yok", "Bu bağ, CI'ın etkin kaynak kayıtları arasında değil.")
+        _, _, method, ds, key, class_hint, others = link
+        reg = md.sources
+        if blocker := _split_blocker(method, others, ds in reg.sources and reg.may_create_ci(ds),
+                                     body.target_ci is not None):
+            raise ApiError(*blocker)
+        if body.target_ci == sys_id:
+            raise ApiError(422, "hedef_ayni", "Hedef CI, ayrılan CI ile aynı olamaz.")
+        h = md.hierarchy
+        if target_cls and class_hint in h and target_cls in h and not h.compatible(class_hint, target_cls):
+            raise ApiError(422, "sinif_uyumsuz", "Kaynak kaydının sınıfı hedef CI ile uyumsuz.",
+                           [{"kayit": class_hint, "hedef": target_cls}])
+        try:
+            with ctx.conn.transaction():
+                cur.execute(
+                    """INSERT INTO ingest.split_request (link_sys_id, ci_sys_id, data_source, source_key, target_ci,
+                                                        note, requested_by)
+                       VALUES (%s, %s, %s, %s, %s, %s, %s) RETURNING sys_id""",
+                    (body.link_id, sys_id, ds, key, body.target_ci, body.note, p.audit_id))
+        except psycopg.errors.UniqueViolation:
+            raise ApiError(409, "bekleyen_ayirma", "Bu kaynak kaydı için bekleyen bir ayırma isteği var.") from None
+        req_id = cur.fetchone()[0]  # type: ignore[index]
+        payload = {"id": req_id, "ci_sys_id": sys_id, "data_source": ds, "source_key": key,
+                   "target_ci": body.target_ci, "by": p.audit_id}
+        cur.execute("INSERT INTO events.outbox (aggregate_type, aggregate_id, event_type, payload) "
+                    "VALUES ('cmdb_ci', %s, 'evren.ci.split.requested.v1', %s)", (sys_id, Jsonb(payload)))
+        cur.execute("INSERT INTO audit.security_event (principal, action, resource, decision, detail) "
+                    "VALUES (%s, 'ci_split', %s, 'allow', %s)", (p.audit_id, f"cmdb_ci:{sys_id}", Jsonb(payload)))
+        response = {"id": req_id, "status": "pending", "status_label": SPLIT_STATUS["pending"], "ci_sys_id": sys_id,
+                    "data_source": ds, "source_key": key, "target_ci": body.target_ci, "replayed": False,
+                    "message": "Ayırma isteği kaydedildi; uzlaştırıcı uyguladığında kayıt "
+                               + ("seçilen CI'a" if body.target_ci else "yeni bir CI'a")
+                               + " taşınır ve iki CI yeniden uzlaştırılır."}
+        remember(cur, p.audit_id, body.idempotency_key, f"/api/v1/ci/{sys_id}/split", digest, 202, response)
+    return JSONResponse(response, status_code=202)
 
 
 @router.get("/ci/{sys_id}/history")

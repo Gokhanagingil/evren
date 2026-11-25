@@ -94,6 +94,25 @@ class PostgresCandidateIndex:
                 (profile.family or "", profile.ci_sys_id, list(types), list(values)),
             )
 
+    def replace(self, profile: CandidateProfile) -> None:
+        """Ayırma (split): profili tam olarak verilen anahtarlarla yeniden kurar; eski anahtarlar düşer.
+
+        Silme, yalnızca tek CI'ın anahtarlarını değiştiren ``ingest.replace_identity_keys`` işleviyle yapılır
+        (göç 0007); uzlaştırıcının dizin tablosunda genel silme yetkisi yoktur.
+        """
+        self.cur.execute(
+            """INSERT INTO ingest.identity_profile (ci_sys_id, class_name, family, keys, updated_at)
+               VALUES (%s, %s, %s, %s, now())
+               ON CONFLICT (ci_sys_id) DO UPDATE SET class_name = EXCLUDED.class_name, family = EXCLUDED.family,
+                 keys = EXCLUDED.keys, updated_at = now()""",
+            (profile.ci_sys_id, profile.class_name, profile.family, Jsonb(keys_to_json(profile.keys))),
+        )
+        postings = _postings(profile.keys)
+        types = [t for t, _ in postings]
+        values = [v for _, v in postings]
+        self.cur.execute("SELECT ingest.replace_identity_keys(%s, %s, %s::text[], %s::text[])",
+                         (profile.ci_sys_id, profile.family or "", types, values))
+
 
 class PostgresLinkStore:
     """Etkin kimlik bağlarını okur. Bağ yazımı meta veriyle (yöntem, olasılık, kanıt, karar veren)

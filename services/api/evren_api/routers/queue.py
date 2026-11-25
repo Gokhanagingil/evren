@@ -5,8 +5,6 @@ uzlaştırıcı uygular (``ReconcilerStore.apply_decisions``). Veritabanı yetki
 """
 from __future__ import annotations
 
-import hashlib
-import json
 from typing import Any, Literal
 
 from fastapi import APIRouter, Depends, Query
@@ -17,6 +15,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..deps import Ctx, context, require_csrf
 from ..errors import ApiError
+from ..idempotency import remember, replay, request_hash
 
 router = APIRouter(prefix="/api/v1", tags=["eşleştirme"])
 
@@ -123,17 +122,10 @@ def queue_item(item_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
 def decide(item_id: str, body: Decision, ctx: Ctx = Depends(context)) -> JSONResponse:
     ctx.require("match_queue", "review_match")
     p = ctx.principal
-    request_hash = hashlib.sha256(json.dumps([item_id, body.model_dump(exclude={"idempotency_key"})],
-                                             sort_keys=True).encode()).hexdigest()
+    digest = request_hash(item_id, body.model_dump(exclude={"idempotency_key"}))
     with ctx.conn.transaction(), ctx.conn.cursor() as cur:
-        cur.execute("SELECT request_hash, status_code, response FROM api.idempotency WHERE principal = %s AND key = %s",
-                    (p.audit_id, body.idempotency_key))
-        prior = cur.fetchone()
-        if prior:
-            if prior[0] != request_hash:
-                raise ApiError(409, "idempotency_cakismasi",
-                               "Bu idempotency_key farklı bir istekle kullanılmış.")
-            return JSONResponse({**prior[2], "replayed": True}, status_code=prior[1])
+        if (prior := replay(cur, p.audit_id, body.idempotency_key, digest)) is not None:
+            return prior
         cur.execute("""SELECT mc.status, mc.candidate_ci, mc.candidates, sr.class_hint
                          FROM ingest.match_candidate mc JOIN ingest.source_record sr USING (data_source, source_key)
                         WHERE mc.sys_id = %s FOR UPDATE OF mc""", (item_id,))
@@ -172,8 +164,6 @@ def decide(item_id: str, body: Decision, ctx: Ctx = Depends(context)) -> JSONRes
         response = {"id": item_id, "status": new_status, "decision": body.decision, "label": LABELS[body.decision],
                     "ci_sys_id": target, "replayed": False,
                     "message": "Karar kaydedildi; uzlaştırıcı uyguladığında kimlik bağı ve CI güncellenir."}
-        cur.execute("""INSERT INTO api.idempotency (principal, key, method, path, request_hash, status_code, response)
-                       VALUES (%s, %s, 'POST', %s, %s, 200, %s)""",
-                    (p.audit_id, body.idempotency_key, f"/api/v1/match-queue/{item_id}/decision", request_hash,
-                     Jsonb(response)))
+        remember(cur, p.audit_id, body.idempotency_key, f"/api/v1/match-queue/{item_id}/decision", digest, 200,
+                 response)
     return JSONResponse(response)

@@ -352,9 +352,10 @@
       "kind_label": "İnsan kararı / arayüz",
       "chapter": "sense",
       "phase": "F0",
-      "text": "Emin olunamayan eşleşmeler insana sorulur. Adaylar yan yana karşılaştırılır, kanıtlar Türkçe açıklanır. Kararlar geri alınabilir; skor ağırlıkları bu kararlarla kalibre edilir.",
+      "text": "Emin olunamayan eşleşmeler insana sorulur. Adaylar yan yana karşılaştırılır, kanıtlar Türkçe açıklanır. Yanlış birleştirme CI panelinden ayrılır (split); kimlik profili yeniden kurulur, iki CI yeniden uzlaştırılır. Skor ağırlıkları bu kararlarla kalibre edilir.",
       "tech": [
-        "ingest.match_candidate"
+        "ingest.match_candidate",
+        "ingest.split_request"
       ],
       "security": [
         "Eşleştirme analisti rolü",

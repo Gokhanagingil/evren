@@ -40,10 +40,16 @@ class Ctx:
 
     def security_event(self, action: str, decision: str, resource: str | None = None,
                        detail: dict[str, Any] | None = None) -> None:
-        with self.conn.cursor() as cur:
-            cur.execute("INSERT INTO audit.security_event (principal, action, resource, decision, detail) "
-                        "VALUES (%s, %s, %s, %s, %s)",
-                        (self.principal.audit_id, action, resource, decision, Jsonb(detail or {})))
+        """Güvenlik olayını yazar. İstek bir veritabanı işleminin içindeyse (ör. ret ardından ApiError ile geri
+        alınacak işlem) olay ayrı bir bağlantıyla yazılır; böylece ret kaydı geri alınmaz."""
+        params = (self.principal.audit_id, action, resource, decision, Jsonb(detail or {}))
+        query = ("INSERT INTO audit.security_event (principal, action, resource, decision, detail) "
+                 "VALUES (%s, %s, %s, %s, %s)")
+        if self.conn.info.transaction_status == psycopg.pq.TransactionStatus.IDLE:
+            self.conn.execute(query, params)
+            return
+        with self.state.pool.connection() as other:
+            other.execute(query, params)
 
 
 def principal_from_request(request: Request) -> Principal:

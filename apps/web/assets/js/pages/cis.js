@@ -1,8 +1,8 @@
 // Konfigürasyon öğeleri: arama ve filtreli liste (API'de sunucu tarafı, imleçli); CI 360° paneli
 // ("bu değer nereden geldi?"), API modunda değişim geçmişi.
 import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/dom.js';
-import { closeDetail, openDetail, setHeader } from '../lib/shell.js';
-import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, srcChip } from '../lib/data.js';
+import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
+import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, splitCi, srcChip } from '../lib/data.js';
 
 const SCOPES = {
   '': 'Tüm kapsam',
@@ -12,6 +12,9 @@ const SCOPES = {
   yetkisiz: 'Yetkisiz kaynak denemesi olan',
 };
 const PAGE = 100;
+const SPLIT_TONE = { pending: 'warn', applied: 'good', rejected: 'bad' };
+/** Tarih-saat alanları yerel biçimde (API ISO 8601 UTC döner). */
+const shown = (a) => (a.type === 'glide_date_time' ? formatDateTime(a.value) : a.display);
 
 export async function renderCis(view, param) {
   const { mode } = await backend();
@@ -75,7 +78,7 @@ export async function renderCis(view, param) {
   function attrRow(a) {
     const contested = a.overridden.length > 0;
     return h('details', { class: `attr${contested ? ' contested' : ''}` },
-      h('summary', {}, h('span', { class: 'k' }, a.label), h('span', { class: 'v' }, a.display), srcChip(a.source, a.role)),
+      h('summary', {}, h('span', { class: 'k' }, a.label), h('span', { class: 'v' }, shown(a)), srcChip(a.source, a.role)),
       h('div', { class: 'why' },
         h('div', {}, h('strong', {}, 'Gerekçe: '), a.reason),
         a.observed_at ? h('div', {}, `Gözlem: ${formatDateTime(a.observed_at)} · Rol: ${ROLE_TR[a.role] || a.role}`) : null,
@@ -84,6 +87,69 @@ export async function renderCis(view, param) {
         a.shadow?.length ? h('div', {}, h('strong', {}, 'Gölge kaynak (karşılaştırma, yazmaz): '),
           a.shadow.map((o) => `${o.source}: ${o.display}`).join(', ')) : null,
         a.unauthorized.length ? h('div', {}, h('strong', {}, 'Yetkisiz kaynak: '), a.unauthorized.join(', '), ' (bu alan bu kaynağın rolüne kapalı)') : null));
+  }
+
+  /** Ayırma onayı: hangi değerlerin etkileneceği önceden gösterilir; gerekçe denetim izine yazılır. */
+  function confirmSplit(c, l, opener) {
+    const own = c.attributes.filter((a) => a.source === l.data_source);
+    const note = h('input', { type: 'text', id: 'splitNote', maxlength: '2000', placeholder: 'Ör. seri numarası başka sunucuya ait',
+      'aria-describedby': 'splitHelp' });
+    const confirm = h('button', { class: 'btn danger', type: 'button', id: 'splitConfirm', onclick: async () => {
+      confirm.disabled = true;
+      try {
+        const res = await splitCi(c.sys_id, l.id, note.value.trim());
+        closeOverlay();
+        toast(res.message);
+        await open(c.sys_id, opener);
+      } catch (err) {
+        confirm.disabled = false;
+        toast(`Ayırma isteği kaydedilemedi: ${err.message}`);
+      }
+    } }, 'Ayır');
+    dialog({
+      title: 'Kaynak kaydını ayır',
+      body: [
+        h('p', {}, h('strong', {}, `${l.data_source} · ${l.source_key}`), ` kaydı "${c.name}" CI'ından ayrılır ve yeni bir CI'a bağlanır. `,
+          'Bağ kalıcıdır: sonraki çalışmalarda kayıt bu CI ile otomatik olarak yeniden birleşmez.'),
+        own.length ? h('div', { class: 'notice warn' }, h('strong', {}, 'Bu CI\'da etkilenecek değerler'),
+          h('ul', {}, own.map((a) => h('li', {}, `${a.label}: ${shown(a)} → `,
+            a.overridden.length ? `${a.overridden[0].source} değeri geçer (${a.overridden[0].display})` : 'temizlenir'))))
+          : h('p', { class: 'muted' }, 'Bu kaynak bu CI\'da hiçbir özniteliğin kazananı değil; değerler değişmez.'),
+        h('p', { class: 'muted small', id: 'splitHelp' }, 'CI silinmez; bağ geçmişi korunur. İstek uzlaştırıcı tarafından uygulanır ve sizin adınızla denetim izine yazılır.'),
+        h('label', { class: 'field', for: 'splitNote' }, 'Gerekçe'), note,
+      ],
+      footer: [h('button', { class: 'btn secondary', type: 'button', onclick: closeOverlay }, 'Vazgeç'), confirm],
+      focus: note,
+    });
+  }
+
+  function linkItem(c, l) {
+    let action = null;
+    if (mode === 'api' && c.can_split && l.split) {
+      if (l.split.allowed) {
+        const btn = h('button', { class: 'btn secondary small', type: 'button', dataset: { split: l.id },
+          'aria-label': `${l.data_source} kaydını bu CI'dan ayır`, onclick: () => confirmSplit(c, l, btn) }, 'Ayır…');
+        action = btn;
+      } else if (l.split.pending) {
+        action = pill('Ayırma bekliyor', 'warn');
+      } else if (l.split.reason) {
+        action = h('span', { class: 'muted small' }, l.split.reason);
+      }
+    }
+    return h('li', {},
+      h('div', { class: 'pills' }, srcChip(l.data_source, l.role), pill(OUTCOME[l.outcome] || l.outcome, l.outcome === 'new' ? 'info' : 'good')),
+      h('div', { class: 'small', title: l.summary }, l.summary),
+      h('div', { class: 'cell-sub mono' }, `${l.source_key} · ${formatDateTime(l.observed_at)}`),
+      action ? h('div', { class: 'link-actions' }, action) : null);
+  }
+
+  function splitItem(s) {
+    const other = s.side === 'source' ? s.result_ci : s.ci_sys_id;
+    return h('li', {},
+      h('div', { class: 'pills' }, pill(s.status_label, SPLIT_TONE[s.status] || 'neutral'), srcChip(s.data_source, roleOf[s.data_source])),
+      h('div', { class: 'small' }, `${s.source_key} · ${s.requested_by} · ${formatDateTime(s.requested_at)}`),
+      s.note ? h('div', { class: 'small muted' }, s.note) : null,
+      other ? h('div', { class: 'small' }, h('a', { href: `#/ci/${other}` }, s.side === 'source' ? 'Kaydın taşındığı CI' : 'Kaydın ayrıldığı CI')) : null);
   }
 
   async function open(id, opener) {
@@ -108,10 +174,10 @@ export async function renderCis(view, param) {
         c.relations.length ? section('İlişkiler', h('ul', { class: 'mini' }, c.relations.map((r) => h('li', {},
           h('span', { class: 'muted' }, `${r.direction === 'parent' ? r.type.split('::')[0] : r.type.split('::')[1]} · `),
           h('a', { href: `#/ci/${r.target}` }, r.target_name))))) : null,
-        section('Kaynak kayıtları ve kimlik kararı', h('ul', { class: 'mini' }, c.links.map((l) => h('li', {},
-          h('div', { class: 'pills' }, srcChip(l.data_source, l.role), pill(OUTCOME[l.outcome] || l.outcome, l.outcome === 'new' ? 'info' : 'good')),
-          h('div', { class: 'small', title: l.summary }, l.summary),
-          h('div', { class: 'cell-sub mono' }, `${l.source_key} · ${formatDateTime(l.observed_at)}`))))),
+        section('Kaynak kayıtları ve kimlik kararı', h('ul', { class: 'mini', id: 'ciLinks' }, c.links.map((l) => linkItem(c, l))),
+          mode === 'api' && c.can_split && c.links.length > 1
+            ? h('p', { class: 'muted small' }, 'Yanlış birleştirilmiş bir kaynak kaydını "Ayır" ile bu CI\'dan ayırabilirsiniz.') : null),
+        c.splits?.length ? section('Ayırma geçmişi', h('ul', { class: 'mini', id: 'ciSplits' }, c.splits.map(splitItem))) : null,
         mode === 'api' ? section('Değişim geçmişi', historyBox) : null,
         section('Kimlik', kv([['sys_id', h('span', { class: 'mono' }, c.sys_id)], ['Sınıf (sys_class_name)', h('span', { class: 'mono' }, c.class)],
           ['Destek grubu', c.support_group], ['Sahip', c.owned_by || h('span', { class: 'pill warn' }, 'Atanmamış')]])),

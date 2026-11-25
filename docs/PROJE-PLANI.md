@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 9/45 adım tamamlandı
+**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 10/45 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -22,7 +22,8 @@
    Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
-1. **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır) — _Devam ediyor_
+1. **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Planlandı_  
+   Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
 
 ## Sizden gerekenler (karar ve erişim)
 
@@ -55,7 +56,7 @@
 
 ## F0 · Temel ve gölge mod
 
-_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 9/16 adım
+_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 10/16 adım
 
 Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki kaynağın gölge modda eşleştirilmesi. ServiceNow'a hiçbir yazma yapılmaz.
 
@@ -83,8 +84,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 - [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
-- [ ] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır) — _Devam ediyor_
-  - Not: Yan yana karşılaştırma, kanıtlar ve kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) tamam; uzlaştırıcı kararları uygular. Birleştirmeyi ayırma (split) ekranı ve uç noktası eksik.
+- [x] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)
+  - Not: Yan yana karşılaştırma, kanıtlar, kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) ve CI panelinden birleştirmeyi ayırma (ADR-0011: kimlik profili yeniden kurulur, ayrılan kaynağın değerleri temizlenir); uzlaştırıcı uygular. Sentetik veriyle test edildi.
 - [ ] **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Planlandı_
   - Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
 

@@ -73,7 +73,14 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
   - **Kabul:** bağ kurulur.
   - **Ret + yeni CI:** yeni CI oluşturulur.
   - **Ret + başka aday:** seçilen adayla bağ kurulur.
-- Birleştirme geri alınabilir (split): bağlar sonlandırılır, golden record kalan kaynaklardan yeniden uzlaştırılır.
+- Birleştirme geri alınabilir (split, ADR-0011). CI 360° panelinde her kaynak kaydı için **Ayır** eylemi:
+  1. API isteği `ingest.split_request`'e yazar (yetki `cmdb_ci/split`, `idempotency_key`).
+  2. Uzlaştırıcı bağı sonlandırır (geçmiş kalır), kaydı yeni CI'a (veya seçilen CI'a) `split` yöntemiyle, isteyen kişinin adıyla bağlar.
+  3. Asıl CI'ın kimlik profili kalan kaynak kayıtlarından **yeniden kurulur**: ayrılan kaydın seri, UUID, MAC… anahtarları artık bu CI'a aday üretmez.
+  4. İki CI yeniden uzlaştırılır. Asıl CI'da önceki kazananı ayrılan kaynak olan ve başka kaynağın bildirmediği değerler temizlenir (denetimde neden `split`); başka kaynak bildiriyorsa onun değeri geçer.
+  - Bağ kalıcıdır: kayıt sonraki çalışmalarda asıl CI ile otomatik yeniden birleşmez.
+  - Ayrılamayanlar: CI'ın tek kaynak kaydı; ServiceNow ilk yükleme kaydı (CI'ın sys_id'si ondan gelir — diğer kayıtlar ayrılır); gölge/devir kaynağının kaydı (hedef CI seçilmeden, çünkü yeni CI açamaz).
+  - Asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez; yıkıcı işlem olduğu için eskime kuralına bırakılır (kural 4).
 
 ## 4. Uzlaştırma
 

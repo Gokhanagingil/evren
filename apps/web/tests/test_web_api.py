@@ -125,3 +125,43 @@ def test_queue_decision_is_persisted(page, base_url):
     expect(page.locator("#tab-decided")).to_have_attribute("aria-selected", "true")
     expect(page.locator("#view tbody")).to_contain_text("Birleştirildi")
     shot(page, "api_queue_decided")
+
+
+def test_split_from_ci_panel_end_to_end(page, base_url):
+    """Yanlış birleştirmeyi CI panelinden ayırma: etkilenecek değerler önceden gösterilir, istek kalıcıdır,
+    uzlaştırıcı uyguladıktan sonra kayıt yeni CI'dadır."""
+    from scenarios import apply_pending_splits, make_wrong_merge
+
+    ci, links, tag = make_wrong_merge()
+    page.goto(base_url + f"/#/ci/{ci}")
+    page.wait_for_selector("#detail.open #ciLinks")
+    button = page.locator(f"button[data-split='{links['vCenter']}']")
+    assert page.locator("button[data-split]").count() == 2
+    # Klavye: Enter ile açılır, Esc ile kapanır, odak düğmeye döner
+    button.focus()
+    page.keyboard.press("Enter")
+    expect(page.locator("#splitNote")).to_be_focused()
+    page.keyboard.press("Escape")
+    expect(page.locator(".dialog")).to_have_count(0)
+    expect(button).to_be_focused()
+    assert page.locator("#detail.open").count() == 1  # Esc yalnızca pencereyi kapatır
+    button.click()
+    expect(page.locator(".dialog .notice")).to_contain_text("temizlenir")
+    page.fill("#splitNote", "Seri numarası başka sunucuya ait")
+    shot(page, "api_split_dialog")
+    page.click("#splitConfirm")
+    expect(page.locator("#toast")).to_contain_text("Ayırma isteği kaydedildi")
+    expect(page.locator("#ciLinks")).to_contain_text("Ayırma bekliyor")
+    expect(page.locator("#ciSplits")).to_contain_text("Uygulanmayı bekliyor")
+    shot(page, "api_split_pending")
+
+    [new] = apply_pending_splits()
+    page.reload()
+    page.wait_for_selector("#detail.open #ciSplits")
+    expect(page.locator("#ciSplits")).to_contain_text("Uygulandı")
+    assert page.locator("button[data-split]").count() == 0  # tek kaynak kaldı
+    page.click("#ciSplits a")
+    expect(page.locator("#detailTitle")).to_have_text(f"wm-{tag}")
+    assert page.url.endswith(f"#/ci/{new}")
+    expect(page.locator("#ciLinks")).to_contain_text("Ayrıldı (insan kararı)")
+    shot(page, "api_split_applied")

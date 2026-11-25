@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 9/45 adım tamamlandı
+**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 10/45 adım tamamlandı
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -17,6 +17,7 @@ Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki *
 | 25.11.2026 | **Kaynak sistemler değişebilir** (keşif ürünü bugün BMC, yarın başka): kurallar ürüne değil kaynak rolüne bağlanır; ürün değişimi gölge → devir → emeklilik yaşam döngüsüyle yapılır | ADR-0009 |
 | 25.11.2026 | GRC Platformu'nun CMDB modülü, Evren hazır olunca CI verisini Evren'den alacak (bugün ServiceNow'dan senkron) | Proje sahibi, F2-08 |
 | 25.11.2026 | BMC ürünü: BMC Helix Discovery (on-prem mi SaaS mı belirsiz; ikisi aynı REST API) | Proje sahibi |
+| 25.11.2026 | Birleştirmeyi ayırma: istek API'de, uygulama uzlaştırıcıda; kimlik profili yeniden kurulur; ayrılan kaynağın tek başına verdiği değerler temizlenir; ilk yükleme kaydı ve tek kayıt ayrılmaz | ADR-0011 |
 | 25.11.2026 | API oturumu: Entra OIDC + PKCE + MFA bağlamı, şifreli `__Host-` çerez; rol = uygulama rolü + grup ataması, girişte SoD; API golden record'a yazmaz, kuyruk kararını uzlaştırıcı uygular | ADR-0010 |
 
 ## Varsayımlar
@@ -65,13 +66,20 @@ Doğrulanınca bu bölümden kaldırılacak.
 - **Arayüz ↔ API:** `lib/data.js` tek veri katmanı; `content/backend.json` ile API veya demo modu. Kuyruk kararları kalıcı, CI araması sunucuda, CI 360°'da değişim geçmişi, kimlik ve roller API'den.
 - **Belgeler:** tehdit modeline API satırları (docs/06), ADR-0010, `services/api/README.md` durum tablosu, docs/08 karar uç noktası, mimari harita (`rest_api`, `entra`).
 - **Bu oturumda düzeltilen CI hatası:** demo yükleyicisi referans verisini çağıranın rolüyle yazmaya çalışıyordu (uzlaştırıcı `ref.*` yazamaz) → her zaman `evren_app_sync` rolüne geçip geri dönüyor. GitHub'daki son üç CI kırmızısının nedeni buydu.
-- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16):** çekirdek 151, uzlaştırıcı 11, API 26 (Entra olumsuz senaryoları dahil), tarayıcı 16 (13 demo modu + 3 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında) — hepsi geçti; `ruff` temiz.
+- **F0-12 (tamamlandı): birleştirmeyi ayırma** (ADR-0011, göç `0007_split.sql`).
+  - API `POST /api/v1/ci/{id}/split` (202, idempotency, CSRF, `cmdb_ci/split` yetkisi, engelleyici durumlar için açık 409/422 kodları); CI yanıtında bağ başına `split` durumu ve ayırma geçmişi.
+  - Uzlaştırıcı `apply_splits`: bağı sonlandırır, kaydı yeni CI'a kalıcı bağlar, kimlik profilini yeniden kurar (tek CI'lık `SECURITY DEFINER` işlev; genel silme yetkisi yok), iki CI'ı yeniden uzlaştırır, yalnızca ayrılan kaynağın tek başına verdiği değerleri temizler.
+  - Arayüz: CI 360°'da kaynak kaydı başına "Ayır…", etkilenecek değerleri önceden gösteren onay penceresi (gerekçe, Enter/Esc, odak iadesi), "Ayırma bekliyor" durumu, ayırma geçmişi ve iki CI arasında bağlantı.
+- **Testlerin yakaladığı güvenlik hatası (düzeltildi):** yetki reddi bir veritabanı işleminin içinde yazıldığında işlem geri alınınca denetim kaydı da kayboluyordu. Ret olayı artık işlem içindeyse ayrı bağlantıyla yazılır (`Ctx.security_event`) ve yetki denetimleri işlem dışında yapılır.
+- **Arayüz düzeltmesi:** tarih-saat öznitelikleri (ilk/son keşif) ham ISO yerine yerel biçimde.
+- **Doğrulama (bu oturumda çalıştırıldı, PostgreSQL 16):** çekirdek 158, uzlaştırıcı 20, API 34 (Entra olumsuz senaryoları dahil), tarayıcı 17 (13 demo modu + 4 API modu: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma uçtan uca) — hepsi geçti; `ruff` temiz. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
 
 ## Bilinen eksikler ve sınırlar
 
 - Veritabanındaki veri **sentetiktir** (`tools/load_demo_pg.py`); arayüz bunu üst çubukta işaretler. Statik sunucuda (demo modu) kuyruk kararları yalnızca oturumluktur.
 - Entra akışı sahte kimlik sağlayıcıyla test edildi; **kurumun Entra kaydıyla canlı kabul yapılmadı.**
-- API'de henüz yok: CI düzenleme (`PATCH`, Manual kaynak kaydı), birleştirmeyi ayırma (`split`), makine hesapları, ServiceNow uyumlu uç noktalar (F2-05), ABAC koşul değerlendirmesi (koşullu izinler şimdilik verilmez).
+- Ayırma sonrası asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez (eskimeye bırakılır). Ayrılan kaydı başka mevcut CI'a taşıma API'de var, arayüzde yok.
+- API'de henüz yok: CI düzenleme (`PATCH`, Manual kaynak kaydı), makine hesapları, ServiceNow uyumlu uç noktalar (F2-05), ABAC koşul değerlendirmesi (koşullu izinler şimdilik verilmez).
 - Uzlaştırıcı kararları `apply_decisions` ile uygular, ancak bunu tetikleyen sürekli çalışan servis (Kafka tüketicisi) ve alım geçidi yok; hedef ortam kararını bekliyor. sn-sync ve MCP servisleri yok.
 - Oturum iptali çerez süresine bağlı (8 saat); anında iptal için sunucu tarafı iptal listesi gerekir (ADR-0010).
 - Bağımlı CI kimliği (uygulama, ağ adaptörü) uygulanmadı; çözümleyici bilinçli olarak `insufficient` döner.
@@ -82,13 +90,12 @@ Doğrulanınca bu bölümden kaldırılacak.
 
 ## Sıradaki adımlar (sırayla)
 
-1. **F0-12** — Birleştirmeyi ayırma: `POST /ci/{id}/split`, uzlaştırıcıda bağın geri alınması, CI 360°'da "ayır" eylemi.
-2. **F0-09 devamı** — `PATCH /ci/{id}` (Manual kaynak kaydı → uzlaştırma, 202); canlı Entra kabulü. *Sizden: Entra uygulama kaydı (kiracı, istemci, `Evren.*` uygulama rolleri, MFA bağlamı).*
-3. **F0-07** — `tools/sn_metadata_export.py` ile kurum sözlüğü; `verify` işaretleri kapatılır. *Sizden: SN salt okunur hesap.*
-4. **F0-08** — ServiceNow CMDB ilk yüklemesi (eşleme ve `import_existing` hazır).
-5. **F0-10 devamı** — Alım geçidi, Kafka tüketicisi, uzlaştırıcıyı sürekli çalıştıran servis. *Sizden: hedef ortam kararı.*
-6. **F0-11** — vCenter ve Zabbix bağlayıcıları. *Sizden: salt okunur servis hesapları.*
-7. **F0-13** — Gölge mod raporları; GRC Platformu'na kanıt aktarımı.
+1. **F0-09 devamı** — `PATCH /ci/{id}` (Manual kaynak kaydı → uzlaştırma, 202); canlı Entra kabulü. *Sizden: Entra uygulama kaydı (kiracı, istemci, `Evren.*` uygulama rolleri, MFA bağlamı).*
+2. **F0-07** — `tools/sn_metadata_export.py` ile kurum sözlüğü; `verify` işaretleri kapatılır. *Sizden: SN salt okunur hesap.*
+3. **F0-08** — ServiceNow CMDB ilk yüklemesi (eşleme ve `import_existing` hazır).
+4. **F0-10 devamı** — Alım geçidi, Kafka tüketicisi, uzlaştırıcıyı sürekli çalıştıran servis. *Sizden: hedef ortam kararı.*
+5. **F0-11** — vCenter ve Zabbix bağlayıcıları. *Sizden: salt okunur servis hesapları.*
+6. **F0-13** — Gölge mod raporları; GRC Platformu'na kanıt aktarımı.
 
 ## Açık sorular
 

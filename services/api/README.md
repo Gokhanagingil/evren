@@ -14,7 +14,8 @@ EVREN_AUTH_MODE=dev EVREN_DATABASE_URL=postgresql://... uvicorn --factory evren_
 | `GET /api/v1/ci` (arama, sınıf/kaynak/kapsam süzgeci, imleçli sayfalama), `/ci/{sys_id}`, `/ci/{sys_id}/history` | Tamam |
 | `GET /api/v1/match-queue`, `/match-queue/{id}`, `POST /match-queue/{id}/decision` | Tamam |
 | `/auth/login`, `/auth/entra/callback`, `/auth/logout` | Tamam (canlı Entra kaydıyla kabul bekliyor) |
-| `PATCH /api/v1/ci/{sys_id}` (Manual kaynak kaydı), `POST /ci/{sys_id}/split` | Sırada |
+| `POST /api/v1/ci/{sys_id}/split` (202; uzlaştırıcı uygular, ADR-0011) | Tamam |
+| `PATCH /api/v1/ci/{sys_id}` (Manual kaynak kaydı) | Sırada |
 | `/api/now/table/*`, `/api/now/identifyreconcile` | F2-05 |
 
 Ortam değişkenleri: `EVREN_AUTH_MODE` (`dev` | `entra`, zorunlu), `EVREN_DATABASE_URL` veya `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE`, `EVREN_COOKIE_SECURE`, `EVREN_ENTRA_*`. Sırlar dosya yolundan okunur; `dev` modu yalnızca 127.0.0.1'de açılır.

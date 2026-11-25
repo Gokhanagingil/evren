@@ -269,6 +269,12 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .dialog h2 { margin: 0; font-size: 17px; }
 .dialog .body { padding: 18px 20px; overflow: auto; font-size: 13.5px; line-height: 1.65; }
 .dialog .body p { margin: 0 0 10px; }
+.dialog > footer { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; padding: 12px 20px; border-top: 1px solid var(--stroke); background: #fafbfc; border-radius: 0 0 12px 12px; }
+.dialog .body label.field { display: block; font-weight: 600; margin: 12px 0 4px; }
+.dialog .body input[type=text] { width: 100%; }
+.btn.danger { background: var(--bad); border-color: var(--bad); }
+.btn.danger:hover { filter: brightness(.92); }
+.link-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
 .palette-input { border: 0; border-bottom: 1px solid var(--stroke); border-radius: 12px 12px 0 0; font-size: 16px; padding: 16px 18px; min-height: 56px; width: 100%; }
 .palette-input:focus { box-shadow: none; border-color: var(--stroke); }
 .pal-list { list-style: none; margin: 0; padding: 6px; max-height: 60vh; overflow: auto; }

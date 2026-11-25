@@ -37,6 +37,19 @@ Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 - Yanıt: `{"decision", "label", "ci_sys_id", "applied": false, "replayed", "message"}`. Karar `match_candidate`'e ve `evren.match.decided.v1` olayı olarak outbox'a yazılır; kimlik bağını ve CI'ı uzlaştırıcı kurar (`applied` sonradan `true` olur).
 - `409`: kayıt zaten karar almış, aday kuyrukta değil veya aynı anahtar farklı içerikle kullanılmış. `403`: Eşleştirme analisti rolü yok.
 
+### Birleştirmeyi ayırma
+
+`POST /api/v1/ci/{sys_id}/split` (ADR-0011):
+
+```json
+{"link_id": "<kimlik bağı sys_id>", "target_ci": null, "note": "Seri başka sunucuya ait", "idempotency_key": "ui-…"}
+```
+
+- `link_id`: `GET /api/v1/ci/{sys_id}` yanıtındaki `links[].id`. Her bağ `split: {allowed, pending, reason}` taşır; yanıtta `can_split` ve `splits` (istek geçmişi) bulunur.
+- `target_ci` boşsa kayıt için yeni CI açılır; doluysa kayıt o CI'a taşınır (hedef sınıfta `merge` yetkisi ve sınıf uyumu gerekir).
+- Yanıt `202`: `{"id", "status": "pending", …}`; olay `evren.ci.split.requested.v1`. Uygulandığında `evren.ci.split.v1`.
+- `409 tek_kaynak`, `409 bekleyen_ayirma`, `422 ilk_yukleme_bagi`, `422 kaynak_ci_acamaz`, `422 bag_yok`, `422 hedef_yok`, `422 sinif_uyumsuz`, `403 yetki_yok`.
+
 ## ServiceNow uyumlu Table API
 
 Desteklenen parametreler:

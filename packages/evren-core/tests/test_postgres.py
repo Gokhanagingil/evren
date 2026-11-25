@@ -158,6 +158,13 @@ def test_segregation_of_duties_enforced():
         ("evren_auditor_ro", "UPDATE meta.sys_dictionary SET label_tr = 'x'"),
         ("evren_app_api", "UPDATE ingest.data_source SET lifecycle = 'retired' WHERE name = 'BMC'"),
         ("evren_app_ingest", "INSERT INTO meta.source_role (name, label_tr, kind) VALUES ('X', 'x', 'discovery')"),
+        # 0006–0007: API kararı/ayırmayı yalnızca istek olarak yazar; bağı ve durumu uzlaştırıcı değiştirir
+        ("evren_app_api", "UPDATE ingest.match_candidate SET applied_at = now()"),
+        ("evren_app_api", "UPDATE ingest.split_request SET status = 'applied'"),
+        ("evren_app_api", "INSERT INTO ingest.identity_link (data_source, source_key, ci_sys_id, method, decided_by) "
+                          "VALUES ('X', 'y', 'eeee0000000000000000000000000004', 'split', 't')"),
+        ("evren_app_ingest", "SELECT count(*) FROM ingest.split_request"),
+        ("evren_app_mcp", "SELECT count(*) FROM ingest.split_request"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -177,6 +184,8 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_api", "INSERT INTO audit.security_event (principal, action, decision) VALUES ('t', 'login', 'allow')"),
         ("evren_readonly", "SELECT count(*) FROM meta.source_role"),
         ("evren_app_ingest", "SELECT role, lifecycle FROM ingest.data_source"),
+        ("evren_app_api", "SELECT count(*) FROM ingest.split_request"),
+        ("evren_auditor_ro", "SELECT count(*) FROM ingest.split_request"),
     ],
 )
 def test_allowed_paths_work(role, statement):
