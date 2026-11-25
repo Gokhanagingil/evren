@@ -180,6 +180,12 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "SELECT count(*) FROM ingest.connector_credential"),
         ("evren_app_api", "SELECT count(*) FROM ingest.connector_credential"),
         ("evren_auditor_ro", "SELECT token_sha256 FROM ingest.connector_credential"),
+        # 0013 (U3): dizinleyici yalnızca okur; kaynak bağının anahtarını ve kısıtlı tabloyu göremez
+        ("evren_app_indexer", "UPDATE cmdb.cmdb_ci SET name = 'x'"),
+        ("evren_app_indexer", "SELECT source_key FROM ingest.identity_link"),
+        ("evren_app_indexer", "SELECT count(*) FROM cmdb.ci_security_posture"),
+        ("evren_app_indexer", "INSERT INTO events.outbox (aggregate_type, aggregate_id, event_type, payload) "
+                              "VALUES ('x', 'x', 'x', '{}')"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -204,6 +210,8 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_ingest", "SELECT count(*) FROM ingest.connector_credential"),
         ("evren_app_ingest", "UPDATE ingest.source_run SET accepted_count = accepted_count WHERE false"),
         ("evren_auditor_ro", "SELECT name, token_hint, last_used_at FROM ingest.connector_credential"),
+        ("evren_app_indexer", "SELECT count(*) FROM cmdb.cmdb_ci"),
+        ("evren_app_indexer", "SELECT ci_sys_id, data_source FROM ingest.identity_link WHERE active LIMIT 1"),
     ],
 )
 def test_allowed_paths_work(role, statement):

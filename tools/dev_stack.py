@@ -15,7 +15,8 @@ biri başarısız olursa yığın yarım açılmaz, hata o adımda görünür.
 Duman testi yalnızca 127.0.0.1'e bağlanır ve şunları doğrular: API hazır, CMDB veri içeriyor, uzlaştırıcı çalışanı
 canlı; API'den gönderilen bir elle düzenleme konteynerdeki uzlaştırıcı tarafından uygulanıyor (golden record
 değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı; olay omurgası uçtan uca çalışıyor (geçici bağlayıcı
-kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali). Hiçbir sır yazdırılmaz.
+kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali); arama (dizinleyici →
+OpenSearch → yetki süzgeçli API; Türkçe harf, yazım hatası, ayırıcısız yazım). Hiçbir sır yazdırılmaz.
 """
 from __future__ import annotations
 
@@ -27,6 +28,7 @@ import subprocess  # nosec B404
 import sys
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 import uuid
 from datetime import UTC, datetime
@@ -35,7 +37,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ["docker", "compose", "-f", str(ROOT / "deploy" / "compose.dev.yaml")]
-LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "gateway"]
+LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "gateway", "indexer"]
 API = "http://127.0.0.1:8088"
 GATEWAY = "http://127.0.0.1:8089"
 OPENSEARCH = "http://127.0.0.1:59200"
@@ -192,7 +194,8 @@ def smoke() -> int:
                           and r[1])
         check(health["status"] in {"green", "yellow"}, f"küme durumu {health['status']}")
 
-        smoke_event_backbone()
+        name, sys_id = smoke_event_backbone()
+        smoke_search(name, sys_id)
     except SmokeError as exc:
         print(f"\nDuman testi BAŞARISIZ: {exc}", file=sys.stderr)
         return 1
@@ -206,7 +209,7 @@ def _envelope(kind: str, data: dict[str, Any]) -> dict[str, Any]:
             "type": kind, "data": data}
 
 
-def smoke_event_backbone() -> None:
+def smoke_event_backbone() -> tuple[str, str]:
     """Bağlayıcı → alım geçidi → Kafka → tüketici → golden record → outbox → Kafka (ADR-0017)."""
     step("Olay omurgası: geçit → Kafka → uzlaştırıcı → CI olayı")
     wait_for("alım geçidi hazır (/readyz)", lambda: http("GET", f"{GATEWAY}/readyz")[0] == 200)
@@ -264,6 +267,24 @@ def smoke_event_backbone() -> None:
     compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "revoke", "--name", f"duman-{tag}", "--by",
             "duman-testi", capture=True)
     check(http("GET", f"{GATEWAY}/ingest/v1/runs/{rid}", auth=token)[0] == 401, "iptal edilen kimlik reddediliyor")
+    return name, found["sys_id"]
+
+
+def smoke_search(name: str, sys_id: str) -> None:
+    """Olay → dizinleyici → OpenSearch → arama API'si (yetki süzgeçli); Türkçe harf, yazım hatası, ayırıcısız yazım."""
+    step("Arama: CI olayı → dizinleyici → OpenSearch → /api/v1/search")
+
+    def found(q: str) -> Any:
+        status, body = http("GET", f"{API}/api/v1/search?{urllib.parse.urlencode({'q': q})}")
+        return status == 200 and body["engine"] == "opensearch" and any(i["sys_id"] == sys_id for i in body["items"])
+
+    wait_for("yeni CI aramada (dizinleyici olayı işledi)", lambda: found(name), timeout=90)
+    check(True, f"yeni CI OpenSearch'ten bulundu ({name})")
+    check(found(name.upper().replace("I", "İ")), "Türkçe büyük harfle bulundu")
+    check(found(name.replace("duman", "dumn")), "yazım hatasıyla bulundu (dumn-…)")
+    check(found(name.replace("-", "")), "ayırıcısız yazımla bulundu")
+    status, body = http("GET", f"{API}/api/v1/search?q=%C4%B0ST-DB-01")  # "İST-DB-01"
+    check(status == 200 and any(i["name"] == "ist-db-01" for i in body["items"]), "demo CI 'İST-DB-01' ile bulundu")
 
 
 def pinned_images() -> list[str]:

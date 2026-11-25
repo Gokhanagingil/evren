@@ -70,13 +70,14 @@
 | İmaj | Tek Evren imajı; komut servisi seçer: `api`, `gateway`, `worker`, `ingest`, `migrate`, `connector`, `demo`, `healthcheck api\|gateway\|worker\|ingest`. uid 10001, hash'li bağımlılıklar, temel görüntü özetle sabit | `deploy/Dockerfile`, `deploy/evren.py` |
 | Alım geçidi | Bağlayıcıların tek giriş noktası (`/ingest/v1`). TLS (`EVREN_GATEWAY_TLS_CERT_FILE`/`_KEY_FILE`), mTLS için `EVREN_GATEWAY_TLS_CLIENT_CA_FILE`. Ağa TLS'siz açılmaz. Yatay ölçeklenir (hız sınırı örnek başına) | ADR-0017 |
 | Alım tüketicisi | `evren ingest`: `evren.ingest.record.v1` tüketici grubu (`evren-reconciler`). En fazla bölüm sayısı (6) kadar örnek paralel çalışır | ADR-0017 |
+| Arama dizinleyicisi | `evren indexer`: `evren.cmdb.ci.changed.v1` (grup `evren-indexer`) → güncel CI → OpenSearch `evren-cmdb-ci` takma adı. Açılışta dizini doğrular/kurar; `evren indexer --reindex` tam yeniden dizinleme (kesintisiz). Giriş rolü `evren_indexer_svc` → `evren_app_indexer` | ADR-0018 |
 | Çalışan | `evren worker`: insan istekleri, çalışma kapanışı, outbox → Kafka. Birden çok örnek güvenli (`SKIP LOCKED`) | ADR-0013, ADR-0017 |
 | Göç | Bir kez çalışan iş. Göçler `meta.schema_migration` defterine (sürüm + SHA-256) yazılır; içeriği değişmiş göçte durur. Metadata tohumu ve servis giriş rolleri de bu işte | `tools/migrate.py` |
 | Veritabanı bağlantısı | Servis başına giriş rolü (`evren_api_svc`, `evren_worker_svc` …), NOINHERIT, yalnızca kendi grup rolü | ADR-0016 madde 4 |
 | Sırlar | `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE` (+ Entra'da istemci sırrı dosyası); servis başına parola dosyası `<dizin>/<giriş rolü>` | kurum sır kasası → dosya |
 | Sağlık | API: `/readyz` (veritabanı erişimi), `/healthz`. Çalışan: nabız dosyası (`EVREN_WORKER_HEALTH_FILE`) + `ingest.worker_heartbeat` | `deploy/evren.py healthcheck` |
 | Kafka | KRaft; otomatik konu açma kapalı; konular, bölüm sayısı ve saklama süresi `deploy/kafka/topics.txt`'te. İstemci: `EVREN_KAFKA_BOOTSTRAP`, `EVREN_KAFKA_SECURITY_PROTOCOL` (varsayılan `SASL_SSL`), `EVREN_KAFKA_USERNAME` + `EVREN_KAFKA_PASSWORD_FILE`, `EVREN_KAFKA_CA_FILE`; `PLAINTEXT` yalnızca `EVREN_KAFKA_ALLOW_PLAINTEXT=1` ile | ADR-0017 |
-| OpenSearch | Tek düğüm (geliştirme) | U3'te kullanılmaya başlar |
+| OpenSearch | Tek düğüm (geliştirme). İstemci: `EVREN_OPENSEARCH_URL` (https), `EVREN_OPENSEARCH_USERNAME` + `EVREN_OPENSEARCH_PASSWORD_FILE`, `EVREN_OPENSEARCH_CA_FILE`; düz HTTP yalnızca `EVREN_OPENSEARCH_ALLOW_HTTP=1`. API'de tanımlı değilse arama PostgreSQL'e düşer | ADR-0018 |
 
 Geliştirme yığını (yalnızca 127.0.0.1):
 

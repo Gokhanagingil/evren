@@ -14,6 +14,7 @@ from fastapi.responses import JSONResponse, Response
 
 from evren_core.changeset import load_change_files
 from evren_core.metadata import load_metadata
+from evren_core.opensearch_client import OpenSearch
 from evren_core.web import SECURITY_HEADERS, STATIC_TYPES
 
 from .authz import Authorizer
@@ -23,7 +24,7 @@ from .editing import EditPolicy
 from .entra import Entra
 from .errors import install_handlers
 from .present import Presenter
-from .routers import auth, ci, platform, queue, refs, reports, schema
+from .routers import auth, ci, platform, queue, refs, reports, schema, search
 from .rules_view import build_rules_view
 from .security import SessionCodec
 
@@ -40,7 +41,8 @@ def _private_client(request: Request) -> bool:
 log = logging.getLogger("evren.api")
 
 
-def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | None = None) -> FastAPI:
+def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | None = None,
+               search_client: Any | None = None) -> FastAPI:
     md = load_metadata(REPO_ROOT / "metadata")
     own_pool = pool is None
     pool = pool or make_pool(settings)
@@ -68,6 +70,8 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     app.state.rules_view = build_rules_view(md)
     app.state.edit_policy = EditPolicy(md)
     app.state.entra = entra or (Entra(settings.entra) if settings.entra else None)
+    app.state.search = search_client if search_client is not None else (
+        OpenSearch(settings.opensearch) if settings.opensearch else None)
     install_handlers(app)
 
     @app.middleware("http")
@@ -96,7 +100,8 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
             return JSONResponse({"status": "unavailable"}, status_code=503)
         return JSONResponse({"status": "ok"})
 
-    for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, auth.router):
+    for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, search.router,
+              auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

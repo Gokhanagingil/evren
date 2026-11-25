@@ -35,7 +35,7 @@ SERVICE_ROLES = {
     "evren_worker_svc": "evren_app_reconciler",
     "evren_ingest_svc": "evren_app_reconciler",   # Kafka alım tüketicisi (U2): uzlaştırıcıyla aynı yetki, ayrı kimlik
     "evren_gateway_svc": "evren_app_ingest",
-    "evren_indexer_svc": "evren_readonly",
+    "evren_indexer_svc": "evren_app_indexer",     # arama dizinleyicisi (U3): okur, yalnızca nabzını yazar
     "evren_sync_svc": "evren_app_sync",
     "evren_mcp_svc": "evren_app_mcp",
 }

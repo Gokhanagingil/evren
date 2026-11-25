@@ -19,6 +19,7 @@ python tools/dev_stack.py up --demo      # veya konteynerde, tüm yığınla (AD
 | `PATCH /api/v1/ci/{sys_id}` (202; Manual kaynak kaydı, ADR-0012), `GET /api/v1/ref/{tablo}` | Tamam |
 | `GET /api/v1/reports/shadow`, kanıt anlık görüntüsü (ADR-0014) | Tamam |
 | `/api/v1/schema/*` metadata değişiklik setleri (ADR-0015) | Tamam |
+| `GET /api/v1/search` küresel arama: OpenSearch, PostgreSQL yedeği, yetki sorguda (ADR-0018) | Tamam |
 | Makine hesapları, ilişki düzenleme | Sırada |
 | `/api/now/table/*`, `/api/now/identifyreconcile` | F2-05 |
 

@@ -208,6 +208,18 @@ export async function ciSearch({ q = '', cls = '', src = '', scope = '', cursor 
   return api(`/api/v1/ci?${p}`);
 }
 
+/**
+ * Küresel CI araması (U3): API modunda OpenSearch (yazım hatası toleranslı, önekle, Türkçe harf duyarsız); OpenSearch
+ * yoksa API PostgreSQL'e düşer. Demo modunda yerel alt dize araması. Dönüş: { engine, degraded, items }.
+ */
+export async function globalSearch(q, limit = 20) {
+  if (!(await isApi())) {
+    const r = await ciSearch({ q, limit });
+    return { engine: 'demo', degraded: false, items: r.items.slice(0, limit) };
+  }
+  return api(`/api/v1/search?${new URLSearchParams({ q, limit: String(limit) })}`);
+}
+
 export async function ciDetail(id) {
   if (!(await isApi())) return (await demo()).cis.find((c) => c.sys_id === id) || null;
   try { return await api(`/api/v1/ci/${encodeURIComponent(id)}`); } catch (e) { if (e.status === 404) return null; throw e; }

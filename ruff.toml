@@ -12,7 +12,7 @@ ignore = ["RUF001", "RUF002", "RUF003", "S101"]
 extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
 
 [lint.isort]
-known-first-party = ["evren_core", "evren_reconciler", "evren_api", "evren_gateway", "_bootstrap", "_font_metrics", "build_architecture", "build_demo",
+known-first-party = ["evren_core", "evren_reconciler", "evren_api", "evren_gateway", "evren_indexer", "_bootstrap", "_font_metrics", "build_architecture", "build_demo",
                      "export_schemas", "dev_server", "sn_metadata_export", "load_demo_pg"]
 
 [lint.per-file-ignores]

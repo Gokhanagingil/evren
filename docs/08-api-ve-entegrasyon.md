@@ -102,6 +102,19 @@ Bilinçli farklar (güvenlik):
 GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_server^operational_status=1^ram>=16384^ORDERBYname&sysparm_fields=sys_id,name,ip_address,ram&sysparm_limit=100
 ```
 
+## Küresel arama (ADR-0018)
+
+`GET /api/v1/search?q=<metin>&limit=<1-50>` → `{"engine": "opensearch" | "postgresql", "degraded": bool, "items": [{sys_id, name, class, class_label, ip_address, fqdn, os, sources}]}`
+
+- **Eşleşme türleri:**
+  - Ad, FQDN, IP, seri, MAC, varlık etiketi ve işletim sisteminde parça önekiyle (`ist-d`, `ist db`) eşleşir.
+  - Ayırıcısız yazım bulunur (`istdb01`, `redhat`).
+  - Yazım hatası toleransı vardır (`windws`, `ank-epr-01`).
+  - Türkçe büyük/küçük harf duyarsızdır (`İST-DB-01`).
+  - IP biçimindeki sorgu IP önekiyle aranır (`10.20.30` → `10.20.30.*`). Tam sys_id en üste gelir.
+- **Yetki:** Yalnızca okuma izni olan sınıflar döner. Kullanıcının göremediği alanla aranamaz ve bu alan yanıtta `null` gelir. Yetki her zaman API'de uygulanır, arama motoruna bırakılmaz.
+- **Yedek:** OpenSearch tanımlı değilse veya ulaşılamıyorsa PostgreSQL alt dize araması kullanılır; Türkçe katlama aynıdır. Yedeğe düşüldüğünde `degraded: true` döner ve arayüz bunu gösterir.
+
 ## Alım geçidi (bağlayıcı sözleşmesi, ADR-0017)
 
 Bağlayıcı `Authorization: Bearer evr_…` ile gelir. Belirteci `tools/connector_credential.py issue` verir; arayüzden yönetim U4'te gelecek. Belirteç tek bir veri kaynağına bağlıdır.

@@ -5,10 +5,11 @@
     evren worker       uzlaştırıcı çalışanı: insan istekleri, çalışma kapanışı, outbox → Kafka
     evren ingest       Kafka alım tüketicisi (evren.ingest.record.v1 → uzlaştırma)
     evren gateway      alım geçidi (bağlayıcılar → Kafka; TLS/mTLS isteğe bağlı)
+    evren indexer      arama dizinleyicisi (CI olayları → OpenSearch); --reindex: tam yeniden dizinleme
     evren migrate      göçler + metadata tohumu + servis giriş rolleri (tek seferlik iş)
     evren connector    bağlayıcı kimlikleri: issue | list | revoke (yönetici bağlantısı)
     evren demo         sentetik demo verisini yükle (yalnızca EVREN_ALLOW_DEMO=1; boş geliştirme veritabanı)
-    evren healthcheck  api|gateway|worker|ingest — konteyner sağlık denetimi
+    evren healthcheck  api|gateway|worker|ingest|indexer — konteyner sağlık denetimi
 
 Sırlar dosyadan okunur (``*_FILE`` ortam değişkenleri); hiçbir sır komut satırına veya günlüğe yazılmaz.
 """
@@ -21,7 +22,8 @@ import urllib.request
 from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1]
-for p in ("packages/evren-core/src", "services/api", "services/reconciler", "services/ingest-gateway", "tools"):
+for p in ("packages/evren-core/src", "services/api", "services/reconciler", "services/ingest-gateway", "services/indexer",
+          "tools"):
     sys.path.insert(0, str(APP / p))
 
 
@@ -65,6 +67,12 @@ def gateway() -> int:
 
 def worker(args: list[str]) -> int:
     from evren_reconciler.worker import main
+
+    return main(args)
+
+
+def indexer(args: list[str]) -> int:
+    from evren_indexer import main
 
     return main(args)
 
@@ -114,13 +122,13 @@ def healthcheck(target: str) -> int:
                 return 0 if r.status == 200 else 1
         except (OSError, ValueError):
             return 1
-    if target in ("worker", "ingest"):
+    if target in ("worker", "ingest", "indexer"):
         path = os.environ.get("EVREN_WORKER_HEALTH_FILE")
         poll = int(os.environ.get("EVREN_WORKER_POLL_SECONDS", "30"))
         if not path or not Path(path).exists():
             return 1
         return 0 if time.time() - Path(path).stat().st_mtime < 3 * poll + 10 else 1
-    print("Kullanım: evren healthcheck api|gateway|worker|ingest", file=sys.stderr)
+    print("Kullanım: evren healthcheck api|gateway|worker|ingest|indexer", file=sys.stderr)
     return 2
 
 
@@ -137,6 +145,8 @@ def main(argv: list[str]) -> int:
         return worker(["--ingest", *rest])
     if cmd == "gateway":
         return gateway()
+    if cmd == "indexer":
+        return indexer(rest)
     if cmd == "connector":
         return connector(rest)
     if cmd == "migrate":

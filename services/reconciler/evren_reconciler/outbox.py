@@ -17,18 +17,13 @@ import psycopg
 from psycopg.rows import dict_row
 
 from evren_core.kafka_client import Publisher
-from evren_core.messaging import HIDDEN_SENSITIVITY, outbox_message
+from evren_core.messaging import outbox_message
 from evren_core.metadata import Metadata
+from evren_core.search import hidden_fields
 
 __all__ = ["OutboxPublisher", "hidden_fields"]
 
 log = logging.getLogger("evren.reconciler.outbox")
-
-
-def hidden_fields(md: Metadata) -> frozenset[str]:
-    """Herhangi bir sınıfta gizli hassasiyetteki alan adları (güvenli taraf: ad her sınıfta gizlenir)."""
-    return frozenset(name for cls in md.hierarchy.parents for name, spec in md.fields_of(cls).items()
-                     if spec.get("sensitivity", "internal") in HIDDEN_SENSITIVITY)
 
 
 class OutboxPublisher:

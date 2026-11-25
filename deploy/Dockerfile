@@ -1,4 +1,4 @@
-# Evren CMDB — tek imaj, birden çok servis (api, gateway, worker, ingest, migrate, demo; U3'te indexer). ADR-0016.
+# Evren CMDB — tek imaj, birden çok servis (api, gateway, worker, ingest, indexer, migrate, demo). ADR-0016.
 #   docker build -f deploy/Dockerfile -t evren:dev .
 # Güvenlik: bağımlılıklar hash'li kilitten (--require-hashes), root olmayan kullanıcı, kaynak dosyalar salt
 # okunur (root sahipli), derleme araçları son katmanda yok. Temel görüntü özetiyle (digest) sabitlenir.
@@ -40,6 +40,7 @@ COPY packages/evren-core/src packages/evren-core/src
 COPY services/api/evren_api services/api/evren_api
 COPY services/reconciler/evren_reconciler services/reconciler/evren_reconciler
 COPY services/ingest-gateway/evren_gateway services/ingest-gateway/evren_gateway
+COPY services/indexer/evren_indexer services/indexer/evren_indexer
 COPY tools tools
 COPY metadata metadata
 COPY db/migrations db/migrations

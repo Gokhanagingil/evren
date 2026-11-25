@@ -95,7 +95,7 @@ export function dialog({ title, body, footer = [], focus = null }) {
 }
 
 /**
- * Arama paleti (Ctrl+K). ``items``: [{group, label, sub, kind, href}] — yalnızca arama anında üretilir.
+ * Arama paleti (Ctrl+K). ``items``: [{group, label, sub, kind, href, matched?}] — yalnızca arama anında üretilir.
  */
 export function palette(buildItems) {
   const input = h('input', {
@@ -139,7 +139,9 @@ export function palette(buildItems) {
     const my = ++seq;
     const all = await buildItems(raw);
     if (my !== seq) return; // eski yanıt yeni aramayı ezmesin
-    results = (q ? all.filter((it) => fold(`${it.label} ${it.sub || ''} ${it.keywords || ''}`).includes(q)) : all.filter((it) => it.group === 'Sayfalar'))
+    // Arama motorunun bulduğu öğeler (``matched``) yeniden süzülmez: yazım hatası ve önek eşleşmeleri korunur.
+    results = (q ? all.filter((it) => it.matched || fold(`${it.label} ${it.sub || ''} ${it.keywords || ''}`).includes(q))
+      : all.filter((it) => it.group === 'Sayfalar'))
       .slice(0, 40);
     active = 0;
     paint();

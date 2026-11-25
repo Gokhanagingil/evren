@@ -109,6 +109,21 @@ def test_ci_search_detail_and_history_come_from_api(page, base_url):
     shot(page, "api_ci_detail")
 
 
+def test_palette_global_search_folds_turkish_case_and_opens_ci(page, base_url):
+    """Ctrl+K → /api/v1/search (bu testte OpenSearch yok: PostgreSQL yedeği, Türkçe katlama)."""
+    page.goto(base_url + "/")
+    page.wait_for_selector("#overviewStats")
+    page.keyboard.press("Control+k")
+    page.wait_for_selector("#paletteInput")
+    page.fill("#paletteInput", "İST-DB-01")
+    option = page.locator("#paletteList [role=option]").filter(has_text="ist-db-01").first
+    expect(option).to_be_visible()
+    assert page.locator("#paletteList .pal-group").first.text_content() == "Konfigürasyon öğeleri"
+    page.keyboard.press("Enter")
+    page.wait_for_selector("#detail.open")
+    assert "ist-db-01" in page.locator("#detailContent").inner_text().lower()
+
+
 def test_queue_decision_is_persisted(page, base_url):
     from scenarios import make_review_item  # API testleriyle aynı kendi kendine yeterli senaryo
 

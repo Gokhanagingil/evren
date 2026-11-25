@@ -23,6 +23,11 @@ x-kafka: &kafka
   EVREN_KAFKA_SECURITY_PROTOCOL: PLAINTEXT
   EVREN_KAFKA_ALLOW_PLAINTEXT: "1"
 
+# OpenSearch istemci ayarları (geliştirme: güvenlik eklentisi kapalı, düz HTTP; üretimde HTTPS + kimlik, ADR-0018)
+x-opensearch: &opensearch
+  EVREN_OPENSEARCH_URL: http://opensearch:9200
+  EVREN_OPENSEARCH_ALLOW_HTTP: "1"
+
 x-evren: &evren
   <<: *hardening
   image: evren:dev
@@ -59,7 +64,7 @@ services:
     command: ["migrate", "--service-roles", "/run/secrets"]
     environment:
       EVREN_DATABASE_URL_FILE: /run/secrets/owner_dsn
-    secrets: [owner_dsn, evren_api_svc, evren_worker_svc, evren_gateway_svc, evren_ingest_svc]
+    secrets: [owner_dsn, evren_api_svc, evren_worker_svc, evren_gateway_svc, evren_ingest_svc, evren_indexer_svc]
     depends_on:
       postgres: {condition: service_healthy}
 
@@ -80,6 +85,7 @@ services:
     <<: *evren
     command: ["api"]
     environment:
+      <<: *opensearch
       EVREN_AUTH_MODE: dev
       EVREN_DEV_CONTAINER: "1"
       EVREN_HOST: 0.0.0.0
@@ -138,6 +144,26 @@ services:
     depends_on:
       migrate: {condition: service_completed_successfully}
       kafka: {condition: service_healthy}
+
+  # Arama dizinleyicisi: CI olayları (Kafka) → güncel CI (PostgreSQL, salt okunur) → OpenSearch
+  indexer:
+    <<: *evren
+    command: ["indexer"]
+    environment:
+      <<: [*kafka, *opensearch]
+      EVREN_DATABASE_URL_FILE: /run/secrets/indexer_dsn
+      EVREN_WORKER_HEALTH_FILE: /tmp/indexer.alive
+    secrets: [indexer_dsn]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "indexer"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 20s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      kafka: {condition: service_healthy}
+      opensearch: {condition: service_healthy}
 
   # Alım geçidi: bağlayıcıların tek giriş noktası (belirteç + kaynak yetkisi + şema + hız sınırı → Kafka).
   # Geliştirmede düz HTTP yalnızca 127.0.0.1'de; üretimde TLS (EVREN_GATEWAY_TLS_*), isteğe bağlı mTLS.
@@ -224,10 +250,12 @@ secrets:
   worker_dsn: {file: ./secrets/worker_dsn}
   gateway_dsn: {file: ./secrets/gateway_dsn}
   ingest_dsn: {file: ./secrets/ingest_dsn}
+  indexer_dsn: {file: ./secrets/indexer_dsn}
   evren_api_svc: {file: ./secrets/evren_api_svc}
   evren_worker_svc: {file: ./secrets/evren_worker_svc}
   evren_gateway_svc: {file: ./secrets/evren_gateway_svc}
   evren_ingest_svc: {file: ./secrets/evren_ingest_svc}
+  evren_indexer_svc: {file: ./secrets/evren_indexer_svc}
   session_key: {file: ./secrets/session_key}
 
 volumes:

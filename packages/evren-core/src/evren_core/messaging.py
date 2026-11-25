@@ -37,7 +37,6 @@ TOPIC_ACTIVITY = "evren.cmdb.activity.v1"
 TOPIC_DLQ = "evren.dlq.v1"
 #: Tek mesaj üst sınırı (Kafka varsayılanı ~1 MB). Geçit daha büyük kaydı reddeder; tüketici yine denetler.
 MAX_MESSAGE_BYTES = 900_000
-HIDDEN_SENSITIVITY = frozenset({"confidential", "restricted"})
 
 
 class MessageError(ValueError):

@@ -1,7 +1,7 @@
 // Evren arayüzü — derlemesiz ES modülleri, hash tabanlı yönlendirme. Kabuk GRC Platformu (tedarik) düzenindedir.
 import { h, append, clear, errorBox, fold } from './lib/dom.js';
 import { icon } from './lib/icons.js';
-import { backend, ciSearch, overview, queueCounts, queueView, sourcesView } from './lib/data.js';
+import { backend, globalSearch, overview, queueCounts, queueView, sourcesView } from './lib/data.js';
 import { closeDetail, closeOverlay, dialog, isDetailOpen, isOverlayOpen, palette, setHeader } from './lib/shell.js';
 import { renderOverview } from './pages/overview.js';
 import { renderQueue } from './pages/queue.js';
@@ -127,10 +127,12 @@ async function searchItems(query = '') {
   const items = Object.entries(ROUTES).map(([id, r]) => ({ group: 'Sayfalar', label: r.title, kind: 'Sayfa', href: `#/${id}` }));
   try {
     const [cis, src, queue] = await Promise.all([
-      query ? ciSearch({ q: query, limit: 25 }) : Promise.resolve({ items: [] }), sourcesView(), queueView('open')]);
+      query ? globalSearch(query, 25) : Promise.resolve({ items: [] }), sourcesView(), queueView('open')]);
+    const group = cis.degraded ? 'Konfigürasyon öğeleri (yedek arama)' : 'Konfigürasyon öğeleri';
     for (const c of cis.items) {
-      items.push({ group: 'Konfigürasyon öğeleri', label: c.name, sub: [c.class_label, c.ip_address, c.fqdn].filter(Boolean).join(' · '),
-        kind: c.class_label, href: `#/ci/${c.sys_id}`, keywords: `${c.sys_id} ${c.os || ''} ${c.sources.join(' ')}` });
+      items.push({ group, label: c.name, sub: [c.class_label, c.ip_address, c.fqdn].filter(Boolean).join(' · '),
+        kind: c.class_label, href: `#/ci/${c.sys_id}`, keywords: `${c.sys_id} ${c.os || ''} ${c.sources.join(' ')}`,
+        matched: cis.engine === 'opensearch' });
     }
     for (const s of src.sources) {
       items.push({ group: 'Veri kaynakları', label: s.label_tr, sub: `${s.name} · ${s.role_label}`, kind: 'Kaynak', href: `#/kaynaklar/${s.name}`,

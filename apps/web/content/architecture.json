@@ -542,12 +542,17 @@
       "kind_label": "Veri deposu",
       "chapter": "store",
       "phase": "F1",
-      "text": "CI seçici ve küresel arama için bulanık ve hızlı arama dizini. Kayıt sistemi değildir; outbox olaylarıyla güncellenir.",
+      "text": "Küresel arama için bulanık ve hızlı arama dizini. Türkçe harf duyarsız; önek, ayırıcısız yazım ve yazım hatası toleranslı. Kayıt sistemi değildir; dizinleyici CI olaylarını Kafka'dan okur ve CI'ın güncel hâlini PostgreSQL'den yazar. Sürümlü dizin, takma adla kesintisiz yeniden dizinlenir. OpenSearch'e ulaşılamazsa arama PostgreSQL'e düşer (ADR-0018).",
       "tech": [
-        "OpenSearch"
+        "OpenSearch",
+        "services/indexer",
+        "evren_core.search",
+        "GET /api/v1/search"
       ],
       "security": [
-        "Alan hassasiyetine göre dizinleme"
+        "Gizli hassasiyetteki alan dizine girmez",
+        "Yetki sorguda ve yanıtta (motora bırakılmaz)",
+        "Dizinleyici salt okur"
       ]
     },
     "cache": {

@@ -17,6 +17,8 @@ from pathlib import Path
 
 from cryptography.fernet import Fernet
 
+from evren_core.opensearch_client import OpenSearchConfigError, OpenSearchSettings
+
 from .entra import EntraConfig, configure_entra
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -32,6 +34,15 @@ def _read_secret(env: Mapping[str, str], name: str) -> str | None:
     if path:
         return Path(path).read_text(encoding="utf-8").strip()
     return env.get(name) or None
+
+
+def _opensearch(env: Mapping[str, str]) -> OpenSearchSettings | None:
+    if not env.get("EVREN_OPENSEARCH_URL"):
+        return None
+    try:
+        return OpenSearchSettings.from_env(env)
+    except OpenSearchConfigError as exc:
+        raise ConfigError(str(exc)) from None
 
 
 def _loopback(host: str) -> bool:
@@ -61,6 +72,7 @@ class Settings:
     web_root: Path = REPO_ROOT / "apps" / "web"
     entra: EntraConfig | None = None
     dev_container: bool = False
+    opensearch: OpenSearchSettings | None = None  # U3: küresel arama; yoksa PostgreSQL yedeği
 
     @property
     def session_cookie(self) -> str:
@@ -106,5 +118,5 @@ class Settings:
             cookie_secure=secure, session_key=key,
             session_hours=int(env.get("EVREN_SESSION_HOURS", "8")),
             dev_user=env.get("EVREN_DEV_USER", "dev"), dev_name=env.get("EVREN_DEV_NAME", "Geliştirici"),
-            dev_roles=roles, entra=entra, dev_container=dev_container,
+            dev_roles=roles, entra=entra, dev_container=dev_container, opensearch=_opensearch(env),
         )
