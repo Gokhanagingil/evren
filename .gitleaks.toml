@@ -1,0 +1,15 @@
+# Evren gitleaks yapılandırması: varsayılan kurallar + gerekçeli, dar kapsamlı istisnalar.
+# Yeni istisna eklemeden önce bulgunun gerçekten sır olmadığını doğrulayın ve olumsuz testini yazın
+# (.github/workflows/security.yml, "İstisna olumsuz testi" adımı). Yol bazlı istisna kullanmayın: bir dosyanın
+# tamamını kapsar ve o dosyaya sonradan giren gerçek bir sır görünmez olur.
+title = "Evren"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = """Kaynak kayıt anahtarları (source_key): onaltılık/UUID biçiminde nesne kimliği; sır değil.
+Yalnızca genel anahtar kuralına uygulanır; GitHub, Slack, AWS vb. özel kurallar etkilenmez."""
+targetRules = ["generic-api-key"]
+regexTarget = "match"
+regexes = ['''^source_key": "(guest:)?[0-9A-Fa-f-]{16,64}(/Host)?"?$''']

@@ -33,6 +33,20 @@ jobs:
           python -m pip install bandit==1.9.4 pip-audit==2.10.1
       - name: Geçmişte sır taraması
         run: gitleaks git --redact=100 --report-format json --report-path verification/security/gitleaks.json .
+      - name: İstisna olumsuz testi (.gitleaks.toml gerçek sırları gizlememeli)
+        run: |
+          set -eu
+          canary="$RUNNER_TEMP/gitleaks-canary"
+          mkdir -p "$canary/apps/web/content"
+          cp .gitleaks.toml "$canary/"
+          # Uydurma ama biçimce gerçek sırlar; istisnanın kapsadığı dosya ve alanda bile yakalanmalı.
+          # Değerler parçalardan birleştirilir: bu dosyanın kendisi depo taramasında sır sayılmasın.
+          gh="ghp""_R8zXqW3mN5pK7vT2yB9cD4fG6hJ1kL0sA8eU"; ak="api""_key"; av="Zx8Qp2Lm9Vt4""Rk7Ws3Yn6Bd1Hf5Jc0Ga"
+          printf '{"source_key": "%s"}\n{"%s": "%s"}\n{"source_key": "%s"}\n' "$gh" "$ak" "$av" \
+            "d43b885e-b4ef-4858-bae3-bf6554c4a99c" > "$canary/apps/web/content/demo.json"
+          gitleaks dir --no-banner -c "$canary/.gitleaks.toml" -f json -r "$canary/report.json" "$canary" || true
+          found=$(python -c "import json,sys; print(len(json.load(open(sys.argv[1]))))" "$canary/report.json")
+          test "$found" = "2" || { echo "Beklenen 2 bulgu (GitHub belirteci, api_key), bulunan: $found"; exit 1; }
       - name: Kilitli bağımlılık denetimi
         run: |
           for f in requirements/runtime.txt requirements/dev.txt; do
