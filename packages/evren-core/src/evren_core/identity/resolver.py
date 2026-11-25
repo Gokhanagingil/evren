@@ -67,9 +67,12 @@ class IdentityResolver:
 
     # -- yardımcılar ---------------------------------------------------------
 
-    def _family(self, class_name: str) -> str | None:
+    def family(self, class_name: str) -> str | None:
+        """Sınıfın kimlik ailesi (aday dizininde anahtarlar aile içinde aranır)."""
         h = self.rules.hierarchy
         return h.family(class_name) if class_name in h else None
+
+    _family = family  # geriye uyumluluk
 
     def _class_conflict(self, record_class: str, candidate: CandidateProfile) -> list[Feature]:
         h = self.rules.hierarchy

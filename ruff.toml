@@ -1,4 +1,4 @@
-# Tüm Python kodu için tek lint yapılandırması (CI: ruff check packages tools apps/web/tests)
+# Tüm Python kodu için tek lint yapılandırması (CI: ruff check packages services tools apps/web/tests)
 line-length = 140
 target-version = "py312"
 
@@ -8,7 +8,8 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "RUF"]
 ignore = ["RUF001", "RUF002", "RUF003", "S101"]
 
 [lint.isort]
-known-first-party = ["evren_core", "_bootstrap", "_font_metrics", "build_architecture", "export_schemas", "dev_server", "sn_metadata_export"]
+known-first-party = ["evren_core", "evren_reconciler", "evren_api", "_bootstrap", "_font_metrics", "build_architecture", "build_demo",
+                     "export_schemas", "dev_server", "sn_metadata_export", "load_demo_pg"]
 
 [lint.per-file-ignores]
 "**/tests/**" = ["S603", "S607", "S608"]

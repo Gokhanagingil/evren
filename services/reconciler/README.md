@@ -1,5 +1,25 @@
 # services/reconciler — Uzlaştırıcı (F0-10)
 
+## Durum (25.11.2026)
+
+| Parça | Durum | Nerede |
+| --- | --- | --- |
+| PostgreSQL deposu: süzgeç → kimlik → bağ/kuyruk/yeni CI → uzlaştırma → denetim + outbox (tek işlem) | ✓ | `evren_reconciler/store.py` |
+| Aday dizini (kesin anahtarlar) | ✓ | `evren_reconciler/pg_identity.py`, göç `0005_identity_index.sql` |
+| Çalışma sonu: devre kesici, `missing` işaretleme (yalnızca OK), anomali kaydı, ilişkiler | ✓ | `ReconcilerStore.finish_run` |
+| Ürün yaşam döngüsü: gölge kaynak yazmaz ve CI açmaz; devredilen kaynak CI açmaz | ✓ | `SourceRegistry` + `_process` |
+| Kafka tüketicisi, outbox yayıncısı, Valkey kilidi | Planlandı | F0-10 ikinci adım (hedef ortam kararı bekleniyor) |
+| Bulanık ad adayları (OpenSearch) | Planlandı | F1-08 |
+| Ayırma (split) ve eskime önerileri | Planlandı | F1-06 |
+
+Testler: `services/reconciler/tests` (gerçek PostgreSQL, `evren_app_reconciler` rolüyle). `tools/load_demo_pg.py`
+aynı sentetik envanteri bu depodan geçirir; test, sonucun bellek içi hatla (demo.json) öznitelik düzeyinde
+aynı olduğunu doğrular.
+
+Devre kesici notu: değişim oranı yalnızca **önceden var olup içeriği değişen** kayıtları sayar. İlk kez görülen
+kayıtlar (ilk yükleme, yeni ürün) sayılmaz; aksi hâlde her yeni kaynak karantinaya düşerdi. Elle giriş ve platform
+çalışmalarına devre kesici uygulanmaz.
+
 Golden record'un **tek yazarı**dır.
 
 ## Akış

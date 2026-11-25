@@ -94,10 +94,12 @@ def test_sys_id_format_is_enforced():
 
 
 def test_servicenow_named_views_expose_typed_class_fields():
-    rows = psql('SELECT name, ram, "virtual" FROM sn.cmdb_ci_server ORDER BY name')
+    # Yalnızca bu modülün test kayıtları (eeee… sys_id'leri): veritabanında demo verisi olsa da sonuç aynı
+    mine = "sys_id LIKE 'eeee%'"
+    rows = psql(f'SELECT name, ram, "virtual" FROM sn.cmdb_ci_server WHERE {mine} ORDER BY name')
     assert rows.splitlines() == ["abc-1|16384|t", "abc-2|8192|f", "old-batch-01|4096|"]
-    assert psql("SELECT pg_typeof(ram) FROM sn.cmdb_ci_linux_server LIMIT 1") == "bigint"
-    assert psql("SELECT count(*) FROM sn.cmdb_ci_netgear") == "1"
+    assert psql(f"SELECT pg_typeof(ram) FROM sn.cmdb_ci_linux_server WHERE {mine} LIMIT 1") == "bigint"
+    assert psql(f"SELECT count(*) FROM sn.cmdb_ci_netgear WHERE {mine}") == "1"
 
 
 def test_update_bumps_versions():

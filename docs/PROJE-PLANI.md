@@ -18,7 +18,7 @@
    Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
 1. **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
-1. **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Planlandı_  
+1. **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Devam ediyor_  
    Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
@@ -31,7 +31,7 @@
 | F0-07 | ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma | Planlandı |
 | F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Planlandı |
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
-| F0-10 | Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı | Planlandı |
+| F0-10 | Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı | Devam ediyor |
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Planlandı |
 | F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Planlandı |
 | F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Planlandı |
@@ -77,7 +77,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_
   - Not: Eşleme dosyası ve sys_id koruyan ilk yükleme mantığı hazır (connectors/servicenow_cmdb, IdentityEngine.import_existing).
   - Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
-- [ ] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Planlandı_
+- [ ] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi — _Devam ediyor_
+  - Not: PostgreSQL deposu, aday dizini, devre kesici ve çalışma sonu tamam (services/reconciler); Kafka tüketicisi ve alım geçidi hedef ortam kararını bekliyor.
   - Sizden gereken: Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı
 - [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi

@@ -26,8 +26,8 @@ jobs:
           python -m pip install --require-hashes -r requirements/dev.txt
       - name: Derleme ve lint
         run: |
-          python -m compileall -q packages tools apps/web/tests
-          ruff check packages tools apps/web/tests
+          python -m compileall -q packages services tools apps/web/tests
+          ruff check packages services tools apps/web/tests
           for f in $(find apps/web/assets/js -name '*.js'); do node --check "$f"; done
       - name: Metadata, şemalar ve mimari harita güncel mi
         run: |
@@ -80,6 +80,10 @@ jobs:
       - name: Entegrasyon testleri
         working-directory: packages/evren-core
         run: python -m pytest -q tests/test_postgres.py
+      - name: Uzlaştırıcı (en az yetkili rolle, gerçek PostgreSQL)
+        run: python -m pytest -q services/reconciler/tests
+      - name: Demo envanteri uzlaştırıcıyla yüklenir
+        run: python tools/load_demo_pg.py
 
   web:
     name: Arayüz duman testi (Chromium)
