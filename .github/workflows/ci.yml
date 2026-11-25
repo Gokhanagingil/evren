@@ -84,6 +84,8 @@ jobs:
         run: python -m pytest -q services/reconciler/tests
       - name: Demo envanteri uzlaştırıcıyla yüklenir
         run: python tools/load_demo_pg.py
+      - name: API (evren_app_api rolüyle; Entra akışı sahte kimlik sağlayıcıyla)
+        run: python -m pytest -q services/api/tests
 
   web:
     name: Arayüz duman testi (Chromium)
