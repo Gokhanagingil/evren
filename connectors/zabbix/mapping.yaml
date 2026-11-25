@@ -6,7 +6,7 @@ data_source: Zabbix
 source_key: hostid
 class: cmdb_ci_server
 class_rules:
-  - when: {from: "hostgroups[*].name", matches: "(?i)network|switch|router|firewall|ag cihaz"}
+  - when: {from: "hostgroups[*].name", matches: "(?i)network|switch|router|firewall|a[gğĞ] cihaz"}   # "Ağ cihazları": Türkçe ğ
     class: cmdb_ci_netgear
   - when: {from: inventory.os_full, matches: "(?i)windows"}
     class: cmdb_ci_win_server

@@ -115,7 +115,7 @@ data_sources:
     lifecycle: active
     product: {vendor: ServiceNow, name: CMDB, interface: "Table API (salt okunur)"}
     connector: servicenow_cmdb
-    mappings: []
+    mappings: [connectors/servicenow_cmdb/server.mapping.yaml]
     schedule: "*/15 * * * *"
     authoritative_for_tr: Yönetişim öznitelikleri (geçiş döneminde), referans veriler
   - name: ServiceNowChange

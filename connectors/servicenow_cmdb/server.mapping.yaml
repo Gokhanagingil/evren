@@ -1,0 +1,50 @@
+# ServiceNow CMDB → Evren alım kaydı (ilk yükleme ve geçiş dönemi artımlı çekme; F0-08, F1-12)
+#
+# Çekme: GET /api/now/table/cmdb_ci_server?sysparm_exclude_reference_link=true
+#        &sysparm_query=sys_updated_on>=<son çekme>^ORDERBYsys_updated_on&sysparm_limit=…&sysparm_offset=…
+# Ağ cihazları için aynı dosya cmdb_ci_netgear tablosuyla kullanılır (class_rules sınıfı korur).
+#
+# Kurallar:
+#   * source_key = sys_id. İlk yüklemede CI aynı sys_id ile açılır (ingest.identity_link.method='import');
+#     task tarafındaki cmdb_ci referansları dönüşümsüz çözülür.
+#   * Referans alanları (support_group, owned_by, location…) sys_id olarak gelir; ad çözümlemesi ref.* tablolarındadır.
+#   * Yönetişim alanlarını (sahiplik, destek grubu, kullanım amacı) ITSM rolü yazar; keşif alanlarında
+#     ServiceNow düşük önceliklidir (metadata/reconciliation_rules.yaml).
+description: ServiceNow CMDB sunucu ve ağ cihazı kayıtları (salt okunur)
+verify: true
+data_source: ServiceNow
+source_key: sys_id
+class: cmdb_ci_server
+class_rules:
+  - when: {from: sys_class_name, matches: "^cmdb_ci_win_server$"}
+    class: cmdb_ci_win_server
+  - when: {from: sys_class_name, matches: "^cmdb_ci_linux_server$"}
+    class: cmdb_ci_linux_server
+  - when: {from: sys_class_name, matches: "^cmdb_ci_esx_server$"}
+    class: cmdb_ci_esx_server
+  - when: {from: sys_class_name, matches: "^cmdb_ci_ip_switch$"}
+    class: cmdb_ci_ip_switch
+  - when: {from: sys_class_name, matches: "^cmdb_ci_ip_router$"}
+    class: cmdb_ci_ip_router
+  - when: {from: sys_class_name, matches: "^cmdb_ci_ip_firewall$"}
+    class: cmdb_ci_ip_firewall
+attributes:
+  name: {from: name, transform: strip}
+  fqdn: {from: fqdn, transform: lower}
+  ip_address: {from: ip_address}
+  serial_number: {from: serial_number, transform: strip}
+  os: {from: os}
+  os_version: {from: os_version}
+  support_group: {from: support_group}
+  owned_by: {from: owned_by}
+  managed_by: {from: managed_by}
+  used_for: {from: used_for}
+  location: {from: location}
+  company: {from: company}
+  operational_status: {from: operational_status, transform: int}
+  install_status: {from: install_status, transform: int}
+  short_description: {from: short_description}
+lookup:
+  mac_addresses: {from: mac_address}
+external_ids:
+  sn_sys_id: {from: sys_id}

@@ -14,7 +14,7 @@ class_rules:
   - when: {from: osPlatform, matches: "(?i)linux|rhel|ubuntu|centos|suse|debian|oracle"}
     class: cmdb_ci_linux_server
 attributes:
-  name: {from: computerDnsName, transform: strip}
+  name: {from: computerDnsName, transform: [strip, short_hostname]}
   fqdn: {from: computerDnsName, transform: lower}
   ip_address: {from: lastIpAddress}
   os: {from: osPlatform}

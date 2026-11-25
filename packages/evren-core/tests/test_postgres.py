@@ -203,7 +203,7 @@ def test_product_swap_lifecycle_constraints():
     # Gölge modda aynı sıra serbest; rolsüz veya geçersiz yaşam döngüsü reddedilir
     psql("BEGIN; INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank, lifecycle) "
          "VALUES ('YeniKesif', 'Yeni keşif', 'discovery', 'Discovery', 1, 'shadow'); ROLLBACK;")
-    with pytest.raises(SqlError, match="not-null|null value"):
+    with pytest.raises(SqlError, match=r"not-null|null value"):
         psql("INSERT INTO ingest.data_source (name, label_tr, kind) VALUES ('Rolsuz', 'x', 'discovery')")
     with pytest.raises(SqlError, match="check constraint"):
         psql("INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank, lifecycle) "

@@ -164,8 +164,9 @@ class IdentityResolver:
             ((c, self._score(record, keys, self.index.profile(c))) for c in self.index.blocking_candidates(keys, family)),
             key=lambda item: -item[1].probability,
         )
+        no_identity = ("Yalnızca kaynak içi kimlik ve/veya IP var; yeni CI için ad, FQDN, seri, UUID veya MAC gerekir",)
         if not scored:
-            return Resolution(Outcome.NEW)
+            return Resolution(Outcome.NEW) if keys.can_create_ci else Resolution(Outcome.INSUFFICIENT, reasons=no_identity)
         best_ci, best = scored[0]
         second = scored[1][1].probability if len(scored) > 1 else 0.0
         candidates = tuple((c, r.probability) for c, r in scored[:5])
@@ -175,6 +176,9 @@ class IdentityResolver:
         if best.probability >= t.review:
             return Resolution(Outcome.REVIEW, best_ci, best.probability, features=best.features, candidates=candidates,
                               reasons=("Skor otomatik eşiğin altında veya adaylar birbirine çok yakın",))
+        if not keys.can_create_ci:
+            return Resolution(Outcome.INSUFFICIENT, probability=best.probability, features=best.features,
+                              candidates=candidates, reasons=no_identity)
         return Resolution(Outcome.NEW, probability=best.probability, features=best.features, candidates=candidates)
 
 
@@ -195,6 +199,18 @@ class IdentityEngine:
             self._attach(record, keys, ci)
             resolution = replace(resolution, ci_sys_id=ci)
         return resolution
+
+    def import_existing(self, record: SourceRecord, ci_sys_id: str) -> Resolution:
+        """İlk yükleme: kaydı kimlik çözümlemeden, verilen sys_id ile bağlar (``method='import'``).
+
+        ServiceNow CMDB'nin ilk yüklemesinde CI aynı sys_id ile açılır; task tarafındaki referanslar
+        dönüşümsüz çözülür. Mükerrer SN kayıtları birleştirilmez: her biri kendi CI'ı olur ve
+        sonraki keşif kayıtları onları "olası mükerrer" olarak eşleştirme kuyruğuna düşürür.
+        """
+        if self.resolver.links.get(record.data_source, record.source_key):
+            raise ValueError(f"{record.data_source}/{record.source_key} zaten bağlı; ilk yükleme tekrarlanamaz")
+        self._attach(record, extract_keys(record), ci_sys_id)
+        return Resolution(Outcome.LINKED, ci_sys_id, rule="import", reasons=("İlk yükleme: sys_id korundu",))
 
     def _attach(self, record: SourceRecord, keys: IdentityKeys, ci: str) -> None:
         index = self.resolver.index

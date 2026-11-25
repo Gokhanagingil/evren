@@ -27,6 +27,7 @@ attributes:
   ip_address: {from: managementAddress}
   serial_number: {from: serialNumber, transform: strip}
   firmware_version: {from: systemDescription}
+# sysObjectID (systemObjectId) harici kimlik DEĞİLDİR: cihazı değil modeli tanımlar; aynı modeldeki tüm
+# cihazlarda aynıdır ve kimlik kanıtı sayılırsa farklı cihazları birleştirir.
 external_ids:
   nnmi_uuid: {from: uuid}
-  snmp_sysobjectid: {from: systemObjectId}

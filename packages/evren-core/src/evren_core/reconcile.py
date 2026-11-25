@@ -26,7 +26,7 @@ from typing import Any
 from .classes import ClassHierarchy
 from .sources import SourceRegistry
 
-__all__ = ["AttributeDecision", "DataRefreshRule", "Reconciler", "ReconciliationRule", "SourceValues"]
+__all__ = ["AttributeDecision", "DataRefreshRule", "ReconcileReport", "Reconciler", "ReconciliationRule", "SourceValues"]
 
 
 @dataclass(frozen=True)
@@ -65,6 +65,18 @@ class AttributeDecision:
     overridden: tuple[tuple[str, Any], ...] = ()
     unauthorized: tuple[str, ...] = ()
     shadow: tuple[tuple[str, Any], ...] = ()
+
+
+@dataclass(frozen=True)
+class ReconcileReport:
+    """Uzlaştırma sonucu: kararlar + hiçbir yetkili kaynağın değer vermediği için reddedilen değerler.
+
+    ``rejected`` ör. izleme aracının destek grubu yazmaya çalışması: golden record değişmez, ama
+    "yetkisiz kaynak denemesi" olarak görünür kalır (veri kalitesi ve eşleme hatası belirtisi).
+    """
+
+    decisions: dict[str, AttributeDecision]
+    rejected: dict[str, tuple[tuple[str, Any], ...]]
 
 
 class Reconciler:
@@ -113,7 +125,11 @@ class Reconciler:
         return None
 
     def reconcile(self, class_name: str, inputs: Sequence[SourceValues], now: datetime) -> dict[str, AttributeDecision]:
+        return self.reconcile_report(class_name, inputs, now).decisions
+
+    def reconcile_report(self, class_name: str, inputs: Sequence[SourceValues], now: datetime) -> ReconcileReport:
         reg = self.registry
+        rejected: dict[str, tuple[tuple[str, Any], ...]] = {}
         writers = [sv for sv in inputs if reg.writes_attributes(sv.data_source)]
         shadows = [sv for sv in inputs if reg.is_shadow(sv.data_source)]
         attributes = sorted({a for sv in writers for a, v in sv.values.items() if v is not None})
@@ -132,7 +148,9 @@ class Reconciler:
                                   key=lambda c: (ranks[reg.role_of(c[0])], reg.rank_of(c[0]), -c[2].timestamp()))
                 unauthorized = tuple(sorted({c[0] for c in candidates if reg.role_of(c[0]) not in auth}))
                 if not eligible:
-                    continue  # yetkili kaynak değer vermedi; mevcut değer korunur
+                    # yetkili kaynak değer vermedi; mevcut değer korunur, deneme raporlanır
+                    rejected[attribute] = tuple((c[0], c[1]) for c in candidates)
+                    continue
 
                 def is_stale(cand: tuple[str, Any, datetime]) -> bool:
                     window = self.refresh_window(class_name, reg.role_of(cand[0]))
@@ -153,4 +171,4 @@ class Reconciler:
                            if sv.values.get(attribute) is not None)
             decisions[attribute] = AttributeDecision(attribute, value, source, observed, reason, reg.role_of(source),
                                                      overridden, unauthorized, shadow)
-        return decisions
+        return ReconcileReport(decisions, rejected)

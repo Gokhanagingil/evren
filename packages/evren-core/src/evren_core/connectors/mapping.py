@@ -5,6 +5,9 @@ Yeni bir kaynak eklemek veya keşif aracını değiştirmek için çoğu zaman y
 veriyi çeker (API, sayfalama, kimlik doğrulama); anlamlandırma burada yapılır.
 
 Yol sözdizimi: ``a.b.c``, ``a[0].b``, ``a[*].b`` (liste döndürür).
+
+``prefix``: aynı kaynak nesnesinden birden fazla kayıt üretildiğinde (ör. vCenter VM örneği ve
+misafir sunucu) kaynak anahtarlarını ayırmak için kullanılır; ``(data_source, source_key)`` benzersizdir.
 """
 from __future__ import annotations
 
@@ -48,6 +51,16 @@ def resolve_path(data: Any, path: str) -> Any:
     return current[0] if current else None
 
 
+def _short_hostname(v: Any) -> Any:
+    """``abc-1.corp.local`` → ``abc-1``. IP adresleri olduğu gibi kalır (ad kimliği sayılmaz)."""
+    if not isinstance(v, str):
+        return v
+    text = v.strip()
+    if re.fullmatch(r"[0-9.]+|[0-9a-fA-F:]+", text):
+        return text
+    return text.split(".", 1)[0]
+
+
 def _to_int(v: Any) -> int | None:
     if v in (None, ""):
         return None
@@ -65,6 +78,7 @@ TRANSFORMS: dict[str, Callable[[Any], Any]] = {
     "kb_to_mb": lambda v: None if v in (None, "") else int(float(v) / 1024),
     "gb_to_mb": lambda v: None if v in (None, "") else int(float(v) * 1024),
     "str": lambda v: None if v is None else str(v),
+    "short_hostname": _short_hostname,
 }
 
 
@@ -76,6 +90,7 @@ class FieldSpec:
     transforms: tuple[str, ...] = ()
     value_map: Mapping[str, Any] | None = None
     split: str | None = None
+    prefix: str | None = None
 
     @classmethod
     def parse(cls, spec: Any) -> FieldSpec:
@@ -83,7 +98,7 @@ class FieldSpec:
             return cls(source=spec)
         if not isinstance(spec, Mapping):
             raise MappingError(f"Geçersiz alan tanımı: {spec!r}")
-        unknown = set(spec) - {"from", "fallback", "const", "transform", "map", "split"}
+        unknown = set(spec) - {"from", "fallback", "const", "transform", "map", "split", "prefix"}
         if unknown:
             raise MappingError(f"Bilinmeyen anahtarlar: {sorted(unknown)}")
         transforms = spec.get("transform", ())
@@ -99,6 +114,7 @@ class FieldSpec:
             transforms=transforms,
             value_map={str(k): v for k, v in spec["map"].items()} if "map" in spec else None,
             split=spec.get("split"),
+            prefix=spec.get("prefix"),
         )
 
     def extract(self, data: Any) -> Any:
@@ -119,6 +135,8 @@ class FieldSpec:
                 v = TRANSFORMS[t](v)
             if self.value_map is not None:
                 v = self.value_map.get(str(v), self.value_map.get("*", v))
+            if self.prefix and v not in (None, ""):
+                v = f"{self.prefix}{v}"
             return v
 
         if isinstance(value, list):

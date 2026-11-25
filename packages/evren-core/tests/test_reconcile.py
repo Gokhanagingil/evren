@@ -171,3 +171,12 @@ def test_unknown_source_or_role_is_explicit(metadata, now):
     md.__post_init__()
     errors = "\n".join(validate(md).errors)
     assert "kaynak rolü tanımsız BMC (ürün/veri kaynağı adı değil, kaynak rolü yazılır)" in errors
+
+
+def test_rejected_values_are_reported_when_no_authorized_source(metadata, now):
+    """İzleme aracı yönetişim alanı göndermeye çalışıyor: golden record değişmez, deneme görünür kalır."""
+    report = make(metadata).reconcile_report("cmdb_ci_server", [
+        SourceValues("Zabbix", {"asset_tag": "DMB-1", "name": "srv-1"}, now)], now)
+    assert "asset_tag" not in report.decisions
+    assert report.rejected == {"asset_tag": (("Zabbix", "DMB-1"),)}
+    assert report.decisions["name"].value == "srv-1"

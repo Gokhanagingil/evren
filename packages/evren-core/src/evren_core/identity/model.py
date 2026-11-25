@@ -68,6 +68,14 @@ class IdentityKeys:
         }
 
     @property
+    def can_create_ci(self) -> bool:
+        """Yeni CI açmaya yetecek kimlik var mı? Kaynak içi harici kimlik ve IP tek başına yetmez."""
+        return any(
+            (self.names, self.fqdns, self.serials, self.vmware_serials, self.uuids, self.macs,
+             self.correlation_ids, self.vm_objects)
+        )
+
+    @property
     def is_empty(self) -> bool:
         return not any(
             (self.names, self.fqdns, self.serials, self.vmware_serials, self.uuids, self.macs,

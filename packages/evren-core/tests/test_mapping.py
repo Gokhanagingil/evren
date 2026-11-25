@@ -46,6 +46,15 @@ def test_every_mapping_file_parses_and_targets_known_classes_and_fields(repo_roo
             assert rel["type"] in rel_types, f"{f}: {rel['type']}"
 
 
+def test_short_hostname_transform():
+    from evren_core.connectors.mapping import TRANSFORMS
+
+    f = TRANSFORMS["short_hostname"]
+    assert f("abc-1.corp.local") == "abc-1"
+    assert f("10.20.30.41") == "10.20.30.41"
+    assert f("ABC_1") == "ABC_1"
+
+
 def test_resolve_path_supports_indices_and_wildcards():
     data = {"a": [{"b": 1}, {"b": 2}, {"c": 3}], "x": {"y": "z"}}
     assert resolve_path(data, "a[1].b") == 2
@@ -75,8 +84,31 @@ def test_vcenter_produces_vm_instance_and_guest_server(repo_root, now):
     assert vm.relations[0].type == "Registered on::Has registered"
     assert guest.class_hint == "cmdb_ci_win_server"
     assert guest.attributes["virtual"] is True
+    assert guest.attributes["name"] == "abc_1" and guest.attributes["fqdn"] == "abc_1.corp.sirket.local"
     assert guest.relations[0].type == "Virtualized by::Virtualizes"
     assert guest.relations[0].target_source_key == raw["config"]["instanceUuid"]
+
+
+def test_vcenter_vm_and_guest_have_distinct_source_keys(repo_root, now):
+    """(data_source, source_key) benzersizdir: aynı VM'den üretilen iki kayıt birbirini ezmemeli."""
+    raw = fixture("vcenter_vm.json")
+    vm = mapping(repo_root, "vcenter/vm_instance.mapping.yaml").apply(raw, run_id=RUN, observed_at=now)
+    guest = mapping(repo_root, "vcenter/guest_server.mapping.yaml").apply(raw, run_id=RUN, observed_at=now)
+    assert vm.source_key != guest.source_key
+    assert guest.source_key == "guest:" + raw["config"]["instanceUuid"]
+    assert guest.relations[0].target_source_key == vm.source_key
+
+
+def test_servicenow_import_keeps_sys_id(repo_root, engine, now):
+    raw = {"sys_id": "0123456789abcdef0123456789abcdef", "sys_class_name": "cmdb_ci_linux_server",
+           "name": "ist-erp-01", "serial_number": "CZJ1234567", "used_for": "Production",
+           "support_group": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "operational_status": "1"}
+    rec = mapping(repo_root, "servicenow_cmdb/server.mapping.yaml").apply(raw, run_id=RUN, observed_at=now)
+    assert rec.class_hint == "cmdb_ci_linux_server" and rec.attributes["operational_status"] == 1
+    res = engine.import_existing(source_record_from_ingest(rec), raw["sys_id"])
+    assert res.ci_sys_id == raw["sys_id"] and res.rule == "import"
+    with pytest.raises(ValueError):
+        engine.import_existing(source_record_from_ingest(rec), raw["sys_id"])
 
 
 def test_vcenter_guest_skipped_without_tools(repo_root, now):
@@ -153,3 +185,36 @@ def test_mapping_errors_are_explicit():
     with pytest.raises(MappingError):
         FieldMapping.from_dict({"data_source": "X", "source_key": "id", "class": "cmdb_ci",
                                 "attributes": {"name": {"from": "n", "transform": "rot13"}}})
+    with pytest.raises(MappingError):
+        FieldMapping.from_dict({"data_source": "X", "source_key": {"from": "id", "prefixx": "a:"}, "class": "cmdb_ci"})
+
+
+def test_nnmi_model_oid_is_not_an_identity(repo_root, engine, now):
+    """Aynı modeldeki iki switch: sysObjectID ortak, cihazlar farklı → asla birleştirilmez."""
+    m = mapping(repo_root, "nnmi/mapping.yaml")
+    a = fixture("nnmi_node.json")
+    b = {**a, "uuid": "11111111-2222-4333-8444-555555555555", "name": "ist-dc1-core-sw02",
+         "systemName": "IST-DC1-CORE-SW02", "longName": "ist-dc1-core-sw02.net.sirket.local",
+         "managementAddress": "10.0.0.2", "serialNumber": "FDO99999ABC"}
+    ra = engine.process(source_record_from_ingest(m.apply(a, run_id=RUN, observed_at=now)))
+    rb = engine.process(source_record_from_ingest(m.apply(b, run_id=RUN, observed_at=now)))
+    assert rb.outcome is Outcome.NEW and rb.ci_sys_id != ra.ci_sys_id
+    assert not any(f.code == "external_id_match" for f in rb.features)
+
+
+def test_zabbix_turkish_network_group_is_network_gear(repo_root, now):
+    raw = {"hostid": "20001", "host": "IST-DC1-CORE-SW01", "name": "Çekirdek switch", "interfaces": [],
+           "inventory": {}, "hostgroups": [{"groupid": "9", "name": "Ağ cihazları/Çekirdek"}]}
+    rec = mapping(repo_root, "zabbix/mapping.yaml").apply(raw, run_id=RUN, observed_at=now)
+    assert rec.class_hint == "cmdb_ci_netgear"
+
+
+def test_ip_named_host_without_other_identity_does_not_create_ci(repo_root, engine, now):
+    """Zabbix'te host adı olarak IP girilmiş, MAC/seri yok → yeni CI açılmaz, kayıt park edilir."""
+    raw = {"hostid": "20002", "host": "10.20.30.99", "name": "10.20.30.99", "interfaces": [
+        {"interfaceid": "1", "type": "1", "ip": "10.20.30.99", "main": "1"}], "inventory": {}, "hostgroups": []}
+    rec = mapping(repo_root, "zabbix/mapping.yaml").apply(raw, run_id=RUN, observed_at=now)
+    res = engine.process(source_record_from_ingest(rec))
+    assert res.outcome is Outcome.INSUFFICIENT and res.ci_sys_id is None
+    assert "yeni CI için" in res.summary_tr
+    assert len(engine.resolver.index) == 0
