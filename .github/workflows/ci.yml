@@ -46,8 +46,9 @@ jobs:
     timeout-minutes: 15
     services:
       postgres:
-        # TODO(F0-06): imajı digest ile sabitle
-        image: postgres:16
+        # postgres:16 çok mimarili imaj dizini, digest ile sabit (25.11.2026). Güncellerken digest'i
+        # Docker Hub'dan yeniden alın ve bu satırı tek değişiklik olarak gözden geçirin.
+        image: postgres:16@sha256:07abc3f43c9395b0bdbbab36bc25ddb0e8d83cd4fcafb5fb7d6abe14ff156dd8
         env:
           POSTGRES_USER: evren_owner
           POSTGRES_PASSWORD: ci-only-not-a-secret

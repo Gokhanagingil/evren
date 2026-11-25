@@ -54,3 +54,18 @@ def test_diff_reports_parent_type_and_missing_items(repo_root, metadata):
     assert "TİP FARKI: cmdb_ci_computer.cpu_speed: Evren=integer ServiceNow=decimal" in report
     assert "EKSİK SINIF: cmdb_ci_linux_server" in report
     assert "EKSİK İLİŞKİ TİPİ: Depends on::Used by" in report
+
+
+def test_instance_url_is_strictly_validated(repo_root):
+    """Kimlik bilgisi yalnızca doğrulanmış https ana makinesine gider (bandit B310)."""
+    import pytest
+
+    tool = load_tool(repo_root)
+    assert tool.validated_instance("https://ornek.service-now.com/") == "https://ornek.service-now.com"
+    assert tool.validated_instance("https://ornek.service-now.com:8443") == "https://ornek.service-now.com:8443"
+    for bad in ("http://ornek.service-now.com", "file:///etc/passwd", "https://user:pw@ornek.service-now.com",
+                "https://ornek.service-now.com/api", "https://ornek.service-now.com?x=1", "https://", "ornek.service-now.com"):
+        with pytest.raises(SystemExit):
+            tool.validated_instance(bad)
+    with pytest.raises(SystemExit):
+        tool.fetch_table("https://ornek.service-now.com", "sys_db_object;drop", "", ["name"])

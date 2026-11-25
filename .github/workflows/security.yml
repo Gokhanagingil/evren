@@ -3,8 +3,9 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 
-# Tarayıcı sürümleri ve SHA-256 değerleri KS GRC (control) deposundaki doğrulanmış
-# güvenlik iş akışıyla aynıdır. Güncellerken yeni sürümün özetini resmi yayından doğrulayın.
+# Tarayıcı sürümleri ve SHA-256 değerleri, GRC Platformu'nun ilk sürümünde (eski KS GRC deposu)
+# doğrulanmış güvenlik iş akışından alınmıştır. Güncellerken yeni sürümün özetini resmi yayından doğrulayın.
+# Yerelde aynı kapıyı çalıştırmak: bandit==1.9.4, pip-audit==2.10.1 (DURUM.md'de komutlar).
 jobs:
   scan:
     runs-on: ubuntu-24.04
