@@ -7,6 +7,10 @@ select = ["E", "F", "W", "I", "B", "UP", "S", "RUF"]
 # RUF001-003: Türkçe metinlerdeki karakterler; S101: testlerde assert
 ignore = ["RUF001", "RUF002", "RUF003", "S101"]
 
+[lint.flake8-bugbear]
+# FastAPI bağımlılık ve parametre bildirimi deyimi
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+
 [lint.isort]
 known-first-party = ["evren_core", "evren_reconciler", "evren_api", "_bootstrap", "_font_metrics", "build_architecture", "build_demo",
                      "export_schemas", "dev_server", "sn_metadata_export", "load_demo_pg"]

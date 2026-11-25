@@ -103,6 +103,28 @@ def seed_history(conn: psycopg.Connection[Any], counts: dict[str, int]) -> None:
                     (run_id(f"{ds}:history:{k}"), ds, started, started + timedelta(minutes=9), n))
 
 
+def seed_refs(conn: psycopg.Connection[Any], refs: dict[str, str], role: str | None) -> None:
+    """Referans verileri (grup, kişi, konum): üretimde sn-sync yansıtır; burada aynı rolle (evren_app_sync)."""
+    with conn.transaction():
+        if role:
+            conn.execute("SET ROLE evren_app_sync")
+        with conn.cursor() as cur:
+            for key, sys_id in refs.items():
+                kind, label = key.split(":", 1)
+                if kind == "group":
+                    cur.execute("INSERT INTO ref.sys_user_group (sys_id, name, source) VALUES (%s, %s, 'evren') "
+                                "ON CONFLICT DO NOTHING", (sys_id, label))
+                elif kind == "user":
+                    user = label.split(" (")[0].lower().replace(" ", ".")
+                    cur.execute("INSERT INTO ref.sys_user (sys_id, user_name, name, source) VALUES (%s, %s, %s, 'evren') "
+                                "ON CONFLICT DO NOTHING", (sys_id, user, label))
+                elif kind == "location":
+                    cur.execute("INSERT INTO ref.cmn_location (sys_id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
+                                (sys_id, label))
+        if role:
+            conn.execute(psycopg.sql.SQL("SET ROLE {}").format(psycopg.sql.Identifier(role)))
+
+
 def load(conn: psycopg.Connection[Any], role: str | None = "evren_app_reconciler") -> dict[str, Any]:
     md = load_metadata(REPO_ROOT / "metadata")
     if role:
@@ -129,8 +151,9 @@ def load(conn: psycopg.Connection[Any], role: str | None = "evren_app_reconciler
 
     # 2) Gerçek alım
     sink = PgSink(store)
-    feed(sink)
+    refs, _hosts = feed(sink)
     sink.close()
+    seed_refs(conn, refs, role)
 
     # 3) NNMi'nin sonraki çalışması sayfalama ortasında kesildi (kısmi): devre kesici karantinaya almalı
     nnmi = sink.records_by_source.get("NNMi", [])

@@ -475,6 +475,54 @@ class ReconcilerStore:
                        ON CONFLICT (parent, child, type) DO UPDATE SET last_discovered = EXCLUDED.last_discovered""",
                     (parent, child, data_source, seen, seen, rel["type"]))
 
+    # ------------------------------------------------------------------ insan kararları (eşleştirme kuyruğu)
+    def apply_decisions(self, limit: int = 100) -> list[ApplyResult]:
+        """API'nin kaydettiği kuyruk kararlarını uygular (kimlik bağı veya yeni CI) ve uzlaştırır.
+
+        Karar veren kişi bağın ``decided_by`` alanına yazılır; yöntem ``manual`` olur. Birden fazla uzlaştırıcı
+        örneği aynı anda çalışabilir (``FOR UPDATE SKIP LOCKED``).
+        """
+        results: list[ApplyResult] = []
+        for _ in range(limit):
+            with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as dcur:
+                dcur.execute(
+                    """SELECT mc.sys_id, mc.data_source, mc.source_key, mc.status, mc.decision, mc.decision_ci,
+                              mc.decided_by, sr.class_hint, sr.attributes, sr.lookup, sr.external_ids, sr.relations,
+                              sr.last_seen, sr.last_run
+                         FROM ingest.match_candidate mc
+                         JOIN ingest.source_record sr USING (data_source, source_key)
+                        WHERE mc.applied_at IS NULL AND mc.status IN ('accepted', 'created_new', 'rejected')
+                        ORDER BY mc.decided_at, mc.sys_id
+                        LIMIT 1 FOR UPDATE OF mc SKIP LOCKED""")
+                row = dcur.fetchone()
+                if row is None:
+                    break
+                with self.conn.cursor() as cur:
+                    record = IngestRecord(
+                        data_source=row["data_source"], run_id=row["last_run"] or UUID(int=0),
+                        source_key=row["source_key"], class_hint=row["class_hint"], attributes=row["attributes"],
+                        lookup=row["lookup"], external_ids=row["external_ids"], relations=row["relations"],
+                        observed_at=row["last_seen"])
+                    result = ApplyResult("decision_rejected", None, [], "Kaynakta düzeltilecek")
+                    if row["status"] in ("accepted", "created_new"):
+                        ci = row["decision_ci"] if row["status"] == "accepted" else self._create_ci(cur, record)
+                        index = PostgresCandidateIndex(cur)
+                        resolver = IdentityResolver(self.rules, index, PostgresLinkStore(cur))
+                        keys = extract_keys(source_record_from_ingest(record))
+                        actor = self.actor
+                        self.actor = row["decided_by"] or actor  # bağın karar vereni insan
+                        try:
+                            self._attach(cur, index, resolver, record, keys, ci, method="manual",
+                                         rule=f"karar:{row['decision']}", resolution=None)
+                        finally:
+                            self.actor = actor
+                        result = ApplyResult("decision_" + ("merged" if row["status"] == "accepted" else "new_ci"),
+                                             ci, self._reconcile(cur, ci, None), "İnsan kararı uygulandı")
+                    cur.execute("UPDATE ingest.match_candidate SET applied_at = now() WHERE sys_id = %s",
+                                (row["sys_id"],))
+                results.append(result)
+        return results
+
     # ------------------------------------------------------------------ toplu yardımcı
     def apply_all(self, records: Iterable[IngestRecord]) -> list[ApplyResult]:
         return [self.apply(r) for r in records]
