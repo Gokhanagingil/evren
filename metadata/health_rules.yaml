@@ -1,0 +1,31 @@
+# CMDB sağlık kuralları (F1-09). Pano dört boyutu 0–100 puanla ölçer; genel puan ağırlıklı ortalamadır.
+#
+#   Tamlık   : sınıf başına zorunlu ve önerilen alanların dolu olma oranı (önerilen alan yarım ağırlık)
+#   Doğruluk : mükerrer adayı, eskimiş (yetkili kaynakların görmediği) CI, kopuk referans
+#              — eskime eşikleri reconciliation_rules.yaml → staleness'tan gelir
+#   Uyum     : üretimdeki sunucuda yönetişim alanları, yetkisiz kaynak denemesi, GRC kontrol sonuçları
+#   Kapsam   : sunucuların keşif, izleme, uç nokta güvenliği ve mevcut CMDB (ITSM) rolleriyle görülme oranı
+#
+# Alan adları sınıf sözlüğünden doğrulanır (tools/load_metadata.py --check). Kurallar ürün adı içermez.
+version: 1
+weights: {completeness: 30, correctness: 30, compliance: 20, coverage: 20}
+thresholds: {good: 85, warn: 70}   # puan ≥ good: iyi · ≥ warn: dikkat · altı: kötü
+
+completeness:
+  - applies_to: cmdb_ci_server
+    required: [name, ip_address, os, serial_number]
+    recommended: [fqdn, support_group, owned_by, used_for, location]
+  - applies_to: cmdb_ci_netgear
+    required: [name, ip_address, serial_number]
+    recommended: [firmware_version, location, support_group]
+  - applies_to: cmdb_ci_vm_instance
+    required: [name]
+    recommended: [cpus, memory]
+
+compliance:
+  # Üretimdeki (used_for = Production) sunucularda dolu olması gereken yönetişim alanları
+  governance_fields: [owned_by, support_group]
+  production_value: Production
+
+coverage:
+  applies_to: cmdb_ci_server

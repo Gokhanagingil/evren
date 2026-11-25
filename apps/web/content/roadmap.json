@@ -66,7 +66,7 @@
         {"id": "F1-06", "title": "Devre kesici ve eskime işletimi; tatbikat", "status": "planned", "components": ["breaker"]},
         {"id": "F1-07", "title": "Bağımlı CI kimliği (uygulama, ağ adaptörü)", "status": "planned", "components": ["dependent_ids"]},
         {"id": "F1-08", "title": "OpenSearch araması ve CI 360° ekranı", "status": "planned", "components": ["search_index"]},
-        {"id": "F1-09", "title": "CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam", "status": "planned", "components": ["analytics"]},
+        {"id": "F1-09", "title": "CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam", "status": "planned", "components": ["analytics"], "note": "Beklemede: zemin hazır (metadata/health_rules.yaml + evren_core.health puanlama, testli). Pano, veri hattı (alım geçidi, bağlayıcılar, eskime, bağımlı CI) kurulduktan sonra; ölçecek gerçek veri yolu olmadan erken."},
         {"id": "F1-10", "title": "Rol–yetki matrisi ekranı (RBAC + ABAC)", "status": "planned", "components": ["rbac_abac"], "needs": "Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı"},
         {"id": "F1-11", "title": "Şema tasarımcısı ve değişiklik setleri", "status": "done", "components": ["schema_sets"], "note": "Şema ve Değişiklikler sayfası: 7 işlem (sınıf/alan ekle, alan değiştir, kullanımdan kaldır, seçim değeri, veri kaynağı ekle (gölge), yaşam döngüsü); taslak → onaya gönderme (doğrulama + etki analizi) → onay (hazırlayan onaylayamaz: API + kısıt + tetikleyici) → yayın = metadata/changes/ dosyası (ADR-0015). Alan silme ve fiziksel kolona taşıma sonraki sürümde."},
         {"id": "F1-12", "title": "ServiceNow'da elle yapılan değişikliklerin çekilmesi", "status": "planned", "components": ["sn_pull", "sn_edits"]},

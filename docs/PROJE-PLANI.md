@@ -125,6 +125,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-07** Bağımlı CI kimliği (uygulama, ağ adaptörü) — _Planlandı_
 - [ ] **F1-08** OpenSearch araması ve CI 360° ekranı — _Planlandı_
 - [ ] **F1-09** CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam — _Planlandı_
+  - Not: Beklemede: zemin hazır (metadata/health_rules.yaml + evren_core.health puanlama, testli). Pano, veri hattı (alım geçidi, bağlayıcılar, eskime, bağımlı CI) kurulduktan sonra; ölçecek gerçek veri yolu olmadan erken.
 - [ ] **F1-10** Rol–yetki matrisi ekranı (RBAC + ABAC) — _Planlandı_
   - Sizden gereken: Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı
 - [x] **F1-11** Şema tasarımcısı ve değişiklik setleri

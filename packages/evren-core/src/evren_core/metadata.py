@@ -81,6 +81,7 @@ class Metadata:
     identification: list[dict[str, Any]]
     reconciliation: dict[str, Any]
     source_roles: list[dict[str, Any]] = field(default_factory=list)
+    health: dict[str, Any] = field(default_factory=dict)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -138,6 +139,7 @@ def _load_base(d: Path) -> Metadata:
         source_roles=sources.get("source_roles", []),
         identification=_read(d / "identification_rules.yaml").get("rules", []),
         reconciliation=_read(d / "reconciliation_rules.yaml"),
+        health=_read(d / "health_rules.yaml") if (d / "health_rules.yaml").exists() else {},
     )
 
 
@@ -259,6 +261,30 @@ def validate(md: Metadata) -> ValidationReport:
     except SourceRegistryError as exc:
         r.errors.append(str(exc))
     role_set = set(role_names)
+
+    # Sağlık kuralları (F1-09)
+    health = md.health or {}
+    weights = health.get("weights") or {}
+    if weights and (set(weights) != {"completeness", "correctness", "compliance", "coverage"}
+                    or sum(weights.values()) != 100):
+        r.errors.append("sağlık: ağırlıklar dört boyut için tanımlı olmalı ve toplamı 100 olmalı")
+    for rule in health.get("completeness", []):
+        cls = rule.get("applies_to")
+        if cls not in known:
+            r.errors.append(f"sağlık[{cls}]: sınıf tanımsız")
+            continue
+        fields_ = md.fields_of(cls)
+        for name in [*rule.get("required", []), *rule.get("recommended", [])]:
+            if name not in fields_:
+                r.errors.append(f"sağlık[{cls}]: alan tanımsız: {name}")
+            elif fields_[name].get("deprecated"):
+                r.warnings.append(f"sağlık[{cls}]: kullanımdan kaldırılmış alan: {name}")
+    for name in (health.get("compliance") or {}).get("governance_fields", []):
+        if name not in md.fields_of("cmdb_ci"):
+            r.errors.append(f"sağlık: yönetişim alanı tanımsız: {name}")
+    cov = (health.get("coverage") or {}).get("applies_to")
+    if cov and cov not in known:
+        r.errors.append(f"sağlık: kapsam sınıfı tanımsız: {cov}")
 
     # Tanımlama kuralları
     applies = [i["applies_to"] for i in md.identification]
