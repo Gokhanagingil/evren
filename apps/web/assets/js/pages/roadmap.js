@@ -123,6 +123,15 @@ export async function renderRoadmap(view, param) {
       metric({ label: 'Etkin faz', value: current.id, foot: current.title }),
       metric({ label: 'Devam eden', value: overall.prog, foot: 'adım' }),
       metric({ label: 'Engelli veya riskli', value: overall.blocked, tone: overall.blocked ? 'bad' : 'good', foot: 'adım' })),
+    rm.track ? h('section', { class: 'panel track', id: 'track', 'aria-labelledby': 'trackTitle' },
+      h('div', { class: 'panel-title' }, h('h2', { id: 'trackTitle' }, rm.track.title),
+        h('span', { class: 'pills' }, h('span', { class: 'pill info' },
+          `${rm.track.items.filter((i) => i.status === 'done').length}/${rm.track.items.length} tamamlandı`))),
+      h('p', { class: 'intro' }, rm.track.note),
+      h('ol', { class: 'track-list' }, rm.track.items.map((i) => h('li', { class: `track-item s-${i.status}` },
+        h('b', { class: 'n' }, i.id),
+        h('span', {}, i.title, h('span', { class: 'cell-sub' }, labels[i.status],
+          i.refs?.length ? ` · ilgili: ${i.refs.join(', ')}` : '', i.needs ? ` · sizden: ${i.needs}` : '')))))) : null,
     h('nav', { class: 'stepper', 'aria-label': 'Fazlar' }, rm.phases.map((phase) => {
       const p = progress(phase.items);
       return h('button', {

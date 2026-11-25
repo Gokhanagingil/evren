@@ -10,7 +10,25 @@
 - **Sizden gereken** satırı, adımın başlaması için kurumdan gelmesi gereken karar veya erişimdir. Bunlar zamanında gelmezse ilgili adım bekler; diğer adımlar sürer.
 - Bir faz, çıkış kriterlerinin tamamı karşılanınca kapanır.
 
-## Sıradaki adımlar
+## Uçtan uca izlek — şu anki çalışma sırası
+
+> Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
+
+**İzlek ilerlemesi:** 0/10 adım tamamlandı
+
+- [ ] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Devam ediyor_ (ilgili: F0-10)
+- [ ] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Planlandı_ (ilgili: F0-10)
+- [ ] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Planlandı_ (ilgili: F1-08)
+- [ ] **U4** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04)
+- [ ] **U5** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_
+- [ ] **U6** Veri modeli yönetimi: sınıf ağacı ve alan gezgini, değişiklik setleriyle bütünleşik tek sayfa; kural görünümü — _Planlandı_ (ilgili: F1-05, F1-11)
+- [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07)
+- [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10)
+- [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
+- [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09)
+  - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
+
+## Sıradaki adımlar (fazlara göre)
 
 1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma

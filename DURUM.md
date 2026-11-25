@@ -90,7 +90,7 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Kanıt: `POST /api/v1/reports/shadow/snapshots` → `insight.evidence_snapshot` (salt ekleme, sahibi dahil değiştirilemez), kararlı JSON + SHA-256; indirme `X-Evren-Content-SHA256` ile doğrulanır. İzin: Veri sorumlusu, Denetçi.
   - Arayüz: "Gölge Mod Raporu" sayfası (CMDB grubunda): kesinlik uyarısı, özet kartları, kapsam tablosu, boşluk sekmeleri, mükerrer grupları ve önerileri, değer farkları (yazım farkları isteğe bağlı), kanıt kaydı ve JSON indirme; 390 px'te taşmasız.
   - Demo verisinde bulduğu gerçekçi durum: iki `ist-db-01` ServiceNow kaydı aynı MAC/IP, farklı seri (fiziksel → sanal taşıma); keşfin görmediği kayıt emekliye ayırma adayı olarak öneriliyor.
-- **Öncelik değişikliği önerisi (25.11.2026, proje sahibinin sorusu üzerine: "CMDB hazır mı?"):** hayır — motor (model, kimlik, uzlaştırma, yönetişim, API, arayüz) hazır ve sentetik veriyle uçtan uca çalışıyor, ama veri girişi yok (bağlayıcılar yalnız eşleme dosyası, alım geçidi yok), ServiceNow ilk yüklemesi yapılmadı, eskime işletilmiyor, uygulama/hizmet katmanı ve bağımlı CI kimliği yok. Önerilen sıra: alım geçidi (veritabanı kuyruğu; Kafka sonra) → bağlayıcı istemcileri (kaydedilmiş örnek yanıtlarla) → eskime (F1-06) → bağımlı CI ve ilişkiler (F1-07) → sağlık panosu (F1-09). Proje sahibinin onayı bekleniyor. Sağlık panosunun zemini commit'lendi: `metadata/health_rules.yaml` (doğrulayıcıda) + `evren_core.health` puanlama (testli).
+- **Yeni çalışma düzeni: uçtan uca izlek (25.11.2026, proje sahibinin kararı).** Beklenti: PostgreSQL, Kafka ve OpenSearch altyapısı; kaynak verisini anlamlandıran akıl katmanı (elle girdi dahil); veri modeli; büyük resim uçtan uca ve tek arayüzden yönetim. Sıra (yol haritasında `track`, Yol Haritası sayfasının en üstünde): U1 altyapı yığını → U2 olay omurgası (alım geçidi, Kafka, tüketici, outbox) → U3 OpenSearch arama → U4 bağlayıcılar ve kaynak yönetimi → U5 elle girdi → U6 veri modeli yönetimi → U7 yaşam döngüsü ve ilişkiler → U8 yönetim ekranları → U9 ServiceNow replika ve MCP yapısı → U10 canlı kabul (dış girdilerle, en sonda). Sağlık panosunun zemini commit'lendi; pano U8'de.
 - **Dış girdiler (Entra kaydı, ServiceNow hesabı, hedef ortam, kaynak hesapları) proje sahibinin kararıyla en sona bırakıldı;** önce yapı ana hatlarıyla tamamlanacak.
 - **F1-11: şema değişiklik setleri (tamamlandı)** (ADR-0015, göç `0011_change_sets.sql`).
   - Çekirdek `evren_core.changeset`: 7 işlem (sınıf ekle, alan ekle — `u_` önekli JSONB —, alan değiştir, kullanımdan kaldır, seçim değeri, veri kaynağı ekle — gölge —, yaşam döngüsü — izinli geçişler), tüm hatalar Türkçe ve birlikte; sonuç tam metadata doğrulamasından geçer. `load_metadata` temel dosyalardan sonra `metadata/changes/*.yaml` dosyalarını ad sırasıyla uygular.
@@ -125,14 +125,15 @@ Doğrulanınca bu bölümden kaldırılacak.
 - Skor ağırlıkları sentetik senaryolarla ayarlandı; gerçek kuyruk kararlarıyla kalibre edilmeli.
 - Testler sentetik veriyle teknik kabuldür; canlı kaynak entegrasyonu veya kullanıcı kabulü sayılmaz.
 
-## Sıradaki adımlar (sırayla)
+## Sıradaki adımlar (uçtan uca izlek)
 
-1. **F0-09 devamı** — canlı Entra kabulü; makine hesapları (GRC Platformu için); ABAC koşul değerlendirmesi (CI sahibi). *Sizden: Entra uygulama kaydı (kiracı, istemci, `Evren.*` uygulama rolleri, MFA bağlamı).*
-2. **F0-07** — `tools/sn_metadata_export.py` ile kurum sözlüğü; `verify` işaretleri kapatılır. *Sizden: SN salt okunur hesap.*
-3. **F0-08** — ServiceNow CMDB ilk yüklemesi (eşleme ve `import_existing` hazır).
-4. **F0-10 devamı** — Alım geçidi ve Kafka tüketicisi (uzlaştırıcı çalışanına eklenir), konteyner imajları. *Sizden: hedef ortam kararı.*
-5. **F0-11** — vCenter ve Zabbix bağlayıcıları. *Sizden: salt okunur servis hesapları.*
-6. **F0-13 kabulü** — Gerçek ServiceNow verisiyle ilk gölge mod raporu (F0-08'den sonra), CMDB sahibinin değerlendirmesi, ilk kanıtın GRC Platformu'na aktarımı (makine hesabı ile).
+1. **U1 Altyapı yığını** — Evren konteyner imajı (tek imaj, çoklu komut), `deploy/compose.dev.yaml` ile PostgreSQL + Kafka + OpenSearch + Evren servisleri, şema/rol kurulum aracı (izlenen göçler), CI'da yığını ayağa kaldırıp sağlık denetimi. *(sürüyor)*
+2. **U2 Olay omurgası** — alım geçidi, Kafka konuları, uzlaştırıcı tüketicisi, outbox yayını.
+3. **U3 Arama** — OpenSearch dizinleyici ve arama API'si.
+4. **U4 Bağlayıcılar ve kaynak yönetimi** — 6 kaynak istemcisi (kaydedilmiş örneklerle), arayüzden çalıştırma/zamanlama.
+5. **U5 Elle girdi** — CI oluşturma, ilişki, CSV içe aktarma.
+6. **U6 Veri modeli yönetimi**, **U7 yaşam döngüsü ve ilişkiler**, **U8 yönetim ekranları**, **U9 ServiceNow replika ve MCP yapısı**.
+7. **U10 Canlı kabul (en son, dış girdilerle)** — Entra kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef ortam.
 
 ## Açık sorular
 

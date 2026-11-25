@@ -49,7 +49,21 @@ def render(rm: dict) -> str:
         "Bunlar zamanında gelmezse ilgili adım bekler; diğer adımlar sürer.",
         "- Bir faz, çıkış kriterlerinin tamamı karşılanınca kapanır.",
         "",
-        "## Sıradaki adımlar",
+    ]
+    track = rm.get("track")
+    if track:
+        tdone = sum(1 for i in track["items"] if i["status"] == "done")
+        out += [f"## {track['title']}", "", f"> {track['note']}", "",
+                f"**İzlek ilerlemesi:** {tdone}/{len(track['items'])} adım tamamlandı", ""]
+        for i in track["items"]:
+            mark = "x" if i["status"] == "done" else " "
+            refs = f" (ilgili: {', '.join(i['refs'])})" if i.get("refs") else ""
+            out.append(f"- [{mark}] **{i['id']}** {i['title']} — _{labels[i['status']]}_{refs}")
+            if i.get("needs"):
+                out.append(f"  - Sizden gereken: {i['needs']}")
+        out.append("")
+    out += [
+        "## Sıradaki adımlar (fazlara göre)",
         "",
     ]
     for i in nxt[:6]:
