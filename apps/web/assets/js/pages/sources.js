@@ -4,6 +4,16 @@ import { closeDetail, openDetail, setHeader } from '../lib/shell.js';
 import { BREAKER, LIFECYCLE, sourcesView, srcChip } from '../lib/data.js';
 import { drillPanel } from './drill.js';
 
+const MODE = { snapshot: 'Tam liste', delta: 'Değişenler' };
+const CRED_STATE = { active: ['Etkin', 'good'], expired: ['Süresi doldu', 'warn'], revoked: ['İptal edildi', 'bad'] };
+
+// Bağlayıcının bildirdiği tamamlanma (olay omurgası): eksik çekme veya hata, devre kesiciden ayrı gösterilir.
+function runStatus(r) {
+  if (r.closing) return h('span', { class: 'cell-sub' }, 'Kapanış bekleniyor');
+  if (r.via_gateway && r.reported_completed === false) return h('span', { class: 'cell-sub' }, 'Bağlayıcı: tamamlanmadı');
+  return null;
+}
+
 function runsChart(runs) {
   const list = [...runs].reverse();
   const W = 560;
@@ -64,11 +74,26 @@ export async function renderSources(view, param) {
           h('div', { class: 'legend' }, h('span', {}, h('i', { class: 'ok' }), 'Sağlıklı'), h('span', {}, h('i', { class: 'warn' }), 'Uyarı'),
             h('span', {}, h('i', { class: 'open' }), 'Karantina')),
           h('div', { class: 'tablewrap' }, h('table', { 'aria-label': 'Çalışma geçmişi' },
-            h('thead', {}, h('tr', {}, h('th', {}, 'Başlangıç'), h('th', { class: 'num' }, 'Kayıt'), h('th', { class: 'num' }, 'Değişen'),
-              h('th', {}, 'Durum'), h('th', {}, 'Gerekçe'))),
-            h('tbody', {}, x.runs.slice(0, 6).map((r) => h('tr', {}, h('td', {}, formatDateTime(r.started_at)), h('td', { class: 'num' }, formatNumber(r.records)),
-              h('td', { class: 'num' }, formatNumber(r.changed)), h('td', {}, pill(...BREAKER[r.state])),
-              h('td', { class: 'small' }, r.reasons.join(' · ') || (r.baseline ? `Taban çizgisi ${formatNumber(r.baseline)}` : '—')))))))) : null,
+            h('thead', {}, h('tr', {}, h('th', {}, 'Başlangıç'), h('th', {}, 'Mod'), h('th', { class: 'num' }, 'Kayıt'),
+              h('th', { class: 'num' }, 'Değişen'), h('th', { class: 'num' }, 'Kabul / bildirilen'), h('th', {}, 'Durum'),
+              h('th', {}, 'Gerekçe'))),
+            h('tbody', {}, x.runs.slice(0, 6).map((r) => h('tr', {}, h('td', {}, formatDateTime(r.started_at),
+              r.opened_by ? h('span', { class: 'cell-sub mono' }, r.opened_by) : null),
+              h('td', {}, MODE[r.mode] || '—'), h('td', { class: 'num' }, formatNumber(r.records)),
+              h('td', { class: 'num' }, formatNumber(r.changed)),
+              h('td', { class: 'num' }, r.via_gateway ? `${formatNumber(r.accepted)} / ${r.reported == null ? '—' : formatNumber(r.reported)}` : '—'),
+              h('td', {}, pill(...BREAKER[r.state]), runStatus(r)),
+              h('td', { class: 'small' }, [...r.reasons, ...(r.notes ? [r.notes] : [])].join(' · ')
+                || (r.baseline ? `Taban çizgisi ${formatNumber(r.baseline)}` : '—')))))))) : null,
+        x.credentials ? section('Bağlayıcı kimlikleri', x.credentials.length ? [h('div', { class: 'tablewrap' }, h('table', { 'aria-label': 'Bağlayıcı kimlikleri' },
+          h('thead', {}, h('tr', {}, h('th', {}, 'Ad'), h('th', {}, 'Durum'), h('th', {}, 'Son kullanım'), h('th', {}, 'Geçerlilik sonu'),
+            h('th', {}, 'Veren'))),
+          h('tbody', {}, x.credentials.map((c) => h('tr', {}, h('td', {}, h('span', { class: 'mono' }, c.name),
+            h('span', { class: 'cell-sub' }, `Belirteç …${c.token_hint} · dakikada ${formatNumber(c.per_minute)} kayıt`)),
+            h('td', {}, pill(...CRED_STATE[c.state])), h('td', {}, c.last_used_at ? formatDateTime(c.last_used_at) : 'Kullanılmadı'),
+            h('td', {}, formatDateTime(c.expires_at)), h('td', {}, c.revoked_by ? `${c.created_by} · iptal: ${c.revoked_by}` : c.created_by)))))),
+          h('p', { class: 'small muted' }, 'Belirteç yalnızca verildiği anda bir kez gösterilir; burada son dört karakteri görünür. Kimlik verme ve iptal şimdilik komut satırından (evren connector issue | revoke).')]
+          : h('p', { class: 'small muted' }, 'Bu kaynağa verilmiş bağlayıcı kimliği yok. Komut satırından verilir: evren connector issue --data-source ' + x.name + '.')) : null,
         x.stats.records ? section('Kimlik sonuçları', kv([
           ['Kaynak kaydı', formatNumber(x.stats.records)], ['Mevcut CI\'a bağlandı', formatNumber(x.stats.linked)],
           ['Yeni CI açtı', formatNumber(x.stats.new)], ['İncelemede', formatNumber(x.stats.review)], ['Kimliği yetersiz', formatNumber(x.stats.insufficient)],

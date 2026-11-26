@@ -152,6 +152,13 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
 - **Kayıt/oynatma:** XML yanıtları ham saklanır (`.xml`). Kimlik doğrulama başlıktadır; gövde sır içermez.
 - **SOAP Fault:** metni kurum bilgisi içerebilir, iletiye yazılmaz.
 
+### 14. Arayüzde bağlayıcı görünürlüğü (U5.3, göç 0018)
+
+- **Çalışma ayrıntısı** (Veri Kaynakları → kaynak): her çalışmanın modu (tam liste/değişenler), işlenen ve değişen sayısı gösterilir. Olay omurgasıyla gelen çalışmada ayrıca geçidin kabul ettiği ve bağlayıcının bildirdiği sayı, "bağlayıcı tamamlanmadı" işareti ve bağlayıcının gerekçesi (`notes`; sır içermez, §3) görünür.
+- **Bağlayıcı kimlikleri:** yeni `data_source/connector_read` izni (Veri sorumlusu, Denetçi) ile görünür. Gösterilenler ad, durum (etkin/süresi doldu/iptal), son kullanım, geçerlilik sonu, veren, hız sınırı ve belirtecin son dört karakteri. Çalışmayı açan kimliğin adı da yalnızca bu izinle döner.
+- **Sırsız görünüm:** API rolü `ingest.connector_credential` tablosunu yine okuyamaz. Yalnızca `ingest.connector_credential_status` görünümünü okur (`security_barrier`); görünümde belirteç özeti yoktur (testli).
+- **Sonraki adım (U5.3b):** kimlik verme/iptal ve "şimdi çalıştır" `connector_admin` izniyle yapılacak (izin 0018'de tanımlandı, uç henüz yok). Zamanlama da bu adımdadır. Belirteç yalnızca verildiği anda bir kez gösterilecek; çalıştırma isteği kaynak sırlarına erişen ayrı bir çalıştırıcı servisinde yürütülecek (API kaynak sırlarını görmez).
+
 ## Sonuçlar
 
 - Yeni kaynak eklemek için üç iş gerekir: `sources/<kaynak>.py` (istemci ve mümkünse simülatör), `SOURCES` kaydı ve eşleme dosyası. Çalıştırıcı, geçit istemcisi ve güvenlik kuralları ortaktır.

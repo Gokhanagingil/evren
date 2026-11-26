@@ -103,6 +103,42 @@ def test_sources_and_controls(client):
                                         "ITSM", "Manual", "Platform"} for g in rules["reconciliation"])
 
 
+def test_connector_credentials_are_visible_only_with_connector_read_and_never_secret(client):
+    """U5.3 (0018): kimlik listesi ve çalışmayı açan kimlik yalnızca data_source/connector_read ile; sır yok."""
+    from evren_core.credentials import new_token, token_hint, token_sha256
+
+    token = new_token()
+    name = f"apitest-{uuid.uuid4().hex[:8]}"
+    run_id = uuid.uuid4()
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("""INSERT INTO ingest.connector_credential (name, data_source, token_sha256, token_hint,
+                            created_by, expires_at) VALUES (%s, 'Zabbix', %s, %s, 'api-testi', now() + interval '1 day')""",
+                     (name, token_sha256(token), token_hint(token)))
+        conn.execute("""INSERT INTO ingest.source_run (run_id, data_source, mode, started_at, opened_by, accepted_count,
+                            reported_count, reported_completed, notes)
+                        VALUES (%s, 'Zabbix', 'snapshot', now() + interval '1 hour', %s, 5, 5, false,
+                                'kaynak veya geçit erişimi: durum 503')""", (run_id, name))
+    try:
+        plain = client.get("/api/v1/sources").json()
+        zbx = next(s for s in plain["sources"] if s["name"] == "Zabbix")
+        assert plain["can"]["connector_read"] is False and zbx["credentials"] is None
+        assert "opened_by" not in zbx["runs"][0] and zbx["runs"][0]["mode"] == "snapshot"
+        assert zbx["runs"][0]["via_gateway"] is True and zbx["runs"][0]["accepted"] == 5
+        assert zbx["runs"][0]["notes"] == "kaynak veya geçit erişimi: durum 503"
+        with make_client(("evren_reader", "evren_data_steward"), "veri-sorumlusu") as steward:
+            doc = steward.get("/api/v1/sources").json()
+        zbx = next(s for s in doc["sources"] if s["name"] == "Zabbix")
+        assert doc["can"]["connector_read"] is True and zbx["runs"][0]["opened_by"] == name
+        cred = next(c for c in zbx["credentials"] if c["name"] == name)
+        assert cred["state"] == "active" and cred["created_by"] == "api-testi" and cred["token_hint"] == token_hint(token)
+        text = str(doc)
+        assert token not in text and token_sha256(token) not in text and "token_sha256" not in text
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM ingest.source_run WHERE run_id = %s", (run_id,))
+            conn.execute("DELETE FROM ingest.connector_credential WHERE name = %s", (name,))
+
+
 def test_decision_requires_csrf_role_and_is_idempotent(client, reader):
     item, target, key = make_review_item()
     url = f"/api/v1/match-queue/{item}/decision"

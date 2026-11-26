@@ -191,6 +191,11 @@ def test_segregation_of_duties_enforced():
                           "VALUES ('cmdb_ci', 'Runs on::Runs', 'cmdb_ci')"),
         ("evren_app_reconciler", "DELETE FROM meta.cmdb_rel_rule"),
         ("evren_app_api", "UPDATE meta.sys_choice SET dependent_value = 'x'"),
+        # 0018 (U5.3): kimlik görünümü salt okunur; gateway/uzlaştırıcı/arama göremez
+        ("evren_app_api", "UPDATE ingest.connector_credential_status SET created_by = 'x'"),
+        ("evren_app_ingest", "SELECT count(*) FROM ingest.connector_credential_status"),
+        ("evren_app_reconciler", "SELECT count(*) FROM ingest.connector_credential_status"),
+        ("evren_app_indexer", "SELECT count(*) FROM ingest.connector_credential_status"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -220,6 +225,8 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_readonly", "SELECT count(*) FROM meta.cmdb_rel_rule"),
         ("evren_app_api", "SELECT parent_class, rel_type, child_class FROM meta.cmdb_rel_rule LIMIT 1"),
         ("evren_app_mcp", "SELECT value, dependent_value FROM meta.sys_choice LIMIT 1"),
+        ("evren_app_api", "SELECT name, data_source, token_hint, state FROM ingest.connector_credential_status"),
+        ("evren_auditor_ro", "SELECT name, state FROM ingest.connector_credential_status"),
     ],
 )
 def test_allowed_paths_work(role, statement):
@@ -266,3 +273,11 @@ def test_data_model_seeded_with_rules_and_dependent_choices(metadata):
     with pytest.raises(SqlError, match="foreign key"):  # tanımsız sınıfa kural yazılamaz
         psql("INSERT INTO meta.cmdb_rel_rule (parent_class, rel_type, child_class) "
              "VALUES ('cmdb_ci_yok', 'Runs on::Runs', 'cmdb_ci')")
+
+
+def test_credential_view_has_no_secret_column():
+    """0018: kimlik görünümünde belirteç özeti yoktur (U5.3)."""
+    cols = psql("SELECT string_agg(column_name, ',' ORDER BY ordinal_position) FROM information_schema.columns "
+                "WHERE table_schema = 'ingest' AND table_name = 'connector_credential_status'")
+    assert "token_sha256" not in cols and "token_hint" in cols and cols.endswith("state")
+    assert psql("SELECT count(*) FROM iam.permission WHERE resource = 'data_source' AND operation = 'connector_read'") == "2"

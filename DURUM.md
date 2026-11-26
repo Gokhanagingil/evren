@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 26.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 14/54 plan adımı tamamlandı, 9'u sürüyor (F0: 12/17; F0-08, F1-01, F1-02 ve F1-03 başladı) · **Bileşen ortalaması (büyük resim):** %53 (CMDB %72, akıl katmanı %54, veri akışı %52, ServiceNow geçişi %10) · **Uçtan uca izlek:** 4/10 tamam, U5 sürüyor (U5.1 çalıştırıcı tamam; U5.2'de altı kaynağın istemcisi hazır, kalanı SN referans verileri, Defender duruş verisi, NNMi arayüz/L2; sırada U5.3 arayüzden yönetim)
+**Son güncelleme:** 26.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 14/54 plan adımı tamamlandı, 9'u sürüyor (F0: 12/17; F0-08, F1-01, F1-02 ve F1-03 başladı) · **Bileşen ortalaması (büyük resim):** %53 (CMDB %72, akıl katmanı %54, veri akışı %52, ServiceNow geçişi %10) · **Uçtan uca izlek:** 4/10 tamam, U5 sürüyor (U5.1 çalıştırıcı tamam; U5.2'de altı kaynağın istemcisi hazır, kalanı SN referans verileri, Defender duruş verisi, NNMi arayüz/L2; U5.3a görünürlük tamam; sırada U5.3b arayüzden çalıştırma, zamanlama ve kimlik verme/iptal)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -112,6 +112,12 @@ Doğrulanınca bu bölümden kaldırılacak.
   - İzinli ilişki kuralları: `metadata/relationship_rules.yaml` (36 kural, ürün adı yok) → `meta.cmdb_rel_rule`; `evren_core.relations.RelationRules` kalıtımlı denetim (izinli / yön ters / izinsiz), Türkçe ipucu, iki yönlü öneri; zorlama kipi `warn`. Yeni ilişki tipi `Provided by::Provides` (verify).
   - `verification_backlog()`: ServiceNow'dan doğrulanacak 113 öğe türüne göre (sınıf, alan, seçim listesi, ilişki tipi/kuralı, kimlik kuralı); `load_metadata --check` özetinde görünür.
   - **Bulunup düzeltilen:** demo üreticisi ters yönlü ilişkileri eklerken eklediği kaydı yeniden çeviriyordu; sunucu aynı VM ile hem ebeveyn hem çocuk görünüyordu. Bağlayıcı eşlemelerindeki ve demo verisindeki her ilişki artık kurallarla test ediliyor.
+- **U5.3a Arayüzde bağlayıcı görünürlüğü (26.11.2026)** (ADR-0020 §14, göç `0018_connector_visibility.sql`).
+  - Veri Kaynakları ayrıntısında çalışma tablosu genişledi: mod (tam liste/değişenler), işlenen ve değişen sayısı. Olay omurgasıyla gelen çalışmalarda ayrıca geçidin kabul ettiği ve bağlayıcının bildirdiği sayı, "bağlayıcı: tamamlanmadı" ve "kapanış bekleniyor" işaretleri ile bağlayıcının gerekçesi görünüyor.
+  - Yeni izinler: `data_source/connector_read` (Veri sorumlusu, Denetçi) ve `connector_admin` (Veri sorumlusu; bir sonraki alt adım için).
+  - Kimlik listesi yalnızca `connector_read` ile görünüyor: ad, durum, son kullanım, geçerlilik sonu, veren, hız sınırı, belirtecin son dört karakteri. Çalışmayı açan kimliğin adı da bu izne bağlı.
+  - API rolü kimlik tablosunu hâlâ okuyamıyor; yalnızca belirteç özeti içermeyen `ingest.connector_credential_status` görünümünü (security_barrier) okuyor.
+  - Testler: PostgreSQL yetki sınırları (görünüm salt okunur; geçit, uzlaştırıcı ve dizinleyici göremez; görünümde özet sütunu yok), API (izinsiz kullanıcı kimlik ve açan kimliği görmez; yanıtta belirteç/özet yok), tarayıcı (Veri sorumlusu kimlik bölümünü görür, yalnızca son 4 karakter).
 - **U5.2 NNMi istemcisi ve güvenli XML ayrıştırma (26.11.2026; F1-03 başladı)** (ADR-0020 §13). Altı kaynağın istemcisinin tamamı hazır.
   - `sources/nnmi.py`: WS-I SOAP `NodeBeanService.getNodes`, Basic kimlik ("Web Services Client" rolü). Sayfalama `id GT SON` + `maxObjects`; kimlikler artan sırada gelmezse çalışma duruyor (sessiz eksik veri yerine görünür hata). SOAP Fault metni yazılmıyor.
   - `connectors/safe_xml.py`: expat üzerinde DOCTYPE, varlık tanımı ve dış varlık reddi (billion laughs ve XXE kapalı), derinlik sınırı. Ek bağımlılık yok; `defusedxml` gerekçesiyle eklenmedi.

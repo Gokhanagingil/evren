@@ -314,3 +314,32 @@ def test_data_model_counts_from_db_and_add_field_opens_preset_change_set(page, b
     page.wait_for_selector("#detail.open #csChanges")
     expect(page.locator("#csChanges")).to_contain_text(element)
     shot(page, "api_model_change_set")
+
+
+def test_source_detail_shows_connector_credentials_without_secret(page, base_url):
+    """U5.3 (0018): Veri sorumlusu kaynak ayrıntısında bağlayıcı kimliklerini görür; belirteç yalnızca son 4 karakter."""
+    import uuid as _uuid
+
+    import psycopg
+
+    from evren_core.credentials import new_token, token_hint, token_sha256
+
+    token = new_token()
+    name = f"webtest-{_uuid.uuid4().hex[:8]}"
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("""INSERT INTO ingest.connector_credential (name, data_source, token_sha256, token_hint, created_by,
+                            expires_at) VALUES (%s, 'Zabbix', %s, %s, 'arayuz-testi', now() + interval '7 days')""",
+                     (name, token_sha256(token), token_hint(token)))
+    try:
+        page.goto(base_url + "/#/kaynaklar/Zabbix")
+        page.wait_for_selector("#detail.open")
+        section = page.locator("table[aria-label='Bağlayıcı kimlikleri']")
+        expect(section).to_contain_text(name)
+        expect(section).to_contain_text("Etkin")
+        text = page.locator("#detailContent").inner_text()
+        assert token not in text and f"…{token_hint(token)}" in text
+        assert "Mod" in page.locator("table[aria-label='Çalışma geçmişi'] thead").text_content()
+        shot(page, "web_api_source_credentials")
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM ingest.connector_credential WHERE name = %s", (name,))

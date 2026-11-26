@@ -47,6 +47,7 @@ def me(ctx: Ctx = Depends(context)) -> dict[str, Any]:
 def _source_rows(ctx: Ctx) -> list[dict[str, Any]]:
     md = ctx.state.metadata
     reg = md.sources
+    can_connectors = ctx.grant("data_source", "connector_read").allowed
     out = []
     with ctx.conn.cursor() as cur:
         cur.execute(
@@ -65,16 +66,37 @@ def _source_rows(ctx: Ctx) -> list[dict[str, Any]]:
             queue.setdefault(ds, {})[kind] = n
         cur.execute(
             """SELECT data_source, started_at, finished_at, record_count, changed_count, error_count, completed,
-                      breaker_state, breaker_reasons, baseline
+                      breaker_state, breaker_reasons, baseline, mode, accepted_count, reported_count,
+                      reported_completed, reported_error_count, close_requested_at, notes, opened_by
                  FROM (SELECT *, row_number() OVER (PARTITION BY data_source ORDER BY started_at DESC) AS rn
                          FROM ingest.source_run) r
                 WHERE rn <= 11 ORDER BY data_source, started_at DESC""")
         runs: dict[str, list[dict[str, Any]]] = {}
-        for ds, st, fin, rec, chg, err, comp, state, reasons, base in cur.fetchall():
-            runs.setdefault(ds, []).append({
+        for (ds, st, fin, rec, chg, err, comp, state, reasons, base, mode, acc, rep, rep_comp, rep_err, close_req,
+             notes, opened_by) in cur.fetchall():
+            run = {
                 "started_at": st.isoformat(), "finished_at": fin.isoformat() if fin else None, "records": rec,
                 "changed": chg, "errors": err, "completed": comp, "state": state or "warn", "reasons": list(reasons),
-                "baseline": float(base) if base is not None else None})
+                "baseline": float(base) if base is not None else None, "mode": mode,
+                # olay omurgası üzerinden gelen çalışma (ADR-0017/0020): geçidin kabul ettiği ve bağlayıcının bildirdiği
+                "via_gateway": opened_by is not None, "accepted": acc if opened_by is not None else None,
+                "reported": rep, "reported_completed": rep_comp, "reported_errors": rep_err,
+                "closing": bool(close_req) and fin is None, "notes": notes}
+            if can_connectors:  # çalışmayı açan kimlik yalnızca bağlayıcı görünürlüğü olanlara
+                run["opened_by"] = opened_by
+            runs.setdefault(ds, []).append(run)
+        credentials: dict[str, list[dict[str, Any]]] = {}
+        if can_connectors:
+            cur.execute("""SELECT name, data_source, token_hint, max_records_per_minute, created_by, created_at,
+                                  expires_at, last_used_at, revoked_at, revoked_by, state
+                             FROM ingest.connector_credential_status ORDER BY data_source, created_at DESC""")
+            for (name, ds, hint, rate, by, created, expires, used, revoked, revoked_by,
+                 cstate) in cur.fetchall():
+                credentials.setdefault(ds, []).append({
+                    "name": name, "token_hint": hint, "per_minute": rate, "created_by": by,
+                    "created_at": created.isoformat(), "expires_at": expires.isoformat(),
+                    "last_used_at": used.isoformat() if used else None,
+                    "revoked_at": revoked.isoformat() if revoked else None, "revoked_by": revoked_by, "state": cstate})
     for src in md.data_sources:
         name = src["name"]
         role = reg.roles[src["role"]]
@@ -91,6 +113,7 @@ def _source_rows(ctx: Ctx) -> list[dict[str, Any]]:
                       "review": q.get("review", 0), "insufficient": q.get("insufficient", 0),
                       "missing": counts.get("missing", 0), "new": 0},
             "runs": runs.get(name, []), "breaker": (runs.get(name) or [{}])[0].get("state"),
+            "credentials": credentials.get(name, []) if can_connectors else None,
         })
     return out
 
@@ -102,7 +125,8 @@ def sources(ctx: Ctx = Depends(context)) -> dict[str, Any]:
     return {"roles": [{"name": r["name"], "label_tr": r["label_tr"], "kind": r["kind"],
                        "description_tr": r.get("description_tr", ""),
                        "ci_attribute_source": bool(r.get("ci_attribute_source", True))} for r in md.source_roles],
-            "sources": _source_rows(ctx)}
+            "sources": _source_rows(ctx),
+            "can": {"connector_read": ctx.grant("data_source", "connector_read").allowed}}
 
 
 @router.get("/rules")

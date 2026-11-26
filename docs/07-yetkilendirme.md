@@ -8,7 +8,7 @@ Bir izin şu boyutlardan oluşur:
 
 - **Rol:** Entra grubuyla eşlenir.
 - **Kaynak:** sınıf adı (alt sınıflara kalıtılır), `cmdb_rel_ci`, `match_queue`, `schema`, `rules`, `iam` veya `*`.
-- **İşlem:** `read`, `create`, `write`, `delete`, `merge`, `split`, `review_match`, `ingest`, `schema_draft`, `schema_approve`, `rules_admin`, `iam_admin`, `audit_read`.
+- **İşlem:** `read`, `create`, `write`, `delete`, `merge`, `split`, `review_match`, `ingest`, `schema_draft`, `schema_approve`, `rules_admin`, `iam_admin`, `audit_read`, `connector_read`, `connector_admin` (0018: bağlayıcı kimlikleri ve çalışmayı açan kimlik; sır hiçbir zaman gösterilmez).
 - **Alanlar:** liste; NULL tüm alanlar demektir.
 - **En yüksek hassasiyet:** `public` < `internal` < `confidential` < `restricted`. Alanın `sys_dictionary.sensitivity` değeriyle karşılaştırılır.
 - **Koşul (ABAC):** satır düzeyi. Örnek: `{"field": "support_group", "op": "in", "value": "$user.groups"}`.
@@ -16,21 +16,21 @@ Bir izin şu boyutlardan oluşur:
 
 ## Matris (tohum)
 
-| Rol | CI okuma | CI yazma | İlişki | Eşleştirme | Kurallar | Şema | IAM | Denetim izi | Kısıtlı alan |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Okuyucu | ✓ | — | okuma | — | — | — | — | — | — |
-| CI sahibi | ✓ | yönetişim alanları, **yalnızca kendi destek grubu** | okuma | — | — | — | — | — | — |
-| Konfigürasyon analisti | ✓ | ✓ (Manual kaynağı) | oluştur/sil (Manual) | — | — | — | — | — | — |
-| Eşleştirme analisti | ✓ | — | okuma | karar, birleştir, ayır | — | — | — | — | — |
-| Veri sorumlusu | ✓ | — | okuma | — | ✓ | — | — | — | — |
-| Şema tasarımcısı | ✓ | — | — | — | — | taslak | — | — | — |
-| Şema onaylayıcı | ✓ | — | — | — | — | onay/yayın | — | — | — |
-| Güvenlik okuyucu | ✓ | — | okuma | — | — | — | — | — | ✓ |
-| Denetçi | ✓ (tümü) | — | okuma | — | — | — | — | ✓ | ✓ |
-| Yetki yöneticisi | — | — | — | — | — | — | ✓ | — | — |
-| Platform yöneticisi (break-glass) | ✓ | ✓ | ✓ | — | — | — | — | — | ✓ |
-| Entegrasyon hesabı (makine) | ✓ | — | — | — | — | — | — | — | — |
-| SN eşleme hesabı (makine) | ✓ | ServiceNow kaynağı olarak | — | — | — | — | — | — | — |
+| Rol | CI okuma | CI yazma | İlişki | Eşleştirme | Kurallar | Şema | IAM | Denetim izi | Kısıtlı alan | Bağlayıcılar |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Okuyucu | ✓ | — | okuma | — | — | — | — | — | — | — |
+| CI sahibi | ✓ | yönetişim alanları, **yalnızca kendi destek grubu** | okuma | — | — | — | — | — | — | — |
+| Konfigürasyon analisti | ✓ | ✓ (Manual kaynağı) | oluştur/sil (Manual) | — | — | — | — | — | — | — |
+| Eşleştirme analisti | ✓ | — | okuma | karar, birleştir, ayır | — | — | — | — | — | — |
+| Veri sorumlusu | ✓ | — | okuma | — | ✓ | — | — | — | — | görme + yönetim |
+| Şema tasarımcısı | ✓ | — | — | — | — | taslak | — | — | — | — |
+| Şema onaylayıcı | ✓ | — | — | — | — | onay/yayın | — | — | — | — |
+| Güvenlik okuyucu | ✓ | — | okuma | — | — | — | — | — | ✓ | — |
+| Denetçi | ✓ (tümü) | — | okuma | — | — | — | — | ✓ | ✓ | görme |
+| Yetki yöneticisi | — | — | — | — | — | — | ✓ | — | — | — |
+| Platform yöneticisi (break-glass) | ✓ | ✓ | ✓ | — | — | — | — | — | ✓ | — |
+| Entegrasyon hesabı (makine) | ✓ | — | — | — | — | — | — | — | — | — |
+| SN eşleme hesabı (makine) | ✓ | ServiceNow kaynağı olarak | — | — | — | — | — | — | — | — |
 
 ## Görevler ayrılığı (veritabanında zorlanır)
 
