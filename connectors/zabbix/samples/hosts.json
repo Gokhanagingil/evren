@@ -1,0 +1,29 @@
+{
+ "_aciklama": "SENTETİK örnek veri — Zabbix host.get yanıt biçiminde (Zabbix 6.4+ API belgesi). Gerçek kurum verisi değildir. Kurum ortamında tools/connector_samples.py --record ile gerçek yanıtlar kaydedilir.",
+ "hosts": [
+  {"hostid": "10501", "host": "ABC_1", "name": "ABC 1 - Muhasebe Uygulama Sunucusu", "status": "0",
+   "interfaces": [{"interfaceid": "31", "type": "1", "ip": "10.20.30.41", "dns": "", "main": "1"},
+                  {"interfaceid": "32", "type": "2", "ip": "10.20.31.41", "dns": "", "main": "0"}],
+   "inventory": {"os": "Windows", "os_full": "Microsoft Windows Server 2019 Datacenter", "serialno_a": "CZ1234ABCD",
+                 "macaddress_a": "00-50-56-AB-CD-EF, 02-42-AC-11-00-02", "asset_tag": ""},
+   "hostgroups": [{"groupid": "4", "name": "Sunucular/Windows"}]},
+  {"hostid": "10502", "host": "ist-app-02", "name": "IST APP 02", "status": "0",
+   "interfaces": [{"interfaceid": "41", "type": "1", "ip": "10.20.30.52", "dns": "ist-app-02.corp.ornek.local", "main": "1"}],
+   "inventory": {"os": "Linux", "os_full": "Red Hat Enterprise Linux 9.4", "serialno_a": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e7 f8",
+                 "macaddress_a": "00:50:56:9a:01:02", "asset_tag": ""},
+   "hostgroups": [{"groupid": "2", "name": "Sunucular/Linux"}]},
+  {"hostid": "10503", "host": "IST-DC1-CORE-SW01", "name": "IST DC1 çekirdek switch", "status": "0",
+   "interfaces": [{"interfaceid": "51", "type": "2", "ip": "10.0.0.1", "dns": "", "main": "1"}],
+   "inventory": {"os": "", "os_full": "", "serialno_a": "FDO2213X0AB", "macaddress_a": "", "asset_tag": "DMB-00871"},
+   "hostgroups": [{"groupid": "7", "name": "Ağ cihazları"}]},
+  {"hostid": "10504", "host": "ank-db-04", "name": "ANK DB 04", "status": "0",
+   "interfaces": [{"interfaceid": "61", "type": "1", "ip": "10.40.10.14", "dns": "", "main": "1"}],
+   "inventory": {"os": "Linux", "os_full": "Oracle Linux Server 8.9", "serialno_a": "", "macaddress_a": "00:50:56:9a:04:04",
+                 "asset_tag": ""},
+   "hostgroups": [{"groupid": "2", "name": "Sunucular/Linux"}]},
+  {"hostid": "10505", "host": "ist-web-07", "name": "IST WEB 07", "status": "1",
+   "interfaces": [{"interfaceid": "71", "type": "1", "ip": "10.20.30.77", "dns": "", "main": "1"}],
+   "inventory": [],
+   "hostgroups": [{"groupid": "2", "name": "Sunucular/Linux"}]}
+ ]
+}

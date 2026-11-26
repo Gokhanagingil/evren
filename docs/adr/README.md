@@ -21,5 +21,6 @@
 | [0017](0017-olay-omurgasi.md) | Olay omurgası: alım geçidi (bağlayıcı belirteci, kaynak yetkisi, ya hep ya hiç toplu gönderim), Kafka konu sözleşmesi, en az bir kez + kalıcı sayaçlar, DLQ, outbox yayını, delta farkında devre kesici; confluent-kafka | Kabul edildi | 25.11.2026 |
 | [0018](0018-opensearch-arama.md) | CI araması OpenSearch'te: olaydan güncel hâli dizinleme, sürümlü dizin + atomik takma ad, Türkçe katlama/önek/ayırıcısız/bulanık eşleşme, yetki sorguda ve yanıtta, PostgreSQL yedeği; standart kütüphaneyle istemci (ek bağımlılık yok) | Kabul edildi | 25.11.2026 |
 | [0019](0019-cmdb-veri-modeli-sinif-kutuphanesi.md) | CMDB veri modeli: ServiceNow uyumlu 82 sınıflık kütüphane (uç nokta, depolama, küme, Kubernetes, bulut, ara katman, CSDM), kimlik ailesi varsayılanı, CSDM 5 yaşam döngüsü (bağımlı değer + eski alan eşlemesi), denetlenen izinli ilişki kuralları (kalıtım, ters yön tespiti, kademeli zorlama) | Kabul edildi | 26.11.2026 |
+| [0020](0020-baglayici-calistirici.md) | Bağlayıcı çalıştırıcı: standart kütüphaneyle HTTP (TLS zorunlu, sırlar yalnızca dosyadan, sızıntısız hata), geri çekilmeli yeniden deneme + Retry-After, eksiksiz çekme olmadan "tamamlandı" yok, değiştirilebilir taşıma (simülatör, kayıt/oynatma, test istemcisi); ek bağımlılık yok | Kabul edildi | 26.11.2026 |
 
 Yeni karar: `/adr <başlık>` komutu.

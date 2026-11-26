@@ -68,6 +68,19 @@ services:
     depends_on:
       postgres: {condition: service_healthy}
 
+  # İsteğe bağlı, tek seferlik: bağlayıcı çalıştırıcı (U5, ADR-0020). Veritabanı erişimi ve sırrı yoktur; yalnızca
+  # alım geçidine gönderir. Belirteç dosyadan (EVREN_CONNECTOR_TOKEN_FILE) veya standart girdiden (/dev/stdin) okunur.
+  #   docker compose run --rm -T -e EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin connector connector-run --connector zabbix \
+  #     --simulate connectors/zabbix/samples < belirtec-dosyasi
+  connector:
+    <<: *evren
+    restart: "no"
+    profiles: [tools]
+    command: ["connector-run", "--help"]
+    environment:
+      EVREN_GATEWAY_URL: http://gateway:8089
+      EVREN_GATEWAY_ALLOW_HTTP: "1"   # yalnızca geliştirme yığını; üretimde geçit TLS ile (EVREN_GATEWAY_CA_FILE)
+
   # İsteğe bağlı: sentetik demo verisi (boş veritabanına bir kez)
   demo:
     <<: *evren

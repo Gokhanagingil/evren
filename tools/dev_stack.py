@@ -15,7 +15,8 @@ biri başarısız olursa yığın yarım açılmaz, hata o adımda görünür.
 Duman testi yalnızca 127.0.0.1'e bağlanır ve şunları doğrular: API hazır, CMDB veri içeriyor, uzlaştırıcı çalışanı
 canlı; API'den gönderilen bir elle düzenleme konteynerdeki uzlaştırıcı tarafından uygulanıyor (golden record
 değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı; olay omurgası uçtan uca çalışıyor (geçici bağlayıcı
-kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali); arama (dizinleyici →
+kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali); bağlayıcı çalıştırıcı
+(Zabbix simülatörü → eşleme → geçit → uzlaştırıcı → çalışma kapanışı); arama (dizinleyici →
 OpenSearch → yetki süzgeçli API; Türkçe harf, yazım hatası, ayırıcısız yazım). Hiçbir sır yazdırılmaz.
 """
 from __future__ import annotations
@@ -49,9 +50,10 @@ class SmokeError(RuntimeError):
     pass
 
 
-def compose(*args: str, check: bool = True, capture: bool = False) -> subprocess.CompletedProcess[str]:
+def compose(*args: str, check: bool = True, capture: bool = False,
+            stdin: str | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run([*COMPOSE, *args], check=check, text=True, cwd=ROOT,  # nosec B603
-                          capture_output=capture)
+                          capture_output=capture, input=stdin)
 
 
 def step(title: str) -> None:
@@ -264,10 +266,42 @@ def smoke_event_backbone() -> tuple[str, str]:
     ingest = http("GET", f"{API}/api/v1/summary")[1]["worker"]["ingest"]
     check(ingest["state"] == "ok" and ingest["processed"] >= 1,
           f"alım tüketicisi canlı ({ingest['instances']} örnek, {ingest['processed']} kayıt)")
+    smoke_connector_run(token)
     compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "revoke", "--name", f"duman-{tag}", "--by",
             "duman-testi", capture=True)
     check(http("GET", f"{GATEWAY}/ingest/v1/runs/{rid}", auth=token)[0] == 401, "iptal edilen kimlik reddediliyor")
     return name, found["sys_id"]
+
+
+def smoke_connector_run(token: str) -> None:
+    """Bağlayıcı çalıştırıcı (U5, ADR-0020): Zabbix simülatörü → eşleme → geçit → Kafka → uzlaştırıcı → çalışma kapanışı.
+
+    Belirteç konteynere standart girdiden verilir (``EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin``); komut satırına ve
+    ekrana yazılmaz. Kaynak sentetik örnek veridir; gerçek Zabbix kabulü yerine geçmez."""
+    step("Bağlayıcı çalıştırıcı: Zabbix simülatörü → geçit → uzlaştırıcı")
+    res = compose("run", "--rm", "--no-deps", "-T", "-e", "EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin", "connector",
+                  "connector-run", "--connector", "zabbix", "--name", "duman-zabbix", "--simulate",
+                  "connectors/zabbix/samples", "--page-size", "2", "--batch-size", "2",
+                  check=False, capture=True, stdin=token + "\n")
+    lines = res.stdout.strip().splitlines()
+    report = json.loads(lines[-1]) if lines and lines[-1].startswith("{") else {}
+    check(res.returncode == 0 and report.get("completed") is True and report.get("sent") == 5,
+          f"bağlayıcı çalıştı: çekilen {report.get('fetched')}, gönderilen {report.get('sent')} "
+          f"(sınıflar: {', '.join(report.get('by_class') or {})})")
+    rid = report["run_id"]
+
+    def finished() -> Any:
+        _s, b = http("GET", f"{GATEWAY}/ingest/v1/runs/{rid}", auth=token)
+        return b and b.get("state") == "finished" and b
+
+    final = wait_for("bağlayıcı çalışmasının kapanışı", finished, timeout=120)
+    check(final["completed"] is True and final["processed"] == 5,
+          f"çalışma tamamlandı: işlenen {final['processed']}, devre kesici {final['breaker_state']}")
+    found = wait_for("simülatör host'u API'de", lambda: (r := http("GET", f"{API}/api/v1/ci?q=ank-db-04"))[0] == 200
+                     and r[1]["items"] and r[1]["items"][0])
+    _s, detail = http("GET", f"{API}/api/v1/ci/{found['sys_id']}")
+    check(any(lk["data_source"] == "Zabbix" and lk["source_key"] == "10504" for lk in detail.get("links") or []),
+          f"Zabbix host'u CMDB'de, kaynak bağı 10504 ({found['sys_id']})")
 
 
 def smoke_search(name: str, sys_id: str) -> None:

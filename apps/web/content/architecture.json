@@ -184,13 +184,17 @@
       "text": "Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma \"tamamlandı\" sayılmaz; bu, GRC Platformu'ndaki collection_status ilkesinin aynısıdır. Her veri kaynağı bir kaynak rolünü (Keşif, Sanallaştırma, Ağ, İzleme, Uç nokta güvenliği, ITSM) doldurur; yeni ürün önce gölge modda çalışır, sonra devralır.",
       "tech": [
         "evren_core.connectors",
+        "ConnectorRunner + HttpClient (ADR-0020)",
         "FieldMapping (YAML)",
         "evren_core.sources.SourceRegistry",
-        "metadata/data_sources.yaml"
+        "metadata/data_sources.yaml",
+        "tools/connector_run.py · evren connector-run"
       ],
       "security": [
-        "Bağlayıcı CMDB'ye yazamaz",
-        "Ham yük arşive yazılır"
+        "Bağlayıcı CMDB'ye yazamaz; veritabanı erişimi yok",
+        "Sırlar yalnızca dosyadan; TLS zorunlu",
+        "Eksiksiz çekme olmadan çalışma tamamlandı sayılmaz",
+        "Ham yük arşive yazılır (F1-14)"
       ]
     },
     "ingest_gateway": {

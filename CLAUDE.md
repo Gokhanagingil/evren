@@ -74,6 +74,7 @@ cd packages/evren-core && EVREN_TEST_PG=1 python -m pytest
 python tools/dev_stack.py up --demo && python tools/dev_stack.py smoke
 python tools/migrate.py --status            # izlenen göçler (EVREN_DATABASE_URL_FILE veya libpq ortamı)
 python tools/connector_credential.py issue --name zabbix-dc1 --data-source Zabbix --by <kişi>   # bağlayıcı belirteci (ADR-0017)
+python tools/connector_run.py --connector zabbix --simulate connectors/zabbix/samples --dry-run   # bağlayıcı çalıştırıcı (ADR-0020)
 EVREN_TEST_PG=1 python -m pytest services/ingest-gateway/tests services/indexer/tests   # alım geçidi, dizinleyici
 EVREN_TEST_OPENSEARCH_URL=http://127.0.0.1:59200 python -m pytest packages/evren-core/tests/test_search_os.py   # arama alakası
 
@@ -125,13 +126,14 @@ packages/evren-core/      Saf alan mantığı + testler
   credentials.py          bağlayıcı belirteçleri (yalnızca SHA-256 özeti saklanır)
   search.py               CI arama dizini: eşleme, belge, sorgu (ADR-0018)
   opensearch_client.py    OpenSearch G/Ç adaptörü (standart kütüphane; çekirdekte OpenSearch'e dokunan tek modül)
-  connectors/             bağlayıcı sözleşmesi, YAML alan eşleme motoru
+  connectors/             bağlayıcı sözleşmesi, YAML alan eşleme motoru; çalıştırıcı (http, gateway, runtime) ve
+                          kaynak istemcileri sources/ (ADR-0020; standart kütüphane, sırlar yalnızca dosyadan)
   metadata.py             sözlük yükleme/doğrulama, tohum SQL, sn.* görünümler
   relations.py            izinli ilişki kuralları (kalıtım, ters yön tespiti; ADR-0019)
   model_view.py           Veri Modeli sayfasının görünümü (API ve model.json aynı kaynaktan)
   sources.py              kaynak rolleri, veri kaynağı yaşam döngüsü (ADR-0009)
   web.py                  güvenlik başlıkları (tek kaynak)
-connectors/<kaynak>/      kaynak başına eşleme dosyaları
+connectors/<kaynak>/      kaynak başına eşleme dosyaları; samples/ sentetik örnek veri (simülatör)
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
 db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … (tools/migrate.py uygular)

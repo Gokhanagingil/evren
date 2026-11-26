@@ -20,7 +20,7 @@
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Tamamlandı_ (ilgili: F1-08)
 - [x] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Tamamlandı_ (ilgili: F0-17, F0-07, F1-11)
-- [ ] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
+- [ ] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Devam ediyor_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
 - [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_ (ilgili: F1-17)
 - [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-20)
@@ -36,7 +36,7 @@
    Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
 1. **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
-1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_  
+1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Devam ediyor_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 1. **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_  
    Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
@@ -48,7 +48,7 @@
 | F0-07 | Kalan 82 öğe ve kurum özelleştirmeleri için ServiceNow salt okunur servis hesabı (sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma) — canlı kabulde | Devam ediyor |
 | F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Devam ediyor |
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
-| F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Planlandı |
+| F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Devam ediyor |
 | F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Devam ediyor |
 | F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Planlandı |
 | F1-02 | Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni | Planlandı |
@@ -97,7 +97,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
 - [x] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi
   - Not: PostgreSQL deposu, aday dizini, devre kesici, sürekli çalışan uzlaştırıcı (ADR-0013); alım geçidi (bağlayıcı belirteci, kaynak yetkisi), Kafka alım tüketicisi (en az bir kez, kalıcı sayaçlar, DLQ), çalışma kapanışı ve outbox yayını (ADR-0017). Canlı kurum ortamında kabul U10'da.
-- [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Planlandı_
+- [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Devam ediyor_
+  - Not: 26.11.2026: Zabbix istemcisi hazır (U5.1, simülatör ve geçitle sınandı; gerçek Zabbix kabulü U10). vCenter istemcisi U5.2'de.
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 - [x] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)
   - Not: Yan yana karşılaştırma, kanıtlar, kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) ve CI panelinden birleştirmeyi ayırma (ADR-0011: kimlik profili yeniden kurulur, ayrılan kaynağın değerleri temizlenir); uzlaştırıcı uygular. Sentetik veriyle test edildi.

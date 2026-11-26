@@ -182,8 +182,8 @@ details:
   connectors:
     phase: F0
     text: Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma "tamamlandı" sayılmaz; bu, GRC Platformu'ndaki collection_status ilkesinin aynısıdır. Her veri kaynağı bir kaynak rolünü (Keşif, Sanallaştırma, Ağ, İzleme, Uç nokta güvenliği, ITSM) doldurur; yeni ürün önce gölge modda çalışır, sonra devralır.
-    tech: ["evren_core.connectors", "FieldMapping (YAML)", "evren_core.sources.SourceRegistry", "metadata/data_sources.yaml"]
-    security: [Bağlayıcı CMDB'ye yazamaz, Ham yük arşive yazılır]
+    tech: ["evren_core.connectors", "ConnectorRunner + HttpClient (ADR-0020)", "FieldMapping (YAML)", "evren_core.sources.SourceRegistry", "metadata/data_sources.yaml", "tools/connector_run.py · evren connector-run"]
+    security: [Bağlayıcı CMDB'ye yazamaz; veritabanı erişimi yok, Sırlar yalnızca dosyadan; TLS zorunlu, Eksiksiz çekme olmadan çalışma tamamlandı sayılmaz, Ham yük arşive yazılır (F1-14)]
   ingest_gateway:
     phase: F0
     text: Bağlayıcılardan gelen CloudEvents zarfları burada doğrulanır. Şema dışı alan reddedilir. Her bağlayıcı belirteci tek bir veri kaynağına bağlıdır, başka kaynak adına yazamaz. Toplu gönderim ya hep ya hiç işlenir; Kafka onaylamadan kabul edilmez. Çalışmayı geçit açar, kapanışını uzlaştırıcı yapar (ADR-0017).

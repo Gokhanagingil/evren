@@ -8,6 +8,7 @@
     evren indexer      arama dizinleyicisi (CI olayları → OpenSearch); --reindex: tam yeniden dizinleme
     evren migrate      göçler + metadata tohumu + servis giriş rolleri (tek seferlik iş)
     evren connector    bağlayıcı kimlikleri: issue | list | revoke (yönetici bağlantısı)
+    evren connector-run  bağlayıcı çalıştır: kaynak → eşleme → alım geçidi (--connector zabbix; --help)
     evren demo         sentetik demo verisini yükle (yalnızca EVREN_ALLOW_DEMO=1; boş geliştirme veritabanı)
     evren healthcheck  api|gateway|worker|ingest|indexer — konteyner sağlık denetimi
 
@@ -83,6 +84,12 @@ def connector(args: list[str]) -> int:
     return connector_credential.main(args)
 
 
+def connector_run(args: list[str]) -> int:
+    import connector_run as cr
+
+    return cr.main(args)
+
+
 def migrate(args: list[str]) -> int:
     import migrate as m
 
@@ -149,6 +156,8 @@ def main(argv: list[str]) -> int:
         return indexer(rest)
     if cmd == "connector":
         return connector(rest)
+    if cmd == "connector-run":
+        return connector_run(rest)
     if cmd == "migrate":
         return migrate(rest)
     if cmd == "demo":

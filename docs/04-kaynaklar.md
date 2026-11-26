@@ -38,6 +38,29 @@ Bağlayıcı CMDB'ye yazmaz; eşleme dosyasıyla ürettiği `IngestRecord`'ları
 3. **Hata durumunda:** Kafka'ya ulaşılamazsa (503) aynı toplu gönderim yeniden denenir; tekrar zararsızdır. Hız sınırında (429) `Retry-After` kadar beklenir. Reddedilen toplu gönderimde (400) hata ayrıntısı hangi kaydın hangi alanının neden reddedildiğini söyler.
 4. **Kimlik yönetimi:** `list` kimlikleri, son kullanım zamanını ve durumu (etkin, süresi doldu, iptal) gösterir. `revoke` kimliği hemen geçersiz kılar. Arayüzden yönetim U5'te gelecek.
 
+## Bağlayıcı çalıştırıcı (U5, ADR-0020)
+
+Kaynaktan salt okunur çeker, eşleme dosyasını uygular, geçide toplu gönderir ve çalışmayı açıp kapatır. Veritabanı erişimi yoktur.
+
+```bash
+# Kaynağa bağlanmadan: simülatör + kuru çalıştırma (kayıtlar dosyaya, geçide gitmez)
+python tools/connector_run.py --connector zabbix --simulate connectors/zabbix/samples --dry-run --out build/zabbix.ndjson
+# Gerçek kaynak → geçit (sırlar yalnızca dosyadan)
+EVREN_SOURCE_URL=https://zabbix.kurum.local EVREN_SOURCE_TOKEN_FILE=/run/secrets/zabbix_api \
+EVREN_GATEWAY_URL=https://evren-gateway.kurum.local EVREN_CONNECTOR_TOKEN_FILE=/run/secrets/zabbix_dc1 \
+  python tools/connector_run.py --connector zabbix --name zabbix-dc1
+# Kurum ortamında gerçek yanıtları bir kez kaydet, sonra kayıttan oynat (eşleme doğrulaması, U10)
+python tools/connector_run.py --connector zabbix --record build/zabbix-kayit --dry-run
+python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --dry-run
+```
+
+- **Rapor:** tek satır JSON: çekilen, eşlenen, atlanan, gönderilen, hata, sınıf dağılımı, geçitteki durum. Çıkış kodu 0 tamamlandı, 1 tamamlanmadı, 2 yapılandırma hatası.
+- **Tamamlanma:** yalnızca sayfalama sonuna kadar hatasız gelindiyse, hiçbir toplu gönderim reddedilmediyse ve eşleme hatası yoksa `completed=true`. Aksi hâlde çalışma eksik kapanır; kısmi veri yine uzlaştırılır, ama devre kesici eskime ve emekliye ayırmayı durdurur.
+- **Yeniden deneme:** bağlantı hatası, 429 ve 5xx için geri çekilmeli (1, 2, 4, 8 sn; `--retries`), `Retry-After`'a uyulur. 4xx kalıcıdır.
+- **Kayıt dosyaları:** `--record` ve `--out` kurum verisi içerir; repoya konmaz. Repodaki `connectors/*/samples/` verisi sentetiktir.
+- **Konteynerde:** `evren connector-run …`; geliştirme yığınında `docker compose run --rm -T -e EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin connector connector-run --connector zabbix --simulate connectors/zabbix/samples < belirtec`.
+- **Durum:** Zabbix istemcisi hazır (U5.1). vCenter, ServiceNow, BMC, NNMi ve Defender istemcileri U5.2; zamanlama ve arayüzden "şimdi çalıştır" U5.3.
+
 **Yeni kaynak türü** (bulut hesapları, Kubernetes, yedekleme, PAM…): mevcut bir rolü dolduruyorsa yalnızca kaynak kaydı ve eşleme; yeni bir görevse yeni rol + o rolün yazabileceği alanlar için uzlaştırma kuralı.
 
 ## vCenter (F0)
@@ -55,6 +78,7 @@ Bağlayıcı CMDB'ye yazmaz; eşleme dosyasıyla ürettiği `IngestRecord`'ları
 ## Zabbix (F0)
 
 - **Veri:** izlenen hostlar, arayüzler, envanter alanları, host grupları.
+- **İstemci (U5.1):** `evren_core/connectors/sources/zabbix.py`. JSON-RPC `host.get`; kimlik doğrulama Zabbix API belirteciyle `Authorization: Bearer` başlığında (Zabbix 6.4+; istek gövdesindeki `auth` alanı 7.2'de kaldırıldı). `selectHostGroups` nedeniyle Zabbix 6.2+ gerekir. API'de ofset olmadığı için önce yalnızca `hostid` listesi çekilir, ayrıntı 500'lük kimlik parçalarıyla istenir. Güvenilir "değişti" alanı olmadığından her çalışma tam listedir.
 - **Tanımlayıcılar:** `hostid`, teknik ad (`host`), envanter seri ve MAC.
 - **Yetkili olduğu alanlar:** izleme kapsamı ve canlılık. Envanterde düşük öncelikli.
 - **Tuzaklar:**
