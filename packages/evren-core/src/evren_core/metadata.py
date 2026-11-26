@@ -123,6 +123,11 @@ class Metadata:
         return AttestationPolicy.from_document(self.attestation or None)
 
     @property
+    def impact_directions(self) -> dict[str, str]:
+        """İlişki tipi → bağımlı uç (ADR-0030): ``parent`` ebeveyn çocuğa bağımlı, ``child`` tersi, ``none`` yok."""
+        return {str(t["name"]): str(t.get("impact") or "none") for t in self.relationship_types}
+
+    @property
     def staleness_policy(self) -> StalenessPolicy:
         """Eskime kuralları (ADR-0028): ``reconciliation_rules.yaml`` → ``staleness``."""
         return StalenessPolicy.from_rules((self.reconciliation or {}).get("staleness", []))
@@ -313,6 +318,9 @@ def validate(md: Metadata) -> ValidationReport:
     for t in rel_names:
         if not re.fullmatch(r"[^:]+::[^:]+", t):
             r.errors.append(f"İlişki tipi 'ebeveyn::çocuk' biçiminde olmalı: {t}")
+    for t in md.relationship_types:
+        if t.get("impact") not in IMPACT_DIRECTIONS:
+            r.errors.append(f"{t['name']}: impact parent, child veya none olmalı (ADR-0030)")
 
     # İzinli ilişki kuralları (ADR-0019)
     rr = md.relationship_rules or {}
@@ -470,6 +478,9 @@ def _product_words(md: Metadata) -> set[str]:
             out.add(str(vendor))
     return out
 
+
+#: Etki yönleri (ADR-0030): ilişkide hangi uç diğerine bağımlıdır
+IMPACT_DIRECTIONS = ("parent", "child", "none")
 
 VERIFICATION_KINDS = ("classes", "fields", "choices", "relationship_types", "relationship_rules", "identification")
 VERDICTS = {"confirmed": "Belgeyle doğrulandı", "corrected": "Belgeye göre düzeltildi",

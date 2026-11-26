@@ -1,20 +1,25 @@
 # cmdb_rel_type tohumları — "ebeveyn tanımlayıcı::çocuk tanımlayıcı" biçiminde.
 # Kesin liste ServiceNow örneğinden (cmdb_rel_type) içe aktarılmalıdır.
+#
+# impact (ADR-0030): ilişkide hangi ucun diğerine bağımlı olduğu — etki analizi bu yönde yürür.
+#   parent: ebeveyn çocuğa bağımlıdır (uygulama "Runs on" sunucu: sunucu düşerse uygulama etkilenir)
+#   child:  çocuk ebeveyne bağımlıdır (örnek "Contains" veritabanı: örnek düşerse veritabanı etkilenir)
+#   none:   bağımlılık yok (fiziksel bağlantı, sahiplik)
 version: 1
 relationship_types:
-  - {name: "Depends on::Used by", label_tr: "Bağımlı::Kullanılır"}
-  - {name: "Runs on::Runs", label_tr: "Üzerinde çalışır::Çalıştırır"}
-  - {name: "Hosted on::Hosts", label_tr: "Barındırılır::Barındırır"}
-  - {name: "Virtualized by::Virtualizes", label_tr: "Sanallaştırılır::Sanallaştırır"}
-  - {name: "Contains::Contained by", label_tr: "İçerir::İçinde"}
-  - {name: "Members::Member of", label_tr: "Üyeleri::Üyesi"}
-  - {name: "Cluster of::Cluster", label_tr: "Kümesi::Küme"}
-  - {name: "Connects to::Connected by", label_tr: "Bağlanır::Bağlanılır"}
-  - {name: "IP Connection::IP Connection", label_tr: "IP bağlantısı::IP bağlantısı"}
-  - {name: "Uses::Used by", label_tr: "Kullanır::Kullanılır"}
-  - {name: "Consumes::Consumed by", label_tr: "Tüketir::Tüketilir"}
-  - {name: "Owns::Owned by", label_tr: "Sahibidir::Sahiplenilir"}
-  - {name: "Sends data to::Receives data from", label_tr: "Veri gönderir::Veri alır"}
-  - {name: "Registered on::Has registered", label_tr: "Kayıtlı::Kayıtlı barındırır"}
-  - {name: "Instantiates::Instantiated by", label_tr: "Örneklendirir::Örneklendirilir"}
-  - {name: "Provided by::Provides", label_tr: "Sağlanır::Sağlar"}
+  - {name: "Depends on::Used by", label_tr: "Bağımlı::Kullanılır", impact: parent}
+  - {name: "Runs on::Runs", label_tr: "Üzerinde çalışır::Çalıştırır", impact: parent}
+  - {name: "Hosted on::Hosts", label_tr: "Barındırılır::Barındırır", impact: parent}
+  - {name: "Virtualized by::Virtualizes", label_tr: "Sanallaştırılır::Sanallaştırır", impact: parent}
+  - {name: "Contains::Contained by", label_tr: "İçerir::İçinde", impact: child}
+  - {name: "Members::Member of", label_tr: "Üyeleri::Üyesi", impact: parent}
+  - {name: "Cluster of::Cluster", label_tr: "Kümesi::Küme", impact: child}
+  - {name: "Connects to::Connected by", label_tr: "Bağlanır::Bağlanılır", impact: none}
+  - {name: "IP Connection::IP Connection", label_tr: "IP bağlantısı::IP bağlantısı", impact: none}
+  - {name: "Uses::Used by", label_tr: "Kullanır::Kullanılır", impact: parent}
+  - {name: "Consumes::Consumed by", label_tr: "Tüketir::Tüketilir", impact: parent}
+  - {name: "Owns::Owned by", label_tr: "Sahibidir::Sahiplenilir", impact: none}
+  - {name: "Sends data to::Receives data from", label_tr: "Veri gönderir::Veri alır", impact: child}
+  - {name: "Registered on::Has registered", label_tr: "Kayıtlı::Kayıtlı barındırır", impact: parent}
+  - {name: "Instantiates::Instantiated by", label_tr: "Örneklendirir::Örneklendirilir", impact: parent}
+  - {name: "Provided by::Provides", label_tr: "Sağlanır::Sağlar", impact: parent}

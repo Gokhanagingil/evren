@@ -341,13 +341,17 @@ def smoke_connector_run(token: str) -> None:
     chg_name, chg_token = _issue("ServiceNowChange")
     try:
         step("Bağlayıcı çalıştırıcı: ServiceNow simülatörü (Table API) → ilk yükleme, sys_id korunur")
-        _connector_run("servicenow", sn_token, 5 + 12)  # 5 CI + 12 referans kaydı (ADR-0022)
+        _connector_run("servicenow", sn_token, 5 + 5 + 12)  # 5 CI + 5 CSDM kaydı (ADR-0030) + 12 referans (ADR-0022)
         status, ci = http("GET", f"{API}/api/v1/ci/{SN_APP_SYS_ID}")
         check(status == 200 and ci["name"] == "ist-app-02", f"CI ServiceNow sys_id'siyle açıldı ({SN_APP_SYS_ID})")
         shown = {a["attribute"]: a["display"] for a in ci.get("attributes") or []}
         check(shown.get("support_group") == "Linux Sistem Ekibi (SENTETİK)"
               and shown.get("cost_center") == "BT Altyapı Masraf Merkezi (SENTETİK)",
               f"referans verileri yüklendi: destek grubu ve maliyet merkezi adıyla görünüyor ({shown.get('support_group')})")
+        _s, imp = http("GET", f"{API}/api/v1/ci/{SN_APP_SYS_ID}/impact")
+        affected = {n["name"] for n in (imp.get("upstream") or {}).get("nodes") or []}
+        check({"Müşteri Portalı - Üretim (SENTETİK)", "Müşteri Portalı (SENTETİK)", "Online Satış (SENTETİK)"} <= affected,
+              "etki analizi: sunucu düşerse uygulama hizmeti, iş uygulaması ve iş hizmeti etkilenir (CSDM, ADR-0030)")
 
         step("Bağlayıcı çalıştırıcı: ServiceNow Change simülatörü (change_request + task_ci) → değişiklik kayıtları")
         # örnek tarihler sabit: geriye bakış penceresi geniş tutulur (sentetik; kurumda varsayılan 30 gün)

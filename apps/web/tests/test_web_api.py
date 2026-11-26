@@ -850,3 +850,21 @@ def test_dependent_ci_section_links_parent_and_adapter(page, base_url):
     expect(page.locator("#ciDependents")).to_contain_text(name)
     expect(page.locator("#ciDependents")).to_contain_text("bağlamında tanımlanır")
     shot(page, "web_api_dependent")
+
+
+def test_impact_section_shows_affected_services_and_dependencies(page, base_url):
+    """U7.3 (ADR-0030): sunucunun panelinde etkilenen hizmetler (özet + düzey), iş uygulamasının panelinde bağımlılıklar."""
+    from scenarios import make_service_chain
+
+    ids = make_service_chain()
+    page.goto(base_url + f"/#/ci/{ids['server']}")
+    box = page.locator("#ciImpact")
+    expect(box).to_contain_text("Bu CI düşerse 3 hizmet veya iş uygulaması etkilenir")
+    expect(box).to_contain_text("1 tanesi üretimde")
+    up = page.locator("#ciImpactUp")
+    expect(up).to_contain_text("etki-hizmet-")
+    expect(up).to_contain_text("2. düzey")
+    shot(page, "web_api_impact")
+    up.get_by_role("link", name=re.compile("^etki-uygulama-")).click()
+    expect(page.locator("#ciImpactDown")).to_contain_text("etki-srv-")
+    assert "null" not in page.locator("#ciImpact").inner_text()

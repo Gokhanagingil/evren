@@ -22,7 +22,7 @@ chapters:
       - {id: src_nnmi, kind: source, col: 2, row: 0, label: NNMi, sub: ["Ağ cihazı, arayüz,", "L2 bağlantı"]}
       - {id: src_zabbix, kind: source, col: 3, row: 0, label: Zabbix, sub: ["İzleme kapsamı,", "canlılık"]}
       - {id: src_defender, kind: source, col: 4, row: 0, label: Defender, sub: ["Koruma durumu,", "maruziyet"]}
-      - {id: src_servicenow, kind: servicenow, col: 5, row: 0, label: ServiceNow, sub: ["CMDB ilk yükleme,", "Change kayıtları"]}
+      - {id: src_servicenow, kind: servicenow, col: 5, row: 0, label: ServiceNow, sub: ["CMDB + hizmet katmanı,", "Change kayıtları"]}
       - {id: connectors, kind: engine, col: 1, row: 1, span: 4, label: Bağlayıcı çalıştırıcı + eşleme dosyaları, sub: ["Şimdi çalıştır ve zamanlama · çekme, sayfalama · kaynak JSON → ServiceNow alan adları"]}
       - {id: ingest_gateway, kind: security, col: 1, row: 2, span: 2, label: Alım geçidi, sub: ["mTLS · şema doğrulama ·", "kaynak başına yetki"]}
       - {id: kafka, kind: store, col: 3, row: 2, span: 2, label: Olay omurgası (Kafka), sub: ["ingest.record · ingest.run", "yeniden oynatılabilir"]}
@@ -178,7 +178,7 @@ details:
     security: [Kısıtlı veri sınıfı, Yalnızca güvenlik rolleri okur]
   src_servicenow:
     phase: F0
-    text: Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları (change_request, task_ci) ayrı bağlayıcı ve ayrı veri kaynağıyla (Değişiklik kayıtları rolü) çekilir; durum kodları Evren'in değişiklik sözlüğüne çevrilir ve yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar (ADR-0025).
+    text: Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları (change_request, task_ci) ayrı bağlayıcı ve ayrı veri kaynağıyla (Değişiklik kayıtları rolü) çekilir; durum kodları Evren'in değişiklik sözlüğüne çevrilir ve yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar (ADR-0025). Hizmet katmanı (iş uygulaması, hizmet, hizmet sunumu) ve bağımlılık tipindeki cmdb_rel_ci ilişkileri de aynı sys_id'lerle gelir; keşfin altyapısıyla birleşerek etki analizini besler (ADR-0030).
     tech: ["Table API (anahtar sıralı sayfalama: sys_id>SON^ORDERBYsys_id)", sys_updated_on ile artımlı çekme, "connectors/sources/servicenow.py", "sys_id korunur (sys_id_key, sync.sn_ci_map)", "Referans verileri ref.* (grup, kişi, konum, şirket, departman, maliyet merkezi, model; ADR-0022)"]
     security: [Ayrı entegrasyon kullanıcısı, IP kısıtı, "Kişisel veri en az: yalnızca izinli sütunlar (evren_core.reference)", "Referans yolu CMDB'ye yazamaz; sütun düzeyi yetki"]
   connectors:

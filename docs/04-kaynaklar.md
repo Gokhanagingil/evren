@@ -156,6 +156,7 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - `sync.sn_ci_map`'te eşleme varsa kayıt Evren CI'ına bağlanır.
   - Eşleme yoksa CI aynı sys_id ile açılır.
   - Keşif ve izleme kaynakları sonra bu CI'a kimlik kurallarıyla (seri, UUID, MAC) bağlanır.
+- **Hizmet katmanı (ADR-0030):** `cmdb_ci_business_app` ve `cmdb_ci_service` (iş/teknik/uygulama hizmeti, hizmet sunumu) sys_id korunarak yüklenir (`csdm.mapping.yaml`). İlişkiler CI tablolarından önce `cmdb_rel_type` ve yalnızca bağımlılık tiplerindeki `cmdb_rel_ci` satırlarından (`typeIN…`) okunur ve ebeveyn kaydına eklenir; sahiplik ve fiziksel bağlantı okunmaz. Entegrasyon kullanıcısı bu tablolara salt okunur erişmelidir.
 - **Artımlı çekme:** `sys_updated_on` ile (`--mode delta --since …`). Geçiş döneminde SN'de yapılan elle değişiklikler "ServiceNow" kaynağı olarak uzlaştırmaya girer.
 - **Referans verileri (ADR-0022, göç 0020):** CI tablolarından sonra aynı çalışmada `sys_user`, `sys_user_group`, `cmn_location`, `core_company`, `cmn_department`, `cmn_cost_center` ve `cmdb_model` okunur.
   - Her tablodan yalnızca `evren_core/reference.py`'deki izinli sütunlar istenir. Kişisel veri en azdır: kullanıcıda yalnızca kullanıcı adı, ad, e-posta, departman ve etkinlik.

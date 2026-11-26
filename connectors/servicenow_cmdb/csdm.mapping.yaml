@@ -1,0 +1,39 @@
+# ServiceNow CMDB → Evren: uygulama ve hizmet katmanı (CSDM; U7.3, ADR-0030)
+#
+# cmdb_ci_business_app ve cmdb_ci_service (iş/teknik/uygulama hizmeti, hizmet sunumu) kayıtları sys_id korunarak
+# yüklenir (ilk yükleme, ADR-0011). İlişkiler cmdb_rel_ci'dan yalnızca bağımlılık tipleriyle gelir; istemci ebeveyn
+# kaydına _relations olarak ekler, hedef aynı kaynağın sys_id'sidir (çözülemeyen hedef yazılmaz). İş uygulaması ve
+# hizmetler keşifte görülmez: yönetişim alanları gibi ITSM'den beslenir, doğruluğu sahiplik onayıyla izlenir.
+description: ServiceNow CMDB iş uygulamaları, hizmetler ve hizmet sunumları (salt okunur)
+verify: true
+data_source: ServiceNow
+source_key: sys_id
+class: cmdb_ci_service
+require:
+  - {from: _table, matches: "^cmdb_ci_(business_app|service)$"}
+class_rules:
+  - when: {from: sys_class_name, matches: "^cmdb_ci_business_app$"}
+    class: cmdb_ci_business_app
+  - when: {from: sys_class_name, matches: "^cmdb_ci_service_business$"}
+    class: cmdb_ci_service_business
+  - when: {from: sys_class_name, matches: "^cmdb_ci_service_technical$"}
+    class: cmdb_ci_service_technical
+  - when: {from: sys_class_name, matches: "^cmdb_ci_service_discovered$"}
+    class: cmdb_ci_service_discovered
+  - when: {from: sys_class_name, matches: "^cmdb_ci_service_auto$"}
+    class: cmdb_ci_service_auto
+  - when: {from: sys_class_name, matches: "^service_offering$"}
+    class: service_offering
+attributes:
+  name: {from: name, transform: strip}
+  short_description: {from: short_description}
+  owned_by: {from: owned_by}
+  managed_by: {from: managed_by}
+  support_group: {from: support_group}
+  used_for: {from: used_for}
+  busines_criticality: {from: busines_criticality}
+  service_classification: {from: service_classification}
+  it_application_owner: {from: it_application_owner}
+  operational_status: {from: operational_status, transform: int}
+  install_status: {from: install_status, transform: int}
+relations_from: {from: _relations}

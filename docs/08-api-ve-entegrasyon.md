@@ -112,6 +112,11 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/attestation-requests?ids=a,b,…`: isteklerin durumu (`pending | applied | rejected`) ve uzlaştırıcının notu.
 - CI ayrıntısında `attestation`: durum, politika, son onay (kişi adı, tarih), geçerlilik sonu, sorumlular, son istekler, açık ret anomalisi, `can_attest`, `blocker` ve `blocker_code`.
 
+### Etki analizi (ADR-0030)
+
+- `GET /api/v1/ci/{sys_id}/impact?depth=6` (1–10): `upstream` (bu CI düşerse etkilenenler) ve `downstream` (bağımlılıkları). Her biri `nodes` (sys_id, ad, sınıf, düzey, ilişki tipi, `phrase` (bağımlı ucun Türkçe fiili), `via`/`via_name` (aracı CI), `service`, `production`, `retired`), `services`, `hidden` (okuma izni olmayan CI sayısı; adları sızmaz), `truncated` (500 düğüm sınırı). `summary`: etkilenen hizmet ve üretimdeki hizmet sayısı.
+- Yön `metadata/relationship_types.yaml` → `impact` (`parent` | `child` | `none`); yürüyüş döngüsüzdür.
+
 ### Bağımlı CI (ADR-0029)
 
 - Alım zarfında isteğe bağlı `parent: {"source_key": "…", "data_source": null}`: bağımlı sınıfın kaydı ana kaydını bildirir (ör. NNMi arayüzü → düğüm). Eşleme dosyasında `parent: {source_key: {from: …}}`. Bağımlı olmayan sınıfta yok sayılmaz ama kullanılmaz.

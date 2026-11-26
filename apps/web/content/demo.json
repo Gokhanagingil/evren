@@ -421,7 +421,8 @@
    },
    "connector": "nnmi",
    "mappings": [
-    "connectors/nnmi/mapping.yaml"
+    "connectors/nnmi/mapping.yaml",
+    "connectors/nnmi/interface.mapping.yaml"
    ],
    "schedule": "0 3 * * *",
    "authoritative_for_tr": "Ağ cihazları, arayüzler, L2 bağlantıları",
@@ -904,6 +905,7 @@
    "connector": "servicenow_cmdb",
    "mappings": [
     "connectors/servicenow_cmdb/server.mapping.yaml",
+    "connectors/servicenow_cmdb/csdm.mapping.yaml",
     "connectors/servicenow_cmdb/reference.mapping.yaml"
    ],
    "schedule": "*/15 * * * *",

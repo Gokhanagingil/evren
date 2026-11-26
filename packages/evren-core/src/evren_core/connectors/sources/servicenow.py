@@ -10,8 +10,12 @@
 * **Delta:** ``sys_updated_on>=<since>`` (UTC). ServiceNow sorgudaki tarihi entegrasyon kullanıcısının saat dilimine
   göre yorumlar; entegrasyon kullanıcısının saat dilimi **UTC** olmalıdır (docs/04). Delta silinen kaydı göstermez;
   delta çalışması "görülmeyeni eksik say" işlemine girmez (ADR-0017).
-* **Tablolar:** ``cmdb_ci_server`` (alt sınıflarıyla: Windows, Linux, ESX…) ve ``cmdb_ci_netgear`` (switch, router,
-  güvenlik duvarı). Üst tablo sorgusu alt sınıf kayıtlarını da döndürür; sınıf ``sys_class_name``'den gelir. Ardından
+* **Tablolar:** ``cmdb_ci_server`` (alt sınıflarıyla: Windows, Linux, ESX…), ``cmdb_ci_netgear`` (switch, router,
+  güvenlik duvarı), ``cmdb_ci_business_app`` ve ``cmdb_ci_service`` (iş/teknik/uygulama hizmeti ve hizmet sunumu;
+  ADR-0030). Üst tablo sorgusu alt sınıf kayıtlarını da döndürür; sınıf ``sys_class_name``'den gelir.
+* **İlişkiler** (ADR-0030): CI tablolarından ÖNCE ``cmdb_rel_type`` (ad → sys_id) ve yalnızca bağımlılık tiplerindeki
+  ``cmdb_rel_ci`` satırları (``typeIN…``) okunur; ebeveyn CI'ın kaydına ``_relations`` olarak eklenir. Delta çalışması
+  ilişkileri de yalnızca güncellenenlerden alır; ilişki silmesi tam çalışmada yansır. Ardından
   aynı çalışmada referans tabloları (``sys_user``, ``sys_user_group``, ``cmn_location``, ``core_company``,
   ``cmn_department``, ``cmn_cost_center``, ``cmdb_model``; ADR-0022): her tablodan yalnızca izinli sütunlar istenir
   (``evren_core.reference``); kişisel veri en azdır.
@@ -38,14 +42,21 @@ from typing import Any, Literal
 from ...reference import CHANGE_TABLES, REFERENCE_TABLES, ROLE_TABLES
 from ..http import HttpClient, HttpError, HttpResponse
 
-__all__ = ["CHANGE_QUERIES", "CI_TABLES", "FIELDS", "TABLES", "ServiceNowClient", "ServiceNowSimulator", "fields_for"]
+__all__ = ["CHANGE_QUERIES", "CI_TABLES", "FIELDS", "RELATION_TYPES", "TABLES", "ServiceNowClient", "ServiceNowSimulator",
+           "fields_for"]
 
-CI_TABLES = ("cmdb_ci_server", "cmdb_ci_netgear")
+CI_TABLES = ("cmdb_ci_server", "cmdb_ci_netgear", "cmdb_ci_business_app", "cmdb_ci_service")
 FIELDS = (
     "sys_id", "sys_class_name", "name", "fqdn", "ip_address", "serial_number", "mac_address", "os", "os_version",
     "support_group", "owned_by", "managed_by", "used_for", "location", "company", "cost_center", "model_id",
-    "operational_status", "install_status", "short_description", "sys_updated_on",
+    "operational_status", "install_status", "short_description", "busines_criticality", "service_classification",
+    "it_application_owner", "sys_updated_on",
 )
+#: Okunan ilişki tipleri (ADR-0030): bağımlılık taşıyan tipler; sahiplik ve fiziksel bağlantı keşiften gelir
+RELATION_TYPES = ("Depends on::Used by", "Runs on::Runs", "Consumes::Consumed by", "Uses::Used by",
+                  "Contains::Contained by", "Provided by::Provides", "Hosted on::Hosts", "Members::Member of",
+                  "Cluster of::Cluster", "Virtualized by::Virtualizes")
+REL_FIELDS = {"cmdb_rel_type": ("sys_id", "name"), "cmdb_rel_ci": ("sys_id", "parent", "child", "type", "sys_updated_on")}
 # Referans tabloları aynı çalışmada CI tablolarından sonra çekilir (ADR-0022); alanlar tek listeden.
 TABLES = (*CI_TABLES, *REFERENCE_TABLES)
 # Değişiklik tabloları (ADR-0025): tablo başına (tam liste, delta) koşulu. {since}: delta başlangıcı, {cutoff}: geriye
@@ -61,6 +72,8 @@ assert set(CHANGE_QUERIES) == set(CHANGE_TABLES)
 
 def fields_for(table: str) -> tuple[str, ...]:
     """Tablo için istenen alanlar: referans/değişiklik tablosunda yalnızca izinli sütunlar, CI tablosunda ``FIELDS``."""
+    if table in REL_FIELDS:
+        return REL_FIELDS[table]
     ref = ROLE_TABLES.get(table)
     return ref.fields if ref else FIELDS
 _TABLE = re.compile(r"^[a-z][a-z0-9_]{0,79}$")
@@ -113,25 +126,47 @@ class ServiceNowClient:
             return [delta_q.format(since=sn_datetime(since))]
         return [snapshot_q.format(cutoff=sn_datetime(self.clock() - self.lookback))]
 
+    def _rows(self, table: str, base: list[str]) -> Iterator[dict[str, Any]]:
+        last = ""
+        while True:
+            rows = self._page(table, "^".join([*base, *([f"sys_id>{last}"] if last else []), "ORDERBYsys_id"]))
+            if not rows:
+                break
+            for row in rows:
+                sid = row.get("sys_id")
+                if not isinstance(sid, str) or not _SYSID.match(sid) or sid <= last:
+                    raise HttpError(f"ServiceNow sıralaması veya sys_id beklenmedik ({table})")
+                last = sid
+                yield row
+
+    def _relations(self, mode: str, since: datetime | None) -> dict[str, list[dict[str, str]]]:
+        """Ebeveyn sys_id → ilişkiler ({type, target, direction}); yalnızca bağımlılık tipleri (ADR-0030)."""
+        types = {r["sys_id"]: r.get("name", "") for r in self._rows("cmdb_rel_type", [])}
+        wanted = sorted(sid for sid, name in types.items() if name in RELATION_TYPES)
+        out: dict[str, list[dict[str, str]]] = {}
+        if not wanted:
+            return out
+        base = [f"typeIN{','.join(wanted)}"]
+        if mode == "delta" and since is not None:
+            base.append(f"sys_updated_on>={sn_datetime(since)}")
+        for r in self._rows("cmdb_rel_ci", base):
+            parent, child = str(r.get("parent") or ""), str(r.get("child") or "")
+            if _SYSID.match(parent) and _SYSID.match(child) and parent != child:
+                out.setdefault(parent, []).append({"type": types[str(r.get("type"))], "target": child,
+                                                   "direction": "parent"})
+        return out
+
     def fetch(self, mode: Literal["snapshot", "delta"] = "snapshot",
               since: datetime | None = None) -> Iterator[dict[str, Any]]:
+        rels = self._relations(mode, since) if any(t in CI_TABLES for t in self.tables) else {}
         for table in self.tables:
-            base = self._base(table, mode, since)
-            last = ""
-            while True:
-                rows = self._page(table, "^".join([*base, *([f"sys_id>{last}"] if last else []), "ORDERBYsys_id"]))
-                if not rows:
-                    break
-                for row in rows:
-                    sid = row.get("sys_id")
-                    if not isinstance(sid, str) or not _SYSID.match(sid) or sid <= last:
-                        raise HttpError(f"ServiceNow sıralaması veya sys_id beklenmedik ({table})")
-                    last = sid
-                    yield {**row, "_table": table}
+            for row in self._rows(table, self._base(table, mode, since)):
+                extra = {"_relations": rels.get(row["sys_id"], [])} if table in CI_TABLES else {}
+                yield {**row, "_table": table, **extra}
 
 
 # ---------------------------------------------------------------------------------------------------- simülatör
-_COND = re.compile(r"^(?P<field>[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)?)(?P<op>>=|>|=)(?P<value>.*)$")
+_COND = re.compile(r"^(?P<field>[a-z_][a-z0-9_]*(?:\.[a-z_][a-z0-9_]*)?)(?P<op>>=|>|=|IN)(?P<value>.*)$")
 
 
 class ServiceNowSimulator:
@@ -173,6 +208,8 @@ class ServiceNowSimulator:
         actual = self._value(table, row, field)
         if op == "=":
             return actual == value
+        if op == "IN":
+            return actual in value.split(",")
         if not actual:
             return False  # boş tarih karşılaştırmada eşleşmez (ServiceNow davranışı)
         return actual >= value if op == ">=" else actual > value

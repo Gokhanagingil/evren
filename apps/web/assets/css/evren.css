@@ -505,3 +505,7 @@ label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: v
 .src-link + .src-link { margin-top: 4px; }
 .comp-table .comp-purpose { font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 3px; max-width: 46ch; }
 .comp-tech { font-weight: 600; color: var(--ink); min-width: 140px; }
+/* Etki analizi (U7.3): düzeye göre girinti */
+#ciImpact .mini li.depth-2 { margin-left: 14px; }
+#ciImpact .mini li.depth-3 { margin-left: 28px; }
+#ciImpact .mini li.depth-4 { margin-left: 42px; }

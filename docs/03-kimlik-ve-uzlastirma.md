@@ -154,3 +154,15 @@ Kapsamdaki CI'ın sorumlusu (`owned_by` veya `managed_by` alanındaki kişi) kay
 - Süre dolunca ya da onaylayan artık sorumlu değilse dönemsel tarama CI'ı "Henüz incelenmedi" yapar. Son onayın kişi ve tarih bilgisi kanıt olarak kalır.
 - Ret, Veri sorumlusu için bir anomali açar. CI sonradan onaylanırsa anomali kapanır, kanıt kalır. Ret CI'ı silmez ve emekliye ayırmaz.
 - Sahipsiz CI'ın onay verecek kimsesi yoktur; bu CI'lar ayrı görünümde listelenir. Geçersiz onaylar GRC kontrolü CMDB-06'ya kanıt olur.
+
+## 8. Etki analizi (ADR-0030)
+
+Her ilişki tipinin hangi ucunun diğerine bağımlı olduğu `metadata/relationship_types.yaml` dosyasındaki `impact` alanında yazılıdır:
+
+- `parent`: ebeveyn çocuğa bağımlıdır. Örnek: uygulama hizmeti "Depends on" sunucu.
+- `child`: çocuk ebeveyne bağımlıdır. Örnek: örnek "Contains" veritabanı.
+- `none`: bağımlılık yoktur. Örnek: fiziksel bağlantı.
+
+Etki analizi bu yönle iki tarafa yürür. **Yukarı** yürüyüş, CI düşerse etkilenenleri bulur: uygulama hizmeti, iş uygulaması, iş hizmeti. **Aşağı** yürüyüş, CI'ın bağımlılıklarını bulur.
+
+Yürüyüş döngüye girmez ve derinlikle sınırlıdır. Okuma izni olmayan CI'ın adı gösterilmez, ama yürüyüş onun üzerinden devam eder. Hizmet katmanı ServiceNow'dan gelir; sunucu ve ağ cihazı keşiften gelir; ikisi golden record'da birleşir.

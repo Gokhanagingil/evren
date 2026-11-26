@@ -163,14 +163,14 @@
     "src_servicenow": {
       "label": "ServiceNow",
       "sub": [
-        "CMDB ilk yükleme,",
+        "CMDB + hizmet katmanı,",
         "Change kayıtları"
       ],
       "kind": "servicenow",
       "kind_label": "ServiceNow",
       "chapter": "sources",
       "phase": "F0",
-      "text": "Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları (change_request, task_ci) ayrı bağlayıcı ve ayrı veri kaynağıyla (Değişiklik kayıtları rolü) çekilir; durum kodları Evren'in değişiklik sözlüğüne çevrilir ve yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar (ADR-0025).",
+      "text": "Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları (change_request, task_ci) ayrı bağlayıcı ve ayrı veri kaynağıyla (Değişiklik kayıtları rolü) çekilir; durum kodları Evren'in değişiklik sözlüğüne çevrilir ve yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar (ADR-0025). Hizmet katmanı (iş uygulaması, hizmet, hizmet sunumu) ve bağımlılık tipindeki cmdb_rel_ci ilişkileri de aynı sys_id'lerle gelir; keşfin altyapısıyla birleşerek etki analizini besler (ADR-0030).",
       "tech": [
         "Table API (anahtar sıralı sayfalama: sys_id>SON^ORDERBYsys_id)",
         "sys_updated_on ile artımlı çekme",

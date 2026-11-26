@@ -2,7 +2,7 @@
 // ("bu değer nereden geldi?"), API modunda değişim geçmişi.
 import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
-import { OUTCOME, ROLE_TR, attest, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
+import { OUTCOME, ROLE_TR, attest, backend, ciDetail, ciFacets, ciHistory, ciImpact, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
 import { STATE_TONE, openRejectDialog, waitForRequests } from './attestation.js';
 import { STAGE_TONE, observationList, openDecisionDialog, sendDecision } from './staleness.js';
 import { openEditDialog } from './ci-edit.js';
@@ -264,6 +264,43 @@ export async function renderCis(view, param) {
       actions));
   }
 
+  // Etki analizi (U7.3, ADR-0030): bu CI düşerse etkilenenler (yukarı) ve bağımlılıkları (aşağı)
+  function impactList(nodes, id, label, up) {
+    const LIMIT = 15;
+    const item = (n) => h('li', { class: `depth-${Math.min(n.depth, 4)}` },
+      h('div', { class: 'pills' }, pill(n.class_label, n.service ? 'info' : 'neutral'), n.production ? pill('Üretim', 'good') : null,
+        n.retired ? pill('Emekli', 'warn') : null, n.depth > 1 ? pill(`${n.depth}. düzey`, 'neutral') : null),
+      h('a', { href: `#/ci/${n.sys_id}` }, n.name),
+      h('div', { class: 'cell-sub' }, up ? `${n.phrase} → ${n.via_name}` : `${n.via_name} → ${n.phrase} → ${n.name}`));
+    const list = h('ul', { class: 'mini', id, 'aria-label': label }, nodes.slice(0, LIMIT).map(item));
+    if (nodes.length <= LIMIT) return list;
+    const more = h('button', { class: 'btn ghost small', type: 'button', onclick: () => {
+      list.append(...nodes.slice(LIMIT).map(item));
+      more.remove();
+    } }, `Tümünü göster (${nodes.length})`);
+    return h('div', {}, list, more);
+  }
+
+  function impactView(doc) {
+    const s = doc.summary;
+    const up = doc.upstream;
+    const down = doc.downstream;
+    const head = s.affected_services
+      ? h('div', { class: `notice ${s.affected_production_services ? 'warn' : ''}`.trim(), role: 'note' },
+        h('strong', {}, `Bu CI düşerse ${s.affected_services} hizmet veya iş uygulaması etkilenir`),
+        s.affected_production_services ? ` (${s.affected_production_services} tanesi üretimde).` : '.')
+      : h('p', { class: 'muted small' }, s.affected ? 'Bu CI\'a bağımlı CI\'lar var; hizmet katmanına ulaşan bağımlılık yok.' : 'Bu CI\'a bağımlı CI yok.');
+    const note = (part) => (part.hidden || part.truncated ? h('p', { class: 'muted small' },
+      part.hidden ? `${part.hidden} CI yetkiniz olmadığı için gösterilmiyor. ` : '', part.truncated ? 'Liste kısaltıldı.' : '') : null);
+    return [head,
+      up.nodes.length ? h('p', { class: 'small' }, h('strong', {}, 'Etkilenenler')) : null,
+      up.nodes.length ? impactList(up.nodes, 'ciImpactUp', 'Bu CI düşerse etkilenenler', true) : null, note(up),
+      down.nodes.length ? h('p', { class: 'small' }, h('strong', {}, 'Bağımlı olduğu CI\'lar')) : null,
+      down.nodes.length ? impactList(down.nodes, 'ciImpactDown', 'Bu CI\'ın bağımlılıkları', false) : null, note(down),
+      h('p', { class: 'muted small' }, 'Yön ilişki tipinden gelir (metadata/relationship_types.yaml → impact); fiziksel bağlantı ve sahiplik etki taşımaz.')]
+      .filter(Boolean);
+  }
+
   // Bağımlı CI kimliği (U7.2, ADR-0029): ana CI'a bağlı CI'lar (ağ adaptörü, uygulama…) ve bağımlının ana CI'ı
   function dependentSection(c) {
     const deps = c.dependents || [];
@@ -394,16 +431,21 @@ export async function renderCis(view, param) {
       h('div', { class: 'cell-sub' }, `${e.requested_by} · ${formatDateTime(e.requested_at)}`));
   }
 
+  // Panel isteği sırası: kullanıcı paneli kapattıktan veya başka CI açıldıktan sonra yanıtlanan eski istek paneli
+  // yeniden açmaz (bağlantı tıklaması + hash değişimi gibi ardışık açılışlarda yarış).
+  let openSeq = 0;
   async function open(id, opener) {
+    const seq = ++openSeq;
     const c = await ciDetail(id);
-    if (!c) return;
+    if (!c || seq !== openSeq) return;
     selected = id;
     if (location.hash !== `#/ci/${id}`) history.replaceState(null, '', `#/ci/${id}`);
     const cov = [['Keşif', c.coverage.discovery], ['İzleme', c.coverage.monitoring], ['Uç nokta güvenliği', c.coverage.security], ['ITSM (ServiceNow)', c.coverage.itsm]];
     const historyBox = h('div', { id: 'ciHistory' }, h('p', { class: 'muted small' }, 'Yükleniyor…'));
+    const impactBox = h('div', { id: 'ciImpact' }, h('p', { class: 'muted small' }, 'Yükleniyor…'));
     openDetail({
       kicker: `Konfigürasyon öğesi · ${c.class_label}`, title: c.name, opener,
-      onClose: () => { selected = null; history.replaceState(null, '', '#/ci'); table?.refreshSelection(); },
+      onClose: () => { openSeq += 1; selected = null; history.replaceState(null, '', '#/ci'); table?.refreshSelection(); },
       body: [
         mode === 'api' && c.can_edit ? h('div', { class: 'panel-actions' }, h('button', { class: 'btn secondary small', type: 'button', id: 'ciEdit',
           onclick: (ev) => openEditDialog(c, ev.currentTarget, () => open(c.sys_id, opener)) }, 'Düzenle…')) : null,
@@ -417,6 +459,7 @@ export async function renderCis(view, param) {
           h('div', { class: 'attrs' }, c.attributes.map(attrRow))),
         c.security_posture ? postureSection(c.security_posture) : null,
         changeSection(c.change_control, reviewFor(c, opener)),
+        mode === 'api' ? section('Etki', impactBox) : null,
         stalenessSection(c, opener),
         attestationSection(c, opener),
         relationSection(c, opener),
@@ -433,6 +476,8 @@ export async function renderCis(view, param) {
     });
     table?.refreshSelection();
     if (mode === 'api') {
+      ciImpact(id).then((doc) => { if (impactBox.isConnected) clear(impactBox).append(...impactView(doc)); })
+        .catch(() => clear(impactBox).append(h('p', { class: 'muted small' }, 'Etki analizi yüklenemedi.')));
       const items = await ciHistory(id);
       clear(historyBox).append(items.length
         ? h('ul', { class: 'mini' }, items.slice(0, 20).map((x) => h('li', {},

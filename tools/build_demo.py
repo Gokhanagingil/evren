@@ -266,7 +266,9 @@ def defender_machine(g: Gen, h: Host) -> dict:
 
 
 def nnmi_node(g: Gen, name: str, category: str, firmware: str, serial: str, ip: str) -> dict:
-    return {"uuid": str(uuid.UUID(int=g.rng.getrandbits(128), version=4)), "name": name.lower(), "systemName": name,
+    # _type: istemcinin eklediği nesne türü (düğüm; arayüzler ayrı nesnedir, ADR-0029)
+    return {"_type": "Node", "uuid": str(uuid.UUID(int=g.rng.getrandbits(128), version=4)), "name": name.lower(),
+            "systemName": name,
             "longName": f"{name.lower()}.net.ornek.local", "systemObjectId": ".1.3.6.1.4.1.9.1.2494",
             "systemDescription": firmware, "deviceCategory": f"com.hp.ov.nms.devices.{category}",
             "managementAddress": ip, "serialNumber": serial}

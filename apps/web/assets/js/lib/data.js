@@ -350,6 +350,8 @@ export async function ciDetail(id) {
   try { return await api(`/api/v1/ci/${encodeURIComponent(id)}`); } catch (e) { if (e.status === 404) return null; throw e; }
 }
 
+export const ciImpact = (id, depth = 6) => api(`/api/v1/ci/${encodeURIComponent(id)}/impact?depth=${depth}`);
+
 export async function ciHistory(id) {
   if (!(await isApi())) return null;
   return (await api(`/api/v1/ci/${encodeURIComponent(id)}/history?limit=50`)).items;

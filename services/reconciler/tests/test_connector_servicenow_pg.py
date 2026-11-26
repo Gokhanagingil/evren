@@ -195,7 +195,8 @@ def test_reference_tables_are_loaded_with_same_sys_id_and_skip_identity(as_recon
         [(0,)]
     # çalışma sayaçları referans kayıtlarını da sayar (geçit kapanışı bildirilen sayıyla eşleşir)
     run_id = recs[0].run_id
-    assert fetch(as_reconciler, "SELECT record_count FROM ingest.source_run WHERE run_id = %s", run_id) == [(17,)]
+    assert fetch(as_reconciler, "SELECT record_count FROM ingest.source_run WHERE run_id = %s", run_id) == [
+        (5 + 5 + 12,)]  # sunucu/ağ + CSDM (ADR-0030) + referans
     again = run(store, "servicenow")[1]
     assert {r.outcome for r in again} == {"unchanged"}
 
@@ -338,3 +339,26 @@ def test_nnmi_l2_connections_become_relations_between_network_devices(as_reconci
     again = run(store, "nnmi")[1]
     assert {r.outcome for r in again} == {"unchanged"}
     assert len(fetch(as_reconciler, "SELECT 1 FROM cmdb.cmdb_rel_ci WHERE discovery_source = 'NNMi'")) == 2
+
+
+
+def test_csdm_layer_is_imported_with_sys_id_and_dependency_relations(as_reconciler, metadata):
+    """ADR-0030: iş uygulaması, hizmetler ve hizmet sunumu sys_id korunarak açılır; yalnızca bağımlılık tipindeki
+    ilişkiler yazılır (sahiplik değil); uygulama hizmeti keşif tarafındaki sunucu ve switch CI'ına bağlanır."""
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    run(store, "servicenow")
+    ba, svc, bs, off = ("ba01c2d3e4f5061728394a5b6c7d8e01", "5a01c2d3e4f5061728394a5b6c7d8e01",
+                        "5b01c2d3e4f5061728394a5b6c7d8e01", "5c01c2d3e4f5061728394a5b6c7d8e01")
+    assert fetch(as_reconciler, "SELECT sys_id, sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = ANY(%s::bpchar[]) "
+                                "ORDER BY sys_id", [ba, svc, bs, off]) == sorted([
+        (ba, "cmdb_ci_business_app"), (svc, "cmdb_ci_service_auto"), (bs, "cmdb_ci_service_business"),
+        (off, "service_offering")])
+    rels = fetch(as_reconciler, """SELECT r.parent, t.name, r.child FROM cmdb.cmdb_rel_ci r
+                                     JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type
+                                    WHERE r.discovery_source = 'ServiceNow' ORDER BY 1, 2, 3""")
+    assert (ba, "Consumes::Consumed by", svc) in rels and (svc, "Depends on::Used by", SWITCH) in rels
+    assert (bs, "Depends on::Used by", svc) in rels and (off, "Depends on::Used by", svc) in rels
+    assert not [r for r in rels if r[1] == "Owns::Owned by"]  # sahiplik ilişkisi okunmaz
+    (crit,), = fetch(as_reconciler, "SELECT class_attributes->>'busines_criticality' FROM cmdb.cmdb_ci WHERE sys_id = %s",
+                     svc)
+    assert crit == "1 - most critical"

@@ -203,3 +203,34 @@ def make_dependent_pair() -> tuple[str, str, str]:
                                        attributes={"name": "eth0", "mac_address": f"02:00:{tag[:2]}:{tag[2:4]}:"
                                                                                    f"{tag[4:6]}:{tag[6:8]}"}))
     return host.ci_sys_id, nic.ci_sys_id, f"dp-{tag}"
+
+
+def make_service_chain() -> dict[str, str]:
+    """Testin kendine ait CSDM zinciri (U7.3, ADR-0030), ServiceNow kayıtları gibi (sys_id korunur):
+    iş uygulaması —Consumes→ uygulama hizmeti —Depends on→ sunucu; iş hizmeti —Depends on→ uygulama hizmeti; döngü için
+    sunucu —Depends on→ iş uygulaması. Döner: ad → sys_id."""
+    from evren_core.envelope import RelationRef
+    md = load_metadata(REPO / "metadata")
+    ids = {k: uuid.uuid4().hex for k in ("server", "app_service", "business_app", "business_service")}
+    tag = ids["server"][:6]
+    rel = lambda t, target: RelationRef(type=t, direction="parent", target_source_key=ids[target])  # noqa: E731
+    spec = [
+        ("server", "cmdb_ci_linux_server", {"name": f"etki-srv-{tag}", "serial_number": f"ETK{tag}",
+                                            "used_for": "Production"}, [rel("Depends on::Used by", "business_app")]),
+        ("app_service", "cmdb_ci_service_auto", {"name": f"etki-hizmet-{tag}", "used_for": "Production"},
+         [rel("Depends on::Used by", "server")]),
+        ("business_app", "cmdb_ci_business_app", {"name": f"etki-uygulama-{tag}"},
+         [rel("Consumes::Consumed by", "app_service")]),
+        ("business_service", "cmdb_ci_service_business", {"name": f"etki-is-{tag}"},
+         [rel("Depends on::Used by", "app_service")]),
+    ]
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        store = ReconcilerStore(conn, md)
+        run = store.start_run(uuid.uuid4(), "ServiceNow")
+        now = datetime.now(UTC)
+        for key, cls, attrs, rels in spec:
+            store.apply(IngestRecord(data_source="ServiceNow", run_id=run, source_key=ids[key], class_hint=cls,
+                                     observed_at=now, attributes=attrs, relations=rels))
+        store.finish_run(run)
+    return ids

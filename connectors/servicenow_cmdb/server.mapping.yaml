@@ -52,3 +52,5 @@ lookup:
   mac_addresses: {from: mac_address}
 external_ids:
   sn_sys_id: {from: sys_id}
+# Sunucunun ebeveyn olduğu bağımlılık ilişkileri (ör. uygulama örneği değil, sunucu → depolama; ADR-0030)
+relations_from: {from: _relations}

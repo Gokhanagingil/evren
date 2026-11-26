@@ -170,6 +170,7 @@ class FieldMapping:
     require: list[tuple[str, re.Pattern[str]]] = field(default_factory=list)
     posture: dict[str, FieldSpec] = field(default_factory=dict)  # kısıtlı güvenlik duruşu (ADR-0023)
     parent: FieldSpec | None = None  # bağımlı CI'ın ana kaydının kaynak anahtarı (ADR-0029)
+    relations_from: FieldSpec | None = None  # kaynağın ilişki listesi: [{type, target, direction}] (ADR-0030)
     parent_data_source: str | None = None
 
     @classmethod
@@ -179,7 +180,7 @@ class FieldMapping:
                 raise MappingError(f"Eşleme dosyasında '{required}' zorunlu")
         unknown = set(doc) - {"data_source", "source_key", "class", "class_rules", "include_when", "require",
                               "attributes", "lookup", "external_ids", "relations", "description", "verify", "posture",
-                              "parent"}
+                              "parent", "relations_from"}
         if unknown:
             raise MappingError(f"Eşleme dosyasında bilinmeyen anahtarlar: {sorted(unknown)}")
         lookup_keys = set((doc.get("lookup") or {}).keys())
@@ -206,6 +207,7 @@ class FieldMapping:
             posture={k: FieldSpec.parse(v) for k, v in (doc.get("posture") or {}).items()},
             parent=FieldSpec.parse(doc["parent"]["source_key"]) if doc.get("parent") else None,
             parent_data_source=(doc.get("parent") or {}).get("data_source"),
+            relations_from=FieldSpec.parse(doc["relations_from"]) if doc.get("relations_from") else None,
         )
 
     @staticmethod
@@ -256,6 +258,18 @@ class FieldMapping:
                     type=rel["type"], direction=rel["direction"], target_source_key=str(t),
                     target_data_source=rel.get("target_data_source"), target_class_hint=rel.get("target_class"),
                 ))
+        if self.relations_from is not None:
+            items = self.relations_from.extract(raw) or []
+            for item in items if isinstance(items, list) else []:
+                if not isinstance(item, Mapping) or not item.get("type") or not item.get("target"):
+                    continue
+                try:
+                    relations.append(RelationRef(type=str(item["type"]), direction=item.get("direction", "parent"),
+                                                 target_source_key=str(item["target"]),
+                                                 target_data_source=item.get("target_data_source"),
+                                                 target_class_hint=item.get("target_class")))
+                except ValidationError:
+                    raise MappingError("Kaynağın ilişki kaydı sözleşmeye uymuyor (değer iletiye yazılmaz)") from None
         parent = None
         if self.parent is not None:
             pk = self.parent.extract(raw)

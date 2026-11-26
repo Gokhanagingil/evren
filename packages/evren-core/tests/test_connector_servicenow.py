@@ -29,18 +29,20 @@ def client(sim=None, page_size: int = 2, password: str = PASSWORD, tables=None) 
     return ServiceNowClient(http, page_size=page_size, **({"tables": tables} if tables else {}))
 
 
-def queries(sim: ServiceNowSimulator) -> list[str]:
-    return [dict(urllib.parse.parse_qsl(c.split("?", 1)[1]))["sysparm_query"] for c in sim.calls]
+def queries(sim: ServiceNowSimulator, *, relations: bool = False) -> list[str]:
+    """Sorgular; ``relations=False`` iken ilişki tabloları (cmdb_rel_type, cmdb_rel_ci; ADR-0030) dışarıda."""
+    return [dict(urllib.parse.parse_qsl(c.split("?", 1)[1]))["sysparm_query"] for c in sim.calls
+            if relations or "/cmdb_rel_" not in c.split("?", 1)[0]]
 
 
 def test_keyset_paging_until_empty_page():
     sim = ServiceNowSimulator.from_dir(SAMPLES, user=USER, password=PASSWORD)
-    rows = list(client(sim, tables=CI_TABLES).fetch())
+    rows = list(client(sim, tables=("cmdb_ci_server", "cmdb_ci_netgear")).fetch())
     assert [r["_table"] for r in rows] == ["cmdb_ci_server"] * 4 + ["cmdb_ci_netgear"]
-    assert len(sim.calls) == 3 + 2  # tablo başına boş sayfaya kadar
+    assert len(queries(sim)) == 3 + 2  # tablo başına boş sayfaya kadar
     q = queries(sim)
     assert q[0] == "ORDERBYsys_id" and q[1] == f"sys_id>{rows[1]['sys_id']}^ORDERBYsys_id"
-    first = dict(urllib.parse.parse_qsl(sim.calls[0].split("?", 1)[1]))
+    first = dict(urllib.parse.parse_qsl(next(c for c in sim.calls if "/cmdb_ci_server" in c).split("?", 1)[1]))
     assert first["sysparm_exclude_reference_link"] == "true" and first["sysparm_display_value"] == "false"
     assert first["sysparm_no_count"] == "true" and first["sysparm_limit"] == "2" and "sys_id" in first["sysparm_fields"]
     assert "sysparm_offset" not in first
@@ -57,9 +59,11 @@ def test_page_shortened_by_acl_does_not_stop_paging():
 def test_delta_uses_utc_updated_on():
     sim = ServiceNowSimulator.from_dir(SAMPLES, user=USER, password=PASSWORD)
     since = datetime(2026, 11, 21, 3, 0, tzinfo=timezone(timedelta(hours=3)))  # İstanbul 03:00 = UTC 00:00
-    rows = list(client(sim, tables=CI_TABLES).fetch("delta", since))
+    rows = list(client(sim, tables=("cmdb_ci_server", "cmdb_ci_netgear")).fetch("delta", since))
     assert {r["name"] for r in rows} == {"IST-MUH-11", "IST-DC2-CORE-SW01"}
     assert queries(sim)[0] == "sys_updated_on>=2026-11-21 00:00:00^ORDERBYsys_id"
+    rel = [q for q in queries(sim, relations=True) if q.startswith("typeIN")]
+    assert rel and all(q.split("^")[1] == "sys_updated_on>=2026-11-21 00:00:00" for q in rel)  # ilişkiler de delta
 
 
 def test_reference_tables_follow_ci_tables_with_their_own_fields_only():
@@ -113,11 +117,12 @@ def test_mapping_keeps_sys_id_and_reference_ids(tmp_path):
     out = tmp_path / "k.ndjson"
     report = ConnectorRunner(client(), load_mappings(REPO / "connectors" / "servicenow_cmdb", "ServiceNow"),
                              DryRunGateway(out)).run()
-    assert report.completed and report.sent == 5 + 12
+    assert report.completed and report.sent == 5 + 5 + 12  # sunucu/ağ + CSDM (ADR-0030) + referans
     assert report.by_class == {"cmdb_ci_linux_server": 1, "cmdb_ci_win_server": 1, "cmdb_ci_esx_server": 1,
-                               "cmdb_ci_server": 1, "cmdb_ci_ip_switch": 1, "sys_user": 3, "sys_user_group": 4,
-                               "cmn_location": 1, "core_company": 1, "cmn_department": 1, "cmn_cost_center": 1,
-                               "cmdb_model": 1}
+                               "cmdb_ci_server": 1, "cmdb_ci_ip_switch": 1, "cmdb_ci_business_app": 2,
+                               "cmdb_ci_service_auto": 1, "cmdb_ci_service_business": 1, "service_offering": 1,
+                               "sys_user": 3, "sys_user_group": 4, "cmn_location": 1, "core_company": 1,
+                               "cmn_department": 1, "cmn_cost_center": 1, "cmdb_model": 1}
     recs = {r["source_key"]: r for r in (json.loads(x) for x in out.read_text(encoding="utf-8").splitlines())}
     app = recs["5b1c2d3e4f5061728394a5b6c7d8e9f0"]
     assert app["external_ids"] == {"sn_sys_id": "5b1c2d3e4f5061728394a5b6c7d8e9f0"}
@@ -160,3 +165,26 @@ def test_samples_are_synthetic_and_sorted_ids_are_valid():
 
 def test_utc_now_formatting():
     assert sn_datetime(datetime(2026, 1, 2, 3, 4, 5, tzinfo=UTC)) == "2026-01-02 03:04:05"
+
+
+
+def test_csdm_relations_are_attached_to_the_parent_and_filtered_by_type(tmp_path):
+    """ADR-0030: ilişkiler CI tablolarından önce okunur, yalnızca bağımlılık tipleri (``typeIN``), ebeveyn kaydına eklenir;
+    sahiplik (Owns) gibi bağımlılık taşımayan tip okunmaz."""
+    sim = ServiceNowSimulator.from_dir(SAMPLES, user=USER, password=PASSWORD)
+    out = tmp_path / "k.ndjson"
+    ConnectorRunner(client(sim), load_mappings(REPO / "connectors" / "servicenow_cmdb", "ServiceNow"),
+                    DryRunGateway(out)).run()
+    assert sim.calls[0].split("?")[0].endswith("/cmdb_rel_type")
+    rel_q = next(q for q in queries(sim, relations=True) if q.startswith("typeIN"))
+    assert "d0e1f2a3b4c5d6e7f8091a2b3c4d5e63" not in rel_q  # Owns::Owned by istenmez
+    recs = {r["source_key"]: r for r in (json.loads(x) for x in out.read_text(encoding="utf-8").splitlines())}
+    ba = recs["ba01c2d3e4f5061728394a5b6c7d8e01"]
+    assert ba["class_hint"] == "cmdb_ci_business_app" and ba["attributes"]["it_application_owner"]
+    assert [(r["type"], r["target_source_key"]) for r in ba["relations"]] == [
+        ("Consumes::Consumed by", "5a01c2d3e4f5061728394a5b6c7d8e01")]
+    svc = recs["5a01c2d3e4f5061728394a5b6c7d8e01"]
+    assert svc["class_hint"] == "cmdb_ci_service_auto" and svc["attributes"]["busines_criticality"] == "1 - most critical"
+    assert sorted(r["target_source_key"] for r in svc["relations"]) == [
+        "5b1c2d3e4f5061728394a5b6c7d8e9f0", "9f5061728394a5b6c7d8e9f0a1b2c3d4"]
+    assert recs["5c01c2d3e4f5061728394a5b6c7d8e01"]["class_hint"] == "service_offering"

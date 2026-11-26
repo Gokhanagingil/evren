@@ -2,65 +2,357 @@
  "_aciklama": "SENTETİK örnek veri — ServiceNow Table API yanıt biçiminde (sysparm_exclude_reference_link=true, sysparm_display_value=false: tüm değerler metin, referanslar sys_id). Gerçek kurum verisi değildir. Kurum ortamında tools/connector_run.py --record ile gerçek yanıtlar kaydedilir.",
  "tables": {
   "cmdb_ci_server": [
-   {"sys_id": "5b1c2d3e4f5061728394a5b6c7d8e9f0", "sys_class_name": "cmdb_ci_linux_server", "name": "ist-app-02",
-    "fqdn": "ist-app-02.corp.ornek.local", "ip_address": "10.20.30.52", "serial_number": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e7 f8",
-    "mac_address": "00:50:56:9a:01:02", "os": "Linux Red Hat", "os_version": "9.4",
-    "support_group": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "owned_by": "b2c3d4e5f60718293a4b5c6d7e8f90a1", "managed_by": "",
-    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "d4e5f60718293a4b5c6d7e8f90a1b2c3",
-    "operational_status": "1", "install_status": "1", "short_description": "Sipariş uygulama sunucusu", "sys_updated_on": "2026-11-20 08:15:00"},
-   {"sys_id": "6c2d3e4f5061728394a5b6c7d8e9f0a1", "sys_class_name": "cmdb_ci_win_server", "name": "IST-MUH-11",
-    "fqdn": "ist-muh-11.corp.ornek.local", "ip_address": "10.20.30.111", "serial_number": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e8 91",
-    "mac_address": "", "os": "Windows 2019 Datacenter", "os_version": "10.0.17763",
-    "support_group": "e5f60718293a4b5c6d7e8f90a1b2c3d4", "owned_by": "", "managed_by": "",
-    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "",
-    "operational_status": "1", "install_status": "1", "short_description": "Muhasebe uygulama sunucusu", "sys_updated_on": "2026-11-24 13:40:12"},
-   {"sys_id": "7d3e4f5061728394a5b6c7d8e9f0a1b2", "sys_class_name": "cmdb_ci_esx_server", "name": "esx01",
-    "fqdn": "esx01.ist.ornek.local", "ip_address": "10.20.1.21", "serial_number": "CZ2150ABCD",
-    "mac_address": "", "os": "ESXi", "os_version": "8.0.3",
-    "support_group": "f60718293a4b5c6d7e8f90a1b2c3d4e5", "owned_by": "", "managed_by": "",
-    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "",
+   {
+    "sys_id": "5b1c2d3e4f5061728394a5b6c7d8e9f0",
+    "sys_class_name": "cmdb_ci_linux_server",
+    "name": "ist-app-02",
+    "fqdn": "ist-app-02.corp.ornek.local",
+    "ip_address": "10.20.30.52",
+    "serial_number": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e7 f8",
+    "mac_address": "00:50:56:9a:01:02",
+    "os": "Linux Red Hat",
+    "os_version": "9.4",
+    "support_group": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+    "owned_by": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+    "managed_by": "",
+    "used_for": "Production",
+    "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2",
+    "company": "",
+    "cost_center": "d4e5f60718293a4b5c6d7e8f90a1b2c3",
+    "operational_status": "1",
+    "install_status": "1",
+    "short_description": "Sipariş uygulama sunucusu",
+    "sys_updated_on": "2026-11-20 08:15:00"
+   },
+   {
+    "sys_id": "6c2d3e4f5061728394a5b6c7d8e9f0a1",
+    "sys_class_name": "cmdb_ci_win_server",
+    "name": "IST-MUH-11",
+    "fqdn": "ist-muh-11.corp.ornek.local",
+    "ip_address": "10.20.30.111",
+    "serial_number": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e8 91",
+    "mac_address": "",
+    "os": "Windows 2019 Datacenter",
+    "os_version": "10.0.17763",
+    "support_group": "e5f60718293a4b5c6d7e8f90a1b2c3d4",
+    "owned_by": "",
+    "managed_by": "",
+    "used_for": "Production",
+    "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2",
+    "company": "",
+    "cost_center": "",
+    "operational_status": "1",
+    "install_status": "1",
+    "short_description": "Muhasebe uygulama sunucusu",
+    "sys_updated_on": "2026-11-24 13:40:12"
+   },
+   {
+    "sys_id": "7d3e4f5061728394a5b6c7d8e9f0a1b2",
+    "sys_class_name": "cmdb_ci_esx_server",
+    "name": "esx01",
+    "fqdn": "esx01.ist.ornek.local",
+    "ip_address": "10.20.1.21",
+    "serial_number": "CZ2150ABCD",
+    "mac_address": "",
+    "os": "ESXi",
+    "os_version": "8.0.3",
+    "support_group": "f60718293a4b5c6d7e8f90a1b2c3d4e5",
+    "owned_by": "",
+    "managed_by": "",
+    "used_for": "Production",
+    "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2",
+    "company": "",
+    "cost_center": "",
     "model_id": "2b3c4d5e6f708192a3b4c5d6e7f8019a",
-    "operational_status": "1", "install_status": "1", "short_description": "IST sanallaştırma kümesi host'u", "sys_updated_on": "2026-10-02 09:00:00"},
-   {"sys_id": "8e4f5061728394a5b6c7d8e9f0a1b2c3", "sys_class_name": "cmdb_ci_server", "name": "eski-rapor-01",
-    "fqdn": "", "ip_address": "10.20.40.9", "serial_number": "SGH123EVR9",
-    "mac_address": "", "os": "", "os_version": "",
-    "support_group": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "owned_by": "", "managed_by": "",
-    "used_for": "Production", "location": "", "company": "", "cost_center": "",
-    "operational_status": "2", "install_status": "7", "short_description": "Emekli rapor sunucusu (keşifte görünmez)", "sys_updated_on": "2025-06-30 17:05:44"}
+    "operational_status": "1",
+    "install_status": "1",
+    "short_description": "IST sanallaştırma kümesi host'u",
+    "sys_updated_on": "2026-10-02 09:00:00"
+   },
+   {
+    "sys_id": "8e4f5061728394a5b6c7d8e9f0a1b2c3",
+    "sys_class_name": "cmdb_ci_server",
+    "name": "eski-rapor-01",
+    "fqdn": "",
+    "ip_address": "10.20.40.9",
+    "serial_number": "SGH123EVR9",
+    "mac_address": "",
+    "os": "",
+    "os_version": "",
+    "support_group": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+    "owned_by": "",
+    "managed_by": "",
+    "used_for": "Production",
+    "location": "",
+    "company": "",
+    "cost_center": "",
+    "operational_status": "2",
+    "install_status": "7",
+    "short_description": "Emekli rapor sunucusu (keşifte görünmez)",
+    "sys_updated_on": "2025-06-30 17:05:44"
+   }
   ],
   "cmdb_ci_netgear": [
-   {"sys_id": "9f5061728394a5b6c7d8e9f0a1b2c3d4", "sys_class_name": "cmdb_ci_ip_switch", "name": "IST-DC2-CORE-SW01",
-    "fqdn": "", "ip_address": "10.2.0.1", "serial_number": "FDO2213X0AB",
-    "mac_address": "", "os": "", "os_version": "",
-    "support_group": "0718293a4b5c6d7e8f90a1b2c3d4e5f6", "owned_by": "", "managed_by": "",
-    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "",
-    "operational_status": "1", "install_status": "1", "short_description": "IST DC2 çekirdek switch", "sys_updated_on": "2026-11-25 22:10:03"}
+   {
+    "sys_id": "9f5061728394a5b6c7d8e9f0a1b2c3d4",
+    "sys_class_name": "cmdb_ci_ip_switch",
+    "name": "IST-DC2-CORE-SW01",
+    "fqdn": "",
+    "ip_address": "10.2.0.1",
+    "serial_number": "FDO2213X0AB",
+    "mac_address": "",
+    "os": "",
+    "os_version": "",
+    "support_group": "0718293a4b5c6d7e8f90a1b2c3d4e5f6",
+    "owned_by": "",
+    "managed_by": "",
+    "used_for": "Production",
+    "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2",
+    "company": "",
+    "cost_center": "",
+    "operational_status": "1",
+    "install_status": "1",
+    "short_description": "IST DC2 çekirdek switch",
+    "sys_updated_on": "2026-11-25 22:10:03"
+   }
   ],
   "sys_user": [
-   {"sys_id": "b2c3d4e5f60718293a4b5c6d7e8f90a1", "user_name": "ornek.sahip", "name": "Örnek Sahip (SENTETİK)", "email": "ornek.sahip@ornek.local", "department": "1a2b3c4d5e6f708192a3b4c5d6e7f801", "active": "true", "sys_updated_on": "2026-11-20 08:00:00"},
-   {"sys_id": "b2c3d4e5f60718293a4b5c6d7e8f90a2", "user_name": "ornek.yonetici", "name": "Örnek Yönetici (SENTETİK)", "email": "ornek.yonetici@ornek.local", "department": "1a2b3c4d5e6f708192a3b4c5d6e7f801", "active": "true", "sys_updated_on": "2026-11-20 08:00:00"},
-   {"sys_id": "b2c3d4e5f60718293a4b5c6d7e8f90a3", "user_name": "ornek.ayrilan", "name": "Ayrılan Kullanıcı (SENTETİK)", "email": "", "department": "", "active": "false", "sys_updated_on": "2026-11-20 08:00:00"}
+   {
+    "sys_id": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+    "user_name": "ornek.sahip",
+    "name": "Örnek Sahip (SENTETİK)",
+    "email": "ornek.sahip@ornek.local",
+    "department": "1a2b3c4d5e6f708192a3b4c5d6e7f801",
+    "active": "true",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "b2c3d4e5f60718293a4b5c6d7e8f90a2",
+    "user_name": "ornek.yonetici",
+    "name": "Örnek Yönetici (SENTETİK)",
+    "email": "ornek.yonetici@ornek.local",
+    "department": "1a2b3c4d5e6f708192a3b4c5d6e7f801",
+    "active": "true",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "b2c3d4e5f60718293a4b5c6d7e8f90a3",
+    "user_name": "ornek.ayrilan",
+    "name": "Ayrılan Kullanıcı (SENTETİK)",
+    "email": "",
+    "department": "",
+    "active": "false",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
   ],
   "sys_user_group": [
-   {"sys_id": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "name": "Linux Sistem Ekibi (SENTETİK)", "manager": "b2c3d4e5f60718293a4b5c6d7e8f90a2", "email": "linux@ornek.local", "active": "true", "sys_updated_on": "2026-11-20 08:00:00"},
-   {"sys_id": "0718293a4b5c6d7e8f90a1b2c3d4e5f6", "name": "Windows Sistem Ekibi (SENTETİK)", "manager": "", "email": "", "active": "true", "sys_updated_on": "2026-11-20 08:00:00"},
-   {"sys_id": "e5f60718293a4b5c6d7e8f90a1b2c3d4", "name": "Sanallaştırma Ekibi (SENTETİK)", "manager": "", "email": "", "active": "true", "sys_updated_on": "2026-11-20 08:00:00"},
-   {"sys_id": "f60718293a4b5c6d7e8f90a1b2c3d4e5", "name": "Ağ Ekibi (SENTETİK)", "manager": "", "email": "", "active": "true", "sys_updated_on": "2026-11-20 08:00:00"}
+   {
+    "sys_id": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+    "name": "Linux Sistem Ekibi (SENTETİK)",
+    "manager": "b2c3d4e5f60718293a4b5c6d7e8f90a2",
+    "email": "linux@ornek.local",
+    "active": "true",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "0718293a4b5c6d7e8f90a1b2c3d4e5f6",
+    "name": "Windows Sistem Ekibi (SENTETİK)",
+    "manager": "",
+    "email": "",
+    "active": "true",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "e5f60718293a4b5c6d7e8f90a1b2c3d4",
+    "name": "Sanallaştırma Ekibi (SENTETİK)",
+    "manager": "",
+    "email": "",
+    "active": "true",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "f60718293a4b5c6d7e8f90a1b2c3d4e5",
+    "name": "Ağ Ekibi (SENTETİK)",
+    "manager": "",
+    "email": "",
+    "active": "true",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
   ],
   "cmn_location": [
-   {"sys_id": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "name": "İstanbul Veri Merkezi 2 (SENTETİK)", "full_name": "Türkiye/İstanbul/İstanbul Veri Merkezi 2", "parent": "", "city": "İstanbul", "country": "Türkiye", "sys_updated_on": "2026-11-20 08:00:00"}
+   {
+    "sys_id": "c3d4e5f60718293a4b5c6d7e8f90a1b2",
+    "name": "İstanbul Veri Merkezi 2 (SENTETİK)",
+    "full_name": "Türkiye/İstanbul/İstanbul Veri Merkezi 2",
+    "parent": "",
+    "city": "İstanbul",
+    "country": "Türkiye",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
   ],
   "core_company": [
-   {"sys_id": "3c4d5e6f708192a3b4c5d6e7f8019a2b", "name": "Örnek Donanım A.Ş. (SENTETİK)", "manufacturer": "true", "vendor": "false", "sys_updated_on": "2026-11-20 08:00:00"}
+   {
+    "sys_id": "3c4d5e6f708192a3b4c5d6e7f8019a2b",
+    "name": "Örnek Donanım A.Ş. (SENTETİK)",
+    "manufacturer": "true",
+    "vendor": "false",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
   ],
   "cmn_department": [
-   {"sys_id": "1a2b3c4d5e6f708192a3b4c5d6e7f801", "name": "Bilgi Teknolojileri Altyapı (SENTETİK)", "company": "", "sys_updated_on": "2026-11-20 08:00:00"}
+   {
+    "sys_id": "1a2b3c4d5e6f708192a3b4c5d6e7f801",
+    "name": "Bilgi Teknolojileri Altyapı (SENTETİK)",
+    "company": "",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
   ],
   "cmn_cost_center": [
-   {"sys_id": "d4e5f60718293a4b5c6d7e8f90a1b2c3", "name": "BT Altyapı Masraf Merkezi (SENTETİK)", "account_number": "MM-7100", "manager": "b2c3d4e5f60718293a4b5c6d7e8f90a2", "parent": "", "active": "true", "sys_updated_on": "2026-11-20 08:00:00"}
+   {
+    "sys_id": "d4e5f60718293a4b5c6d7e8f90a1b2c3",
+    "name": "BT Altyapı Masraf Merkezi (SENTETİK)",
+    "account_number": "MM-7100",
+    "manager": "b2c3d4e5f60718293a4b5c6d7e8f90a2",
+    "parent": "",
+    "active": "true",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
   ],
   "cmdb_model": [
-   {"sys_id": "2b3c4d5e6f708192a3b4c5d6e7f8019a", "name": "Örnek Sunucu R760 (SENTETİK)", "display_name": "Örnek Donanım Örnek Sunucu R760", "manufacturer": "3c4d5e6f708192a3b4c5d6e7f8019a2b", "model_number": "R760", "sys_updated_on": "2026-11-20 08:00:00"}
+   {
+    "sys_id": "2b3c4d5e6f708192a3b4c5d6e7f8019a",
+    "name": "Örnek Sunucu R760 (SENTETİK)",
+    "display_name": "Örnek Donanım Örnek Sunucu R760",
+    "manufacturer": "3c4d5e6f708192a3b4c5d6e7f8019a2b",
+    "model_number": "R760",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
+  ],
+  "cmdb_rel_type": [
+   {
+    "sys_id": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e60",
+    "name": "Depends on::Used by"
+   },
+   {
+    "sys_id": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e61",
+    "name": "Consumes::Consumed by"
+   },
+   {
+    "sys_id": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e62",
+    "name": "Runs on::Runs"
+   },
+   {
+    "sys_id": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e63",
+    "name": "Owns::Owned by"
+   },
+   {
+    "sys_id": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e64",
+    "name": "Contains::Contained by"
+   }
+  ],
+  "cmdb_ci_business_app": [
+   {
+    "sys_id": "ba01c2d3e4f5061728394a5b6c7d8e01",
+    "sys_class_name": "cmdb_ci_business_app",
+    "name": "Müşteri Portalı (SENTETİK)",
+    "owned_by": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+    "it_application_owner": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+    "short_description": "Kurumsal müşterilerin sipariş ve fatura portalı",
+    "used_for": "Production",
+    "install_status": "1",
+    "operational_status": "1",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "ba01c2d3e4f5061728394a5b6c7d8e02",
+    "sys_class_name": "cmdb_ci_business_app",
+    "name": "Muhasebe Uygulaması (SENTETİK)",
+    "owned_by": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+    "short_description": "Genel muhasebe",
+    "used_for": "Production",
+    "install_status": "1",
+    "operational_status": "1",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
+  ],
+  "cmdb_ci_service": [
+   {
+    "sys_id": "5a01c2d3e4f5061728394a5b6c7d8e01",
+    "sys_class_name": "cmdb_ci_service_auto",
+    "name": "Müşteri Portalı - Üretim (SENTETİK)",
+    "support_group": "a1b2c3d4e5f60718293a4b5c6d7e8f90",
+    "used_for": "Production",
+    "busines_criticality": "1 - most critical",
+    "operational_status": "1",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "5b01c2d3e4f5061728394a5b6c7d8e01",
+    "sys_class_name": "cmdb_ci_service_business",
+    "name": "Online Satış (SENTETİK)",
+    "owned_by": "b2c3d4e5f60718293a4b5c6d7e8f90a1",
+    "busines_criticality": "1 - most critical",
+    "service_classification": "Business Service",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "5c01c2d3e4f5061728394a5b6c7d8e01",
+    "sys_class_name": "service_offering",
+    "name": "Online Satış - Kurumsal (SENTETİK)",
+    "busines_criticality": "2 - somewhat critical",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
+  ],
+  "cmdb_rel_ci": [
+   {
+    "sys_id": "e001c2d3e4f5061728394a5b6c7d8e9f",
+    "parent": "ba01c2d3e4f5061728394a5b6c7d8e01",
+    "child": "5a01c2d3e4f5061728394a5b6c7d8e01",
+    "type": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e61",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "e011c2d3e4f5061728394a5b6c7d8e9f",
+    "parent": "5a01c2d3e4f5061728394a5b6c7d8e01",
+    "child": "5b1c2d3e4f5061728394a5b6c7d8e9f0",
+    "type": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e60",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "e021c2d3e4f5061728394a5b6c7d8e9f",
+    "parent": "5a01c2d3e4f5061728394a5b6c7d8e01",
+    "child": "9f5061728394a5b6c7d8e9f0a1b2c3d4",
+    "type": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e60",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "e031c2d3e4f5061728394a5b6c7d8e9f",
+    "parent": "5b01c2d3e4f5061728394a5b6c7d8e01",
+    "child": "5a01c2d3e4f5061728394a5b6c7d8e01",
+    "type": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e60",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "e041c2d3e4f5061728394a5b6c7d8e9f",
+    "parent": "5c01c2d3e4f5061728394a5b6c7d8e01",
+    "child": "5a01c2d3e4f5061728394a5b6c7d8e01",
+    "type": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e60",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "e051c2d3e4f5061728394a5b6c7d8e9f",
+    "parent": "ba01c2d3e4f5061728394a5b6c7d8e02",
+    "child": "6c2d3e4f5061728394a5b6c7d8e9f0a1",
+    "type": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e60",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   },
+   {
+    "sys_id": "e061c2d3e4f5061728394a5b6c7d8e9f",
+    "parent": "ba01c2d3e4f5061728394a5b6c7d8e01",
+    "child": "5a01c2d3e4f5061728394a5b6c7d8e01",
+    "type": "d0e1f2a3b4c5d6e7f8091a2b3c4d5e63",
+    "sys_updated_on": "2026-11-20 08:00:00"
+   }
   ]
  }
 }
