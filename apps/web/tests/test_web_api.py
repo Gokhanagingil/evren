@@ -644,3 +644,54 @@ def test_manual_relation_add_and_remove_with_keyboard(page, base_url):
     finally:
         stop.set()
         t.join(timeout=5)
+
+
+def test_csv_import_preview_commit_and_row_results(page, base_url):
+    """U6.3 (ADR-0026 §6): CSV önizlemesi (Türkçe başlık, noktalı virgül, satır hataları), onay ve satır sonuçları;
+    dosya içi mükerrer satır "Zaten var" olur. Klavye ile erişilebilir düğmeler."""
+    import uuid as _uuid
+
+    from scenarios import apply_pending_creates
+
+    tag = _uuid.uuid4().hex[:6].upper()
+    content = ("Ad;Seri numarası;Kullanım amacı\n"
+               f"web-csv-{tag}-1;WEBCSV{tag}1;Üretim\n"
+               f"web-csv-{tag}-2;WEBCSV{tag}2;Test\n"
+               f"=CMD();WEBCSV{tag}3;\n"
+               f"web-csv-{tag}-4;WEBCSV{tag}1;\n").encode()
+    stop = threading.Event()
+
+    def worker():
+        while not stop.is_set():
+            apply_pending_creates()
+            stop.wait(0.3)
+
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
+    try:
+        page.goto(base_url + "/#/ci")
+        page.wait_for_selector("#ciCount")
+        page.locator("#ciImport").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#importClass")).to_be_focused()
+        page.set_input_files("#importFile", files=[{"name": "sunucular.csv", "mimeType": "text/csv", "buffer": content}])
+        page.click("#importPreview")
+        box = page.locator("#importPreviewBox")
+        expect(box).to_contain_text("4 satır · 3 geçerli · 1 hatalı")
+        expect(box).to_contain_text("ayraç: noktalı virgül")
+        expect(box).to_contain_text("Seri numarası")
+        expect(box).to_contain_text("Linux sunucu")  # sınıf Türkçe etiketiyle
+        expect(box).to_contain_text("formül olabilecek değer")
+        expect(page.locator("#importCommit")).to_have_text("İçe aktar (3 satır)")
+        expect(page.locator("#importCommit")).to_be_focused()
+        shot(page, "web_api_import_preview")
+        page.keyboard.press("Enter")
+        expect(page.locator("#importProgress")).to_contain_text("İçe aktarma tamamlandı.", timeout=20000)
+        expect(page.locator("#importProgress")).to_contain_text("açılan 2 · zaten var 1")
+        problems = page.locator("#importProblems")
+        expect(problems).to_contain_text("Zaten var")
+        expect(problems).to_contain_text(f"web-csv-{tag}-1")
+        shot(page, "web_api_import_done")
+    finally:
+        stop.set()
+        t.join(timeout=5)

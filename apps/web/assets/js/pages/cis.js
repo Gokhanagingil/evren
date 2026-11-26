@@ -5,6 +5,7 @@ import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from 
 import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
 import { openEditDialog } from './ci-edit.js';
 import { openCreateDialog } from './ci-create.js';
+import { openImportDialog } from './ci-import.js';
 import { confirmRemoveRelation, openAddRelationDialog } from './ci-relations.js';
 
 // KISITLI güvenlik duruşu (ADR-0023): API yalnızca Güvenlik okuyucu/Denetçi rolüne döndürür; her gösterim denetim izinde.
@@ -109,8 +110,10 @@ export async function renderCis(view, param) {
     title: 'Konfigürasyon Öğeleri',
     sub: 'Golden record. Her öznitelik, rolüne göre yetkili kaynaktan gelir; ezilen değerler ve kural gerekçesi CI panelinde görünür.',
     crumbs: [['Konfigürasyon Öğeleri']],
-    actions: canCreate ? [h('button', { class: 'btn', type: 'button', id: 'ciCreate',
-      onclick: () => openCreateDialog(async (ciId) => { await load(); await open(ciId); }) }, 'Yeni CI…')] : [],
+    actions: canCreate ? [
+      h('button', { class: 'btn secondary', type: 'button', id: 'ciImport', onclick: () => openImportDialog(() => load()) }, 'CSV içe aktar…'),
+      h('button', { class: 'btn', type: 'button', id: 'ciCreate',
+        onclick: () => openCreateDialog(async (ciId) => { await load(); await open(ciId); }) }, 'Yeni CI…')] : [],
   });
 
   const search = h('input', { type: 'search', class: 'searchbar', id: 'ciSearch', placeholder: 'Ad, FQDN, IP, işletim sistemi', 'aria-label': 'CI ara' });

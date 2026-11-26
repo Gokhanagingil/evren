@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ipaddress
+import json
 import logging
 import posixpath
 from contextlib import asynccontextmanager
@@ -40,6 +41,63 @@ def _private_client(request: Request) -> bool:
     return ip.is_loopback or ip.is_private
 log = logging.getLogger("evren.api")
 
+MAX_BODY_BYTES = 5 * 1024 * 1024  # CSV içe aktarma (2 MB metin) JSON kaçışlarıyla birlikte sığar
+
+
+class _TooLarge(Exception):
+    pass
+
+
+class BodyLimit:
+    """İstek gövdesi üst sınırı (ASVS V12/V13): ``Content-Length`` sınırı aşıyorsa veya akış sırasında aşılırsa 413.
+    Ayrıştırmadan önce uygulanır; büyük gövde belleğe alınmaz."""
+
+    def __init__(self, app: Any, max_bytes: int = MAX_BODY_BYTES) -> None:
+        self.app, self.max_bytes = app, max_bytes
+
+    async def _reject(self, send: Any) -> None:
+        body = json.dumps({"error": {"code": "istek_cok_buyuk", "details": [],
+                                     "message": f"İstek gövdesi çok büyük (en çok {self.max_bytes // 1048576} MB)."}},
+                          ensure_ascii=False).encode("utf-8")
+        headers = [(b"content-type", b"application/json"), (b"content-length", str(len(body)).encode()),
+                   (b"cache-control", b"no-store")]
+        headers += [(k.lower().encode(), v.encode()) for k, v in SECURITY_HEADERS.items()]
+        await send({"type": "http.response.start", "status": 413, "headers": headers})
+        await send({"type": "http.response.body", "body": body})
+
+    async def __call__(self, scope: Any, receive: Any, send: Any) -> None:
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        length = dict(scope.get("headers") or []).get(b"content-length")
+        if length is not None and (not length.isdigit() or int(length) > self.max_bytes):
+            await self._reject(send)
+            return
+        received = 0
+        started = False
+
+        async def limited_receive() -> Any:
+            nonlocal received
+            message = await receive()
+            if message["type"] == "http.request":
+                received += len(message.get("body", b""))
+                if received > self.max_bytes:
+                    raise _TooLarge
+            return message
+
+        async def tracking_send(message: Any) -> None:
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, limited_receive, tracking_send)
+        except _TooLarge:
+            if started:
+                raise
+            await self._reject(send)
+
 
 def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | None = None,
                search_client: Any | None = None) -> FastAPI:
@@ -73,6 +131,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     app.state.search = search_client if search_client is not None else (
         OpenSearch(settings.opensearch) if settings.opensearch else None)
     install_handlers(app)
+    app.add_middleware(BodyLimit, max_bytes=MAX_BODY_BYTES)
 
     @app.middleware("http")
     async def headers(request: Request, call_next: Any) -> Response:

@@ -94,6 +94,16 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/relation-requests/{id}`: `pending | applied | rejected` ve uzlaştırıcının notu.
 - CI ayrıntısında her ilişki `source` (yazan kaynak) ve `manual` (elle girilmiş mi; iki uçtaki Manual kayıtlardan) taşır; `pending_relations`, `can_relate`, `can_unrelate`.
 
+### CSV ile toplu içe aktarma (ADR-0026 §6)
+
+- `POST /api/v1/imports/preview` (CSRF, `create` izni): `{"sys_class_name": "cmdb_ci_linux_server", "csv": "…", "file_name": "sunucular.csv"}` → `200`. Hiçbir şey yazmaz.
+  - Yanıt: `delimiter` (virgül, noktalı virgül, sekme), `columns` (başlık → alan; `ok | class | unknown | duplicate`), `total`, `valid_count`, `invalid_count`, `rows` (hatalılar önce, en çok 500: `row_no`, `class`, `class_label`, `name`, `valid`, `errors`).
+  - Başlık alan adı veya Türkçe etiket olabilir; `sys_class_name` sütunu satırın sınıfıdır. Seçim değeri Türkçe etiketiyle, referans adla, evet/hayır Türkçe yazılabilir.
+- `POST /api/v1/imports` (CSRF, `idempotency_key` zorunlu, isteğe bağlı `note`): dosyayı yeniden doğrular, geçerli satırları toplu iş altında oluşturma isteği yapar → `202 {"id", "row_count", "skipped_count"}`. Aynı anahtar aynı işi döndürür.
+- `GET /api/v1/imports/{id}` (isteğe bağlı `status` süzgeci): `counts` (`pending | created | duplicate | needs_decision | rejected`), `done`, satır sonuçları (`row_no`, `name`, `status`, `result_ci`, `result_ci_name`, `result_note`).
+- Hatalar: `413 dosya_cok_buyuk` (2 MB), `413 istek_cok_buyuk` (gövde 5 MB), `422 bos_dosya`, `422 csv_bozuk`, `422 cok_satir` (5000), `422 satir_yok`, `422 ad_sutunu_yok`, `422 gecerli_satir_yok`, `422 sinif_yok` (varsayılan sınıf), `422 idempotency_key_yok`, `403 yetki_yok`.
+- Var olan CI güncellenmez: kimliği var olan CI'a denk gelen satır `duplicate` olur ve o CI'ı gösterir. Aynı dosyada iki satır aynı CI'sa ilki açılır, ikincisi `duplicate` olur (satırlar sırayla işlenir).
+
 ### Değişiklik denetimi (ADR-0025)
 
 - `GET /api/v1/ci/{sys_id}` yanıtındaki `change_control`:

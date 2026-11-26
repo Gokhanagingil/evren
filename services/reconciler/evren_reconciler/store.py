@@ -1081,15 +1081,16 @@ class ReconcilerStore:
                 res = resolver.resolve(sr, keys)
                 if res.outcome in (Outcome.RULE_MATCH, Outcome.LINKED) and res.ci_sys_id:
                     name = self._ci_name(cur, res.ci_sys_id)
-                    note = (f"Bu kimlik zaten '{name}' CI'ında var ({res.summary_tr}"
-                            f"{': ' + res.rule if res.rule else ''}); yeni CI açılmadı. Var olan CI'ı düzenleyin.")
+                    note = f"Bu kimlik zaten '{name}' CI'ında var ({res.summary_tr}); yeni CI açılmadı. Var olan CI'ı düzenleyin."
                     self._finish_create(cur, req, "duplicate", res.ci_sys_id,
                                         {"outcome": res.outcome.value, "rule": res.rule,
                                          "reasons": list(res.reasons)}, note)
                     return ApplyResult("create_duplicate", res.ci_sys_id, [], note)
                 candidates = self._create_candidates(cur, res, cls, str(req["attributes"].get("name") or ""))
                 if candidates and not req["force_new"]:
-                    note = ("Benzer CI'lar var; yeni CI açılmadı. Adayları inceleyin; yine de açmak için gerekçe yazıp "
+                    note = ("Benzer CI'lar var; yeni CI açılmadı. Adayları inceleyin; yine de açılacaksa 'Yeni CI…' "
+                            "penceresinden gerekçeyle açın." if req.get("batch_id") else
+                            "Benzer CI'lar var; yeni CI açılmadı. Adayları inceleyin; yine de açmak için gerekçe yazıp "
                             "'yeni CI aç' deyin.")
                     self._finish_create(cur, req, "needs_decision", None,
                                         {"outcome": res.outcome.value, "candidates": candidates,
@@ -1118,8 +1119,8 @@ class ReconcilerStore:
             self._finish_create(cur, req, "rejected", None, {}, note)
 
         return self._drain("create", """
-            SELECT sys_id, sys_class_name, attributes, force_new, requested_by FROM ingest.manual_create
-             WHERE status = 'pending' ORDER BY requested_at, sys_id
+            SELECT sys_id, sys_class_name, attributes, force_new, requested_by, batch_id FROM ingest.manual_create
+             WHERE status = 'pending' ORDER BY requested_at, batch_id NULLS FIRST, row_no, sys_id
              LIMIT 1 FOR UPDATE SKIP LOCKED""", handle, fail, limit)
 
     @staticmethod

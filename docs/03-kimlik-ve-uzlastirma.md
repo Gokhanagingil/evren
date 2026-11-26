@@ -112,6 +112,7 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
 - **Yönetişim alanları** (destek grubu, sahip, yaşam döngüsü) yalnızca Manual ve geçiş döneminde ITSM rolü (ServiceNow) tarafından yazılır.
 - **Keşif sahipli alanlarda Manual en düşük önceliktedir (900):** elle girilen değer yalnızca keşif kaynağı yoksa geçerlidir.
 - **Elle düzenleme (ADR-0012):** CI başına tek `Manual` kaynak kaydı (`source_key` = CI sys_id). Arayüzdeki Düzenle penceresi yalnızca değişen alanları gönderir; uzlaştırıcı kayda ekler ve uzlaştırır. Sonuç alan başına: uygulandı, yedek (daha öncelikli kaynak var) veya kaldırıldı. Manual kayıt kimlik anahtarı eklemez.
+- **Elle oluşturma ve CSV (ADR-0026):** istek kimlik çözümlemesinden geçer. Kesin eşleşmede CI açılmaz ve zorlanamaz; belirsiz eşleşmede veya kimlik anahtarı olmadan aynı ailede aynı adda gerekçeli karar istenir; yeni CI'ın kimlik anahtarları bu tek seferde dizine girer (keşif sonradan aynı CI'a bağlanır). CSV satırları aynı yoldan, dosyadaki sırayla geçer; güncelleme yapmaz.
 
 ## 5. Devre kesici ve eskime
 

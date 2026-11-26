@@ -257,6 +257,14 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "UPDATE ingest.manual_relation SET action = 'add' WHERE false"),
         ("evren_readonly", "SELECT count(*) FROM ingest.manual_relation"),
         ("evren_app_connector", "SELECT count(*) FROM ingest.manual_create"),
+        # 0024 (ADR-0026 §6): toplu içe aktarma işini API açar ama değiştiremez; uzlaştırıcı yalnızca okur
+        ("evren_app_api", "UPDATE ingest.import_batch SET row_count = 1 WHERE false"),
+        ("evren_app_api", "DELETE FROM ingest.import_batch WHERE false"),
+        ("evren_app_api", "UPDATE ingest.manual_create SET row_no = 1 WHERE false"),
+        ("evren_app_reconciler", "INSERT INTO ingest.import_batch (default_class, row_count, requested_by) "
+                                 "VALUES ('cmdb_ci_server', 1, 'x')"),
+        ("evren_readonly", "SELECT count(*) FROM ingest.import_batch"),
+        ("evren_app_connector", "SELECT count(*) FROM ingest.import_batch"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
         ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
@@ -305,6 +313,9 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_connector", "SELECT name, lifecycle FROM ingest.data_source"),
         ("evren_app_connector", "UPDATE ingest.connector_run_request SET result_note = result_note WHERE false"),
         ("evren_auditor_ro", "SELECT count(*) FROM ingest.connector_run_request"),
+        ("evren_app_api", "SELECT file_name, row_count FROM ingest.import_batch"),
+        ("evren_app_reconciler", "SELECT count(*) FROM ingest.import_batch"),
+        ("evren_auditor_ro", "SELECT batch_id, row_no FROM ingest.manual_create"),
     ],
 )
 def test_allowed_paths_work(role, statement):

@@ -199,6 +199,24 @@ export async function createStatus(id) {
   return api(`/api/v1/ci-requests/${encodeURIComponent(id)}`);
 }
 
+/** CSV ile toplu içe aktarma (U6.3, ADR-0026 §6; yalnızca API modu): önizleme yazmaz, onay toplu iş açar. */
+export async function previewImport({ cls, csv, fileName }) {
+  return api('/api/v1/imports/preview', { method: 'POST', body: JSON.stringify({ sys_class_name: cls, csv, file_name: fileName || null }) });
+}
+
+export async function commitImport({ cls, csv, fileName, note }) {
+  return api('/api/v1/imports', {
+    method: 'POST',
+    body: JSON.stringify({ sys_class_name: cls, csv, file_name: fileName || null, note: note || null,
+      idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+
+export async function importStatus(id, status = '') {
+  const p = new URLSearchParams(status ? { status } : {});
+  return api(`/api/v1/imports/${encodeURIComponent(id)}${status ? `?${p}` : ''}`);
+}
+
 /** Elle ilişki (U6.2, ADR-0026; yalnızca API modu): izinli ilişkiler, ekleme/kaldırma isteği ve durumu. */
 export async function relationOptions(ciId) {
   return api(`/api/v1/ci/${encodeURIComponent(ciId)}/relation-options`);
