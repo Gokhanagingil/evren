@@ -116,6 +116,7 @@ data_sources:
     product: {vendor: ServiceNow, name: CMDB, interface: "Table API (salt okunur)"}
     connector: servicenow_cmdb
     mappings: [connectors/servicenow_cmdb/server.mapping.yaml]
+    sys_id_key: true   # kaynak anahtarı SN sys_id'si: ilk görüldüğünde CI aynı sys_id ile açılır (ADR-0004)
     schedule: "*/15 * * * *"
     authoritative_for_tr: Yönetişim öznitelikleri (geçiş döneminde), referans veriler
   - name: ServiceNowChange

@@ -104,6 +104,27 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
 
 İkisi de testlidir.
 
+### 10. ServiceNow: Table API, anahtar sıralı sayfalama, sys_id korunur (U5.2)
+
+- **Çekme:** `GET /api/now/table/{cmdb_ci_server|cmdb_ci_netgear}` ile yapılır. Parametreler:
+  - `sysparm_exclude_reference_link=true` ve `sysparm_display_value=false`: referanslar `sys_id` olarak gelir.
+  - `sysparm_fields`: yalnızca eşlemenin alanları.
+  - `sysparm_no_count=true`: toplam sayım yapılmaz.
+
+  Üst tablo sorgusu alt sınıf kayıtlarını da döndürür; sınıf `sys_class_name`'den gelir. Kimlik doğrulama, entegrasyon kullanıcısıyla Basic'tir (parola dosyadan).
+- **Sayfalama:** offset yerine anahtar sırası kullanılır: `sys_id>SON^ORDERBYsys_id`.
+  - ServiceNow'un "Break up a large export" belgesi aynı deseni kullanır. Offset her sayfada önceki satırları yeniden okur; değişen tabloda kayıt atlatabilir veya yineleyebilir.
+  - ACL bazı satırları gizlerse sayfa istenenden kısa gelir. Bu yüzden istemci kısa sayfada durmaz, boş sayfaya kadar devam eder.
+  - Gelen `sys_id`'nin sırası ve biçimi denetlenir.
+- **Delta:** `sys_updated_on>=<UTC>` ile yapılır. ServiceNow sorgudaki tarihi kullanıcının saat dilimiyle yorumladığı için entegrasyon kullanıcısının saat dilimi UTC olmalıdır.
+- **sys_id korunur (uzlaştırıcıda):** Veri kaynağında `sys_id_key: true` vardır (`metadata/data_sources.yaml`). Bağı olmayan ServiceNow kaydı kimlik çözümlemesine girmez:
+  - `sync.sn_ci_map`'te o SN sys_id'si varsa kayıt, Evren'de doğup IRE ile replikaya giden CI'dır; Evren CI'ına bağlanır.
+  - Yoksa CI aynı sys_id ile açılır (ilk yükleme) veya o sys_id'li CI'a bağlanır.
+  - Gölge veya devredilen kaynak bu yola girmez (CI açamaz).
+
+  Önceden bu mantık yalnızca demo yükleyicide vardı. Olay omurgasından gelen ServiceNow kaydı yeni sys_id'li CI açardı ve ServiceNow task'larındaki CI referansları kopardı.
+- **Henüz yok:** referans verileri (`sys_user_group`, `sys_user`, `cmn_location`, `core_company`, `cmn_cost_center`) yükleme yolu. CI'daki referans alanları yumuşak referanstır (yabancı anahtar yok), yani CI'lar bu veriler olmadan da alınır; adlar görünmez. F0-08'in parçası olarak sıradadır.
+
 ## Sonuçlar
 
 - Yeni kaynak eklemek için üç iş gerekir: `sources/<kaynak>.py` (istemci ve mümkünse simülatör), `SOURCES` kaydı ve eşleme dosyası. Çalıştırıcı, geçit istemcisi ve güvenlik kuralları ortaktır.

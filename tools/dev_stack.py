@@ -16,7 +16,8 @@ Duman testi yalnızca 127.0.0.1'e bağlanır ve şunları doğrular: API hazır,
 canlı; API'den gönderilen bir elle düzenleme konteynerdeki uzlaştırıcı tarafından uygulanıyor (golden record
 değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı; olay omurgası uçtan uca çalışıyor (geçici bağlayıcı
 kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali); bağlayıcı çalıştırıcı
-(Zabbix simülatörü → eşleme → geçit → uzlaştırıcı → çalışma kapanışı); arama (dizinleyici →
+(ServiceNow ilk yüklemesi sys_id korunarak, Zabbix ve vCenter simülatörleri → eşleme → geçit → uzlaştırıcı →
+ilişkiler ve tek CI); arama (dizinleyici →
 OpenSearch → yetki süzgeçli API; Türkçe harf, yazım hatası, ayırıcısız yazım). Hiçbir sır yazdırılmaz.
 """
 from __future__ import annotations
@@ -273,11 +274,16 @@ def smoke_event_backbone() -> tuple[str, str]:
     return name, found["sys_id"]
 
 
+SAMPLES = {"zabbix": "connectors/zabbix/samples", "vcenter": "connectors/vcenter/samples",
+           "servicenow": "connectors/servicenow_cmdb/samples"}
+SN_APP_SYS_ID = "5b1c2d3e4f5061728394a5b6c7d8e9f0"  # örnek ServiceNow kaydı (ist-app-02)
+
+
 def _connector_run(connector: str, token: str, expected: int) -> dict[str, Any]:
     """Konteynerde ``evren connector-run --simulate``; belirteç standart girdiden, komut satırına ve ekrana yazılmaz."""
     res = compose("run", "--rm", "--no-deps", "-T", "-e", "EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin", "connector",
                   "connector-run", "--connector", connector, "--name", f"duman-{connector}", "--simulate",
-                  f"connectors/{connector}/samples", "--page-size", "2", "--batch-size", "4",
+                  SAMPLES[connector], "--page-size", "2", "--batch-size", "4",
                   check=False, capture=True, stdin=token + "\n")
     lines = res.stdout.strip().splitlines()
     report = json.loads(lines[-1]) if lines and lines[-1].startswith("{") else {}
@@ -302,23 +308,39 @@ def _find_ci(name: str) -> dict[str, Any]:
     return http("GET", f"{API}/api/v1/ci/{found['sys_id']}")[1]
 
 
+def _issue(data_source: str) -> tuple[str, str]:
+    name = f"duman-{data_source.lower()}-{uuid.uuid4().hex[:8]}"
+    issued = compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "issue", "--name", name,
+                     "--data-source", data_source, "--by", "duman-testi", "--expires-days", "1", capture=True)
+    return name, issued.stdout.strip().splitlines()[-1]  # belirteç ekrana yazılmaz
+
+
+def _revoke(name: str) -> None:
+    compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "revoke", "--name", name, "--by", "duman-testi",
+            capture=True)
+
+
 def smoke_connector_run(token: str) -> None:
     """Bağlayıcı çalıştırıcı (U5, ADR-0020): kaynak simülatörü → eşleme → geçit → Kafka → uzlaştırıcı → kapanış.
 
-    Zabbix (JSON-RPC) olay omurgası adımının geçici kimliğiyle; vCenter (VI/JSON) kendi geçici kimliğiyle çalışır ve
-    ESXi ↔ VM ilişkilerinin CMDB'ye yazıldığı denetlenir. Kaynak verisi sentetiktir; gerçek kaynak kabulü yerine geçmez."""
-    step("Bağlayıcı çalıştırıcı: Zabbix simülatörü → geçit → uzlaştırıcı")
-    _connector_run("zabbix", token, 5)
-    detail = _find_ci("ank-db-14")
-    check(any(lk["data_source"] == "Zabbix" and lk["source_key"] == "20504" for lk in detail.get("links") or []),
-          f"Zabbix host'u CMDB'de, kaynak bağı 20504 ({detail['sys_id']})")
-
-    step("Bağlayıcı çalıştırıcı: vCenter simülatörü (VI/JSON) → ESXi, VM, misafir sunucu ve ilişkiler")
-    name = f"duman-vc-{uuid.uuid4().hex[:8]}"
-    issued = compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "issue", "--name", name,
-                     "--data-source", "vCenter", "--by", "duman-testi", "--expires-days", "1", capture=True)
-    vc_token = issued.stdout.strip().splitlines()[-1]
+    Sıra gerçek geçişteki gibidir: önce ServiceNow ilk yüklemesi (CI'lar SN sys_id'siyle açılır), sonra keşif ve izleme
+    kaynakları bu CI'lara bağlanır. Zabbix olay omurgası adımının geçici kimliğiyle; ServiceNow ve vCenter kendi geçici
+    kimlikleriyle çalışır. Kaynak verisi sentetiktir; gerçek kaynak kabulü yerine geçmez."""
+    sn_name, sn_token = _issue("ServiceNow")
+    vc_name, vc_token = _issue("vCenter")
     try:
+        step("Bağlayıcı çalıştırıcı: ServiceNow simülatörü (Table API) → ilk yükleme, sys_id korunur")
+        _connector_run("servicenow", sn_token, 5)
+        status, ci = http("GET", f"{API}/api/v1/ci/{SN_APP_SYS_ID}")
+        check(status == 200 and ci["name"] == "ist-app-02", f"CI ServiceNow sys_id'siyle açıldı ({SN_APP_SYS_ID})")
+
+        step("Bağlayıcı çalıştırıcı: Zabbix simülatörü (JSON-RPC) → geçit → uzlaştırıcı")
+        _connector_run("zabbix", token, 5)
+        detail = _find_ci("ank-db-14")
+        check(any(lk["data_source"] == "Zabbix" and lk["source_key"] == "20504" for lk in detail.get("links") or []),
+              f"Zabbix host'u CMDB'de, kaynak bağı 20504 ({detail['sys_id']})")
+
+        step("Bağlayıcı çalıştırıcı: vCenter simülatörü (VI/JSON) → ESXi, VM, misafir sunucu ve ilişkiler")
         _connector_run("vcenter", vc_token, 10)
         esx = _find_ci("esx01")
         check(esx["class"] == "cmdb_ci_esx_server", "ESXi host'u CMDB'de (cmdb_ci_esx_server)")
@@ -326,12 +348,12 @@ def smoke_connector_run(token: str) -> None:
         check(("Registered on::Has registered", "child", "ist-app-02 (Uygulama)") in rels
               and ("Virtualized by::Virtualizes", "child", "ist-app-02") in rels,
               "ilişkiler yazıldı: VM örneği ve misafir sunucu → ESXi (nitelikli anahtar)")
-        guest = _find_ci("ist-app-02")
-        check({lk["data_source"] for lk in guest.get("links") or []} >= {"Zabbix", "vCenter"},
-              "akıl katmanı: Zabbix ve vCenter aynı sunucuyu tek CI'da birleştirdi (seri numarası)")
+        _s, app = http("GET", f"{API}/api/v1/ci/{SN_APP_SYS_ID}")
+        check({lk["data_source"] for lk in app.get("links") or []} >= {"ServiceNow", "Zabbix", "vCenter"},
+              "akıl katmanı: Zabbix ve vCenter, ServiceNow'dan gelen CI'a bağlandı (seri numarası; sys_id aynı)")
     finally:
-        compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "revoke", "--name", name, "--by",
-                "duman-testi", capture=True)
+        _revoke(sn_name)
+        _revoke(vc_name)
 
 
 def smoke_search(name: str, sys_id: str) -> None:

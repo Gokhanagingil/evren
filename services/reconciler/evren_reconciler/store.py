@@ -254,7 +254,28 @@ class ReconcilerStore:
 
     # ------------------------------------------------------------------ kayıt işleme
     def apply(self, record: IngestRecord) -> ApplyResult:
-        """Kaynak kaydını kimlik çözümlemesi ve uzlaştırmadan geçirir (tek işlem)."""
+        """Kaynak kaydını kimlik çözümlemesi ve uzlaştırmadan geçirir (tek işlem).
+
+        Kaynak anahtarı ServiceNow sys_id'si olan kaynakta (``sys_id_key``) bağı olmayan kayıt kimlik çözümlemesine
+        girmez; hedef CI sys_id ile belirlenir (ADR-0004, docs/05):
+
+        * ``sync.sn_ci_map``'te bu SN sys_id'si varsa kayıt, Evren'de doğup replikaya IRE ile giden CI'dır
+          (ServiceNow yeni sys_id verdi); eşlemedeki Evren CI'ına bağlanır.
+        * Yoksa CI aynı sys_id ile açılır (ilk yükleme) ya da o sys_id'li CI zaten varsa ona bağlanır.
+
+        Böylece ServiceNow task'larındaki CI referansları dönüşümsüz çözülür ve replikadan geri gelen kayıt mükerrer
+        CI açmaz. Gölge veya devredilen kaynak CI açamayacağı için bu yola girmez."""
+        src = self.registry.source(record.data_source)
+        if src.sys_id_key and _SYSID.match(record.source_key) and self.registry.may_create_ci(src.name):
+            with self.conn.cursor() as cur:
+                linked = PostgresLinkStore(cur).get(record.data_source, record.source_key)
+                target = record.source_key
+                if not linked:
+                    cur.execute("SELECT evren_sys_id FROM sync.sn_ci_map WHERE sn_sys_id = %s", (record.source_key,))
+                    row = cur.fetchone()
+                    target = row[0] if row else record.source_key
+            if not linked:
+                return self.import_record(record, target)
         return self._process(record, attach_to=None, method=None)
 
     def import_record(self, record: IngestRecord, ci_sys_id: str) -> ApplyResult:

@@ -34,7 +34,7 @@
    Sizden gereken: Kalan 82 öğe ve kurum özelleştirmeleri için ServiceNow salt okunur servis hesabı (sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma) — canlı kabulde
 1. **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_  
    Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
-1. **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_  
+1. **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Devam ediyor_  
    Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
 1. **F0-11** vCenter ve Zabbix bağlayıcıları — _Devam ediyor_  
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
@@ -47,7 +47,7 @@
 | --- | --- | --- |
 | F0-07 | Kalan 82 öğe ve kurum özelleştirmeleri için ServiceNow salt okunur servis hesabı (sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma) — canlı kabulde | Devam ediyor |
 | F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Devam ediyor |
-| F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
+| F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Devam ediyor |
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Devam ediyor |
 | F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Devam ediyor |
 | F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Planlandı |
@@ -92,8 +92,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_
   - Not: Kod ve testler tamam (services/api, ADR-0010, ADR-0012): okuma uç noktaları, kalıcı kuyruk kararı, birleştirmeyi ayırma, elle düzenleme (Manual kaynak kaydı, alan başına sonuç), Entra OIDC + PKCE, rol eşlemesi, girişte SoD; arayüz API modunda çalışıyor. Canlı Entra kaydıyla kabul bekliyor. Makine hesapları ve ilişki düzenleme sırada.
   - Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
-- [ ] **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_
-  - Not: Eşleme dosyası ve sys_id koruyan ilk yükleme mantığı hazır (connectors/servicenow_cmdb, IdentityEngine.import_existing).
+- [ ] **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Devam ediyor_
+  - Not: 26.11.2026: CI tarafı hazır — ServiceNow Table API istemcisi (U5.2) ve alım yolunda sys_id koruması (uzlaştırıcı; sync.sn_ci_map ile replikadan dönen CI), simülatör ve yığın duman testiyle sınandı. Referans verilerinin (grup, kullanıcı, konum, şirket, maliyet merkezi) yükleme yolu ve canlı yükleme sırada.
   - Sizden gereken: ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi
 - [x] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi
   - Not: PostgreSQL deposu, aday dizini, devre kesici, sürekli çalışan uzlaştırıcı (ADR-0013); alım geçidi (bağlayıcı belirteci, kaynak yetkisi), Kafka alım tüketicisi (en az bir kez, kalıcı sayaçlar, DLQ), çalışma kapanışı ve outbox yayını (ADR-0017). Canlı kurum ortamında kabul U10'da.

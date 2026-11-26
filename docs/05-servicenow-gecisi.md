@@ -39,6 +39,7 @@ Kaçındığımız değişiklik tam olarak budur.
 ## sys_id stratejisi
 
 - **SN kökenli CI'lar:** Evren'de aynı sys_id. `sync.sn_ci_map` kaydında iki değer eşittir.
+- **Alım yolunda:** ServiceNow bağlayıcısından gelen, bağı olmayan kayıt kimlik çözümlemesine girmez. Önce `sync.sn_ci_map`'te aranır, eşleme varsa Evren CI'ına bağlanır; yoksa CI aynı sys_id ile açılır (ADR-0020 §10). Replikadan geri gelen kayıt bu sayede mükerrer CI açmaz.
 - **Evren'de doğan CI'lar:** IRE API ile gönderilir; ServiceNow'un verdiği sys_id eşleme tablosuna yazılır. Table API ile sys_id'yi önceden belirleyerek ekleme seçeneği F2'de bir PoC ile değerlendirilecek; o zamana kadar eşleme tablosu esastır.
 
 ## Geçiş dönemi kuralları

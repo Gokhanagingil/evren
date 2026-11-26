@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from ..http import HttpClient, Transport
+from .servicenow import ServiceNowClient, ServiceNowSimulator
 from .vcenter import VCenterClient, VCenterSimulator
 from .zabbix import ZabbixClient, ZabbixSimulator
 
@@ -39,4 +40,8 @@ SOURCES: dict[str, SourceSpec] = {
                                                release=str(opts.get("release", "8.0.1.0")),
                                                page_size=int(opts.get("page_size", 500))),
         simulator=VCenterSimulator.from_dir, options=("page_size", "release")),
+    "servicenow": SourceSpec(
+        key="servicenow", data_source="ServiceNow", auth="basic", mapping_dir="servicenow_cmdb",
+        build=lambda http, opts: ServiceNowClient(http, page_size=int(opts.get("page_size", 1000))),
+        simulator=ServiceNowSimulator.from_dir, options=("page_size",)),
 }

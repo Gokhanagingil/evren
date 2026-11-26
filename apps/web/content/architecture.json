@@ -166,8 +166,10 @@
       "phase": "F0",
       "text": "Geçişin başında ServiceNow CMDB aynı sys_id'lerle Evren'e yüklenir. Change kayıtları, yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar.",
       "tech": [
-        "Table API",
-        "sys_updated_on ile artımlı çekme"
+        "Table API (anahtar sıralı sayfalama: sys_id>SON^ORDERBYsys_id)",
+        "sys_updated_on ile artımlı çekme",
+        "connectors/sources/servicenow.py",
+        "sys_id korunur (sys_id_key, sync.sn_ci_map)"
       ],
       "security": [
         "Ayrı entegrasyon kullanıcısı",

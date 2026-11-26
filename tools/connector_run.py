@@ -68,7 +68,7 @@ def source_http(spec: SourceSpec, args: argparse.Namespace, env: dict[str, str]
     if args.simulate or args.replay:
         if spec.auth == "login":
             options["credentials"] = ("simulasyon", "simulasyon")  # simülatör/kayıt gerçek kimlik istemez
-        auth = None if spec.auth == "login" else "Bearer simulasyon"
+        auth = {"bearer": "Bearer simulasyon", "basic": HttpClient.basic("simulasyon", "simulasyon")}.get(spec.auth)
         if args.simulate:
             if not spec.simulator:
                 raise ConfigError(f"{spec.key} için simülatör yok")

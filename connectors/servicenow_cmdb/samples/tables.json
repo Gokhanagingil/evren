@@ -1,0 +1,39 @@
+{
+ "_aciklama": "SENTETİK örnek veri — ServiceNow Table API yanıt biçiminde (sysparm_exclude_reference_link=true, sysparm_display_value=false: tüm değerler metin, referanslar sys_id). Gerçek kurum verisi değildir. Kurum ortamında tools/connector_run.py --record ile gerçek yanıtlar kaydedilir.",
+ "tables": {
+  "cmdb_ci_server": [
+   {"sys_id": "5b1c2d3e4f5061728394a5b6c7d8e9f0", "sys_class_name": "cmdb_ci_linux_server", "name": "ist-app-02",
+    "fqdn": "ist-app-02.corp.ornek.local", "ip_address": "10.20.30.52", "serial_number": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e7 f8",
+    "mac_address": "00:50:56:9a:01:02", "os": "Linux Red Hat", "os_version": "9.4",
+    "support_group": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "owned_by": "b2c3d4e5f60718293a4b5c6d7e8f90a1", "managed_by": "",
+    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "d4e5f60718293a4b5c6d7e8f90a1b2c3",
+    "operational_status": "1", "install_status": "1", "short_description": "Sipariş uygulama sunucusu", "sys_updated_on": "2026-11-20 08:15:00"},
+   {"sys_id": "6c2d3e4f5061728394a5b6c7d8e9f0a1", "sys_class_name": "cmdb_ci_win_server", "name": "IST-MUH-11",
+    "fqdn": "ist-muh-11.corp.ornek.local", "ip_address": "10.20.30.111", "serial_number": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e8 91",
+    "mac_address": "", "os": "Windows 2019 Datacenter", "os_version": "10.0.17763",
+    "support_group": "e5f60718293a4b5c6d7e8f90a1b2c3d4", "owned_by": "", "managed_by": "",
+    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "",
+    "operational_status": "1", "install_status": "1", "short_description": "Muhasebe uygulama sunucusu", "sys_updated_on": "2026-11-24 13:40:12"},
+   {"sys_id": "7d3e4f5061728394a5b6c7d8e9f0a1b2", "sys_class_name": "cmdb_ci_esx_server", "name": "esx01",
+    "fqdn": "esx01.ist.ornek.local", "ip_address": "10.20.1.21", "serial_number": "CZ2150ABCD",
+    "mac_address": "", "os": "ESXi", "os_version": "8.0.3",
+    "support_group": "f60718293a4b5c6d7e8f90a1b2c3d4e5", "owned_by": "", "managed_by": "",
+    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "",
+    "operational_status": "1", "install_status": "1", "short_description": "IST sanallaştırma kümesi host'u", "sys_updated_on": "2026-10-02 09:00:00"},
+   {"sys_id": "8e4f5061728394a5b6c7d8e9f0a1b2c3", "sys_class_name": "cmdb_ci_server", "name": "eski-rapor-01",
+    "fqdn": "", "ip_address": "10.20.40.9", "serial_number": "SGH123EVR9",
+    "mac_address": "", "os": "", "os_version": "",
+    "support_group": "a1b2c3d4e5f60718293a4b5c6d7e8f90", "owned_by": "", "managed_by": "",
+    "used_for": "Production", "location": "", "company": "", "cost_center": "",
+    "operational_status": "2", "install_status": "7", "short_description": "Emekli rapor sunucusu (keşifte görünmez)", "sys_updated_on": "2025-06-30 17:05:44"}
+  ],
+  "cmdb_ci_netgear": [
+   {"sys_id": "9f5061728394a5b6c7d8e9f0a1b2c3d4", "sys_class_name": "cmdb_ci_ip_switch", "name": "IST-DC2-CORE-SW01",
+    "fqdn": "", "ip_address": "10.2.0.1", "serial_number": "FDO2213X0AB",
+    "mac_address": "", "os": "", "os_version": "",
+    "support_group": "0718293a4b5c6d7e8f90a1b2c3d4e5f6", "owned_by": "", "managed_by": "",
+    "used_for": "Production", "location": "c3d4e5f60718293a4b5c6d7e8f90a1b2", "company": "", "cost_center": "",
+    "operational_status": "1", "install_status": "1", "short_description": "IST DC2 çekirdek switch", "sys_updated_on": "2026-11-25 22:10:03"}
+  ]
+ }
+}

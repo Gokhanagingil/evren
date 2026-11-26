@@ -67,6 +67,9 @@ class DataSource:
     schedule: str | None = None
     authoritative_for_tr: str = ""
     open_question: str | None = None
+    # Kaynak anahtarı ServiceNow sys_id'sidir (ADR-0004): bağı olmayan kayıt kimlik çözümlemesine girmez; sync.sn_ci_map'te
+    # eşlemesi varsa Evren CI'ına bağlanır, yoksa CI aynı sys_id ile açılır (ilk yükleme) veya o sys_id'li CI'a bağlanır.
+    sys_id_key: bool = False
 
 
 class SourceRegistry:
@@ -106,6 +109,7 @@ class SourceRegistry:
                 connector=s.get("connector"), product=dict(s.get("product") or {}),
                 mappings=tuple(s.get("mappings") or ()), schedule=s.get("schedule"),
                 authoritative_for_tr=s.get("authoritative_for_tr", ""), open_question=s.get("open_question"),
+                sys_id_key=bool(s.get("sys_id_key", False)),
             )
             for s in document.get("data_sources", [])
         ]

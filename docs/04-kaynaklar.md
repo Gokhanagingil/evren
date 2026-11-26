@@ -125,7 +125,17 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
 ## ServiceNow (F0 ilk yükleme, F1 çekme, F1 Change)
 
 - **CMDB ilk yükleme:** `cmdb_ci` soyağacı, `cmdb_rel_ci` ve referans tabloları aynı sys_id ile.
-- **Artımlı çekme:** `sys_updated_on` ile. Geçiş döneminde SN'de yapılan elle değişiklikler "ServiceNow" kaynağı olarak uzlaştırmaya girer.
+- **İstemci (U5.2):** `evren_core/connectors/sources/servicenow.py`, Table API.
+  - Okunan tablolar: `cmdb_ci_server` ve `cmdb_ci_netgear` (alt sınıflarıyla).
+  - Sayfalama `sys_id>SON^ORDERBYsys_id` ile anahtar sırasına göredir; kısa sayfada durmaz, boş sayfaya kadar devam eder.
+  - Referanslar sys_id olarak gelir. Kimlik doğrulama Basic'tir (`EVREN_SOURCE_USER` + `EVREN_SOURCE_PASSWORD_FILE`).
+- **Entegrasyon kullanıcısı:** salt okunur (CMDB tablolarında okuma), saat dilimi **UTC** (delta sorgusu tarihi kullanıcının saat dilimiyle yorumlanır). Kullanıcı, okunacak tüm CI kayıtlarını görebilmelidir: ACL tam bir sayfayı gizlerse sayfalama orada biter.
+- **sys_id korunur:** uzlaştırıcı, bağı olmayan ServiceNow kaydını kimlik çözümlemesinden geçirmez (`sys_id_key`, ADR-0020 §10).
+  - `sync.sn_ci_map`'te eşleme varsa kayıt Evren CI'ına bağlanır.
+  - Eşleme yoksa CI aynı sys_id ile açılır.
+  - Keşif ve izleme kaynakları sonra bu CI'a kimlik kurallarıyla (seri, UUID, MAC) bağlanır.
+- **Artımlı çekme:** `sys_updated_on` ile (`--mode delta --since …`). Geçiş döneminde SN'de yapılan elle değişiklikler "ServiceNow" kaynağı olarak uzlaştırmaya girer.
+- **Henüz yok:** referans verilerinin (grup, kullanıcı, konum, şirket, maliyet merkezi) yükleme yolu (F0-08).
 - **Change kayıtları:** `change_request` + `task_ci`. Yetkisiz değişiklik tespiti için onaylı pencere sağlar. CI özniteliği yazmaz (`ci_attribute_source: false`).
 
 ## Gelecekte eklenebilecek kaynaklar
