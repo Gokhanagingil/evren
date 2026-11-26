@@ -123,3 +123,15 @@ def test_big_picture_is_up_to_date_and_csp_safe(repo_root):
         "python tools/build_big_picture.py"
     assert "<script" not in svg and "<style" not in svg and " style=" not in svg
     assert "SERVİCENOW" not in svg and "SISTEMI" not in svg  # Türkçe büyük harf; ürün adı Latin
+
+
+def test_every_component_has_one_sentence_purpose_and_technology(repo_root):
+    """A3 büyük resim: her kutuda ne işe yaradığı (tek cümle) ve teknolojisi yazılı."""
+    comps = json.loads((repo_root / "apps/web/content/components.json").read_text(encoding="utf-8"))
+    for g in comps["groups"]:
+        for it in g["items"]:
+            purpose, tech = it.get("purpose", ""), it.get("tech", "")
+            assert purpose.endswith(".") and purpose.count(". ") == 0 and 20 <= len(purpose) <= 110, it["id"]
+            assert tech and len(tech) <= 45, it["id"]
+    svg = (repo_root / "apps/web/content/big-picture.svg").read_text(encoding="utf-8")
+    assert 'width="420mm" height="297mm"' in svg  # A3 yatay

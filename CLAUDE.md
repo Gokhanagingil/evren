@@ -15,7 +15,7 @@ Mimarinin tamamı uygulamanın içindedir: **Mimari Harita** sayfası. İş plan
 
 - `apps/web/content/architecture.yaml` → `python tools/build_architecture.py`
 - `apps/web/content/roadmap.json` → `python tools/build_plan.py` (docs/PROJE-PLANI.md) ve `python tools/build_big_picture.py`
-- `apps/web/content/components.json` → büyük resimdeki her kutunun tamamlanma yüzdesi, var olanı, eksiği ve plan bağı (`python tools/build_big_picture.py`). %100'ün altındaki her bileşen bir plan maddesine bağlıdır; bağlı değilse test kırmızıdır.
+- `apps/web/content/components.json` → büyük resimdeki her kutunun tek cümlelik görevi (`purpose`), teknolojisi (`tech`), tamamlanma yüzdesi, var olanı, eksiği ve plan bağı (`python tools/build_big_picture.py`; çizim A3 yatay, 420 × 297 mm). %100'ün altındaki her bileşen bir plan maddesine bağlıdır; bağlı değilse test kırmızıdır.
 
 ## Çalışma biçimi (proje sahibinin beklentisi)
 

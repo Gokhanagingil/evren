@@ -499,3 +499,5 @@ label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: v
 #detailContent .kv + .section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef0f2; }
 .src-link { display: block; font-size: 12.5px; color: var(--accent-dark); text-decoration: underline; text-underline-offset: 2px; overflow-wrap: anywhere; }
 .src-link + .src-link { margin-top: 4px; }
+.comp-table .comp-purpose { font-weight: 400; text-transform: none; letter-spacing: 0; margin-top: 3px; max-width: 46ch; }
+.comp-tech { font-weight: 600; color: var(--ink); min-width: 140px; }

@@ -1,5 +1,5 @@
-// Büyük resim: tek sayfalık mimari özet (tools/build_big_picture.py → content/big-picture.svg) ve bileşen durumu
-// (content/components.json: her kutunun yüzdesi, var olan, eksik ve plan bağı).
+// Büyük resim: A3 tek sayfalık mimari özet (tools/build_big_picture.py → content/big-picture.svg) ve bileşen durumu
+// (content/components.json: her kutunun amacı, teknolojisi, yüzdesi, var olanı, eksiği ve plan bağı).
 import { h, loadJSON, loadSVG } from '../lib/dom.js';
 import { setHeader } from '../lib/shell.js';
 
@@ -27,10 +27,12 @@ function groupTable(g, onlyGaps) {
       h('h2', { id: `cg-${g.id}` }, g.title),
       h('strong', { class: `comp-pct ${tone(average(g.items))}` }, `%${average(g.items)}`)),
     h('div', { class: 'tablewrap' }, h('table', { class: 'comp-table', 'aria-label': `${g.title} bileşenleri` },
-      h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Bileşen'), h('th', { scope: 'col' }, 'Tamamlanma'),
+      h('thead', {}, h('tr', {}, h('th', { scope: 'col' }, 'Bileşen ve görevi'), h('th', { scope: 'col' }, 'Teknoloji'),
+        h('th', { scope: 'col' }, 'Tamamlanma'),
         h('th', { scope: 'col' }, 'Var olan'), h('th', { scope: 'col' }, 'Eksik'), h('th', { scope: 'col' }, 'Plan'))),
       h('tbody', {}, ...rows.map((it) => h('tr', { id: `comp-${it.id}` },
-        h('th', { scope: 'row' }, it.label),
+        h('th', { scope: 'row' }, it.label, h('span', { class: 'cell-sub comp-purpose' }, it.purpose || '')),
+        h('td', { class: 'comp-tech' }, it.tech || '—'),
         h('td', { class: 'comp-cell' }, h('span', { class: `comp-pct ${tone(it.pct)}` }, `%${it.pct}`), bar(it.pct)),
         h('td', {}, it.done || '—'),
         h('td', {}, it.missing || '—'),
@@ -52,7 +54,8 @@ export async function renderBigPicture(view) {
     sub: 'Kaynaklar değişebilir, kurallar değişmez. Gözlemler ara katmanda anlamlanır, golden record Evren\'de tutulur, ServiceNow CMDB replika olur.',
     crumbs: [['Büyük Resim']],
     actions: [h('a', { class: 'btn secondary', href: '#/mimari' }, 'Bileşen ayrıntısı: Mimari Harita'),
-      h('a', { class: 'btn secondary', href: '/content/big-picture.svg', download: 'Evren_Buyuk_Resim.svg', id: 'bpExport' }, 'SVG indir')],
+      h('a', { class: 'btn secondary', href: '/content/big-picture.svg', download: 'Evren_Buyuk_Resim_A3.svg', id: 'bpExport',
+        title: 'A3 yatay (420 × 297 mm); tarayıcıdan veya vektör düzenleyiciden yazdırılabilir' }, 'A3 çizimi indir (SVG)')],
   });
   const all = comps.groups.flatMap((g) => g.items);
   const gaps = all.filter((it) => it.pct < 100 && !it.same_as).length;

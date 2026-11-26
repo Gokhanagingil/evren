@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-"""Tek sayfalık "büyük resim" çizimini üretir: kaynak rolleri → alım → ara katman → kayıt sistemi → tüketim,
-ServiceNow geçiş şeridi, güvenlik şeridi ve fazlar. Her kutuda tamamlanma yüzdesi vardır.
+"""Tek sayfalık "büyük resim" çizimini A3 yatay (420 × 297 mm) üretir: kaynak rolleri → alım → ara katman → kayıt
+sistemi → tüketim, ServiceNow geçiş şeridi, güvenlik şeridi ve fazlar. Her kutuda ad, ne işe yaradığını anlatan tek
+cümle, teknoloji ve tamamlanma yüzdesi vardır.
 
-Kaynaklar: ``apps/web/content/components.json`` (bileşen yüzdesi, kanıt, eksik, plan bağı) ve ``roadmap.json``
+Kaynaklar: ``apps/web/content/components.json`` (amaç, teknoloji, yüzde, kanıt, eksik, plan bağı) ve ``roadmap.json``
 (fazlar). Çıktı: ``apps/web/content/big-picture.svg`` (uygulamadaki Büyük Resim sayfası ve paylaşılabilir görünüm).
 
-Kalite kapıları: kutuya sığmayan metin ve bileşen kaydı olmayan kutu derlemeyi durdurur. CSP uyumlu: <style> ve
-style="" yok.
+Kalite kapıları: kutuya sığmayan metin, satır sınırını aşan cümle, tuvali aşan yerleşim ve bileşen kaydı olmayan kutu
+derlemeyi durdurur. CSP uyumlu: <style> ve style="" yok. 1 mm = 5 birim; yazdırıldığında gövde metni ≈ 6,5 pt.
 
 Kullanım: python tools/build_big_picture.py [--check]
 """
@@ -24,7 +25,7 @@ from _font_metrics import BOLD, DEFAULT_EM, REGULAR
 OUT = REPO_ROOT / "apps" / "web" / "content" / "big-picture.svg"
 ROADMAP = REPO_ROOT / "apps" / "web" / "content" / "roadmap.json"
 COMPONENTS = REPO_ROOT / "apps" / "web" / "content" / "components.json"
-W, H = 1600, 1196
+W, H = 2100, 1485  # A3 yatay: 420 × 297 mm, 1 mm = 5 birim
 FONT = "Inter, 'Segoe UI', 'DejaVu Sans', Arial, sans-serif"
 
 C = {
@@ -45,6 +46,10 @@ KINDS = {
     "external": {"fill": "#ffffff", "stroke": "#1d2026", "title": C["text"], "sub": C["text2"], "width": 1.8},
     "security": {"fill": "#fdeef1", "stroke": "#f0a3b0", "title": "#9c1023", "sub": "#9c1023"},
 }
+TECH = {"store": "#9be3c3", "security": "#7a0c1c", "sn": "#0b5c40", "role_sn": "#0b5c40", "human": "#6a3c00",
+        "engine": "#16357a"}
+TS, PS, XS = 14.0, 11.6, 10.8      # başlık, amaç cümlesi, teknoloji yazı boyutları (birim)
+LP, LX = 14.6, 13.6                # satır yükseklikleri
 PCT_ON_DARK = "#9be3c3"
 
 
@@ -121,327 +126,378 @@ class Canvas:
 
     def fit(self, text: str, size: float, width: float, bold: bool, where: str) -> None:
         if tw(text, size, bold) > width:
-            self.errors.append(f"Metin sığmıyor ({where}): '{text}' {tw(text, size, bold):.0f}px > {width:.0f}px")
+            self.errors.append(f"Metin sığmıyor ({where}): '{text}' {tw(text, size, bold):.0f} > {width:.0f}")
 
-    def progress(self, x, y, w, pct, *, label_x, label_y, size=10.5, dark=False) -> None:
+    def wrap(self, text: str, size: float, width: float, bold: bool, where: str, max_lines: int) -> list[str]:
+        lines: list[str] = []
+        for word in text.split(" "):
+            if lines and tw(lines[-1] + " " + word, size, bold) <= width:
+                lines[-1] += " " + word
+            else:
+                if tw(word, size, bold) > width:
+                    self.errors.append(f"Sözcük kutuya sığmıyor ({where}): '{word}'")
+                lines.append(word)
+        if len(lines) > max_lines:
+            self.errors.append(f"Metin {max_lines} satırı aşıyor ({where}): '{text}'")
+        return lines
+
+    def progress(self, x, y, w, pct, *, label_x, label_y, size=11.0, dark=False) -> None:
         color = PCT_ON_DARK if dark else pct_color(pct)
-        self.add(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="5" rx="2.5" '
+        self.add(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="6" rx="3" '
                  f'fill="{"#46536d" if dark else "#e3e6eb"}"/>')
         if pct:
-            self.add(f'<rect x="{x:.1f}" y="{y:.1f}" width="{max(w * pct / 100, 3):.1f}" height="5" rx="2.5" '
+            self.add(f'<rect x="{x:.1f}" y="{y:.1f}" width="{max(w * pct / 100, 3):.1f}" height="6" rx="3" '
                      f'fill="{color}"/>')
         self.add(txt(label_x, label_y, f"%{pct}", size, color, weight=700, anchor="end"))
 
-    def box(self, x, y, w, h, kind, title, sub=(), *, align="center", tsize=13.0, ssize=11.0, rx=8, pct=None):
-        k = KINDS[kind]
-        dash = f' stroke-dasharray="{k["dash"]}"' if "dash" in k else ""
-        self.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="{rx}" fill="{k["fill"]}" stroke="{k["stroke"]}" '
-                 f'stroke-width="{k.get("width", 1.2)}"{dash}/>')
-        body = h
-        if pct is not None:  # alt şerit: ilerleme çubuğu + yüzde
-            body = h - 14
-            self.progress(x + 10, y + h - 13, w - 58, pct, label_x=x + w - 9, label_y=y + h - 8,
-                          dark=kind == "store")
-        lines = [(title, tsize, True, k["title"])] + [(s, ssize, False, k["sub"]) for s in sub]
-        heights = [ln[1] * 1.28 for ln in lines]
-        total = sum(heights)
-        cy = y + (body - total) / 2
-        for (s, size, bold, fill), lh in zip(lines, heights, strict=True):
-            cy += lh
-            self.fit(s, size, w - 18, bold, title)
-            if align == "center":
-                self.add(txt(x + w / 2, cy - lh * 0.24, s, size, fill, weight=700 if bold else 400, anchor="middle"))
-            else:
-                self.add(txt(x + 12, cy - lh * 0.24, s, size, fill, weight=700 if bold else 400))
-        if total > body - 4:
-            self.errors.append(f"Kutu yüksekliği yetmiyor: {title}")
+    # ------------------------------------------------------------ bileşen kutusu: ad · amaç · teknoloji · yüzde
+    def layout(self, w: float, item: dict[str, Any], *, purpose_lines: int = 3, tech_lines: int = 2):
+        title, inner = item["label_draw"], w - 22
+        self.fit(title, TS, inner, True, f"{item['id']} başlık")
+        p = self.wrap(item["purpose"], PS, inner, False, f"{item['id']} amaç", purpose_lines)
+        t = self.wrap(item["tech"], XS, inner, True, f"{item['id']} teknoloji", tech_lines)
+        height = 10 + TS * 1.25 + len(p) * LP + 7 + len(t) * LX + 24
+        return p, t, height
 
-    def cylinder(self, x, y, w, h, title, sub, pct=None):
+    def cbox(self, x, y, w, h, kind, item, *, purpose_lines=3, tech_lines=2):
+        k = KINDS[kind]
+        p, t, need = self.layout(w, item, purpose_lines=purpose_lines, tech_lines=tech_lines)
+        if need > h + 0.5:
+            self.errors.append(f"Kutu yüksekliği yetmiyor ({item['id']}): {need:.0f} > {h:.0f}")
+        dash = f' stroke-dasharray="{k["dash"]}"' if "dash" in k else ""
+        self.add(f'<rect x="{x:.1f}" y="{y:.1f}" width="{w:.1f}" height="{h:.1f}" rx="8" fill="{k["fill"]}" '
+                 f'stroke="{k["stroke"]}" stroke-width="{k.get("width", 1.2)}"{dash}/>')
+        cy = y + 10 + TS
+        self.add(txt(x + 11, cy, item["label_draw"], TS, k["title"], weight=700))
+        cy += 4
+        for line in p:
+            cy += LP
+            self.add(txt(x + 11, cy - 2, line, PS, k["sub"]))
+        cy += 5
+        self.add(f'<line x1="{x + 11:.1f}" y1="{cy:.1f}" x2="{x + w - 11:.1f}" y2="{cy:.1f}" '
+                 f'stroke="{k["stroke"]}" stroke-width="0.8" stroke-dasharray="2 3"/>')
+        for line in t:
+            cy += LX
+            self.add(txt(x + 11, cy - 1, line, XS, TECH.get(kind, "#2f3b52"), weight=700))
+        self.progress(x + 11, y + h - 15, w - 62, item["pct"], label_x=x + w - 10, label_y=y + h - 8.5,
+                      dark=kind == "store")
+
+    def cylinder(self, x, y, w, h, item):
         k = KINDS["store"]
-        e = 11
+        e = 13
         self.add(f'<path d="M{x},{y + e} v{h - 2 * e} a{w / 2},{e} 0 0 0 {w},0 v-{h - 2 * e}" fill="{k["fill"]}" '
                  f'stroke="{k["stroke"]}"/>')
         self.add(f'<ellipse cx="{x + w / 2}" cy="{y + e}" rx="{w / 2}" ry="{e}" fill="#46536d" stroke="{k["stroke"]}"/>')
-        self.fit(title, 13.5, w - 16, True, title)
-        self.add(txt(x + w / 2, y + 38, title, 13.5, "#ffffff", weight=700, anchor="middle"))
-        for i, s in enumerate(sub):
-            self.fit(s, 11, w - 16, False, title)
-            self.add(txt(x + w / 2, y + 55 + i * 14, s, 11, "#cdd3de", anchor="middle"))
-        if pct is not None:
-            self.add(f'<rect x="{x + 14:.1f}" y="{y + h - 24:.1f}" width="{w - 66:.1f}" height="5" rx="2.5" fill="#46536d"/>')
-            self.add(f'<rect x="{x + 14:.1f}" y="{y + h - 24:.1f}" width="{max((w - 66) * pct / 100, 3):.1f}" '
-                     f'height="5" rx="2.5" fill="{PCT_ON_DARK}"/>')
-            self.add(txt(x + w - 14, y + h - 18, f"%{pct}", 11, PCT_ON_DARK, weight=700, anchor="end"))
+        inner = w - 40
+        self.fit(item["label_draw"], 15, inner, True, item["id"])
+        p = self.wrap(item["purpose"], PS, inner, False, f"{item['id']} amaç", 2)
+        t = self.wrap(item["tech"], XS + 0.6, inner, True, f"{item['id']} teknoloji", 1)
+        cy = y + e + 26
+        self.add(txt(x + w / 2, cy, item["label_draw"], 15, "#ffffff", weight=700, anchor="middle"))
+        for line in p:
+            cy += LP
+            self.add(txt(x + w / 2, cy, line, PS, "#cdd3de", anchor="middle"))
+        for line in t:
+            cy += LX + 3
+            self.add(txt(x + w / 2, cy, line, XS + 0.6, PCT_ON_DARK, weight=700, anchor="middle"))
+        if cy + 30 > y + h:
+            self.errors.append(f"Silindir yüksekliği yetmiyor: {item['id']}")
+        self.progress(x + 20, y + h - 26, w - 76, item["pct"], label_x=x + w - 18, label_y=y + h - 19.5, dark=True)
 
     def panel(self, x, y, w, h, number, title, caption="", pct=None):
         self.add(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="12" fill="{C["panel"]}" stroke="{C["line"]}"/>')
         label = tr_upper(f"{number} · {title}" if number else title)
-        room = w - 24
+        room = w - 28
         if pct is not None:
-            self.add(txt(x + w - 14, y + 25, f"%{pct}", 14, pct_color(pct), weight=800, anchor="end"))
-            room -= tw(f"%{pct}", 14, True) + 10
-        self.fit(label, 11.5, room, True, "panel")
-        self.add(txt(x + 14, y + 24, label, 11.5, C["accent"], weight=700))
+            self.add(txt(x + w - 16, y + 28, f"%{pct}", 17, pct_color(pct), weight=800, anchor="end"))
+            room -= tw(f"%{pct}", 17, True) + 12
+        self.fit(label, 13.5, room, True, "panel")
+        self.add(txt(x + 16, y + 27, label, 13.5, C["accent"], weight=700))
         if caption:
-            self.fit(caption, 11.5, w - 24, False, "panel caption")
-            self.add(txt(x + 14, y + 41, caption, 11.5, C["muted"]))
+            self.fit(caption, 12.5, w - 28, False, "panel caption")
+            self.add(txt(x + 16, y + 46, caption, 12.5, C["muted"]))
 
     def arrow(self, points, *, dashed=False, label=None, label_at=None, color=None):
         d = "M" + " L".join(f"{px:.1f},{py:.1f}" for px, py in points)
         dash = ' stroke-dasharray="5 4"' if dashed else ""
-        self.add(f'<path d="{d}" fill="none" stroke="{color or C["arrow"]}" stroke-width="1.6"{dash} marker-end="url(#ah)"/>')
+        self.add(f'<path d="{d}" fill="none" stroke="{color or C["arrow"]}" stroke-width="1.8"{dash} marker-end="url(#ah)"/>')
         if label:
             lx, ly = label_at or points[0]
-            self.add(txt(lx, ly, label, 10.5, C["muted"], anchor="middle", italic=True))
+            self.add(f'<rect x="{lx - tw(label, 11.5) / 2 - 4:.1f}" y="{ly - 11:.1f}" width="{tw(label, 11.5) + 8:.1f}" '
+                     f'height="15" fill="{C["panel"]}"/>')
+            self.add(txt(lx, ly, label, 11.5, C["muted"], anchor="middle", italic=True))
 
 
 def build() -> str:
     cv = Canvas()
     roadmap = json.loads(ROADMAP.read_text(encoding="utf-8"))
     st = Status(json.loads(COMPONENTS.read_text(encoding="utf-8")))
+    M = 24  # kenar boşluğu
+
+    def item(cid: str, label: str | None = None) -> dict[str, Any]:
+        st.pct(cid)
+        it = dict(st.items[cid])
+        it["label_draw"] = label or it["label"]
+        for key in ("purpose", "tech"):
+            if not it.get(key):
+                cv.errors.append(f"components.json: {cid} için '{key}' yok")
+                it[key] = "?"
+        return it
+
+    def uniform(w: float, items: list[dict[str, Any]], **kw) -> float:
+        return max(cv.layout(w, it, **kw)[2] for it in items)
 
     # ---------------------------------------------------------------- başlık, açıklama, lejant
-    cv.add(txt(24, 42, "Evren CMDB — büyük resim", 26, C["text"], weight=750))
+    cv.add(txt(M, 50, "Evren CMDB — büyük resim", 32, C["text"], weight=750))
     sub = ("Kaynaklar değişebilir, kurallar değişmez. Gözlemler ara katmanda anlamlanır, golden record Evren'de "
            "tutulur, ServiceNow CMDB replika olur.")
-    cv.fit(sub, 13.5, 960, False, "alt başlık")
-    cv.add(txt(24, 68, sub, 13.5, C["text2"]))
+    cv.fit(sub, 15, 1150, False, "alt başlık")
+    cv.add(txt(M, 80, sub, 15, C["text2"]))
     legend = [("role", "Kaynak rolü (ürün değişebilir)"), ("engine", "Evren anlamlandırma"), ("human", "İnsan kararı"),
               ("store", "Kayıt sistemi"), ("sn", "ServiceNow"), ("external", "Bağlanan dış uygulama"),
-              ("security", "Güvenlik")]
-    lx, ly = 1010, 30
+              ("security", "Güvenlik"), ("cache", "Destek bileşeni")]
+    lx0 = 1240
+    lx, ly = lx0, 24
     for kind, label in legend:
         k = KINDS[kind]
-        width = 22 + tw(label, 11.5) + 16
-        if lx + width > W - 24:
-            lx, ly = 1010, ly + 22
-        cv.add(f'<rect x="{lx}" y="{ly}" width="14" height="14" rx="3" fill="{k["fill"]}" stroke="{k["stroke"]}" '
-               f'stroke-width="{k.get("width", 1.2)}"/>')
-        cv.add(txt(lx + 20, ly + 11.5, label, 11.5, C["text2"]))
+        width = 24 + tw(label, 12.5) + 18
+        if lx + width > W - M:
+            lx, ly = lx0, ly + 22
+        dash = f' stroke-dasharray="{k["dash"]}"' if "dash" in k else ""
+        cv.add(f'<rect x="{lx}" y="{ly}" width="15" height="15" rx="3" fill="{k["fill"]}" stroke="{k["stroke"]}" '
+               f'stroke-width="{k.get("width", 1.2)}"{dash}/>')
+        cv.add(txt(lx + 21, ly + 12.5, label, 12.5, C["text2"]))
         lx += width
+    how = "Her kutu: ad · ne işe yaradığı (tek cümle) · teknoloji (kalın) · tamamlanma yüzdesi"
+    cv.fit(how, 13, 1150, True, "kutu açıklaması")
+    cv.add(txt(M, 100, how, 13, C["text"], weight=600))
 
     # ---------------------------------------------------------------- tamamlanma özeti (ana sütunlar)
-    sy = 88
+    sy = 112
     pillars = [(p["title"], st.pillar_pct(p)) for p in st.doc["pillars"]]
     overall = st.overall()
     head_ = "TAMAMLANMA"
-    cv.add(txt(24, sy + 13, head_, 11.5, C["accent"], weight=700))
-    cv.add(txt(24, sy + 30, f"genel %{overall}", 13, pct_color(overall), weight=800))
-    chip_x0 = 24 + max(tw(head_, 11.5, True), tw(f"genel %{overall}", 13, True)) + 18
-    cw_ = (W - 24 - chip_x0 - (len(pillars) - 1) * 10) / len(pillars)
+    cv.add(txt(M, sy + 15, head_, 13, C["accent"], weight=700))
+    cv.add(txt(M, sy + 34, f"genel %{overall}", 15, pct_color(overall), weight=800))
+    chip_x0 = M + max(tw(head_, 13, True), tw(f"genel %{overall}", 15, True)) + 22
+    chip_w = (W - M - chip_x0 - (len(pillars) - 1) * 8) / len(pillars)
     for i, (title, pct) in enumerate(pillars):
-        cx = chip_x0 + i * (cw_ + 10)
-        cv.add(f'<rect x="{cx:.1f}" y="{sy}" width="{cw_:.1f}" height="32" rx="8" fill="{C["panel"]}" '
+        cx = chip_x0 + i * (chip_w + 8)
+        cv.add(f'<rect x="{cx:.1f}" y="{sy}" width="{chip_w:.1f}" height="38" rx="8" fill="{C["panel"]}" '
                f'stroke="{C["line"]}"/>')
-        cv.fit(title, 12, cw_ - 104, True, "sütun")
-        cv.add(txt(cx + 10, sy + 20.5, title, 12, C["text"], weight=700))
-        cv.progress(cx + cw_ - 86, sy + 13.5, 40, pct, label_x=cx + cw_ - 9, label_y=sy + 21, size=12)
+        cv.fit(title, 12.5, chip_w - 98, True, "sütun")
+        cv.add(txt(cx + 10, sy + 24, title, 12.5, C["text"], weight=700))
+        cv.progress(cx + chip_w - 84, sy + 16, 38, pct, label_x=cx + chip_w - 9, label_y=sy + 24, size=12.5)
 
-    top, bottom = 128, 744
-    ph = bottom - top
-    # ---------------------------------------------------------------- 1 kaynaklar (rol → ürün)
-    x1, w1 = 24, 246
-    cv.panel(x1, top, w1, ph, "1", "Kaynaklar", "Rol → bugünkü ürün", pct=st.group_pct("sources"))
-    roles = [
-        ("role", "src_discovery", "Keşif", "BMC Helix Discovery"),
-        ("role", "src_virtualization", "Sanallaştırma", "VMware vCenter"),
-        ("role", "src_network", "Ağ keşfi", "OpenText NNMi"), ("role", "src_monitoring", "İzleme", "Zabbix"),
-        ("role", "src_endpoint", "Uç nokta güvenliği", "Microsoft Defender"),
-        ("role_sn", "src_itsm", "ITSM / mevcut CMDB", "ServiceNow CMDB"),
-        ("role_sn", "src_change", "Değişiklik kayıtları", "ServiceNow Change"),
-        ("new", "src_new", "+ Yeni rol veya ürün", "bulut, Kubernetes, yedekleme…"),
-    ]
-    ry = top + 56
-    for kind, cid, role, product in roles:
-        cv.box(x1 + 12, ry, w1 - 24, 62, kind, role, [product], align="left", tsize=12.5, ssize=11, pct=st.pct(cid))
-        ry += 69
+    top = 162
+    # sütun genişlikleri: 1 kaynaklar, 2 alım, 3 akıl katmanı, 4 CMDB, 5 tüketim
+    gapx = 22
+    widths = [436, 254, 612, 392, 0]
+    widths[4] = W - 2 * M - sum(widths) - 4 * gapx
+    xs = [M]
+    for wd in widths[:-1]:
+        xs.append(xs[-1] + wd + gapx)
+    (x1, x2, x3, x4, x5), (w1, w2, w3, w4, w5) = xs, widths
+    head = 58
 
-    # ---------------------------------------------------------------- 2 alım (veri akış ortamı)
-    x2, w2 = 296, 196
+    # 1 kaynaklar -----------------------------------------------------------
+    roles = [("role", "src_discovery", "Keşif"), ("role", "src_virtualization", "Sanallaştırma"),
+             ("role", "src_network", "Ağ keşfi"), ("role", "src_monitoring", "İzleme"),
+             ("role", "src_endpoint", "Uç nokta güvenliği"), ("role_sn", "src_itsm", "ITSM / mevcut CMDB"),
+             ("role_sn", "src_change", "Değişiklik kayıtları"), ("new", "src_new", "+ Yeni rol veya ürün")]
+    r_items = [(k, item(c, lbl)) for k, c, lbl in roles]
+    bw1 = (w1 - 24 - 12) / 2
+    rh1 = uniform(bw1, [i for _, i in r_items])
+    col1_h = head + 4 * rh1 + 3 * 10 + 14
+
+    # 2 alım ------------------------------------------------------------------
+    steps = [("engine", "connector_runtime", "Bağlayıcı"), ("engine", "mapping", "YAML eşleme"),
+             ("security", "gateway", "Alım geçidi"), ("store2", "kafka", "Kafka olay omurgası"),
+             ("cache", "raw_archive", "Ham yük arşivi")]
+    s_items = [(k, item(c, lbl)) for k, c, lbl in steps]
+    bw2 = w2 - 28
+    rh2 = uniform(bw2, [i for _, i in s_items])
+
+    # 3 akıl katmanı ----------------------------------------------------------
+    grid = {(0, 0): ("engine", "change_filter", "Değişim süzgeci"), (1, 0): ("engine", "normalize", "Normalizasyon"),
+            (2, 0): ("engine", "identity", "Kimlik çözümleme"), (0, 1): ("security", "breaker", "Devre kesici"),
+            (1, 1): ("human", "match_queue", "Eşleştirme kuyruğu"), (2, 1): ("engine", "reconcile", "Uzlaştırma"),
+            (0, 2): ("engine", "quality", "Kalite ve kapsam"), (1, 2): ("human", "ai_suggest", "Yapay zekâ önerisi"),
+            (2, 2): ("engine", "unauthorized", "Yetkisiz değişiklik"), (0, 3): ("human", "manual_input", "Elle girdi"),
+            (1, 3): ("engine", "dependent_ci", "Bağımlı CI kimliği"), (2, 3): ("engine", "lifecycle", "Eskime, emeklilik")}
+    g_items = {pos: (k, item(c, lbl)) for pos, (k, c, lbl) in grid.items()}
+    gcol = 24
+    cw = (w3 - 28 - 2 * gcol) / 3
+    rh3 = uniform(cw, [i for _, i in g_items.values()])
+    grow = 34
+
+    # 4 CMDB ------------------------------------------------------------------
+    stores = [("store2", "data_model", "Veri modeli"), ("store2", "relations", "İlişkiler"),
+              ("store2", "dictionary", "Metadata sözlüğü"), ("store2", "provenance", "Kaynak bilgisi"),
+              ("store2", "audit", "Denetim izi"), ("store2", "outbox", "Outbox"),
+              ("cache", "search", "OpenSearch arama"), ("cache", "backup", "Felaket kurtarma")]
+    d_items = [(k, item(c, lbl)) for k, c, lbl in stores]
+    dcw = (w4 - 32 - 12) / 2
+    rh4 = uniform(dcw, [i for _, i in d_items])
+    golden = item("golden", "PostgreSQL golden record")
+
+    # 5 tüketim ---------------------------------------------------------------
+    cons = [("consumer", "web_ui", "Evren arayüzü"), ("consumer", "rest_api", "REST API"),
+            ("consumer", "event_stream", "Olay akışı"), ("consumer", "evren_mcp", "Evren MCP sunucusu"),
+            ("external", "grc", "GRC Platformu (tedarik)"), ("external", "corp_mcp", "Kurum MCP uygulaması")]
+    c_items = [(k, item(c, lbl)) for k, c, lbl in cons]
+    bw5 = w5 - 28
+    rh5 = uniform(bw5, [i for _, i in c_items], purpose_lines=2)
+
+    ph = max(col1_h, head + 5 * rh2 + 4 * 26 + 16, head + 10 + 4 * rh3 + 3 * grow + 40,
+             head + 150 + 4 * rh4 + 3 * 12 + 14, head + 6 * rh5 + 5 * 14 + 12)
+    bottom = top + ph
+
+    cv.panel(x1, top, w1, ph, "1", "Kaynaklar", "Rol (başlık) → bugünkü ürün (teknoloji satırı)", pct=st.group_pct("sources"))
+    for i, (kind, it) in enumerate(r_items):
+        cv.cbox(x1 + 12 + (i % 2) * (bw1 + 12), top + head + (i // 2) * (rh1 + 10), bw1, rh1, kind, it)
+
     cv.panel(x2, top, w2, ph, "2", "Alım", "Bağlayıcı CMDB'ye yazmaz", pct=st.group_pct("ingest"))
-    steps = [("engine", "connector_runtime", "Bağlayıcı", ["ürüne özel · çeker,", "sayfalar, salt okunur"]),
-             ("engine", "mapping", "YAML eşleme", ["kaynak alanı →", "ServiceNow alan adı"]),
-             ("security", "gateway", "Alım geçidi", ["belirteç · şema ·", "kaynak başına yetki"]),
-             ("store2", "kafka", "Kafka olay omurgası", ["yeniden oynatılabilir", "DLQ · outbox yayını"]),
-             ("cache", "raw_archive", "Ham yük arşivi", ["sorun analizi ve", "yeniden işleme"])]
-    by = top + 56
-    for i, (kind, cid, title, sub_) in enumerate(steps):
-        cv.box(x2 + 14, by, w2 - 28, 88, kind, title, sub_, tsize=12.5, pct=st.pct(cid))
+    y = top + head
+    for i, (kind, it) in enumerate(s_items):
+        cv.cbox(x2 + 14, y, bw2, rh2, kind, it)
         if i < 3:
-            cv.arrow([(x2 + w2 / 2, by + 88), (x2 + w2 / 2, by + 110)])
-        by += 112
-    cv.arrow([(x2 + w2 / 2 + 40, by - 112 - 24), (x2 + w2 / 2 + 40, by - 112 - 2)], dashed=True)
+            cv.arrow([(x2 + w2 / 2, y + rh2), (x2 + w2 / 2, y + rh2 + 24)])
+        elif i == 3:
+            cv.arrow([(x2 + w2 / 2 + 50, y + rh2 + 24), (x2 + w2 / 2 + 50, y + rh2 + 2)], dashed=True)
+        y += rh2 + 26
 
-    # ---------------------------------------------------------------- 3 ara katman (akıl katmanı)
-    x3, w3 = 518, 518
     cv.panel(x3, top, w3, ph, "3", "Ara katman — akıl katmanı", "Evren'in asıl değeri; golden record'a tek yazan "
              "uzlaştırıcıdır", pct=st.group_pct("sense"))
-    cols = [x3 + 14, x3 + 14 + 170, x3 + 14 + 340]
-    cw, rh = 156, 90
-    rows = [top + 62, top + 192, top + 322, top + 452]
-    grid = {
-        (0, 0): ("engine", "change_filter", "Değişim süzgeci", ["içerik özeti aynıysa", "yalnız last_seen"]),
-        (1, 0): ("engine", "normalize", "Normalizasyon", ["abc_1 = ABC-1", "= abc-1.corp"]),
-        (2, 0): ("engine", "identity", "Kimlik çözümleme", ["IRE kuralı + skor", "+ çelişki denetimi"]),
-        (0, 1): ("security", "breaker", "Devre kesici", ["kısmi çalışmada", "eskime ve silme yok"]),
-        (1, 1): ("human", "match_queue", "Eşleştirme kuyruğu", ["insan karar verir;", "birleştirme geri alınır"]),
-        (2, 1): ("engine", "reconcile", "Uzlaştırma", ["rol önceliği · tazeleme", "öznitelik başına"]),
-        (0, 2): ("engine", "quality", "Kalite ve kapsam", ["mükerrer, kapsam,", "gölge mod raporları"]),
-        (1, 2): ("human", "ai_suggest", "Yapay zekâ önerisi", ["gerekçesiyle kayıt;", "insan onaylar"]),
-        (2, 2): ("engine", "unauthorized", "Yetkisiz değişiklik", ["Change penceresi dışı", "değişen öznitelik"]),
-        (0, 3): ("human", "manual_input", "Elle girdi", ["CI, ilişki, düzeltme;", "aynı uzlaştırmadan geçer"]),
-        (1, 3): ("engine", "dependent_ci", "Bağımlı CI kimliği", ["uygulama, adaptör:", "üst CI bağlamında"]),
-        (2, 3): ("engine", "lifecycle", "Eskime, emeklilik", ["görülmeyen CI;", "devre kesici onayıyla"]),
-    }
-    for (c, r), (kind, cid, title, sub_) in grid.items():
-        cv.box(cols[c], rows[r], cw, rh, kind, title, sub_, tsize=12.5, ssize=10.8, pct=st.pct(cid))
-    mid = (rh - 14) / 2
+    cols = [x3 + 14 + i * (cw + gcol) for i in range(3)]
+    rows = [top + head + 10 + r * (rh3 + grow) for r in range(4)]
+    for (c, r), (kind, it) in g_items.items():
+        cv.cbox(cols[c], rows[r], cw, rh3, kind, it)
+    mid = rh3 / 2
     cv.arrow([(cols[0] + cw, rows[0] + mid), (cols[1] - 2, rows[0] + mid)])
     cv.arrow([(cols[1] + cw, rows[0] + mid), (cols[2] - 2, rows[0] + mid)])
-    cv.arrow([(cols[2] + cw / 2, rows[0] + rh), (cols[2] + cw / 2, rows[1] - 2)], label="eşleşti",
-             label_at=(cols[2] + cw / 2 + 32, rows[0] + rh + 26))
-    cv.arrow([(cols[2] + 14, rows[0] + rh), (cols[1] + cw - 14, rows[1] - 2)], label="şüpheli",
-             label_at=(cols[1] + cw - 30, rows[0] + rh + 20))
+    cv.arrow([(cols[2] + cw / 2, rows[0] + rh3), (cols[2] + cw / 2, rows[1] - 2)], label="eşleşti",
+             label_at=(cols[2] + cw / 2, rows[0] + rh3 + grow / 2 + 4))
+    cv.arrow([(cols[2] + 16, rows[0] + rh3), (cols[1] + cw - 16, rows[1] - 2)], label="şüpheli",
+             label_at=(cols[1] + cw + gcol / 2, rows[0] + rh3 + grow / 2 + 4))
     cv.arrow([(cols[1] + cw, rows[1] + mid), (cols[2] - 2, rows[1] + mid)])
-    cv.arrow([(cols[1] + cw / 2, rows[2]), (cols[1] + cw / 2, rows[1] + rh + 2)], label="öneri",
-             label_at=(cols[1] + cw / 2 + 24, rows[1] + rh + 26))
-    cv.arrow([(cols[2] + cw / 2, rows[1] + rh), (cols[2] + cw / 2, rows[2] - 2)])
+    cv.arrow([(cols[1] + cw / 2, rows[2]), (cols[1] + cw / 2, rows[1] + rh3 + 2)], label="öneri",
+             label_at=(cols[1] + cw / 2, rows[1] + rh3 + grow / 2 + 4))
+    cv.arrow([(cols[2] + cw / 2, rows[1] + rh3), (cols[2] + cw / 2, rows[2] - 2)])
     note = "Her kararın gerekçesi saklanır: kaynak, kural, ezilen değerler."
-    cv.fit(note, 11.5, w3 - 28, False, "not")
-    cv.add(txt(x3 + 16, bottom - 16, note, 11.5, C["muted"]))
+    cv.fit(note, 12.5, w3 - 32, False, "not")
+    cv.add(txt(x3 + 16, bottom - 16, note, 12.5, C["muted"]))
 
-    # ---------------------------------------------------------------- 4 kayıt sistemi (CMDB)
-    x4, w4 = 1062, 230
-    cv.panel(x4, top, w4, ph, "4", "CMDB", pct=st.group_pct("record"))
-    cv.cylinder(x4 + 16, top + 40, w4 - 32, 110, "PostgreSQL", ["golden record", "cmdb_ci · sys_id · ilişkiler"],
-                pct=st.pct("golden"))
-    stores = [("store2", "data_model", "Veri modeli", ["SN uyumlu sınıflar + CSDM"]),
-              ("store2", "relations", "İlişkiler", ["cmdb_rel_ci · hizmet haritası"]),
-              ("store2", "dictionary", "Metadata sözlüğü", ["sınıf, alan, değişiklik seti"]),
-              ("store2", "provenance", "Kaynak bilgisi", ["öznitelik başına kazanan"]),
-              ("store2", "audit", "Denetim izi", ["salt ekleme → SIEM"]),
-              ("store2", "outbox", "Outbox", ["tek işlemde olay"]),
-              ("cache", "search", "OpenSearch arama", ["dizin; kayıt sistemi değil"]),
-              ("cache", "backup", "Felaket kurtarma", ["yedek · PITR · çoğaltma"])]
-    sy = top + 160
-    for kind, cid, title, sub_ in stores:
-        cv.box(x4 + 16, sy, w4 - 32, 52, kind, title, sub_, tsize=12.5, ssize=10.8, pct=st.pct(cid))
-        sy += 57
+    cv.panel(x4, top, w4, ph, "4", "CMDB", "Kayıt sistemi", pct=st.group_pct("record"))
+    cv.cylinder(x4 + 16, top + head, w4 - 32, 140, golden)
+    y = top + head + 150
+    for i, (kind, it) in enumerate(d_items):
+        cv.cbox(x4 + 16 + (i % 2) * (dcw + 12), y + (i // 2) * (rh4 + 12), dcw, rh4, kind, it)
 
-    # ---------------------------------------------------------------- 5 tüketim
-    x5, w5 = 1318, 258
-    cv.panel(x5, top, w5, ph, "5", "Tüketim", pct=st.group_pct("consume"))
-    cons = [("consumer", "web_ui", "Evren arayüzü", ["CI 360° · kuyruk · kaynaklar"]),
-            ("consumer", "rest_api", "REST API", ["+ ServiceNow uyumlu Table/IRE"]),
-            ("consumer", "event_stream", "Olay akışı", ["CloudEvents · imzalı webhook"]),
-            ("consumer", "evren_mcp", "Evren MCP sunucusu", ["salt okuma + öneri"]),
-            ("external", "grc", "GRC Platformu (tedarik)", ["CI verisi + otomatik kontroller",
-                                                             "provenance · inconclusive"]),
-            ("external", "corp_mcp", "Kurum MCP uygulaması", ["yapay zekâ ajanları"])]
-    cy = top + 44
-    for kind, cid, title, sub_ in cons:
-        hgt = 88 if len(sub_) > 1 else 74
-        cv.box(x5 + 14, cy, w5 - 28, hgt, kind, title, sub_, tsize=12.5, ssize=10.8, pct=st.pct(cid))
-        cy += hgt + 16
+    cv.panel(x5, top, w5, ph, "5", "Tüketim", "Evren'in verisini kullananlar", pct=st.group_pct("consume"))
+    y = top + head
+    for kind, it in c_items:
+        cv.cbox(x5 + 14, y, bw5, rh5, kind, it, purpose_lines=2)
+        y += rh5 + 14
 
-    # ana akış okları
     ay = top + ph / 2
     cv.arrow([(x1 + w1, ay), (x2 - 2, ay)])
     cv.arrow([(x2 + w2, ay), (x3 - 2, ay)])
     cv.arrow([(cols[2] + cw, rows[1] + mid), (x4 - 2, rows[1] + mid)])
     cv.arrow([(x4 + w4, ay), (x5 - 2, ay)])
 
-    # ürün değişimi notu
+    # ürün değişimi notu ----------------------------------------------------
     ny = bottom + 10
     swap = ("Ürün değişirse: yeni bağlayıcı + eşleme → gölge mod (yazmaz, karşılaştırır) → devir → emeklilik. "
             "Kurallar, CI'lar ve sys_id'ler değişmez (ADR-0009).")
-    cv.add(f'<rect x="24" y="{ny}" width="{W - 48}" height="34" rx="8" fill="#fdeef1" stroke="#f0a3b0"/>')
-    cv.fit(swap, 12.5, W - 80, False, "ürün değişimi")
-    cv.add(txt(40, ny + 22, swap, 12.5, "#9c1023", weight=600))
+    cv.add(f'<rect x="{M}" y="{ny}" width="{W - 2 * M}" height="34" rx="8" fill="#fdeef1" stroke="#f0a3b0"/>')
+    cv.fit(swap, 13.5, W - 2 * M - 32, False, "ürün değişimi")
+    cv.add(txt(M + 16, ny + 22.5, swap, 13.5, "#9c1023", weight=600))
 
-    # ---------------------------------------------------------------- 6 ServiceNow geçişi
-    st6, sh = ny + 48, 150
-    cv.panel(24, st6, W - 48, sh, "6", "ServiceNow geçişi — Evren ana kaynak, SN CMDB replika",
+    # 6 ServiceNow geçişi ---------------------------------------------------
+    lane = [("sn", "sn_load", "SN CMDB ilk yükleme"), ("store", "sn_golden", "Evren golden record"),
+            ("engine", "sn_sync", "sn-sync"), ("sn", "sn_ire", "SN IRE API"), ("sn", "sn_replica", "SN CMDB (replika)"),
+            ("sn", "sn_task", "task.cmdb_ci"), ("external", "ci_picker", "CI seçici (F3)")]
+    l_items = [(k, item(c, lbl)) for k, c, lbl in lane]
+    lgap = 34
+    lw = (W - 2 * M - 32 - (len(lane) - 1) * lgap) / len(lane)
+    lh = uniform(lw, [i for _, i in l_items], purpose_lines=2)
+    st6 = ny + 46
+    sh = 44 + lh + 40
+    cv.panel(M, st6, W - 2 * M, sh, "6", "ServiceNow geçişi — Evren ana kaynak, SN CMDB replika",
              pct=st.group_pct("servicenow"))
-    lane = [("sn", "sn_load", "SN CMDB ilk yükleme", ["sys_id korunur (F0)"], 196),
-            ("store", "sn_golden", "Evren golden record", ["ana kaynak"], 196),
-            ("engine", "sn_sync", "sn-sync", ["kapsamlı itme: süreç sınıfları"], 214),
-            ("sn", "sn_ire", "SN IRE API", ["/identifyreconcile"], 176),
-            ("sn", "sn_replica", "SN CMDB (replika)", ["aynı sys_id"], 176),
-            ("sn", "sn_task", "task.cmdb_ci", ["Incident/Change kuralları aynı"], 214),
-            ("external", "ci_picker", "CI seçici (F3)", ["SN formunda Evren araması"], 196)]
-    gap = (W - 48 - 32 - sum(item[4] for item in lane)) / (len(lane) - 1)
-    lx, ly2, lh = 40.0, st6 + 38, 68
+    ly2 = st6 + 42
     centers = []
-    for kind, cid, title, sub_, wd in lane:
-        cv.box(lx, ly2, wd, lh, kind, title, sub_, tsize=12.5, ssize=10.8, pct=st.pct(cid))
-        centers.append((lx, wd))
-        lx += wd + gap
+    for i, (kind, it) in enumerate(l_items):
+        lx = M + 16 + i * (lw + lgap)
+        cv.cbox(lx, ly2, lw, lh, kind, it, purpose_lines=2)
+        centers.append(lx)
     for i in range(len(lane) - 2):
-        (ax, aw), (bx, _) = centers[i], centers[i + 1]
-        cv.arrow([(ax + aw, ly2 + lh / 2), (bx - 2, ly2 + lh / 2)])
-    (fx, fw), (gx, _) = centers[5], centers[6]
-    cv.arrow([(gx, ly2 + lh / 2), (fx + fw + 2, ly2 + lh / 2)], dashed=True)
-    (ex, ew), (bx2, bw2) = centers[4], centers[1]
-    ry2 = ly2 + lh + 24
-    cv.arrow([(ex + ew / 2, ly2 + lh), (ex + ew / 2, ry2), (bx2 + bw2 / 2, ry2), (bx2 + bw2 / 2, ly2 + lh + 2)],
-             dashed=True)
+        cv.arrow([(centers[i] + lw, ly2 + lh / 2), (centers[i + 1] - 2, ly2 + lh / 2)])
+    cv.arrow([(centers[6], ly2 + lh / 2), (centers[5] + lw + 2, ly2 + lh / 2)], dashed=True)
+    ry2 = ly2 + lh + 22
+    cv.arrow([(centers[4] + lw / 2, ly2 + lh), (centers[4] + lw / 2, ry2), (centers[1] + lw / 2, ry2),
+              (centers[1] + lw / 2, ly2 + lh + 2)], dashed=True)
     back = "SN'de elle yapılan düzenleme ITSM kaynağı olarak geri çekilir ve uzlaştırmadan geçer"
-    cv.add(f'<rect x="{(ex + bx2 + bw2) / 2 - tw(back, 11) / 2 - 8:.1f}" y="{ry2 - 9}" width="{tw(back, 11) + 16:.1f}" '
-           f'height="18" fill="{C["panel"]}"/>')
-    cv.add(txt((ex + bx2 + bw2) / 2, ry2 + 4, back, 11, C["muted"], anchor="middle", italic=True))
+    bx = (centers[4] + centers[1] + lw) / 2
+    cv.add(f'<rect x="{bx - tw(back, 12) / 2 - 8:.1f}" y="{ry2 - 10}" width="{tw(back, 12) + 16:.1f}" '
+           f'height="20" fill="{C["panel"]}"/>')
+    cv.add(txt(bx, ry2 + 4.5, back, 12, C["muted"], anchor="middle", italic=True))
 
-    # ---------------------------------------------------------------- 7 güvenlik
-    gt, gh = st6 + sh + 14, 116
-    cv.panel(24, gt, W - 48, gh, "7", "Güvenlik ve yönetişim — her katmanda", pct=st.group_pct("security"))
-    chips = [("sec_entra", "Entra ID", "OIDC + PKCE"), ("sec_rbac", "RBAC + ABAC", "alan hassasiyeti"),
-             ("sec_sod", "Görevler ayrılığı", "veritabanında"), ("sec_schema", "Şema değişikliği", "taslak → onay → yayın"),
-             ("sec_writer", "Tek yazar", "uzlaştırıcı"), ("sec_least", "En az yetki", "DB rolleri"),
-             ("sec_audit", "Denetim izi", "salt ekleme → SIEM"), ("sec_secrets", "mTLS + sır kasası", "repoda sır yok"),
-             ("sec_supply", "Tedarik zinciri", "hash kilidi, tarama"), ("sec_ai", "Yapay zekâ önerir", "insan onaylar")]
-    cwid = (W - 48 - 32 - 9 * 10) / 10
-    for i, (cid, a, b) in enumerate(chips):
-        cv.box(40 + i * (cwid + 10), gt + 38, cwid, 64, "security", a, [b], tsize=11.5, ssize=10.5, pct=st.pct(cid))
+    # 7 güvenlik ------------------------------------------------------------
+    chips = [("sec_entra", "Entra ID"), ("sec_rbac", "RBAC + ABAC"), ("sec_sod", "Görevler ayrılığı"),
+             ("sec_schema", "Şema değişikliği"), ("sec_writer", "Tek yazar"), ("sec_least", "En az yetki"),
+             ("sec_audit", "Denetim izi"), ("sec_secrets", "mTLS + sır kasası"), ("sec_supply", "Tedarik zinciri"),
+             ("sec_ai", "Yapay zekâ önerir")]
+    k_items = [item(c, lbl) for c, lbl in chips]
+    kgap = 10
+    kw = (W - 2 * M - 32 - (len(chips) - 1) * kgap) / len(chips)
+    kh = uniform(kw, k_items)
+    gt = st6 + sh + 12
+    gh = 44 + kh + 14
+    cv.panel(M, gt, W - 2 * M, gh, "7", "Güvenlik ve yönetişim — her katmanda", pct=st.group_pct("security"))
+    for i, it in enumerate(k_items):
+        cv.cbox(M + 16 + i * (kw + kgap), gt + 42, kw, kh, "security", it)
 
-    # ---------------------------------------------------------------- fazlar
+    # fazlar ------------------------------------------------------------------
     ft = gt + gh + 12
     current = next((p for p in roadmap["phases"] if any(i["status"] != "done" for i in p["items"])), roadmap["phases"][-1])
-    cv.add(txt(24, ft + 14, "YOL HARİTASI", 11.5, C["accent"], weight=700))
+    cv.add(txt(M, ft + 15, "YOL HARİTASI", 13, C["accent"], weight=700))
     note = ("Yüzde = hedef kapsamın çalışır ve testli kısmı (sentetik veriyle). Her eksik bir plan maddesine bağlı; "
             "kanıt ve eksikler Büyük Resim sayfasındaki tabloda (components.json).")
-    cv.fit(note, 11, W - 200, False, "yüzde notu")
-    cv.add(txt(W - 24, ft + 14, note, 11, C["muted"], anchor="end"))
+    cv.fit(note, 12, W - 260, False, "yüzde notu")
+    cv.add(txt(W - M, ft + 15, note, 12, C["muted"], anchor="end"))
     phases = roadmap["phases"]
-    pw = (W - 48 - (len(phases) - 1) * 16) / len(phases)
+    pw = (W - 2 * M - (len(phases) - 1) * 18) / len(phases)
     for i, p in enumerate(phases):
-        px = 24 + i * (pw + 16)
+        px = M + i * (pw + 18)
         on = p is current
         done = sum(1 for it in p["items"] if it["status"] == "done")
-        cv.add(f'<rect x="{px:.1f}" y="{ft + 22}" width="{pw:.1f}" height="52" rx="8" fill="{"#fdeef1" if on else C["panel"]}" '
+        cv.add(f'<rect x="{px:.1f}" y="{ft + 24}" width="{pw:.1f}" height="54" rx="8" fill="{"#fdeef1" if on else C["panel"]}" '
                f'stroke="{C["accent"] if on else C["line"]}" stroke-width="{1.8 if on else 1.2}"/>')
         title = f"{p['id']} · {p['title']}".replace("ServiceNow", "SN")
-        cv.fit(title, 12.5, pw - 20, True, "faz")
-        cv.add(txt(px + 12, ft + 43, title, 12.5, C["text"], weight=700))
+        cv.fit(title, 13.5, pw - 22, True, "faz")
+        cv.add(txt(px + 12, ft + 46, title, 13.5, C["text"], weight=700))
         meta = f"{p['window'].split('·')[0].strip()} · {done}/{len(p['items'])} iş" + (" · şu an" if on else "")
-        cv.add(txt(px + 12, ft + 62, meta, 11, C["accent"] if on else C["muted"], weight=600 if on else 400))
+        cv.add(txt(px + 12, ft + 66, meta, 12, C["accent"] if on else C["muted"], weight=600 if on else 400))
         if i < len(phases) - 1:
-            cv.arrow([(px + pw + 2, ft + 48), (px + pw + 14, ft + 48)])
+            cv.arrow([(px + pw + 2, ft + 51), (px + pw + 16, ft + 51)])
 
     missing = sorted(set(st.items) - st.used)
     if missing:
         cv.errors.append("Çizimde kutusu olmayan bileşen(ler): " + ", ".join(missing))
-    if ft + 80 > H:
-        cv.errors.append(f"Tuval yüksekliği yetmiyor: {ft + 80} > {H}")
+    if ft + 84 > H:
+        cv.errors.append(f"A3 tuval yüksekliği yetmiyor: {ft + 84:.0f} > {H}")
     if cv.errors:
         raise BuildError("\n".join(cv.errors))
     defs = ('<defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" '
             f'orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="{C["arrow"]}"/></marker></defs>')
-    head = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" '
-            'aria-labelledby="bpTitle bpDesc">'
-            '<title id="bpTitle">Evren CMDB — büyük resim</title>'
-            '<desc id="bpDesc">Kaynak rolleri, alım, ara katman, kayıt sistemi, tüketim; ServiceNow geçiş şeridi; '
-            'güvenlik ve yönetişim; yol haritası fazları. Her bileşende tamamlanma yüzdesi.</desc>')
-    return head + defs + f'<rect width="{W}" height="{H}" fill="{C["bg"]}"/>' + "".join(cv.parts) + "</svg>\n"
+    head_svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="420mm" height="297mm" role="img" '
+                'aria-labelledby="bpTitle bpDesc">'
+                '<title id="bpTitle">Evren CMDB — büyük resim (A3)</title>'
+                '<desc id="bpDesc">Kaynak rolleri, alım, ara katman, kayıt sistemi, tüketim; ServiceNow geçiş şeridi; '
+                'güvenlik ve yönetişim; yol haritası fazları. Her bileşende amaç, teknoloji ve tamamlanma yüzdesi.</desc>')
+    return head_svg + defs + f'<rect width="{W}" height="{H}" fill="{C["bg"]}"/>' + "".join(cv.parts) + "</svg>\n"
 
 
 def main(argv: list[str] | None = None) -> int:

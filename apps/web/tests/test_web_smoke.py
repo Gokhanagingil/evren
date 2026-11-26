@@ -265,13 +265,15 @@ def test_big_picture(page, base_url):
     page.goto(base_url + "/#/buyuk-resim")
     page.wait_for_selector(".bp-frame svg")
     assert page.locator(".bp-frame svg text", has_text="Kaynaklar").count() >= 1
-    assert page.get_attribute("#bpExport", "download") == "Evren_Buyuk_Resim.svg"
+    assert page.get_attribute("#bpExport", "download") == "Evren_Buyuk_Resim_A3.svg"
     # Her kutuda yüzde var; bileşen tablosu kanıt, eksik ve plan bağını gösterir (components.json)
     assert page.locator(".bp-frame svg text", has_text="%").count() >= 50
     page.wait_for_selector("#compGroups .comp-table")
     assert page.locator("#compTitle").inner_text().startswith("Bileşen durumu · genel %")
     model = page.locator("#comp-data_model")
     assert "F0-07" in model.inner_text() and "CSDM" in model.inner_text()
+    assert "Metadata YAML" in model.locator(".comp-tech").inner_text()  # teknoloji sütunu
+    assert model.locator(".comp-purpose").inner_text().endswith(".")  # tek cümlelik görev
     total = page.locator("#compGroups tbody tr").count()
     page.check("#compOnlyGaps")
     assert 0 < page.locator("#compGroups tbody tr").count() < total   # %100 olanlar gizlenir
