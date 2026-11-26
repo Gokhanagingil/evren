@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Literal
 
 from ..http import HttpClient, Transport
+from .vcenter import VCenterClient, VCenterSimulator
 from .zabbix import ZabbixClient, ZabbixSimulator
 
 __all__ = ["SOURCES", "SourceSpec"]
@@ -20,7 +21,7 @@ __all__ = ["SOURCES", "SourceSpec"]
 class SourceSpec:
     key: str
     data_source: str
-    auth: Literal["bearer", "basic"]
+    auth: Literal["bearer", "basic", "login"]  # login: kullanıcı + parola dosyası istemciye verilir (oturum açar)
     mapping_dir: str
     build: Callable[[HttpClient, Mapping[str, Any]], Any]
     simulator: Callable[[Path], Transport] | None = None
@@ -32,4 +33,10 @@ SOURCES: dict[str, SourceSpec] = {
         key="zabbix", data_source="Zabbix", auth="bearer", mapping_dir="zabbix",
         build=lambda http, opts: ZabbixClient(http, page_size=int(opts.get("page_size", 500))),
         simulator=ZabbixSimulator.from_dir, options=("page_size",)),
+    "vcenter": SourceSpec(
+        key="vcenter", data_source="vCenter", auth="login", mapping_dir="vcenter",
+        build=lambda http, opts: VCenterClient(http, user=opts["credentials"][0], password=opts["credentials"][1],
+                                               release=str(opts.get("release", "8.0.1.0")),
+                                               page_size=int(opts.get("page_size", 500))),
+        simulator=VCenterSimulator.from_dir, options=("page_size", "release")),
 }

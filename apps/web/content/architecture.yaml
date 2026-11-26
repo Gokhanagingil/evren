@@ -152,7 +152,7 @@ details:
   src_vcenter:
     phase: F0
     text: VMware vCenter'dan VM örnekleri, ESXi hostlar, kümeler ve datastore'lar çekilir. Her VM iki kayıt üretir. Birincisi VM örneğidir (cmdb_ci_vmware_instance). İkincisi misafir işletim sistemi sunucusudur (cmdb_ci_server, virtual=true). İkisi "Instantiates::Instantiated by" ilişkisiyle, misafir sunucu ESXi host'a "Virtualized by::Virtualizes" ile bağlanır; bu ServiceNow modeliyle aynıdır.
-    tech: [vSphere API, "connectors/vcenter/*.mapping.yaml"]
+    tech: ["VI/JSON API (vSphere 8.0 U1+, PropertyCollector)", "connectors/vcenter/*.mapping.yaml", "connectors/sources/vcenter.py"]
     security: [Salt okunur servis hesabı, Kimlik bilgisi sır kasasında]
   src_bmc:
     phase: F1
@@ -167,7 +167,7 @@ details:
   src_zabbix:
     phase: F0
     text: İzleme kapsamı ve canlılık sinyali. Envanter için düşük öncelikli kaynaktır. Metrik ve alarm verisi CMDB'ye taşınmaz; yalnızca "izleniyor mu" ve "en son ne zaman canlıydı" gibi özetler gelir.
-    tech: [Zabbix JSON-RPC host.get, "connectors/zabbix/mapping.yaml"]
+    tech: [Zabbix JSON-RPC host.get, "connectors/zabbix/mapping.yaml", "connectors/sources/zabbix.py"]
     security: [API belirteci sır kasasında]
   src_defender:
     phase: F1

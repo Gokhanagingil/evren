@@ -3,12 +3,19 @@
 # (guest_server.mapping.yaml). ServiceNow modelinde bunlar ayrı CI'lardır:
 #   <sunucu> --Instantiates::Instantiated by--> <VM örneği> --Registered on::Has registered--> <ESXi host>
 #   <sunucu> --Virtualized by::Virtualizes--> <ESXi host>   (guest_server.mapping.yaml)
-# Bağlayıcı ham JSON'a vCenter örnek UUID'sini `_vcenter.instanceUuid` olarak ekler.
+# Bağlayıcı ham JSON'a vCenter örnek UUID'sini `_vcenter.instanceUuid`, nitelikli host anahtarını `_ref.host`
+# ("<vCenter örnek kimliği>/host-221"; esx_host.mapping.yaml'ın kaynak anahtarı) olarak ekler (ADR-0020).
+# Alan adları vSphere VI/JSON 8.0.1.0 tanımıyla karşılaştırıldı (VirtualMachineConfigInfo, VirtualHardware,
+# VirtualMachineRuntimeInfo, GuestInfo, GuestNicInfo); gerçek çıktıyla kabul U10'da.
+# Şablonlar (config.template = true) CI değildir: require ile dışarıda kalır.
 description: VMware sanal makine örnekleri
 verify: true
 data_source: vCenter
 source_key: config.instanceUuid
 class: cmdb_ci_vmware_instance
+require:                                   # hepsi sağlanmalı
+  - {from: _type, matches: "^VirtualMachine$"}
+  - {from: config.template, matches: "^false$"}
 attributes:
   name: {from: name, transform: strip}
   correlation_id: {from: config.instanceUuid, transform: lower}
@@ -25,4 +32,4 @@ attributes:
 lookup:
   mac_addresses: {from: "guest.net[*].macAddress"}
 relations:
-  - {type: "Registered on::Has registered", direction: parent, target: runtime.host, target_class: cmdb_ci_esx_server}
+  - {type: "Registered on::Has registered", direction: parent, target: _ref.host, target_class: cmdb_ci_esx_server}

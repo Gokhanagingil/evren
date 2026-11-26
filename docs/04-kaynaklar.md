@@ -59,7 +59,9 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
 - **Yeniden deneme:** bağlantı hatası, 429 ve 5xx için geri çekilmeli (1, 2, 4, 8 sn; `--retries`), `Retry-After`'a uyulur. 4xx kalıcıdır.
 - **Kayıt dosyaları:** `--record` ve `--out` kurum verisi içerir; repoya konmaz. Repodaki `connectors/*/samples/` verisi sentetiktir.
 - **Konteynerde:** `evren connector-run …`; geliştirme yığınında `docker compose run --rm -T -e EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin connector connector-run --connector zabbix --simulate connectors/zabbix/samples < belirtec`.
-- **Durum:** Zabbix istemcisi hazır (U5.1). vCenter, ServiceNow, BMC, NNMi ve Defender istemcileri U5.2; zamanlama ve arayüzden "şimdi çalıştır" U5.3.
+- **Durum:** Zabbix (U5.1) ve vCenter (U5.2) istemcileri hazır; ServiceNow, BMC, NNMi ve Defender istemcileri U5.2'nin devamı; zamanlama ve arayüzden "şimdi çalıştır" U5.3.
+- **Kaynağa göre kimlik bilgisi:** Zabbix API belirteci (`EVREN_SOURCE_TOKEN_FILE`); vCenter kullanıcı (`EVREN_SOURCE_USER`) + parola dosyası (`EVREN_SOURCE_PASSWORD_FILE`), API sürümü `--api-release` (varsayılan 8.0.1.0).
+- **Eşleme koşulları:** `require` (hepsi sağlanmalı; ör. nesne türü VM ve şablon değil) ve `include_when` (en az biri; ör. misafir adı bildirilmiş).
 
 **Yeni kaynak türü** (bulut hesapları, Kubernetes, yedekleme, PAM…): mevcut bir rolü dolduruyorsa yalnızca kaynak kaydı ve eşleme; yeni bir görevse yeni rol + o rolün yazabileceği alanlar için uzlaştırma kuralı.
 
@@ -68,7 +70,9 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
 - **Veri:** VM'ler, ESXi hostlar, kümeler, datastore'lar, etiketler. Her VM için iki kayıt:
   - VM örneği (`cmdb_ci_vmware_instance`).
   - Misafir sunucu (`cmdb_ci_server`, `virtual=true`). Yalnızca VMware Tools hostName bildiriyorsa üretilir.
-- **Tanımlayıcılar:** `config.instanceUuid` (VM kalıcı kimliği), `config.uuid` (BIOS UUID), vCenter `instanceUuid` + `moId`. Misafir sunucu seri numarası BIOS UUID'den türetilir: `VMware-42 1a …`.
+- **İstemci (U5.2):** `evren_core/connectors/sources/vcenter.py`, VI/JSON API (vCenter 8.0 U1+). Oturum `SessionManager.Login` ile açılır; parola dosyadan okunur ve yalnızca bu istekte gönderilir. Sonraki isteklerde `vmware-api-session-id` başlığı kullanılır. Host'lar ve VM'ler kapsayıcı görünümden `RetrievePropertiesEx` ile 500'lük sayfalarla çekilir; görünüm ve oturum her durumda kapatılır. Servis hesabına salt okunur rol yeter.
+- **Kayıtlar:** ESXi host (`esx_host.mapping.yaml`, `cmdb_ci_esx_server`; kimlik için fiziksel kart MAC'leri, seri, donanım UUID'si), VM örneği ve misafir sunucu. İlişkiler: VM örneği → host `Registered on`, misafir sunucu → VM örneği `Instantiates`, misafir sunucu → host `Virtualized by`.
+- **Tanımlayıcılar:** `config.instanceUuid` (VM kalıcı kimliği), `config.uuid` (BIOS UUID), vCenter `instanceUuid` + `moId`. Host kaynak anahtarı `<vCenter örnek kimliği>/<moId>` biçimindedir; `moId` vCenter'lar arasında tekrar eder. Misafir sunucu seri numarası BIOS UUID'den türetilir: `VMware-42 1a …`.
 - **Yetkili olduğu alanlar:** VM kaynakları (vCPU, bellek), sanal sunucularda CPU/RAM.
 - **Tuzaklar:**
   - VM görünen adı hostname değildir (`abc-1 (Muhasebe)`).

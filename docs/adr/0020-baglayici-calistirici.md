@@ -1,4 +1,4 @@
-# ADR-0020: Bağlayıcı çalıştırıcı — standart kütüphaneyle HTTP, değiştirilebilir taşıma, kaynak simülatörü, ek bağımlılık yok
+# ADR-0020: Bağlayıcı çalıştırıcı — standart kütüphaneyle HTTP, değiştirilebilir taşıma, kaynak simülatörü, ek bağımlılık yok; vCenter için VI/JSON
 
 - Durum: Kabul edildi
 - Tarih: 26.11.2026
@@ -82,10 +82,32 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
 - Çıkış kodu: 0 tamamlandı, 1 tamamlanmadı, 2 yapılandırma hatası.
 - Zamanlama (`data_sources.yaml` `schedule`) ve arayüzden "şimdi çalıştır" U5.3'tedir.
 
+### 8. vCenter: VI/JSON API (U5.2)
+
+- **Seçim:** Eşleme dosyaları vSphere yönetilen nesne modelinin özellik adlarını kullanır (`config.instanceUuid`, `runtime.host`, `guest.net`). vSphere 8.0 U1 ile gelen VI/JSON API aynı modeli JSON/HTTP ile sunar. Bu yüzden ne SOAP/XML ayrıştırma ne de pyVmomi bağımlılığı gerekir. vSphere Automation REST API (`/api/vcenter/vm`) daha az alan verir (ör. `runtime.host`, `guest.net` yok), VM listesinde üst sınır vardır ve alan adları farklıdır; reddedildi. vCenter 7.x (genel desteği bitti) desteklenmez.
+- **Protokol** (VMware'in VI/JSON 8.0.1.0 OpenAPI tanımıyla doğrulandı):
+  - `GET /sdk/vim25/{sürüm}/ServiceInstance/ServiceInstance/content`.
+  - `POST …/SessionManager/{moId}/Login` (`userName`, `password`). Oturum kimliği `vmware-api-session-id` başlığıyla döner ve sonraki isteklerde aynı başlıkla gönderilir.
+  - `ViewManager.CreateContainerView`, ardından `PropertyCollector.RetrievePropertiesEx` (`maxObjects`) ve `ContinueRetrievePropertiesEx` (`token`). Sonra `DestroyView` ve `Logout`; ikisi her durumda çağrılır.
+  - İlkel değerler `{"_typeName", "_value"}` kutusundadır; nesne başvurusu `{type, value}` biçimindedir. İstemci bunları açar ve noktalı özellik adlarını iç içe belgeye çevirir.
+- **Nitelikli anahtar:** `moId` yalnızca tek vCenter içinde tekildir (`host-10` her vCenter'da vardır). ESXi kaynak anahtarı ve VM'lerin host ilişki hedefi bu yüzden `<vCenter örnek kimliği>/<moId>` biçimindedir (`_key`, `_ref.host`). Aksi hâlde iki vCenter'ın host'ları tek CI'da birleşirdi.
+- **Eksik özellik:** Yetki veya erişim yüzünden okunamayan özellik (`missingSet`) belgeye `_missing` olarak işlenir. Kimliği okunamayan VM eşleme hatası olur ve çalışma tamamlanmamış kapanır. Sorun sessizce yutulmaz.
+- **Eşleme koşulları:** Eşleme motoruna `require` eklendi: koşulların hepsi sağlanmalıdır. `include_when` için ise en az biri yeter. Her vCenter eşlemesi kendi nesne türüne bağlıdır (`_type`). VM örneği şablonları dışarıda bırakır (`config.template` = `false`). Mantıksal değerler `true`/`false` metniyle eşlenir.
+
+### 9. Kayıt dosyalarında sır yok
+
+İlk sürümde istek parmak izi gövdenin SHA-256 özetiydi. Oturum açma gövdesi parolayı içerdiği için kayıt dosyasına parolanın tuzsuz özeti yazılıyordu; bu özet çevrimdışı tahmin edilebilir. Bu, vCenter testinde bulundu ve düzeltildi:
+
+- Parmak izinde kimlik alanları (`password`, `userName` …) özetten önce maskelenir. Oynatma da bu sayede gerçek kimlik bilgisi istemez.
+- Gizli yanıt başlıkları (oturum kimliği, `set-cookie`) yalnızca yer tutucuyla kaydedilir.
+- İstek başlıkları hiç kaydedilmez.
+
+İkisi de testlidir.
+
 ## Sonuçlar
 
 - Yeni kaynak eklemek için üç iş gerekir: `sources/<kaynak>.py` (istemci ve mümkünse simülatör), `SOURCES` kaydı ve eşleme dosyası. Çalıştırıcı, geçit istemcisi ve güvenlik kuralları ortaktır.
-- Delta: Zabbix'te güvenilir "değişti" alanı yoktur; her çalışma tam listedir. Delta destekleyen kaynaklar (vCenter, ServiceNow, Defender) U5.2'de `since` parametresini kullanacak.
+- Delta: Zabbix ve vCenter'da her çalışma tam listedir. vCenter'da değişiklik akışı (`WaitForUpdatesEx`) ileride delta için kullanılabilir. ServiceNow ve Defender U5.2'de `since` parametresini kullanacak.
 - Ham yük arşivi (`raw_ref`, F1-14) için çalıştırıcıda kanca var (`archive`); arşiv deposu henüz yok.
 - Bilinen sınır: yeniden deneme süreç içindedir. Çalıştırıcı süreci ölürse çalışma yarıda kalır ve uzlaştırıcı onu eskiyen çalışma olarak tamamlanmamış kapatır. Kaldığı yerden devam yoktur; sonraki çalışma tam listeyi yeniden gönderir.
 

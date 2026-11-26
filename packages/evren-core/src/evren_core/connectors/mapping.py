@@ -6,6 +6,9 @@ veriyi çeker (API, sayfalama, kimlik doğrulama); anlamlandırma burada yapıl�
 
 Yol sözdizimi: ``a.b.c``, ``a[0].b``, ``a[*].b`` (liste döndürür).
 
+Kapsam: ``require`` koşullarının hepsi ve ``include_when`` koşullarından en az biri sağlanmalıdır (ikisi de isteğe
+bağlı). Koşul ``{from: yol, matches: düzenli ifade}``; mantıksal değer ``true``/``false`` metniyle eşlenir.
+
 ``prefix``: aynı kaynak nesnesinden birden fazla kayıt üretildiğinde (ör. vCenter VM örneği ve
 misafir sunucu) kaynak anahtarlarını ayırmak için kullanılır; ``(data_source, source_key)`` benzersizdir.
 """
@@ -162,14 +165,15 @@ class FieldMapping:
     class_rules: list[ClassRule] = field(default_factory=list)
     relations: list[dict[str, Any]] = field(default_factory=list)
     include_when: list[tuple[str, re.Pattern[str]]] = field(default_factory=list)
+    require: list[tuple[str, re.Pattern[str]]] = field(default_factory=list)
 
     @classmethod
     def from_dict(cls, doc: Mapping[str, Any]) -> FieldMapping:
         for required in ("data_source", "source_key", "class"):
             if required not in doc:
                 raise MappingError(f"Eşleme dosyasında '{required}' zorunlu")
-        unknown = set(doc) - {"data_source", "source_key", "class", "class_rules", "include_when", "attributes",
-                              "lookup", "external_ids", "relations", "description", "verify"}
+        unknown = set(doc) - {"data_source", "source_key", "class", "class_rules", "include_when", "require",
+                              "attributes", "lookup", "external_ids", "relations", "description", "verify"}
         if unknown:
             raise MappingError(f"Eşleme dosyasında bilinmeyen anahtarlar: {sorted(unknown)}")
         lookup_keys = set((doc.get("lookup") or {}).keys())
@@ -189,12 +193,16 @@ class FieldMapping:
             class_rules=rules,
             relations=list(doc.get("relations", [])),
             include_when=[(w["from"], re.compile(w["matches"])) for w in doc.get("include_when", [])],
+            require=[(w["from"], re.compile(w["matches"])) for w in doc.get("require", [])],
         )
 
     @staticmethod
     def _matches(value: Any, pattern: re.Pattern[str]) -> bool:
+        """Metin düzenli ifadeyle eşlenir; mantıksal değer ``true``/``false``, sayı metin olarak (ör. şablon bayrağı)."""
         values = value if isinstance(value, list) else [value]
-        return any(isinstance(v, str) and pattern.search(v) for v in values)
+        texts = [("true" if v else "false") if isinstance(v, bool) else str(v) if isinstance(v, int | float) else v
+                 for v in values]
+        return any(isinstance(v, str) and pattern.search(v) for v in texts)
 
     def class_for(self, raw: Any) -> str:
         for rule in self.class_rules:
@@ -203,7 +211,10 @@ class FieldMapping:
         return self.default_class
 
     def included(self, raw: Any) -> bool:
-        """``include_when`` koşullarından en az biri sağlanıyorsa kayıt kapsamdadır."""
+        """Kayıt kapsamdadır: ``require`` koşullarının hepsi ve ``include_when`` koşullarından en az biri sağlanıyorsa
+        (ör. ``require``: nesne türü VM ve şablon değil; ``include_when``: misafir adı bildirilmiş)."""
+        if not all(self._matches(resolve_path(raw, path), pattern) for path, pattern in self.require):
+            return False
         if not self.include_when:
             return True
         return any(self._matches(resolve_path(raw, path), pattern) for path, pattern in self.include_when)

@@ -98,7 +98,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [x] **F0-10** Alım geçidi, Kafka ve uzlaştırıcı servisi
   - Not: PostgreSQL deposu, aday dizini, devre kesici, sürekli çalışan uzlaştırıcı (ADR-0013); alım geçidi (bağlayıcı belirteci, kaynak yetkisi), Kafka alım tüketicisi (en az bir kez, kalıcı sayaçlar, DLQ), çalışma kapanışı ve outbox yayını (ADR-0017). Canlı kurum ortamında kabul U10'da.
 - [ ] **F0-11** vCenter ve Zabbix bağlayıcıları — _Devam ediyor_
-  - Not: 26.11.2026: Zabbix istemcisi hazır (U5.1, simülatör ve geçitle sınandı; gerçek Zabbix kabulü U10). vCenter istemcisi U5.2'de.
+  - Not: 26.11.2026: Zabbix (U5.1) ve vCenter (U5.2, VI/JSON) istemcileri hazır; simülatör, geçit, uzlaştırıcı ve yığın duman testiyle sınandı. Gerçek kaynaklarda kabul U10'da (salt okunur servis hesapları).
   - Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 - [x] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)
   - Not: Yan yana karşılaştırma, kanıtlar, kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) ve CI panelinden birleştirmeyi ayırma (ADR-0011: kimlik profili yeniden kurulur, ayrılan kaynağın değerleri temizlenir); uzlaştırıcı uygular. Sentetik veriyle test edildi.

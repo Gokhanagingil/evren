@@ -8,8 +8,8 @@
 
 Yapılandırma ortam değişkenleriyle; **sırlar yalnızca dosyadan** okunur, komut satırına ve çıktıya yazılmaz:
 
-* Kaynak: ``EVREN_SOURCE_URL`` (https), ``EVREN_SOURCE_TOKEN_FILE`` (Bearer) veya ``EVREN_SOURCE_USER`` +
-  ``EVREN_SOURCE_PASSWORD_FILE`` (Basic), isteğe bağlı ``EVREN_SOURCE_CA_FILE`` (kurum CA paketi).
+* Kaynak: ``EVREN_SOURCE_URL`` (https), ``EVREN_SOURCE_TOKEN_FILE`` (Bearer: Zabbix) veya ``EVREN_SOURCE_USER`` +
+  ``EVREN_SOURCE_PASSWORD_FILE`` (Basic ya da oturum açma: vCenter), isteğe bağlı ``EVREN_SOURCE_CA_FILE``.
 * Geçit: ``EVREN_GATEWAY_URL``, ``EVREN_CONNECTOR_TOKEN_FILE`` (``evren connector issue`` ile verilen belirteç),
   isteğe bağlı ``EVREN_GATEWAY_CA_FILE``. Düz http yalnızca ``EVREN_GATEWAY_ALLOW_HTTP=1`` ile (geliştirme yığını).
 
@@ -62,26 +62,35 @@ def _env(env: dict[str, str], name: str) -> str:
 
 def source_http(spec: SourceSpec, args: argparse.Namespace, env: dict[str, str]
                 ) -> tuple[HttpClient, dict[str, Any], RecordingTransport | None]:
-    options: dict[str, Any] = {k: v for k, v in (("page_size", args.page_size),) if v and k in spec.options}
+    options: dict[str, Any] = {k: v for k, v in (("page_size", args.page_size), ("release", args.api_release))
+                               if v and k in spec.options}
     recorder = None
-    if args.simulate:
-        if not spec.simulator:
-            raise ConfigError(f"{spec.key} için simülatör yok")
-        transport: Transport = spec.simulator(Path(args.simulate))
-        return HttpClient(SIMULATED_URL, transport=transport, auth_header="Bearer simulasyon"), options, None
-    if args.replay:
+    if args.simulate or args.replay:
+        if spec.auth == "login":
+            options["credentials"] = ("simulasyon", "simulasyon")  # simülatör/kayıt gerçek kimlik istemez
+        auth = None if spec.auth == "login" else "Bearer simulasyon"
+        if args.simulate:
+            if not spec.simulator:
+                raise ConfigError(f"{spec.key} için simülatör yok")
+            return HttpClient(SIMULATED_URL, transport=spec.simulator(Path(args.simulate)), auth_header=auth,
+                              retries=args.retries), options, None
         replay = ReplayTransport.from_dir(args.replay)
         options = {**options, **replay.options}  # kayıttaki ayarlarla aynı istekler yapılmalı
-        return HttpClient(SIMULATED_URL, transport=replay, auth_header="Bearer kayit"), options, None
+        return HttpClient(SIMULATED_URL, transport=replay, auth_header=auth, retries=args.retries), options, None
     url = _env(env, "EVREN_SOURCE_URL")
+    auth = None
     if spec.auth == "bearer":
         auth = HttpClient.bearer(read_secret(env.get("EVREN_SOURCE_TOKEN_FILE"), "Kaynak belirteci"))
-    else:
+    elif spec.auth == "basic":
         auth = HttpClient.basic(_env(env, "EVREN_SOURCE_USER"),
                                 read_secret(env.get("EVREN_SOURCE_PASSWORD_FILE"), "Kaynak parolası"))
-    transport = UrllibTransport(ca_file=env.get("EVREN_SOURCE_CA_FILE") or None)
+    else:  # oturum açan kaynak (vCenter): kimlik istemciye verilir, yalnızca oturum açma isteğinde kullanılır
+        options["credentials"] = (_env(env, "EVREN_SOURCE_USER"),
+                                  read_secret(env.get("EVREN_SOURCE_PASSWORD_FILE"), "Kaynak parolası"))
+    transport: Transport = UrllibTransport(ca_file=env.get("EVREN_SOURCE_CA_FILE") or None)
     if args.record:
-        recorder = RecordingTransport(transport, args.record, options)
+        recorder = RecordingTransport(transport, args.record,
+                                      {k: v for k, v in options.items() if k != "credentials"})
         transport = recorder
     return HttpClient(url, transport=transport, auth_header=auth, retries=args.retries), options, recorder
 
@@ -110,6 +119,7 @@ def main(argv: list[str] | None = None, env: dict[str, str] | None = None) -> in
     ap.add_argument("--dry-run", action="store_true", help="geçide gönderme; yalnızca rapor")
     ap.add_argument("--out", metavar="DOSYA", help="kuru çalıştırmada kayıtları NDJSON olarak yaz")
     ap.add_argument("--page-size", type=int, help="kaynak sayfa boyutu")
+    ap.add_argument("--api-release", help="kaynak API sürümü (vCenter VI/JSON, ör. 8.0.1.0)")
     ap.add_argument("--batch-size", type=int, default=500, help="geçide toplu gönderim boyutu (geçit sınırı ≤)")
     ap.add_argument("--retries", type=int, default=4, help="geçici hatada yeniden deneme sayısı (geri çekilmeli)")
     args = ap.parse_args(argv)

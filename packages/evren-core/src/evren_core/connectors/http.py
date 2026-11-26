@@ -73,10 +73,37 @@ def read_secret(path: str | Path | None, what: str) -> str:
     return value
 
 
+CREDENTIAL_FIELDS = frozenset({"password", "userName", "username", "user", "secret", "client_secret"})
+SENSITIVE_RESPONSE_HEADERS = frozenset({"vmware-api-session-id", "set-cookie", "x-auth-token"})
+RECORDED_HEADERS = SENSITIVE_RESPONSE_HEADERS | {"content-type"}
+
+
+def _masked_body(body: bytes | None) -> bytes:
+    """Gövdedeki kimlik alanlarının değerleri parmak izine girmez (kayıtta parola özeti olmasın)."""
+    if not body:
+        return b""
+    try:
+        doc = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return body
+
+    def mask(v: Any) -> Any:
+        if isinstance(v, dict):
+            return {k: ("***" if k in CREDENTIAL_FIELDS else mask(x)) for k, x in v.items()}
+        if isinstance(v, list):
+            return [mask(x) for x in v]
+        return v
+
+    return json.dumps(mask(doc), ensure_ascii=False, sort_keys=False).encode("utf-8")
+
+
 def request_fingerprint(method: str, url: str, body: bytes | None) -> str:
-    """Kaydedilmiş yanıt eşlemesi için istek parmak izi: yöntem + yol + sorgu + gövde özeti (alan sırası korunur)."""
+    """Kaydedilmiş yanıt eşlemesi için istek parmak izi: yöntem + yol + sorgu + gövde özeti (alan sırası korunur).
+
+    Kimlik alanları (``password``, ``userName`` …) özetten önce maskelenir: kayıt dosyası parolanın özetini taşımaz ve
+    oynatma gerçek kimlik bilgisi istemez."""
     parts = urllib.parse.urlsplit(url)
-    digest = hashlib.sha256(body or b"").hexdigest()[:16]
+    digest = hashlib.sha256(_masked_body(body)).hexdigest()[:16]
     return f"{method.upper()} {parts.path}{'?' + parts.query if parts.query else ''} #{digest}"
 
 
@@ -115,8 +142,8 @@ class ReplayTransport:
 
     responses: dict[str, tuple[int, Any]]
     calls: list[str] = field(default_factory=list)
-
     options: dict[str, Any] = field(default_factory=dict)
+    headers: dict[str, dict[str, str]] = field(default_factory=dict)  # parmak izi → yanıt başlıkları
 
     @classmethod
     def from_dir(cls, directory: str | Path) -> ReplayTransport:
@@ -126,9 +153,12 @@ class ReplayTransport:
         kullanılmalıdır, yoksa istekler kayıtla eşleşmez."""
         d = Path(directory)
         index = json.loads((d / "replay.json").read_text(encoding="utf-8"))
-        responses = {fp: (int(v.get("status", 200)), json.loads((d / v["file"]).read_text(encoding="utf-8")))
-                     for fp, v in index["responses"].items()}
-        return cls(responses, options=dict(index.get("options") or {}))
+        responses: dict[str, tuple[int, Any]] = {}
+        headers: dict[str, dict[str, str]] = {}
+        for fp, v in index["responses"].items():
+            responses[fp] = (int(v.get("status", 200)), json.loads((d / v["file"]).read_text(encoding="utf-8")))
+            headers[fp] = {str(k).lower(): str(x) for k, x in (v.get("headers") or {}).items()}
+        return cls(responses, options=dict(index.get("options") or {}), headers=headers)
 
     def send(self, method: str, url: str, headers: Mapping[str, str], body: bytes | None,
              timeout: float) -> HttpResponse:
@@ -137,14 +167,16 @@ class ReplayTransport:
         if fp not in self.responses:
             raise HttpError(f"Kayıtlı yanıt yok: {fp}")
         status, payload = self.responses[fp]
-        return HttpResponse(status, {"content-type": "application/json"}, json.dumps(payload).encode("utf-8"))
+        data = b"" if payload is None else json.dumps(payload).encode("utf-8")
+        return HttpResponse(status, {"content-type": "application/json", **self.headers.get(fp, {})}, data)
 
 
 class RecordingTransport:
     """Gerçek (veya simüle) taşımayı sarar ve her yanıtı ``ReplayTransport`` biçiminde kaydeder.
 
-    Kurum ortamında bir kez gerçek kaynağa karşı çalıştırılır; kayıt sırları içermez (yalnızca yanıt gövdesi ve istek
-    parmak izi saklanır). Kayıttan önce yanıtlar kişisel veri açısından gözden geçirilmelidir.
+    Kurum ortamında bir kez gerçek kaynağa karşı çalıştırılır. Kayıt sır içermez: istek parmak izinde kimlik alanları
+    maskelenir, oturum kimliği gibi gizli yanıt başlıkları yer tutucuyla saklanır, istek başlıkları hiç saklanmaz.
+    Yanıt gövdeleri kurum verisidir; repoya konmadan önce kişisel veri açısından gözden geçirilmelidir.
     """
 
     def __init__(self, inner: Transport, directory: str | Path, options: Mapping[str, Any] | None = None) -> None:
@@ -156,9 +188,18 @@ class RecordingTransport:
         resp = self.inner.send(method, url, headers, body, timeout)
         fp = request_fingerprint(method, url, body)
         name = f"{len(self.index['responses']) + 1:03d}.json"
+        try:
+            payload = resp.json()
+        except HttpError:
+            payload = None  # JSON olmayan hata gövdesi kaydedilmez
         self.dir.mkdir(parents=True, exist_ok=True)
-        (self.dir / name).write_text(json.dumps(resp.json(), ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        self.index["responses"][fp] = {"status": resp.status, "file": name}
+        (self.dir / name).write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        entry: dict[str, Any] = {"status": resp.status, "file": name}
+        kept = {k: ("kayit-yer-tutucu" if k in SENSITIVE_RESPONSE_HEADERS else v)  # oturum kimliği diske yazılmaz
+                for k, v in resp.headers.items() if k in RECORDED_HEADERS and k != "content-type"}
+        if kept:
+            entry["headers"] = kept
+        self.index["responses"][fp] = entry
         return resp
 
     def save(self) -> None:

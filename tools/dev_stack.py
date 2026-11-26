@@ -273,20 +273,16 @@ def smoke_event_backbone() -> tuple[str, str]:
     return name, found["sys_id"]
 
 
-def smoke_connector_run(token: str) -> None:
-    """Bağlayıcı çalıştırıcı (U5, ADR-0020): Zabbix simülatörü → eşleme → geçit → Kafka → uzlaştırıcı → çalışma kapanışı.
-
-    Belirteç konteynere standart girdiden verilir (``EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin``); komut satırına ve
-    ekrana yazılmaz. Kaynak sentetik örnek veridir; gerçek Zabbix kabulü yerine geçmez."""
-    step("Bağlayıcı çalıştırıcı: Zabbix simülatörü → geçit → uzlaştırıcı")
+def _connector_run(connector: str, token: str, expected: int) -> dict[str, Any]:
+    """Konteynerde ``evren connector-run --simulate``; belirteç standart girdiden, komut satırına ve ekrana yazılmaz."""
     res = compose("run", "--rm", "--no-deps", "-T", "-e", "EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin", "connector",
-                  "connector-run", "--connector", "zabbix", "--name", "duman-zabbix", "--simulate",
-                  "connectors/zabbix/samples", "--page-size", "2", "--batch-size", "2",
+                  "connector-run", "--connector", connector, "--name", f"duman-{connector}", "--simulate",
+                  f"connectors/{connector}/samples", "--page-size", "2", "--batch-size", "4",
                   check=False, capture=True, stdin=token + "\n")
     lines = res.stdout.strip().splitlines()
     report = json.loads(lines[-1]) if lines and lines[-1].startswith("{") else {}
-    check(res.returncode == 0 and report.get("completed") is True and report.get("sent") == 5,
-          f"bağlayıcı çalıştı: çekilen {report.get('fetched')}, gönderilen {report.get('sent')} "
+    check(res.returncode == 0 and report.get("completed") is True and report.get("sent") == expected,
+          f"{connector} bağlayıcısı çalıştı: çekilen {report.get('fetched')}, gönderilen {report.get('sent')} "
           f"(sınıflar: {', '.join(report.get('by_class') or {})})")
     rid = report["run_id"]
 
@@ -294,14 +290,48 @@ def smoke_connector_run(token: str) -> None:
         _s, b = http("GET", f"{GATEWAY}/ingest/v1/runs/{rid}", auth=token)
         return b and b.get("state") == "finished" and b
 
-    final = wait_for("bağlayıcı çalışmasının kapanışı", finished, timeout=120)
-    check(final["completed"] is True and final["processed"] == 5,
+    final = wait_for(f"{connector} çalışmasının kapanışı", finished, timeout=120)
+    check(final["completed"] is True and final["processed"] == expected,
           f"çalışma tamamlandı: işlenen {final['processed']}, devre kesici {final['breaker_state']}")
-    found = wait_for("simülatör host'u API'de", lambda: (r := http("GET", f"{API}/api/v1/ci?q=ank-db-04"))[0] == 200
-                     and r[1]["items"] and r[1]["items"][0])
-    _s, detail = http("GET", f"{API}/api/v1/ci/{found['sys_id']}")
-    check(any(lk["data_source"] == "Zabbix" and lk["source_key"] == "10504" for lk in detail.get("links") or []),
-          f"Zabbix host'u CMDB'de, kaynak bağı 10504 ({found['sys_id']})")
+    return report
+
+
+def _find_ci(name: str) -> dict[str, Any]:
+    found = wait_for(f"'{name}' API'de", lambda: (r := http("GET", f"{API}/api/v1/ci?q={name}"))[0] == 200
+                     and next((i for i in r[1]["items"] if i["name"].lower() == name), None))
+    return http("GET", f"{API}/api/v1/ci/{found['sys_id']}")[1]
+
+
+def smoke_connector_run(token: str) -> None:
+    """Bağlayıcı çalıştırıcı (U5, ADR-0020): kaynak simülatörü → eşleme → geçit → Kafka → uzlaştırıcı → kapanış.
+
+    Zabbix (JSON-RPC) olay omurgası adımının geçici kimliğiyle; vCenter (VI/JSON) kendi geçici kimliğiyle çalışır ve
+    ESXi ↔ VM ilişkilerinin CMDB'ye yazıldığı denetlenir. Kaynak verisi sentetiktir; gerçek kaynak kabulü yerine geçmez."""
+    step("Bağlayıcı çalıştırıcı: Zabbix simülatörü → geçit → uzlaştırıcı")
+    _connector_run("zabbix", token, 5)
+    detail = _find_ci("ank-db-14")
+    check(any(lk["data_source"] == "Zabbix" and lk["source_key"] == "20504" for lk in detail.get("links") or []),
+          f"Zabbix host'u CMDB'de, kaynak bağı 20504 ({detail['sys_id']})")
+
+    step("Bağlayıcı çalıştırıcı: vCenter simülatörü (VI/JSON) → ESXi, VM, misafir sunucu ve ilişkiler")
+    name = f"duman-vc-{uuid.uuid4().hex[:8]}"
+    issued = compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "issue", "--name", name,
+                     "--data-source", "vCenter", "--by", "duman-testi", "--expires-days", "1", capture=True)
+    vc_token = issued.stdout.strip().splitlines()[-1]
+    try:
+        _connector_run("vcenter", vc_token, 10)
+        esx = _find_ci("esx01")
+        check(esx["class"] == "cmdb_ci_esx_server", "ESXi host'u CMDB'de (cmdb_ci_esx_server)")
+        rels = {(r["type"], r["direction"], r["target_name"]) for r in esx.get("relations") or []}
+        check(("Registered on::Has registered", "child", "ist-app-02 (Uygulama)") in rels
+              and ("Virtualized by::Virtualizes", "child", "ist-app-02") in rels,
+              "ilişkiler yazıldı: VM örneği ve misafir sunucu → ESXi (nitelikli anahtar)")
+        guest = _find_ci("ist-app-02")
+        check({lk["data_source"] for lk in guest.get("links") or []} >= {"Zabbix", "vCenter"},
+              "akıl katmanı: Zabbix ve vCenter aynı sunucuyu tek CI'da birleştirdi (seri numarası)")
+    finally:
+        compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "revoke", "--name", name, "--by",
+                "duman-testi", capture=True)
 
 
 def smoke_search(name: str, sys_id: str) -> None:

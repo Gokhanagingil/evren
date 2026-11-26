@@ -203,7 +203,7 @@ def test_record_then_replay_gives_identical_records(tmp_path):
 def test_zabbix_pages_by_host_id_chunks_and_selects_only_needed_fields():
     sim = ZabbixSimulator.from_dir(SAMPLES)
     hosts = list(zabbix(sim, page_size=2).fetch())
-    assert [h["hostid"] for h in hosts] == ["10501", "10502", "10503", "10504", "10505"]
+    assert [h["hostid"] for h in hosts] == ["20501", "20502", "20503", "20504", "20505"]
     assert sim.calls == 1 + 3  # kimlik listesi + 3 ayrıntı sayfası
     assert set(hosts[0]) == {"hostid", "host", "name", "status", "interfaces", "inventory", "hostgroups"}
     assert set(hosts[0]["inventory"]) <= {"os", "os_full", "serialno_a", "macaddress_a", "asset_tag"}
@@ -243,7 +243,7 @@ def test_successful_run_opens_streams_in_batches_and_closes_completed():
     assert report.by_class == {"cmdb_ci_win_server": 1, "cmdb_ci_linux_server": 2, "cmdb_ci_netgear": 1,
                                "cmdb_ci_server": 1}
     first = fake.batches[0][0]
-    assert first["source"] == "urn:evren:connector:zabbix-test" and first["data"]["source_key"] == "10501"
+    assert first["source"] == "urn:evren:connector:zabbix-test" and first["data"]["source_key"] == "20501"
     assert all(h["Authorization"] == f"Bearer {TOKEN}" for h in fake.headers)
     assert report.gateway_state == "closing"
 
@@ -305,7 +305,7 @@ def test_gateway_client_raises_rejected_for_permanent_errors(status):
 def test_mappings_must_belong_to_the_client_source():
     with pytest.raises(MappingError, match="başka bir veri kaynağına"):
         ConnectorRunner(zabbix(), load_mappings(REPO / "connectors" / "vcenter", "vCenter"), DryRunGateway())
-    assert len(load_mappings(REPO / "connectors" / "vcenter", "vCenter")) == 2
+    assert len(load_mappings(REPO / "connectors" / "vcenter", "vCenter")) == 3  # ESXi, VM örneği, misafir sunucu
     with pytest.raises(MappingError, match="eşleme dosyası yok"):
         load_mappings(REPO / "connectors" / "zabbix", "vCenter")
 

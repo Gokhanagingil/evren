@@ -98,6 +98,7 @@
    },
    "connector": "vcenter",
    "mappings": [
+    "connectors/vcenter/esx_host.mapping.yaml",
     "connectors/vcenter/vm_instance.mapping.yaml",
     "connectors/vcenter/guest_server.mapping.yaml"
    ],

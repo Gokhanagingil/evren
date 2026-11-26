@@ -64,7 +64,7 @@ data_sources:
     lifecycle: active
     product: {vendor: Broadcom (VMware), name: vCenter Server, interface: "vSphere Automation REST + VIM (property collector)"}
     connector: vcenter
-    mappings: [connectors/vcenter/vm_instance.mapping.yaml, connectors/vcenter/guest_server.mapping.yaml]
+    mappings: [connectors/vcenter/esx_host.mapping.yaml, connectors/vcenter/vm_instance.mapping.yaml, connectors/vcenter/guest_server.mapping.yaml]
     schedule: "0 */4 * * *"
     authoritative_for_tr: VM örnekleri, ESXi hostlar, kümeler, datastore'lar; VM donanım kaynakları
   - name: BMC

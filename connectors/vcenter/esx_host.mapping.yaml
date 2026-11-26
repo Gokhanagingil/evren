@@ -1,0 +1,29 @@
+# vCenter HostSystem → cmdb_ci_esx_server (U5.2)
+# Alan adları vSphere VI/JSON 8.0.1.0 tanımıyla karşılaştırıldı (HostListSummary, HostHardwareSummary,
+# HostSystemInfo, HostVirtualNic, PhysicalNic); gerçek çıktıyla kabul U10'da.
+# Kaynak anahtarı nitelikli moId'dir (`_key` = "<vCenter örnek kimliği>/host-221"): moId yalnızca tek vCenter içinde
+# tekildir. VM eşlemeleri ilişki hedefi olarak aynı anahtarı kullanır (`_ref.host`).
+description: ESXi host'ları (vCenter HostSystem)
+verify: true
+data_source: vCenter
+source_key: _key
+class: cmdb_ci_esx_server
+require:
+  - {from: _type, matches: "^HostSystem$"}
+attributes:
+  name: {from: name, transform: [strip, short_hostname]}
+  serial_number: {from: hardware.systemInfo.serialNumber, transform: strip}
+  bios_uuid: {from: summary.hardware.uuid, transform: lower}
+  manufacturer: {from: summary.hardware.vendor, transform: strip}
+  os: {from: summary.config.product.fullName}
+  cpu_count: {from: summary.hardware.numCpuPkgs, transform: int}
+  ram: {from: summary.hardware.memorySize, transform: bytes_to_mb}
+  ip_address: {from: "config.network.vnic[0].spec.ip.ipAddress"}
+  object_id: {from: _moId}
+  virtual: {const: false}
+lookup:
+  ip_addresses: {from: "config.network.vnic[*].spec.ip.ipAddress"}
+  mac_addresses: {from: "config.network.pnic[*].mac"}   # fiziksel kartlar; vmk MAC'leri VMware üretir, kimlik değildir
+  serial_numbers: {from: hardware.systemInfo.serialNumber}
+external_ids:
+  vcenter_moid: {from: _key}

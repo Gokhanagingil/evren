@@ -53,7 +53,7 @@ def test_connector_run_reaches_kafka_and_closes_the_run(gateway):
     report = connector(client, headers).run()
     assert report.completed and report.sent == 5 and report.gateway_state == "closing", report.as_json()
     records = [json.loads(v) for t, _k, v, _h in pub.sent if t == TOPIC_RECORD]
-    assert sorted(r["data"]["source_key"] for r in records) == ["10501", "10502", "10503", "10504", "10505"]
+    assert sorted(r["data"]["source_key"] for r in records) == ["20501", "20502", "20503", "20504", "20505"]
     assert {r["source"] for r in records} == {"urn:evren:connector:zabbix-e2e"}
     assert [json.loads(v)["type"] for t, _k, v, _h in pub.sent if t == TOPIC_RUN] == [
         "evren.ingest.run.started.v1", "evren.ingest.run.completed.v1"]

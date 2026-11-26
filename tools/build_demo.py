@@ -204,6 +204,7 @@ def vcenter_vm(h: Host, instance_uuid: str, bios: str) -> dict:
     os_full = OS[h.family][0]
     return {
         "_moId": f"vm-{1000 + int(instance_uuid[:4], 16) % 9000}",
+        "_type": "VirtualMachine",
         "_vcenter": {"instanceUuid": "8D5F1A2B-0000-4C3D-9E8F-ABCDEF012345"},
         "_derived": {"vmwareSerial": vmware_serial(bios)},
         "name": f"{h.name} ({h.role_tr})",
@@ -212,6 +213,7 @@ def vcenter_vm(h: Host, instance_uuid: str, bios: str) -> dict:
                    "files": {"vmPathName": f"[DS-{h.site.upper()}-01] {h.name}/{h.name}.vmx"},
                    "hardware": {"numCPU": h.cpu, "memoryMB": h.ram}},
         "runtime": {"powerState": "poweredOn", "host": f"host-{200 + len(h.name)}"},
+        "_ref": {"host": f"8d5f1a2b-0000-4c3d-9e8f-abcdef012345/host-{200 + len(h.name)}"},  # bağlayıcının eklediği
         "guest": ({"hostName": h.fqdn, "ipAddress": h.ip, "net": [{"macAddress": h.mac, "ipAddress": [h.ip]}]}
                   if h.vm_tools else {}),
     }
