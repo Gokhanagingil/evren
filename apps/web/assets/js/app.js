@@ -129,7 +129,9 @@ async function navigate() {
     clear(view).append(errorBox(`Sayfa yüklenemedi: ${err.message}`));
     console.error(err);
   }
-  document.getElementById('main').focus({ preventScroll: true });
+  // Sayfa bir paneli veya pencereyi açtıysa (ör. #/ci/<sys_id> doğrudan bağlantısı) odak orada kalır; geç biten
+  // bir istekten sonra odağı ana alana çekmek, kullanıcının o arada odakladığı düğmeyi elinden alırdı.
+  if (!isDetailOpen() && !isOverlayOpen()) document.getElementById('main').focus({ preventScroll: true });
 }
 
 async function searchItems(query = '') {

@@ -476,14 +476,17 @@ export async function renderCis(view, param) {
     });
     table?.refreshSelection();
     if (mode === 'api') {
+      // Etki ve değişim geçmişi arka planda yüklenir: panel hemen kullanılabilir, açılış bunları beklemez
       ciImpact(id).then((doc) => { if (impactBox.isConnected) clear(impactBox).append(...impactView(doc)); })
         .catch(() => clear(impactBox).append(h('p', { class: 'muted small' }, 'Etki analizi yüklenemedi.')));
-      const items = await ciHistory(id);
-      clear(historyBox).append(items.length
-        ? h('ul', { class: 'mini' }, items.slice(0, 20).map((x) => h('li', {},
-            h('strong', {}, x.attribute), `: ${x.old ?? '—'} → ${x.new ?? '—'}`,
-            h('span', { class: 'cell-sub' }, `${formatDateTime(x.changed_at)} · ${x.source || '—'} · ${x.reason}`))))
-        : h('p', { class: 'muted small' }, 'Kayıt yok.'));
+      ciHistory(id).then((items) => {
+        if (!historyBox.isConnected) return;
+        clear(historyBox).append(items.length
+          ? h('ul', { class: 'mini' }, items.slice(0, 20).map((x) => h('li', {},
+              h('strong', {}, x.attribute), `: ${x.old ?? '—'} → ${x.new ?? '—'}`,
+              h('span', { class: 'cell-sub' }, `${formatDateTime(x.changed_at)} · ${x.source || '—'} · ${x.reason}`))))
+          : h('p', { class: 'muted small' }, 'Kayıt yok.'));
+      }).catch(() => clear(historyBox).append(h('p', { class: 'muted small' }, 'Değişim geçmişi yüklenemedi.')));
     }
   }
 
