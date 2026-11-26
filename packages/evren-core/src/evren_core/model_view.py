@@ -119,4 +119,9 @@ def model_view(md: Metadata) -> dict[str, Any]:
         "reference_tables": [{"name": t["name"], "label_tr": t.get("label_tr", t["name"])}
                              for t in md.reference_tables],
         "backlog": backlog,
+        "verification": {
+            "checked_on": (md.verification or {}).get("checked_on"),
+            "sources": (md.verification or {}).get("sources") or {},
+            "items": (md.verification or {}).get("items") or [],
+        },
     }

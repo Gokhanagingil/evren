@@ -35,6 +35,7 @@ __all__ = [
     "metadata_field_resolver",
     "sys_id_for",
     "validate",
+    "validate_verification",
     "verification_backlog",
 ]
 
@@ -89,6 +90,8 @@ class Metadata:
     health: dict[str, Any] = field(default_factory=dict)
     #: İzinli ilişki kuralları (ADR-0019): ``{"enforcement": ..., "rules": [...]}``
     relationship_rules: dict[str, Any] = field(default_factory=dict)
+    #: ServiceNow uyum doğrulaması kanıt defteri (F0-07): ``{"checked_on", "sources", "items"}``
+    verification: dict[str, Any] = field(default_factory=dict)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -159,6 +162,7 @@ def _load_base(d: Path) -> Metadata:
         reconciliation=_read(d / "reconciliation_rules.yaml"),
         health=_read(d / "health_rules.yaml") if (d / "health_rules.yaml").exists() else {},
         relationship_rules=_read(d / "relationship_rules.yaml") if (d / "relationship_rules.yaml").exists() else {},
+        verification=_read(d / "verification.yaml") if (d / "verification.yaml").exists() else {},
     )
 
 
@@ -408,7 +412,71 @@ def validate(md: Metadata) -> ValidationReport:
             r.errors.append(f"Eskime kuralı sınıfı tanımsız: {s['applies_to']}")
         if s["absent_candidate_after_days"] <= s["stale_after_days"]:
             r.errors.append(f"{s['applies_to']}: absent_candidate_after_days > stale_after_days olmalı")
+    if not r.errors:
+        r.errors.extend(validate_verification(md))
     return r
+
+
+VERIFICATION_KINDS = ("classes", "fields", "choices", "relationship_types", "relationship_rules", "identification")
+VERDICTS = {"confirmed": "Belgeyle doğrulandı", "corrected": "Belgeye göre düzeltildi",
+            "partial": "Kısmen doğrulandı", "not_found": "Belgede bulunamadı", "evren": "Evren tanımı (ServiceNow'da yok)"}
+#: Bu sonuçlarda öğe artık ServiceNow'dan doğrulanacak sayılmaz (verify işareti kalkar).
+SETTLED_VERDICTS = frozenset({"confirmed", "corrected", "evren"})
+
+
+def _verification_keys(md: Metadata) -> dict[str, set[str]]:
+    """Doğrulanabilir her öğenin anahtarı, türüne göre (verify işaretli olsun olmasın)."""
+    return {
+        "classes": {c["name"] for c in md.classes},
+        "fields": {f"{c['name']}.{f['name']}" for c in md.classes for f in c.get("fields") or []},
+        "choices": {f"{ch['table']}.{ch['element']}" for ch in md.choices},
+        "relationship_types": {t["name"] for t in md.relationship_types},
+        "relationship_rules": {f"{r['parent']} --{r['type']}--> {r['child']}"
+                               for r in (md.relationship_rules or {}).get("rules") or []},
+        "identification": {i["applies_to"] for i in md.identification},
+    }
+
+
+def validate_verification(md: Metadata) -> list[str]:
+    """Kanıt defteri ile verify işaretleri tutarlı mı? Belgeyle sonuçlanan öğede işaret kalmaz; kısmi veya
+    bulunamayan öğede işaret durur; her kayıt var olan bir öğeye ve tanımlı bir kaynağa bağlıdır."""
+    doc = md.verification or {}
+    if not doc:
+        return []
+    errors: list[str] = []
+    sources = doc.get("sources") or {}
+    for sid, src in sources.items():
+        if not str(src.get("url", "")).startswith("https://"):
+            errors.append(f"doğrulama kaynağı {sid}: https adresi zorunlu")
+    keys = _verification_keys(md)
+    flagged = {k: set(v) for k, v in verification_backlog(md).items()}
+    seen: set[tuple[str, str]] = set()
+    for item in doc.get("items") or []:
+        kind, key, verdict = item.get("kind"), str(item.get("key")), item.get("verdict")
+        where = f"doğrulama[{kind}:{key}]"
+        if kind not in VERIFICATION_KINDS:
+            errors.append(f"{where}: geçersiz tür")
+            continue
+        if (kind, key) in seen:
+            errors.append(f"{where}: tekrarlanan kayıt")
+        seen.add((kind, key))
+        if key not in keys[kind]:
+            errors.append(f"{where}: metadata'da böyle bir öğe yok")
+            continue
+        if verdict not in VERDICTS:
+            errors.append(f"{where}: geçersiz sonuç {verdict}")
+            continue
+        refs = item.get("sources") or []
+        if verdict != "evren" and verdict != "not_found" and not refs:
+            errors.append(f"{where}: kaynak zorunlu")
+        for ref in refs:
+            if ref not in sources:
+                errors.append(f"{where}: tanımsız kaynak {ref}")
+        if verdict in SETTLED_VERDICTS and key in flagged[kind]:
+            errors.append(f"{where}: belgeyle sonuçlandı ama hâlâ verify: true")
+        if verdict not in SETTLED_VERDICTS and key not in flagged[kind]:
+            errors.append(f"{where}: {VERDICTS[verdict].lower()}; verify: true kalmalı")
+    return errors
 
 
 def verification_backlog(md: Metadata) -> dict[str, list[str]]:

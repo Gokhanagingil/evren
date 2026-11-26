@@ -253,11 +253,37 @@ export async function renderModel(view, param) {
     ];
   }
 
+  const VERDICT_TR = { confirmed: ['Belgeyle doğrulandı', 'good'], corrected: ['Belgeye göre düzeltildi', 'info'],
+    partial: ['Kısmen doğrulandı', 'warn'], not_found: ['Belgede bulunamadı', 'bad'], evren: ['Evren tanımı', 'neutral'] };
+  const KIND_TR = Object.fromEntries(BACKLOG_TR);
+
+  function evidenceTable(items) {
+    const src = m.verification.sources || {};
+    return h('div', { class: 'tablewrap' }, h('table', { 'aria-label': 'Doğrulama kanıtları' },
+      h('thead', {}, h('tr', {}, h('th', {}, 'Öğe'), h('th', {}, 'Sonuç'), h('th', {}, 'Belgedeki değer ve not'), h('th', {}, 'Kaynak'))),
+      h('tbody', {}, items.map((it) => h('tr', {},
+        h('td', {}, it.kind === 'classes' || it.kind === 'identification' ? classLink(it.key) : h('span', { class: 'mono' }, it.key),
+          h('span', { class: 'cell-sub' }, KIND_TR[it.kind] || it.kind)),
+        h('td', {}, pill(...(VERDICT_TR[it.verdict] || [it.verdict, 'neutral']))),
+        h('td', {}, it.documented ? h('span', { class: 'mono' }, it.documented) : null, it.note ? h('span', { class: 'cell-sub' }, it.note) : null),
+        h('td', {}, (it.sources || []).map((ref) => (src[ref]
+          ? h('a', { href: src[ref].url, target: '_blank', rel: 'noopener noreferrer', class: 'src-link' }, src[ref].title)
+          : h('span', { class: 'mono' }, ref)))))))));
+  }
+
   function verifyTab() {
+    const ledger = m.verification?.items || [];
+    const settled = ledger.filter((it) => ['confirmed', 'corrected', 'evren'].includes(it.verdict));
+    const open = ledger.filter((it) => !['confirmed', 'corrected', 'evren'].includes(it.verdict));
     return [
-      h('div', { class: 'notice warn' }, h('strong', {}, `${m.stats.to_verify} öğe ServiceNow örneğinden doğrulanacak. `),
-        'Sınıf ve alan adları ServiceNow temel adlarıyla yazıldı; sürüme ve eklentiye göre değişebilenler işaretli. Doğrulama kurum örneğinden salt okunur dışa aktarımla yapılır (F0-07, tools/sn_metadata_export.py); salt okunur ServiceNow hesabı gerekir.'),
-      ...BACKLOG_TR.filter(([k]) => m.backlog[k]?.length).map(([k, title]) => section(`${title} (${m.backlog[k].length})`,
+      m.stats.to_verify
+        ? h('div', { class: 'notice warn' }, h('strong', {}, `${m.stats.to_verify} öğe hâlâ doğrulanacak. `),
+          'Temel ServiceNow adları herkese açık belgelerden doğrulandı; belgede bulunamayanlar ve kurum örneğine özgü özelleştirmeler canlı kabulde (U10) salt okunur dışa aktarımla (tools/sn_metadata_export.py) denetlenir.')
+        : h('div', { class: 'notice success' }, h('strong', {}, 'Doğrulanacak öğe kalmadı. '), 'Kurum örneğine özgü özelleştirmeler canlı kabulde denetlenir.'),
+      ledger.length ? section(`Belgeyle sonuçlananlar (${settled.length})${m.verification.checked_on ? ` · ${m.verification.checked_on}` : ''}`,
+        evidenceTable(settled)) : null,
+      open.length ? section(`Belgede tam karşılığı bulunamayanlar (${open.length})`, evidenceTable(open)) : null,
+      ...BACKLOG_TR.filter(([k]) => m.backlog[k]?.length).map(([k, title]) => section(`İşaretli: ${title} (${m.backlog[k].length})`,
         h('ul', { class: 'chips wrap' }, m.backlog[k].map((item) => h('li', {}, k === 'classes' || k === 'identification'
           ? classLink(item) : h('span', { class: 'chip plain mono' }, item)))))),
     ];

@@ -133,7 +133,7 @@ def apply_changes(md: Any, changes: Iterable[Change]) -> Any:
                         relationship_types=base.relationship_types, choices=kw.get("choices", base.choices),
                         data_sources=kw.get("data_sources", base.data_sources), identification=base.identification,
                         reconciliation=base.reconciliation, source_roles=base.source_roles, health=base.health,
-                        relationship_rules=base.relationship_rules)
+                        relationship_rules=base.relationship_rules, verification=base.verification)
 
     cur = rebuild(md, classes=copy.deepcopy(md.classes), choices=copy.deepcopy(md.choices),
                   data_sources=copy.deepcopy(md.data_sources))
