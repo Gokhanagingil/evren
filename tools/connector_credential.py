@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Alım geçidi bağlayıcı kimlikleri (U2, ADR-0017): ver, listele, iptal et. Arayüzden yönetim U4'te gelir.
+"""Alım geçidi bağlayıcı kimlikleri (U2, ADR-0017): ver, listele, iptal et. Arayüzden yönetim U5'te gelir.
 
     python tools/connector_credential.py issue --name zabbix-dc1 --data-source Zabbix --by ahmet.yilmaz
     python tools/connector_credential.py list

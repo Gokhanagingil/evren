@@ -73,3 +73,47 @@ def test_frontend_never_writes_html_from_strings(repo_root):
             assert forbidden not in text, f"{f.name}: {forbidden} kullanılmamalı"
     html = (repo_root / "apps/web/index.html").read_text(encoding="utf-8")
     assert "<script>" not in html and "style=" not in html and "<style" not in html
+
+
+def test_component_status_is_complete_and_every_gap_is_planned(repo_root):
+    """Büyük resim yüzdeleri (components.json): her eksik bir plan maddesine bağlı olmalı.
+
+    Amaç: büyük resimde olup planda karşılığı olmayan boşluk kalmasın (26.11.2026'da veri modeli, ham yük arşivi,
+    yedekleme, SIEM ve gözlemlenebilirlik böyle bulundu ve plana eklendi).
+    """
+    rm = json.loads((repo_root / "apps/web/content/roadmap.json").read_text(encoding="utf-8"))
+    comps = json.loads((repo_root / "apps/web/content/components.json").read_text(encoding="utf-8"))
+    plan_ids = {it["id"] for p in rm["phases"] for it in p["items"]} | {it["id"] for it in rm["track"]["items"]}
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", comps["updated_at"])
+    seen: dict[str, dict] = {}
+    for g in comps["groups"]:
+        assert g["id"] and g["title"] and g["items"], g
+        for it in g["items"]:
+            assert it["id"] not in seen, f"yinelenen bileşen {it['id']}"
+            seen[it["id"]] = it
+            assert isinstance(it["pct"], int) and 0 <= it["pct"] <= 100, it["id"]
+            assert it["label"] and isinstance(it["done"], str) and isinstance(it["missing"], str)
+            unknown = [ref for ref in it["plan"] if ref not in plan_ids]
+            assert not unknown, f"{it['id']}: planda olmayan madde {unknown}"
+            if it["pct"] < 100 and not it.get("optional"):
+                assert it["plan"], f"{it['id']}: %{it['pct']} ama hiçbir plan maddesine bağlı değil"
+                assert it["missing"], f"{it['id']}: eksik yazılmalı"
+            if it["pct"] == 100:
+                assert not it["missing"], f"{it['id']}: %100 ise eksik olmamalı"
+    for it in seen.values():
+        if it.get("same_as"):
+            assert seen[it["same_as"]]["pct"] == it["pct"], f"{it['id']}: {it['same_as']} ile aynı yüzde olmalı"
+    group_ids = {g["id"] for g in comps["groups"]}
+    covered = [gid for p in comps["pillars"] for gid in p["groups"]]
+    assert sorted(covered) == sorted(group_ids), "her grup tam olarak bir ana sütunda"
+
+
+def test_big_picture_is_up_to_date_and_csp_safe(repo_root):
+    sys.path.insert(0, str(repo_root / "tools"))
+    import build_big_picture
+
+    svg = build_big_picture.build()
+    assert (repo_root / "apps/web/content/big-picture.svg").read_text(encoding="utf-8") == svg, \
+        "python tools/build_big_picture.py"
+    assert "<script" not in svg and "<style" not in svg and " style=" not in svg
+    assert "SERVİCENOW" not in svg and "SISTEMI" not in svg  # Türkçe büyük harf; ürün adı Latin

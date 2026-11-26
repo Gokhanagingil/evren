@@ -33,7 +33,7 @@ Anahtar, aynı nesnenin kayıtlarını aynı bölüme düşürür; böylece sır
 
 - **Kimlik:** Her bağlayıcı kimliği (`ingest.connector_credential`) tek bir veri kaynağına bağlıdır. Süresi ve dakikalık kayıt sınırı vardır, iptal edilebilir.
   - Belirteç `evr_` + 32 rastgele bayttır. Veritabanında yalnızca SHA-256 özeti ve son 4 karakteri tutulur.
-  - Belirteç verilirken bir kez gösterilir (`tools/connector_credential.py`; arayüzden yönetim U4'te).
+  - Belirteç verilirken bir kez gösterilir (`tools/connector_credential.py`; arayüzden yönetim U5'te).
 - **Doğrulama zinciri:**
   1. Belirteç denetlenir.
   2. Kaynak yetkisi denetlenir: kimlik başka kaynağa yazamaz, emekli kaynak yazamaz. Ret denetim izine yazılır.
@@ -106,5 +106,5 @@ Anahtar, aynı nesnenin kayıtlarını aynı bölüme düşürür; böylece sır
   - Aynı `source_key` bir çalışmada iki kez gönderilirse işlenen sayı bildirilenden az kalır ve çalışma süre sonunda eksik kapanır. Bu güvenli taraftır, ama bağlayıcı sözleşmesinde açıkça yazılıdır.
   - Çalışma olayları yalnızca bilgilendirme amaçlıdır.
   - Geliştirme yığınında Kafka ACL'leri ve SASL yoktur.
-  - Bağlayıcı kimlikleri için arayüz U4'tedir.
-  - Gerçek kaynak bağlayıcıları (vCenter, Zabbix …) U4'te bu geçide gönderecek.
+  - Bağlayıcı kimlikleri için arayüz U5'tedir.
+  - Gerçek kaynak bağlayıcıları (vCenter, Zabbix …) U5'te bu geçide gönderecek (26.11.2026'da izlek yeniden sıralandı: U4 CMDB veri modeli).

@@ -1,0 +1,87 @@
+{
+  "title": "Büyük resim bileşen durumu",
+  "updated_at": "2026-11-26",
+  "scale": "% = bileşenin hedef kapsamının çalışır ve testli kısmı (sentetik veriyle). Kaynak bağlantılarında puan: eşleme 25 + istemci 35 + kayıtlı örnekle test 15 + canlı kabul 25.",
+  "rule": "100'den küçük her bileşen en az bir plan maddesine (roadmap.json) bağlıdır; bağlı olmayan eksik testleri kırmızı yapar. İsteğe bağlı bileşenler 'optional' ile işaretlenir.",
+  "pillars": [
+    {"id": "cmdb", "title": "CMDB", "groups": ["record"]},
+    {"id": "mind", "title": "Akıl katmanı", "groups": ["sense"]},
+    {"id": "flow", "title": "Veri akış ortamı", "groups": ["sources", "ingest"]},
+    {"id": "use", "title": "Tüketim", "groups": ["consume"]},
+    {"id": "sn", "title": "ServiceNow geçişi", "groups": ["servicenow"]},
+    {"id": "sec", "title": "Güvenlik", "groups": ["security"]}
+  ],
+  "groups": [
+    {"id": "sources", "title": "Kaynaklar", "items": [
+      {"id": "src_discovery", "label": "Keşif · BMC Helix Discovery", "pct": 25, "done": "Eşleme dosyası (connectors/bmc_discovery), Keşif rolü ve önceliği.", "missing": "REST istemcisi, kayıtlı örnek yanıtla test, alan adlarının kurum örneğinde doğrulanması, canlı kabul.", "plan": ["U5", "F1-01", "U10"]},
+      {"id": "src_virtualization", "label": "Sanallaştırma · vCenter", "pct": 25, "done": "VM ve konuk sunucu eşlemeleri, Sanallaştırma rolü.", "missing": "vSphere istemcisi, kayıtlı örnekle test, canlı kabul.", "plan": ["U5", "F0-11", "U10"]},
+      {"id": "src_network", "label": "Ağ keşfi · NNMi", "pct": 25, "done": "Düğüm eşlemesi, Ağ rolü.", "missing": "İstemci, arayüz ve L2 bağlantıları, kayıtlı örnekle test, canlı kabul.", "plan": ["U5", "F1-03", "U10"]},
+      {"id": "src_monitoring", "label": "İzleme · Zabbix", "pct": 25, "done": "Host eşlemesi, İzleme rolü.", "missing": "Zabbix API istemcisi, kayıtlı örnekle test, canlı kabul.", "plan": ["U5", "F0-11", "U10"]},
+      {"id": "src_endpoint", "label": "Uç nokta · Defender", "pct": 25, "done": "Cihaz eşlemesi, kısıtlı güvenlik duruşu tablosu ve rolü.", "missing": "Graph/Defender istemcisi, duruş verisinin kısıtlı tabloya yazımı, kayıtlı örnekle test, canlı kabul.", "plan": ["U5", "F1-02", "U10"]},
+      {"id": "src_itsm", "label": "ITSM · ServiceNow CMDB", "pct": 35, "done": "Sunucu eşlemesi, sys_id korunarak ilk yükleme yolu (import_record), salt okunur sözlük dışa aktarım aracı.", "missing": "Table API istemcisi, referans verilerinin yüklenmesi, 18 işaretli alanın doğrulanması, canlı kabul.", "plan": ["U5", "F0-07", "F0-08", "U10"]},
+      {"id": "src_change", "label": "Değişiklik · ServiceNow Change", "pct": 5, "done": "Değişiklik Yönetimi rolü ve veri kaynağı tanımı.", "missing": "Eşleme, istemci, onaylı değişiklik pencerelerinin alınması, canlı kabul.", "plan": ["U5", "F1-04", "U10"]},
+      {"id": "src_new", "label": "+ Yeni rol veya ürün", "pct": 80, "done": "Rol tabanlı kurallar, gölge → devir → emeklilik yaşam döngüsü, ürün değişimi tatbikatı, değişiklik setiyle veri kaynağı ekleme.", "missing": "Arayüzden yeni kaynak ekleme sihirbazı ve bağlayıcı kimliği yönetimi.", "plan": ["U5"]}
+    ]},
+    {"id": "ingest", "title": "Alım", "items": [
+      {"id": "connector_runtime", "label": "Bağlayıcı çalıştırıcı", "pct": 15, "done": "Bağlayıcı sözleşmesi (IngestRecord) ve eşleme motoru.", "missing": "Ürün istemcileri, sayfalama ve yeniden deneme, zamanlayıcı, arayüzden 'şimdi çalıştır'.", "plan": ["U5"]},
+      {"id": "mapping", "label": "YAML eşleme", "pct": 70, "done": "Eşleme motoru, 6 kaynak için 7 eşleme dosyası, testler.", "missing": "Alan adlarının gerçek API çıktısıyla doğrulanması (verify: true işaretliler).", "plan": ["U5", "U10"]},
+      {"id": "gateway", "label": "Alım geçidi", "pct": 85, "done": "Bağlayıcı belirteci, tek kaynak yetkisi, şema, boyut ve hız sınırı, TLS/mTLS, ya hep ya hiç toplu gönderim, testli (ADR-0017).", "missing": "Arayüzden kimlik yönetimi, istemci sertifikasının kimliğe bağlanması, örnekler arası ortak hız sınırı.", "plan": ["U5", "U10"]},
+      {"id": "kafka", "label": "Kafka olay omurgası", "pct": 80, "done": "Konular, idempotent üretici, tüketici grupları, DLQ, outbox yayını, yığında uçtan uca test.", "missing": "Üretimde SASL/TLS, konu ACL'leri, çoğaltma ayarları (hedef ortam).", "plan": ["U10"]},
+      {"id": "raw_archive", "label": "Ham yük arşivi", "pct": 0, "done": "Zarfta raw_ref alanı.", "missing": "Ham yükün saklanması, saklama politikası, arşivden yeniden işleme.", "plan": ["F1-14", "U5"]}
+    ]},
+    {"id": "sense", "title": "Ara katman — akıl katmanı", "items": [
+      {"id": "change_filter", "label": "Değişim süzgeci", "pct": 95, "done": "İçerik özeti; değişmeyen kayıt yalnız last_seen günceller; yeniden teslim iki kez sayılmaz.", "missing": "Gerçek hacimde başarım ölçümü.", "plan": ["U10"]},
+      {"id": "normalize", "label": "Normalizasyon", "pct": 90, "done": "Ad, seri, MAC, UUID, IP; Türkçe harfler; çöp değerler.", "missing": "Gerçek veride görülecek yeni kalıplar (işletim sistemi adlandırma farkı vb.).", "plan": ["U5", "U10"]},
+      {"id": "identity", "label": "Kimlik çözümleme", "pct": 80, "done": "IRE kuralları, olasılıksal skor, çelişki denetimi, kuyruk, geri alınabilir birleştirme.", "missing": "Bağımlı CI kimliği, skor ağırlıklarının gerçek kararlarla ayarı.", "plan": ["U7", "F1-07", "U10"]},
+      {"id": "breaker", "label": "Devre kesici", "pct": 90, "done": "Taban çizgisi + MAD, kısmi/eksik/terk edilmiş çalışma, delta farkındalığı.", "missing": "Eskime işletimiyle birlikte gerçek çalışma geçmişiyle doğrulama.", "plan": ["U7", "F1-06"]},
+      {"id": "match_queue", "label": "Eşleştirme kuyruğu", "pct": 90, "done": "Yan yana karşılaştırma, karar, birleştirmeyi ayırma, çalışan uygular.", "missing": "Toplu karar ve atama.", "plan": ["U6"]},
+      {"id": "reconcile", "label": "Uzlaştırma", "pct": 75, "done": "Rol önceliği, veri tazeleme, öznitelik başına kaynak, yönetişim alanı koruması, yeniden uzlaştırma.", "missing": "Eskime ve emekliye ayırma işletimi.", "plan": ["U7", "F1-05", "F1-06"]},
+      {"id": "quality", "label": "Kalite ve kapsam", "pct": 50, "done": "Gölge mod raporu ve kanıtı, kapsam kartları, mükerrer sınıflaması, sağlık puanı çekirdeği.", "missing": "Sağlık panosu (CMDB oturduktan sonra).", "plan": ["U8", "F1-09"]},
+      {"id": "manual_input", "label": "Elle girdi", "pct": 45, "done": "Elle düzenleme (Manual kaynağı), ayırma, kuyruk kararı — hepsi uzlaştırmadan geçer.", "missing": "Arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma.", "plan": ["U6"]},
+      {"id": "lifecycle", "label": "Eskime ve emeklilik", "pct": 15, "done": "Snapshot çalışmasında görülmeyen kaydın işaretlenmesi; devre kesici koruması.", "missing": "Eskime kuralı işletimi, CI emekliye ayırma, ilişki temizliği.", "plan": ["U7", "F1-06"]},
+      {"id": "dependent_ci", "label": "Bağımlı CI kimliği", "pct": 5, "done": "Tasarım; çözümleyici bilinçli olarak 'yetersiz' döner.", "missing": "Uygulama ve ağ adaptörünün üst CI bağlamında kimliği.", "plan": ["U7", "F1-07"]},
+      {"id": "ai_suggest", "label": "Yapay zekâ önerisi", "pct": 0, "done": "İlke ve yönetişim belgesi (insan onaylar, ISO/IEC 42001).", "missing": "Öneri asistanı, açıklamalar, kayıt ve değerlendirme.", "plan": ["F3-02", "F3-03", "F3-04", "F3-05"]},
+      {"id": "unauthorized", "label": "Yetkisiz değişiklik", "pct": 10, "done": "Kaynağın rolüne kapalı alana yazma girişimi sayılıyor.", "missing": "Onaylı Change penceresi dışındaki değişikliğin tespiti.", "plan": ["U5", "F1-04"]}
+    ]},
+    {"id": "record", "title": "Kayıt sistemi — CMDB", "items": [
+      {"id": "golden", "label": "PostgreSQL golden record", "pct": 85, "done": "cmdb_ci soyağacı, sys_id, hibrit şema, sn.* görünümleri, izlenen göçler, en az yetkili roller.", "missing": "Hedef ortamda yüksek erişilebilirlik ve başarım ayarı.", "plan": ["U10", "F2-09"]},
+      {"id": "data_model", "label": "Veri modeli (SN uyumlu + CSDM)", "pct": 35, "done": "36 sınıf (sunucu, ağ, sanal, veritabanı, uygulama, hizmet, iş uygulaması), 81 alan, 14 ilişki tipi, 6 referans tablosu.", "missing": "ServiceNow temel sınıf kütüphanesinin genişliği (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, yaşam döngüsü durumları, sınıf ağacı ve alan gezgini.", "plan": ["U4", "F0-17", "F0-07"]},
+      {"id": "relations", "label": "İlişkiler ve hizmet haritası", "pct": 25, "done": "cmdb_rel_ci; kaynak ilişkileri çalışma sonunda yazılıyor; 14 ilişki tipi.", "missing": "İlişki görünümü ve düzenleme, hizmet haritası, etki analizi.", "plan": ["U4", "U6", "U7"]},
+      {"id": "dictionary", "label": "Metadata sözlüğü", "pct": 85, "done": "Sözlük, doğrulama, değişiklik setleri (taslak → onay → yayın, görevler ayrılığı).", "missing": "Sınıf ağacı/alan gezgini sayfası, ilişki tipi ekleme işlemi.", "plan": ["U4"]},
+      {"id": "provenance", "label": "Kaynak bilgisi", "pct": 90, "done": "Öznitelik başına kazanan, ezilen değerler, CI geçmişi.", "missing": "Toplu 'bu değer nereden geldi' raporu.", "plan": ["F1-05"]},
+      {"id": "audit", "label": "Denetim izi", "pct": 75, "done": "Salt ekleme değişiklik ve güvenlik olayları, ret kaydı.", "missing": "SIEM'e aktarım, arayüzde denetim izi görünümü.", "plan": ["U8", "F1-16"]},
+      {"id": "outbox", "label": "Outbox", "pct": 100, "done": "Değişiklik ve olay aynı işlemde; Kafka'ya yayın, gizli alan maskeleme.", "missing": "", "plan": []},
+      {"id": "search", "label": "OpenSearch arama", "pct": 75, "done": "Dizinleyici, Türkçe/önek/yazım hatası, yetki süzgeçli arama, PostgreSQL yedeği (ADR-0018).", "missing": "CI listesi sayfasının OpenSearch'e taşınması, trend ve anomali analizi.", "plan": ["U7", "F3-04"]},
+      {"id": "backup", "label": "Yedek ve felaket kurtarma", "pct": 5, "done": "Hedefler belgede (docs/12).", "missing": "PITR yedekleri, Kafka/OpenSearch çoğaltma, geri yükleme tatbikatı.", "plan": ["F2-09", "U10"]}
+    ]},
+    {"id": "consume", "title": "Tüketim ve entegrasyon", "items": [
+      {"id": "web_ui", "label": "Evren arayüzü", "pct": 55, "done": "Genel bakış, CI, kuyruk, gölge mod, kaynaklar, kurallar, şema, arama, mimari, yol haritası; Türkçe, klavye, mobil.", "missing": "CI oluşturma ve ilişkiler, CI 360°, sınıf gezgini, sistem durumu, rol–yetki matrisi, denetim izi, sağlık panosu.", "plan": ["U4", "U6", "U7", "U8"]},
+      {"id": "rest_api", "label": "REST API", "pct": 50, "done": "Okuma, arama, düzenleme, karar, ayırma, rapor, şema uçları; idempotency, yetki.", "missing": "ServiceNow uyumlu Table/IRE uçları, makine hesapları.", "plan": ["U9", "F2-05"]},
+      {"id": "event_stream", "label": "Olay akışı", "pct": 50, "done": "CloudEvents olayları Kafka'da (CI ve etkinlik konuları).", "missing": "İmzalı webhook aboneliği.", "plan": ["F2-06"]},
+      {"id": "evren_mcp", "label": "Evren MCP sunucusu", "pct": 0, "done": "Sözleşme belgesi (docs/09).", "missing": "Sunucu, araçlar ve yetki.", "plan": ["U9", "F2-07"]},
+      {"id": "grc", "label": "GRC Platformu (tedarik)", "pct": 15, "done": "Gölge mod kanıtı (SHA-256), provenance ilkesi.", "missing": "CMDB modülünün Evren'den beslenmesi, otomatik kontroller.", "plan": ["F2-08"]},
+      {"id": "corp_mcp", "label": "Kurum MCP uygulaması", "pct": 0, "done": "Bağlanma sözleşmesi belgede.", "missing": "Evren MCP sunucusu hazır olunca bağlantı ve kabul.", "plan": ["F2-07", "U10"]}
+    ]},
+    {"id": "servicenow", "title": "ServiceNow geçişi", "items": [
+      {"id": "sn_load", "label": "SN CMDB ilk yükleme", "pct": 35, "done": "sys_id korunarak yükleme yolu, eşleme, demo.", "missing": "SN istemcisi, referans verileri, canlı yükleme.", "plan": ["F0-08", "U5", "U10"]},
+      {"id": "sn_golden", "label": "Evren golden record", "pct": 85, "same_as": "golden", "done": "Kayıt sistemi bileşeniyle aynı.", "missing": "Kayıt sistemi bileşeniyle aynı.", "plan": ["U10", "F2-09"]},
+      {"id": "sn_sync", "label": "sn-sync", "pct": 5, "done": "Sorumluluk tanımı ve replika deseni (docs/05).", "missing": "Kapsamlı itme servisi, IRE istemcisi, kaydedilmiş örneklerle test.", "plan": ["U9", "F2-01"]},
+      {"id": "sn_ire", "label": "SN IRE API", "pct": 0, "done": "", "missing": "Evren veri kaynağı ve kuralının SN'de tanımı, istemci.", "plan": ["U9", "F2-02"]},
+      {"id": "sn_replica", "label": "SN CMDB (replika)", "pct": 0, "done": "", "missing": "Replikanın beslenmesi, eski entegrasyonların kapatılması.", "plan": ["F2-02", "F2-03"]},
+      {"id": "sn_task", "label": "task.cmdb_ci", "pct": 0, "done": "Replika deseniyle SN kuralları değişmeden çalışır (tasarım).", "missing": "Replika canlıya alınınca doğrulama.", "plan": ["F2-01", "U10"]},
+      {"id": "ci_picker", "label": "CI seçici", "pct": 0, "done": "", "missing": "SN formunda Evren araması.", "plan": ["F3-01"]}
+    ]},
+    {"id": "security", "title": "Güvenlik ve yönetişim", "items": [
+      {"id": "sec_entra", "label": "Entra ID", "pct": 80, "done": "OIDC + PKCE, MFA bağlamı, grup → rol, sahte kimlik sağlayıcıyla olumsuz testler.", "missing": "Kurumun uygulama kaydıyla canlı kabul.", "plan": ["F0-09", "U10"]},
+      {"id": "sec_rbac", "label": "RBAC + ABAC", "pct": 70, "done": "Rol izinleri, alan hassasiyeti, yanıt süzme.", "missing": "ABAC koşul değerlendirmesi, rol–yetki matrisi ekranı.", "plan": ["U8", "F1-10"]},
+      {"id": "sec_sod", "label": "Görevler ayrılığı", "pct": 90, "done": "Veritabanında ve girişte; hazırlayan onaylayamaz.", "missing": "Matris ekranında görünürlük.", "plan": ["U8"]},
+      {"id": "sec_schema", "label": "Şema değişikliği", "pct": 90, "done": "Taslak → onay → yayın, Git'te dağıtım.", "missing": "PR açmanın otomasyonu (hedef ortam).", "plan": ["U10"]},
+      {"id": "sec_writer", "label": "Tek yazar", "pct": 100, "done": "Golden record'a yalnızca uzlaştırıcı yazar; roller zorlar, testli.", "missing": "", "plan": []},
+      {"id": "sec_least", "label": "En az yetki", "pct": 95, "done": "Servis başına giriş rolü, sütun düzeyi yetki, testli sınırlar.", "missing": "Üretim kimlik bilgisi döndürme yordamı.", "plan": ["U10"]},
+      {"id": "sec_audit", "label": "Denetim → SIEM", "pct": 70, "done": "Salt ekleme denetim izi.", "missing": "SIEM aktarımı.", "plan": ["F1-16", "U8"]},
+      {"id": "sec_secrets", "label": "mTLS + sır kasası", "pct": 55, "done": "Sırlar yalnız dosyadan, geçitte TLS/mTLS, Kafka/OpenSearch TLS varsayılan.", "missing": "Kurum sır kasası bağlantısı, servisler arası mTLS (hedef ortam).", "plan": ["U10"]},
+      {"id": "sec_supply", "label": "Tedarik zinciri", "pct": 85, "done": "Hash kilidi, 14 gün bekleme, digest sabitleme, Trivy imaj kapısı, SBOM, gitleaks, bandit.", "missing": "İmaj imzalama ve kayıt defteri (hedef ortam).", "plan": ["U10"]},
+      {"id": "sec_ai", "label": "Yapay zekâ önerir", "pct": 10, "done": "İlke: yapay zekâ çıktısı golden record'a yazılmaz.", "missing": "Öneri kaydı, değerlendirme, 42001 kontrol eşlemesi.", "plan": ["F3-05"]}
+    ]}
+  ]
+}

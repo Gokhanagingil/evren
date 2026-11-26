@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 25.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 13/45 adım tamamlandı
+**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 13/50 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -19,13 +19,13 @@
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Tamamlandı_ (ilgili: F1-08)
-- [ ] **U4** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04)
-- [ ] **U5** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_
-- [ ] **U6** Veri modeli yönetimi: sınıf ağacı ve alan gezgini, değişiklik setleriyle bütünleşik tek sayfa; kural görünümü — _Planlandı_ (ilgili: F1-05, F1-11)
+- [ ] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Planlandı_ (ilgili: F0-17, F0-07, F1-11)
+- [ ] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
+- [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_
 - [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07)
-- [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10)
+- [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
-- [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09)
+- [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
 
 ## Sıradaki adımlar (fazlara göre)
@@ -40,6 +40,7 @@
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 1. **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_  
    Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
+1. **F0-17** CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları — _Planlandı_
 
 ## Sizden gerekenler (karar ve erişim)
 
@@ -71,7 +72,7 @@
 
 ## F0 · Temel ve gölge mod
 
-_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 11/16 adım
+_Ay 0–3 · Ara 2026 – Şub 2027 (öneri)_ · 11/17 adım
 
 Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki kaynağın gölge modda eşleştirilmesi. ServiceNow'a hiçbir yazma yapılmaz.
 
@@ -103,6 +104,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_
   - Not: Rapor (kapsam, sınıf × rol, mükerrer adayları, değer farkları, gölge kaynak uyumu), arayüz sayfası ve değiştirilemez SHA-256 kanıt kaydı hazır (ADR-0014); sentetik veriyle test edildi. Gerçek ServiceNow verisiyle ilk rapor F0-08 yüklemesinden sonra; değerlendirme CMDB sahibinde.
   - Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
+- [ ] **F0-17** CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları — _Planlandı_
+  - Not: 26.11.2026 büyük resim incelemesinde planda karşılığı olmadığı görüldü; uçtan uca izlekte U4.
 
 **Çıkış kriterleri**
 
@@ -121,7 +124,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 2/13 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 2/16 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -148,6 +151,9 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-12** ServiceNow'da elle yapılan değişikliklerin çekilmesi — _Planlandı_
 - [x] **F1-13** Ürün değişimi tatbikatı: ikinci bir keşif kaynağını gölge modda çalıştırıp kapsam ve değer farkını raporlama
   - Not: Sentetik tatbikat (tools/build_drill.py, Veri Kaynakları sayfası): BMC → Keşif-B gölge → etkin/devir → emekli; 9 denetim geçti, kural dosyaları değişmedi. Gerçek veritabanında rereconcile_source ile aynı geçişler testli. Bulgular: eşleme kapsamı farkı, adlandırma farkı. Gerçek ikinci ürün geldiğinde tatbikat onunla tekrarlanır.
+- [ ] **F1-14** Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla) — _Planlandı_
+- [ ] **F1-15** Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry) — _Planlandı_
+- [ ] **F1-16** Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı — _Planlandı_
 
 **Çıkış kriterleri**
 
@@ -165,7 +171,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 
 ## F2 · Evren ana kaynak, ServiceNow replika
 
-_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/8 adım
+_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/9 adım
 
 Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.
 
@@ -180,6 +186,7 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 - [ ] **F2-07** Evren MCP sunucusu ve kurum MCP uygulaması sözleşmesi — _Planlandı_
 - [ ] **F2-08** GRC Platformu (tedarik) entegrasyonu: CMDB modülünün Evren'den beslenmesi ve CMDB tabanlı otomatik kontroller — _Planlandı_
   - Sizden gereken: GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması
+- [ ] **F2-09** Yedekleme, felaket kurtarma ve yüksek erişilebilirlik: PostgreSQL PITR, Kafka/OpenSearch çoğaltma, geri yükleme tatbikatı — _Planlandı_
 
 **Çıkış kriterleri**
 

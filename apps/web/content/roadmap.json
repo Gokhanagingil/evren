@@ -1,6 +1,6 @@
 {
   "title": "Evren CMDB yol haritası",
-  "updated_at": "2026-11-25",
+  "updated_at": "2026-11-26",
   "note": "Tek kaynak bu dosyadır. Uygulamadaki Yol Haritası sayfası, docs/PROJE-PLANI.md (tools/build_plan.py) ve büyük resim çizimi buradan beslenir; DURUM.md ile birlikte güncellenir. Takvim önerisi, ekip kapasitesine göre güncellenmelidir.",
   "statuses": {
       "done": "Tamamlandı",
@@ -24,13 +24,13 @@
       {"id": "U1", "title": "Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir", "status": "done", "refs": ["F0-10"], "note": "25.11.2026: tek imaj (uid 10001, salt okunur kök, digest sabit), izlenen göçler (SHA-256 defteri), servis giriş rolleri, sırlar yalnızca dosyadan, compose yığını (PostgreSQL, Kafka KRaft, OpenSearch, api, worker), tools/dev_stack.py; CI 'Yığın' işi uçtan uca duman testi yapar (ADR-0016). Kafka ve OpenSearch U2/U3'te kullanılmaya başlar."},
       {"id": "U2", "title": "Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını)", "status": "done", "refs": ["F0-10"], "note": "25.11.2026: alım geçidi (evr_ belirteci, tek kaynak, ya hep ya hiç toplu gönderim, boyut/hız sınırı, TLS/mTLS), Kafka konu sözleşmesi, alım tüketicisi (DB işleminden sonra ofset, DLQ, geçici hatada geri sarma), kalıcı çalışma sayaçları ve kapanış (tamam/süre doldu/terk edildi), delta farkında devre kesici, outbox → Kafka (gizli alan maskeleme), confluent-kafka; yığın duman testi uçtan uca (ADR-0017)."},
       {"id": "U3", "title": "Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek)", "status": "done", "refs": ["F1-08"], "note": "25.11.2026: dizinleyici (CI olayı → güncel CI → OpenSearch, sürümlü dizin + atomik takma ad, --reindex), Türkçe katlama/önek/ayırıcısız/bulanık sorgu, /api/v1/search (yetki sorguda ve yanıtta, PostgreSQL yedeği), Ctrl+K paleti; ek bağımlılık yok (ADR-0018). CI listesi sayfası hâlâ PostgreSQL'de."},
-      {"id": "U4", "title": "Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi", "status": "planned", "refs": ["F0-11", "F1-01", "F1-02", "F1-03", "F1-04"]},
-      {"id": "U5", "title": "Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer", "status": "planned", "refs": []},
-      {"id": "U6", "title": "Veri modeli yönetimi: sınıf ağacı ve alan gezgini, değişiklik setleriyle bütünleşik tek sayfa; kural görünümü", "status": "planned", "refs": ["F1-05", "F1-11"]},
+      {"id": "U4", "title": "CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur", "status": "planned", "refs": ["F0-17", "F0-07", "F1-11"]},
+      {"id": "U5", "title": "Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi", "status": "planned", "refs": ["F0-11", "F1-01", "F1-02", "F1-03", "F1-04", "F1-14"]},
+      {"id": "U6", "title": "Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer", "status": "planned", "refs": []},
       {"id": "U7", "title": "Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası", "status": "planned", "refs": ["F1-06", "F1-07"]},
-      {"id": "U8", "title": "Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu", "status": "planned", "refs": ["F1-09", "F1-10"]},
+      {"id": "U8", "title": "Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu", "status": "planned", "refs": ["F1-09", "F1-10", "F1-15", "F1-16"]},
       {"id": "U9", "title": "ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle", "status": "planned", "refs": ["F2-01", "F2-02", "F2-03"]},
-      {"id": "U10", "title": "Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri", "status": "planned", "refs": ["F0-07", "F0-08", "F0-09"], "needs": "Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)"}
+      {"id": "U10", "title": "Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri", "status": "planned", "refs": ["F0-07", "F0-08", "F0-09", "F2-09"], "needs": "Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)"}
     ]
   },
   "phases": [
@@ -56,7 +56,8 @@
         {"id": "F0-10", "title": "Alım geçidi, Kafka ve uzlaştırıcı servisi", "status": "done", "note": "PostgreSQL deposu, aday dizini, devre kesici, sürekli çalışan uzlaştırıcı (ADR-0013); alım geçidi (bağlayıcı belirteci, kaynak yetkisi), Kafka alım tüketicisi (en az bir kez, kalıcı sayaçlar, DLQ), çalışma kapanışı ve outbox yayını (ADR-0017). Canlı kurum ortamında kabul U10'da.", "components": ["ingest_gateway", "kafka", "change_filter"], "needs": "Hedef çalışma ortamı kararı: Kubernetes/OpenShift mi, sanal makinede Docker mı"},
         {"id": "F0-11", "title": "vCenter ve Zabbix bağlayıcıları", "status": "planned", "components": ["src_vcenter", "src_zabbix", "connectors"], "needs": "vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi"},
         {"id": "F0-12", "title": "Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)", "status": "done", "components": ["match_queue"], "note": "Yan yana karşılaştırma, kanıtlar, kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) ve CI panelinden birleştirmeyi ayırma (ADR-0011: kimlik profili yeniden kurulur, ayrılan kaynağın değerleri temizlenir); uzlaştırıcı uygular. Sentetik veriyle test edildi."},
-        {"id": "F0-13", "title": "Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları", "status": "in_progress", "components": ["analytics"], "note": "Rapor (kapsam, sınıf × rol, mükerrer adayları, değer farkları, gölge kaynak uyumu), arayüz sayfası ve değiştirilemez SHA-256 kanıt kaydı hazır (ADR-0014); sentetik veriyle test edildi. Gerçek ServiceNow verisiyle ilk rapor F0-08 yüklemesinden sonra; değerlendirme CMDB sahibinde.", "needs": "Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri"}
+        {"id": "F0-13", "title": "Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları", "status": "in_progress", "components": ["analytics"], "note": "Rapor (kapsam, sınıf × rol, mükerrer adayları, değer farkları, gölge kaynak uyumu), arayüz sayfası ve değiştirilemez SHA-256 kanıt kaydı hazır (ADR-0014); sentetik veriyle test edildi. Gerçek ServiceNow verisiyle ilk rapor F0-08 yüklemesinden sonra; değerlendirme CMDB sahibinde.", "needs": "Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri"},
+        {"id": "F0-17", "title": "CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları", "status": "planned", "components": ["cmdb_ci", "cmdb_rel_ci", "dictionary"], "note": "26.11.2026 büyük resim incelemesinde planda karşılığı olmadığı görüldü; uçtan uca izlekte U4."}
       ],
       "exit_criteria": [
         {"text": "ServiceNow CMDB aynı sys_id'lerle yüklendi; sınıf bazında kayıt sayıları eşit", "met": false},
@@ -87,7 +88,10 @@
         {"id": "F1-10", "title": "Rol–yetki matrisi ekranı (RBAC + ABAC)", "status": "planned", "components": ["rbac_abac"], "needs": "Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı"},
         {"id": "F1-11", "title": "Şema tasarımcısı ve değişiklik setleri", "status": "done", "components": ["schema_sets"], "note": "Şema ve Değişiklikler sayfası: 7 işlem (sınıf/alan ekle, alan değiştir, kullanımdan kaldır, seçim değeri, veri kaynağı ekle (gölge), yaşam döngüsü); taslak → onaya gönderme (doğrulama + etki analizi) → onay (hazırlayan onaylayamaz: API + kısıt + tetikleyici) → yayın = metadata/changes/ dosyası (ADR-0015). Alan silme ve fiziksel kolona taşıma sonraki sürümde."},
         {"id": "F1-12", "title": "ServiceNow'da elle yapılan değişikliklerin çekilmesi", "status": "planned", "components": ["sn_pull", "sn_edits"]},
-        {"id": "F1-13", "title": "Ürün değişimi tatbikatı: ikinci bir keşif kaynağını gölge modda çalıştırıp kapsam ve değer farkını raporlama", "status": "done", "components": ["connectors", "reconcile", "analytics"], "note": "Sentetik tatbikat (tools/build_drill.py, Veri Kaynakları sayfası): BMC → Keşif-B gölge → etkin/devir → emekli; 9 denetim geçti, kural dosyaları değişmedi. Gerçek veritabanında rereconcile_source ile aynı geçişler testli. Bulgular: eşleme kapsamı farkı, adlandırma farkı. Gerçek ikinci ürün geldiğinde tatbikat onunla tekrarlanır."}
+        {"id": "F1-13", "title": "Ürün değişimi tatbikatı: ikinci bir keşif kaynağını gölge modda çalıştırıp kapsam ve değer farkını raporlama", "status": "done", "components": ["connectors", "reconcile", "analytics"], "note": "Sentetik tatbikat (tools/build_drill.py, Veri Kaynakları sayfası): BMC → Keşif-B gölge → etkin/devir → emekli; 9 denetim geçti, kural dosyaları değişmedi. Gerçek veritabanında rereconcile_source ile aynı geçişler testli. Bulgular: eşleme kapsamı farkı, adlandırma farkı. Gerçek ikinci ürün geldiğinde tatbikat onunla tekrarlanır."},
+        {"id": "F1-14", "title": "Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla)", "status": "planned", "components": ["raw_archive"]},
+        {"id": "F1-15", "title": "Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry)", "status": "planned", "components": []},
+        {"id": "F1-16", "title": "Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı", "status": "planned", "components": ["siem"]}
       ],
       "exit_criteria": [
         {"text": "Beş kaynak üretimde; her biri için devre kesici taban çizgisi oluştu", "met": false},
@@ -112,7 +116,8 @@
         {"id": "F2-05", "title": "ServiceNow uyumlu API: /api/now/table ve /identifyreconcile", "status": "planned", "components": ["sn_compat_api"]},
         {"id": "F2-06", "title": "Olay akışı ve imzalı webhook", "status": "planned", "components": ["event_stream", "outbox"]},
         {"id": "F2-07", "title": "Evren MCP sunucusu ve kurum MCP uygulaması sözleşmesi", "status": "planned", "components": ["evren_mcp", "corp_mcp"]},
-        {"id": "F2-08", "title": "GRC Platformu (tedarik) entegrasyonu: CMDB modülünün Evren'den beslenmesi ve CMDB tabanlı otomatik kontroller", "status": "planned", "components": ["grc_app"], "needs": "GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması"}
+        {"id": "F2-08", "title": "GRC Platformu (tedarik) entegrasyonu: CMDB modülünün Evren'den beslenmesi ve CMDB tabanlı otomatik kontroller", "status": "planned", "components": ["grc_app"], "needs": "GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması"},
+        {"id": "F2-09", "title": "Yedekleme, felaket kurtarma ve yüksek erişilebilirlik: PostgreSQL PITR, Kafka/OpenSearch çoğaltma, geri yükleme tatbikatı", "status": "planned", "components": ["backup_dr"]}
       ],
       "exit_criteria": [
         {"text": "30 gün kesintisiz eşleme", "met": false},

@@ -117,7 +117,7 @@ GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_
 
 ## Alım geçidi (bağlayıcı sözleşmesi, ADR-0017)
 
-Bağlayıcı `Authorization: Bearer evr_…` ile gelir. Belirteci `tools/connector_credential.py issue` verir; arayüzden yönetim U4'te gelecek. Belirteç tek bir veri kaynağına bağlıdır.
+Bağlayıcı `Authorization: Bearer evr_…` ile gelir. Belirteci `tools/connector_credential.py issue` verir; arayüzden yönetim U5'te gelecek. Belirteç tek bir veri kaynağına bağlıdır.
 
 | Adım | İstek | Yanıt |
 | --- | --- | --- |

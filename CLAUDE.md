@@ -15,6 +15,7 @@ Mimarinin tamamı uygulamanın içindedir: **Mimari Harita** sayfası. İş plan
 
 - `apps/web/content/architecture.yaml` → `python tools/build_architecture.py`
 - `apps/web/content/roadmap.json` → `python tools/build_plan.py` (docs/PROJE-PLANI.md) ve `python tools/build_big_picture.py`
+- `apps/web/content/components.json` → büyük resimdeki her kutunun tamamlanma yüzdesi, var olanı, eksiği ve plan bağı (`python tools/build_big_picture.py`). %100'ün altındaki her bileşen bir plan maddesine bağlıdır; bağlı değilse test kırmızıdır.
 
 ## Çalışma biçimi (proje sahibinin beklentisi)
 
@@ -23,7 +24,8 @@ Mimarinin tamamı uygulamanın içindedir: **Mimari Harita** sayfası. İş plan
 - Gerçek bir engelde üç şeyi açıkça yaz: neyin eksik olduğu, etkisi ve uygulanabilir alternatifler.
 - Uzun işlerde kısa ve anlamlı ilerleme bilgisi ver.
 - **Her büyük adımdan önce** büyük resmin yaklaşık yüzde kaçının tamamlandığını (`roadmap.json`'dan; faz bazında da) ve sıradaki adımın ne olduğunu kısaca söyle, sonra çalışmaya başla.
-- **Her oturumun sonunda** `DURUM.md`'yi güncelle (kararlar, yapılanlar, bilinen eksikler, sıradaki adımlar). `roadmap.json` durumlarını eşitle ve `updated_at` alanını güncelle. Kesinti sonrası kaldığın yerden buradan devam edilir.
+- **Her oturumun sonunda** `DURUM.md`'yi güncelle (kararlar, yapılanlar, bilinen eksikler, sıradaki adımlar). `roadmap.json` durumlarını ve `components.json` yüzdelerini eşitle, `updated_at` alanlarını güncelle. Kesinti sonrası kaldığın yerden buradan devam edilir.
+- **Önce temel:** CMDB (ServiceNow uyumlu ve daha iyisi veri modeli), yanında akıl katmanı ve kaynak verisinin akacağı ortam. Bunlar oturmadan çevre işlere (ör. CMDB sağlık panosu) girme; büyük resimde boşluk görürsen plana ekle.
 - Kalite yalnızca kodla ölçülmez: kullanım kolaylığı, görsel kalite, içerik, mantık bütünlüğü, testler ve tamamlanmış ürün davranışı birlikte değerlendirilir.
 
 ## Dil

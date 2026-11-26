@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 25.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 13/45 adım tamamlandı, 3'ü sürüyor (~%32) · **Uçtan uca izlek:** 3/10 (U1–U3 tamam; sırada U4)
+**Son güncelleme:** 26.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 13/50 plan adımı tamamlandı, 3'ü sürüyor (~%29; 26.11'de 5 eksik madde eklendi) · **Bileşen ortalaması (büyük resim):** %48 · **Uçtan uca izlek:** 3/10 (U1–U3 tamam; sırada U4 CMDB veri modeli)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -17,6 +17,8 @@ Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki *
 | 25.11.2026 | **Kaynak sistemler değişebilir** (keşif ürünü bugün BMC, yarın başka): kurallar ürüne değil kaynak rolüne bağlanır; ürün değişimi gölge → devir → emeklilik yaşam döngüsüyle yapılır | ADR-0009 |
 | 25.11.2026 | GRC Platformu'nun CMDB modülü, Evren hazır olunca CI verisini Evren'den alacak (bugün ServiceNow'dan senkron) | Proje sahibi, F2-08 |
 | 25.11.2026 | BMC ürünü: BMC Helix Discovery (on-prem mi SaaS mı belirsiz; ikisi aynı REST API) | Proje sahibi |
+| 26.11.2026 | Büyük resimde her kutu tamamlanma yüzdesi taşır (tek kaynak `apps/web/content/components.json`: yüzde, var olan, eksik, plan bağı); %100'ün altındaki her bileşen bir plan maddesine bağlı olmak zorunda (test). Önce temel: CMDB veri modeli (ServiceNow uyumlu ve daha iyisi), akıl katmanı, veri akış ortamı; CMDB oturmadan sağlık panosu gibi çevre işlere girilmez | Proje sahibi |
+| 26.11.2026 | Uçtan uca izlek yeniden sıralandı: U4 CMDB veri modeli (eski U6 "veri modeli yönetimi" buna katıldı) → U5 bağlayıcılar → U6 elle girdi; bağlayıcılar yazacakları hedef sınıflar hazır olunca gelir | Proje sahibi |
 | 25.11.2026 | CI araması OpenSearch'te: dizinleyici olaydan güncel CI'ı yazar (sürümlü dizin + takma ad), yetki API'de (okunabilir sınıf süzgeci, görülebilir alan, yanıt yeniden süzülür), OpenSearch yoksa PostgreSQL yedeği; standart kütüphaneyle istemci, ek bağımlılık yok | ADR-0018 |
 | 25.11.2026 | Olay omurgası: bağlayıcılar yalnızca alım geçidine gönderir (belirteç tek kaynağa bağlı, yalnızca SHA-256 özeti saklanır); Kafka en az bir kez + kalıcı sayaçlar (etkisi bir kez); zehirli mesaj DLQ'ya; çalışmayı geçit açar, uzlaştırıcı kapatır; delta çalışmasında hacim denetlenmez; outbox → Kafka, gizli alan değeri olaya konmaz; Kafka istemcisi confluent-kafka | ADR-0017 |
 | 25.11.2026 | Tek konteyner imajı (servis komutla seçilir), izlenen göçler (SHA-256 defteri; değişmiş göçte durur), servis başına giriş rolü, sırlar yalnızca dosyadan; compose geliştirme yığını CI'da uçtan uca sınanır. Üretim dağıtım biçimi hedef ortam kararıyla yazılacak | ADR-0016 |
@@ -95,6 +97,10 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Demo verisinde bulduğu gerçekçi durum: iki `ist-db-01` ServiceNow kaydı aynı MAC/IP, farklı seri (fiziksel → sanal taşıma); keşfin görmediği kayıt emekliye ayırma adayı olarak öneriliyor.
 - **Yeni çalışma düzeni: uçtan uca izlek (25.11.2026, proje sahibinin kararı).** Beklenti: PostgreSQL, Kafka ve OpenSearch altyapısı; kaynak verisini anlamlandıran akıl katmanı (elle girdi dahil); veri modeli; büyük resim uçtan uca ve tek arayüzden yönetim. Sıra (yol haritasında `track`, Yol Haritası sayfasının en üstünde): U1 altyapı yığını → U2 olay omurgası (alım geçidi, Kafka, tüketici, outbox) → U3 OpenSearch arama → U4 bağlayıcılar ve kaynak yönetimi → U5 elle girdi → U6 veri modeli yönetimi → U7 yaşam döngüsü ve ilişkiler → U8 yönetim ekranları → U9 ServiceNow replika ve MCP yapısı → U10 canlı kabul (dış girdilerle, en sonda). Sağlık panosunun zemini commit'lendi; pano U8'de.
 - **Dış girdiler (Entra kaydı, ServiceNow hesabı, hedef ortam, kaynak hesapları) proje sahibinin kararıyla en sona bırakıldı;** önce yapı ana hatlarıyla tamamlanacak.
+- **Büyük resim bileşen durumu (26.11.2026).** Proje sahibinin isteğiyle büyük resim çiziminde her kutuya kanıta dayalı tamamlanma yüzdesi eklendi; panel ortalamaları ve ana sütun özeti (CMDB %64, akıl katmanı %54, veri akış ortamı %38, tüketim %28, ServiceNow geçişi %7, güvenlik %74; genel %48). Büyük Resim sayfasında her bileşenin var olanı, eksiği ve plan maddesi tablo olarak görünür ("yalnızca eksiği olanlar" süzgeciyle).
+  - İnceleme planda karşılığı olmayan boşlukları ortaya çıkardı ve plana eklendi: **F0-17 CMDB veri modeli** (ServiceNow temel sınıf kütüphanesinin genişliği, CSDM katmanları, yaşam döngüsü durumları; bugün 36 sınıf, 81 alan, 14 ilişki tipi), **F1-14 ham yük arşivi**, **F1-15 gözlemlenebilirlik**, **F1-16 SIEM aktarımı**, **F2-09 yedekleme, felaket kurtarma ve yüksek erişilebilirlik**.
+  - Bir test artık %100'ün altındaki her bileşenin var olan bir plan maddesine bağlı olduğunu denetler; böyle bir boşluk bir daha sessizce kalamaz.
+  - Çizimdeki Türkçe büyük harf hatası düzeltildi ("KAYIT SISTEMI" → "SİSTEMİ"; ürün adları Latin kurallarıyla: "SERVICENOW").
 - **U3 arama (tamamlandı)** (ADR-0018, göç `0013_search_indexer.sql`). Yol haritasında F1-08'in arama kısmı tamam; CI 360° ekranı (ilişkiler, etki) U7'de, bu yüzden F1-08 sürüyor.
   - `evren_core/search.py`: katı eşleme; parçalama + Türkçe küçük harf + ASCII katlama; `prefix`/`raw`/`compact` alt alanları; sorgu sırası: tam kimlik → ayırıcısız → önek → bulanık (hepsi gerekli). IP biçimindeki sorgu IP önekiyle aranır. Sürümlü dizin (`MAPPING_VERSION`); gizli alanlar dizine girmez (`hidden_fields`, outbox ile ortak).
   - `evren_core/opensearch_client.py`: standart kütüphaneyle istemci. HTTPS ve doğrulama varsayılan; düz HTTP yalnızca açık izinle; parola yalnızca dosyadan; hata iletisi sunucu gövdesini yansıtmaz. Yeni bağımlılık eklenmedi.
@@ -146,7 +152,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 - Ayırma sonrası asıl CI'da ayrılan kayıttan türemiş ilişki satırları silinmez (eskimeye bırakılır). Ayrılan kaydı başka mevcut CI'a taşıma API'de var, arayüzde yok.
 - Elle düzenlemeyi yalnızca Konfigürasyon analisti yapabilir; "CI sahibi" rolünün koşullu izni (kendi grubunun CI'ları) ABAC değerlendirmesi gelene kadar verilmez. İlişki düzenleme yok.
 - API'de henüz yok: makine hesapları, ilişki düzenleme, ServiceNow uyumlu uç noktalar (F2-05), ABAC koşul değerlendirmesi (koşullu izinler şimdilik verilmez).
-- Olay omurgası çalışıyor ama ona gönderen gerçek bağlayıcı yok: vCenter, Zabbix vb. istemciler U4'te. Bağlayıcı kimlikleri yalnızca komut satırından yönetiliyor (arayüz U4). Geçidin hız sınırı örnek başına (süreç içi). Bir çalışmada aynı `source_key` iki kez gönderilirse çalışma süre sonunda eksik kapanır (güvenli taraf; sözleşmede yazılı). Geliştirme yığınında Kafka SASL/ACL ve OpenSearch güvenlik eklentisi yok. CI listesi sayfası hâlâ PostgreSQL'de (küresel arama OpenSearch'te); 1–2 karakterlik parçalarda yazım hatası toleransı yok (bilinçli). OpenTelemetry metrikleri yok. sn-sync ve MCP servisleri yok.
+- Olay omurgası çalışıyor ama ona gönderen gerçek bağlayıcı yok: vCenter, Zabbix vb. istemciler U5'te. Bağlayıcı kimlikleri yalnızca komut satırından yönetiliyor (arayüz U4). Geçidin hız sınırı örnek başına (süreç içi). Bir çalışmada aynı `source_key` iki kez gönderilirse çalışma süre sonunda eksik kapanır (güvenli taraf; sözleşmede yazılı). Geliştirme yığınında Kafka SASL/ACL ve OpenSearch güvenlik eklentisi yok. CI listesi sayfası hâlâ PostgreSQL'de (küresel arama OpenSearch'te); 1–2 karakterlik parçalarda yazım hatası toleransı yok (bilinçli). OpenTelemetry metrikleri yok. sn-sync ve MCP servisleri yok.
 - Üretim dağıtım tanımı (Kubernetes manifesti, Helm, VM betiği) yok: hedef ortam kararını bekliyor (U10). Geliştirme yığınında Kafka ve OpenSearch şifresiz, düz metin (yalnızca 127.0.0.1). İmaj imzalama (cosign) ve imaj kayıt defteri yok (hedef ortamla). Bu sanal geliştirme ortamında Debian deposuna erişim olmadığı için yerel imaj `EVREN_BUILD_OS_UPDATES=0` ile derlendi; güvenlik güncellemeli derleme ve Trivy imaj kapısı yalnızca CI'da doğrulanır.
 - Oturum iptali çerez süresine bağlı (8 saat); anında iptal için sunucu tarafı iptal listesi gerekir (ADR-0010).
 - Bağımlı CI kimliği (uygulama, ağ adaptörü) uygulanmadı; çözümleyici bilinçli olarak `insufficient` döner.
@@ -160,10 +166,11 @@ Doğrulanınca bu bölümden kaldırılacak.
 1. ~~**U1 Altyapı yığını**~~ — tamamlandı (ADR-0016).
 2. ~~**U2 Olay omurgası**~~ — tamamlandı (ADR-0017).
 3. ~~**U3 Arama**~~ — tamamlandı (ADR-0018).
-4. **U4 Bağlayıcılar ve kaynak yönetimi** *(sırada)* — 6 kaynak istemcisi (kaydedilmiş örneklerle), arayüzden çalıştırma/zamanlama.
-5. **U5 Elle girdi** — CI oluşturma, ilişki, CSV içe aktarma.
-6. **U6 Veri modeli yönetimi**, **U7 yaşam döngüsü ve ilişkiler**, **U8 yönetim ekranları**, **U9 ServiceNow replika ve MCP yapısı**.
-7. **U10 Canlı kabul (en son, dış girdilerle)** — Entra kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef ortam.
+4. **U4 CMDB veri modeli** *(sırada)* — ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları (iş uygulaması, uygulama hizmeti, teknik hizmet, hizmet sunumu), uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı sınıfları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle). Bağlayıcıların yazacağı hedef sınıflar hazır olur (F0-17, F0-07).
+5. **U5 Bağlayıcılar ve kaynak yönetimi** — 6 kaynak istemcisi (kaydedilmiş örneklerle), arayüzden çalıştırma/zamanlama, bağlayıcı kimliği yönetimi, ham yük arşivi (F1-14).
+6. **U6 Elle girdi** — CI oluşturma, ilişki, CSV içe aktarma.
+7. **U7 yaşam döngüsü ve ilişkiler**, **U8 yönetim ekranları** (+ gözlemlenebilirlik F1-15, SIEM F1-16), **U9 ServiceNow replika ve MCP yapısı**.
+8. **U10 Canlı kabul (en son, dış girdilerle)** — Entra kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef ortam; yedekleme ve felaket kurtarma (F2-09).
 
 ## Açık sorular
 

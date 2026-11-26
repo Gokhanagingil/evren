@@ -217,6 +217,16 @@ def test_big_picture(page, base_url):
     page.wait_for_selector(".bp-frame svg")
     assert page.locator(".bp-frame svg text", has_text="Kaynaklar").count() >= 1
     assert page.get_attribute("#bpExport", "download") == "Evren_Buyuk_Resim.svg"
+    # Her kutuda yüzde var; bileşen tablosu kanıt, eksik ve plan bağını gösterir (components.json)
+    assert page.locator(".bp-frame svg text", has_text="%").count() >= 50
+    page.wait_for_selector("#compGroups .comp-table")
+    assert page.locator("#compTitle").inner_text().startswith("Bileşen durumu · genel %")
+    model = page.locator("#comp-data_model")
+    assert "U4" in model.inner_text() and "CSDM" in model.inner_text()
+    total = page.locator("#compGroups tbody tr").count()
+    page.check("#compOnlyGaps")
+    assert 0 < page.locator("#compGroups tbody tr").count() < total   # %100 olanlar gizlenir
+    assert page.locator("#comp-outbox").count() == 0
     shot(page, "web_big_picture")
 
 

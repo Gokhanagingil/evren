@@ -455,3 +455,20 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .bp-frame { overflow-x: auto; padding: 12px; }
 .bp-svg { display: block; width: 100%; min-width: 1080px; height: auto; }
 .need { display: block; color: var(--warn); font-size: 12.5px; font-weight: 500; margin-top: 2px; }
+
+/* Büyük resim: bileşen durumu tablosu (components.json) */
+.comp-intro { margin: 18px 0 8px; }
+.comp-intro h2 { font-size: 17px; margin: 0 0 6px; }
+.comp-intro .check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; margin-top: 4px; }
+.comp-group { margin-top: 12px; }
+.comp-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-bottom: 8px; }
+.comp-head h2 { font-size: 15px; margin: 0; }
+.comp-pct { font-weight: 800; white-space: nowrap; }
+.comp-pct.good { color: var(--good); } .comp-pct.warn { color: #b86e00; } .comp-pct.bad { color: var(--accent); }
+.comp-table th[scope=row] { min-width: 150px; text-align: left; vertical-align: top; text-transform: none; letter-spacing: 0; font-size: 13px; font-weight: 650; color: var(--text); background: transparent; }
+.comp-table td { vertical-align: top; }
+.comp-cell { min-width: 96px; }
+.comp-bar { margin-top: 4px; height: 6px; }
+.comp-bar.good i { background: var(--good); } .comp-bar.warn i { background: #e0a020; } .comp-bar.bad i { background: var(--accent); }
+.comp-plan { white-space: nowrap; }
+.comp-plan .pill { margin: 0 4px 4px 0; display: inline-block; text-decoration: none; }
