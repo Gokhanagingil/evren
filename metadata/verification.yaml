@@ -1,0 +1,1554 @@
+# ServiceNow uyum doğrulaması — kanıt defteri (F0-07, ADR-0019).
+# Her öğe: tür, anahtar, sonuç (confirmed | corrected | removed | partial | not_found | evren), belgedeki değer,
+# not ve kaynaklar. Doğrulayıcı: sonuçlanan öğede verify işareti kalmaz; kısmi/bulunamayanda kalır.
+# Kaynak türü: resmi (ServiceNow belgesi, KB, CSDM yayını), topluluk (ServiceNow Community), ucuncu (üçüncü taraf).
+version: 1
+checked_on: '2026-11-26'
+method: Herkese açık ServiceNow belgeleri, CSDM 5 yayınları, ServiceNow topluluğu ve üçüncü taraf sözlük dökümleri; web araması özetleri üzerinden
+  (servicenow.com sayfaları bu ortamda doğrudan açılamadı). Kurum örneğine özgü özelleştirmeler canlı kabulde (U10) tools/sn_metadata_export.py
+  ile denetlenir.
+sources:
+  sn_vcenter_orlando:
+    title: Data collected by Discovery on vCenter (Orlando)
+    url: https://docs.servicenow.com/bundle/orlando-it-operations-management/page/product/discovery/reference/r_VCenterDataCollected.html
+    kind: resmi
+  sn_vcenter_wdc:
+    title: Data collected by Discovery on vCenter (Washington DC)
+    url: https://www.servicenow.com/docs/bundle/washingtondc-it-operations-management/page/product/discovery/reference/r_VCenterDataCollected.html
+    kind: resmi
+  sn_esx_ny:
+    title: Discover ESX servers (New York)
+    url: https://docs.servicenow.com/bundle/newyork-it-operations-management/page/product/discovery/reference/r_DiscoverESXServers.html
+    kind: resmi
+  sn_vmware_fields:
+    title: VMware VM instance alanları
+    url: https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/I36sx4Q7d3sXn_42C28bdg
+    kind: resmi
+  sn_vmware_guestid:
+    title: VMware VM instance (Guest ID)
+    url: https://www.servicenow.com/docs/r/LZHoJyH9VPKmhdIph_6gSw/MrxGJ1ymu0tR1YLAO8gLPw
+    kind: resmi
+  sn_vcenter_object:
+    title: VMware vCenter Object [cmdb_ci_vcenter_object] class
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/0PNbmxuBMN0NcKLqpjiaYQ
+    kind: resmi
+  sn_wap:
+    title: Cisco WAP discovery (Xanadu)
+    url: https://www.servicenow.com/docs/bundle/xanadu-it-operations-management/page/product/service-mapping/reference/cisco-waps-discovery.html
+    kind: resmi
+  sn_tables:
+    title: CMDB tables descriptions
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/1GLrH0vZKHQqi0lHfIjuTw
+    kind: resmi
+  sn_tables_rome:
+    title: CMDB tables descriptions (Rome)
+    url: https://docs.servicenow.com/bundle/rome-servicenow-platform/page/product/configuration-management/reference/cmdb-tables-details.html
+    kind: resmi
+  sn_cmdb_schema:
+    title: CMDB schema model (Zurich)
+    url: https://www.servicenow.com/docs/r/zurich/servicenow-platform/configuration-management-database-cmdb/c_ConfigurationManagementDatabase.html
+    kind: resmi
+  sn_k8s_models:
+    title: Kubernetes extension classes (iş yükü sınıfları)
+    url: https://www.servicenow.com/docs/r/u7nZu9GEUxWr9UkuDmbe6w/xk7fLrbNrphPSB2Cludc9w
+    kind: resmi
+  sn_k8s_otel:
+    title: CMDB classes targeted in Service Graph Connector for OpenTelemetry
+    url: https://www.servicenow.com/docs/r/servicenow-platform/service-graph-connectors/sgc-cmdb-opentelemetry-classes.html
+    kind: resmi
+  kb_k8s_ident:
+    title: KB1166200 Kubernetes kimlik kuralları
+    url: https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1166200
+    kind: resmi
+  sn_cloud_account:
+    title: Cloud service account alanları
+    url: https://www.servicenow.com/docs/r/LZHoJyH9VPKmhdIph_6gSw/xjf5Yf3PcuHMTgAcx30Pkw
+    kind: resmi
+  sn_cloud_master:
+    title: Management account (is_master_account)
+    url: https://www.servicenow.com/docs/r/sPnEbors95h6DhgBlE~f0A/mJA2xJSWBxeFATgS~CH2qw
+    kind: resmi
+  sn_logical_dc:
+    title: Logical datacenter alanları
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/D6BxExd37UlOt3v9N19FKA
+    kind: resmi
+  kb_cloud_dc:
+    title: KB2203635 Bulut veri merkezi bağımlı CI
+    url: https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB2203635
+    kind: resmi
+  sn_mssql:
+    title: MSSQL data collected (Zurich)
+    url: https://www.servicenow.com/docs/r/zurich/it-operations-management/itom-visibility/mssql-data-collected-pattern.html
+    kind: resmi
+  sn_postgres:
+    title: PostgreSQL Instance classifier
+    url: https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/jkzUSVdGAOkpHG2dzg~Dpg
+    kind: resmi
+  sn_db2:
+    title: Db2 discovery
+    url: https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/akQ09WsUequnMEW_K8uGwA
+    kind: resmi
+  sn_extend_rules:
+    title: Extend classes and rules (MySQL katalog örneği)
+    url: https://www.servicenow.com/docs/r/GCPjp~ldPTNRN99oH1DYFg/4ZC39BuKWkwpCOZ3pPjVmQ
+    kind: resmi
+  sn_tomcat:
+    title: Tomcat discovery
+    url: https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/a5X5aupb0AxmmQLnnHhFOQ
+    kind: resmi
+  sn_jboss:
+    title: JBoss discovery
+    url: https://www.servicenow.com/docs/r/sPnEbors95h6DhgBlE~f0A/XSDHUo82Bd6gEjME5q1gLQ
+    kind: resmi
+  sn_webserver:
+    title: Web Server / NGINX discovery
+    url: https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/DusphftU8nW_yg49bVx3Kw
+    kind: resmi
+  sn_apache:
+    title: Create a CI type (Apache Web Server)
+    url: https://www.servicenow.com/docs/r/it-operations-management/discovery-and-service-mapping-patterns/t_CreateCITypeForSM.html
+    kind: resmi
+  sn_iis:
+    title: IIS discovery
+    url: https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/C6EAy1b3edQSp87o37xTEw
+    kind: resmi
+  sn_services:
+    title: Services filtresi (cmdb_ci_service)
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/fCzi~LXiQLYrfA2F~6ZGvg
+    kind: resmi
+  sn_tms_label:
+    title: Technology Management Service etiketi (Yokohama+)
+    url: https://www.servicenow.com/docs/r/Ir~NPf1dr8MGFXQE6QlBoQ/Wgjm2oZyU_EDSzzV8oit3g
+    kind: resmi
+  sn_service_instance:
+    title: Service Instance [cmdb_ci_service_auto] (CSDM 5)
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/iHT9SvSAjIhuKWFdxOMovw
+    kind: resmi
+  sn_tag_based:
+    title: Tag-Based Application Service
+    url: https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/SSIknIrJtQivv~ZyMHm6GA
+    kind: resmi
+  sn_csdm_design:
+    title: CSDM Design & Planning domain
+    url: https://www.servicenow.com/docs/r/zS6yb8e~gR8BPjeviYdV9g/jmgdE30lYIDRQPojDKOzmA
+    kind: resmi
+  sn_business_process:
+    title: 'CSDM Foundation: Business Process'
+    url: https://www.servicenow.com/docs/r/4AA65edJ2a~o5pASflQppQ/9HN8yRmsn2lT9egJsLwDNw
+    kind: resmi
+  sn_info_object:
+    title: Information Object sınıfı ve kimlik kuralı
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/mw4CSdwsch2UGhO6z3u7SA
+    kind: resmi
+  sn_business_app:
+    title: Business Application alanları
+    url: https://www.servicenow.com/docs/r/U2CVwXuy001wBq~XyYjcSg/SGyYP3JTlCbQT_p7cXaGLw
+    kind: resmi
+  csdm5_wp:
+    title: CSDM 5 white paper (ServiceNow CSDM ekibi, 2025)
+    url: https://www.servicenow.com/community/s/cgfwn76974/attachments/cgfwn76974/common-service-data-model-kb/744/3/CSDM%205%20w%20links.pdf
+    kind: resmi
+  csdm5_img:
+    title: CSDM 5 Information Management Implementation Guide
+    url: https://www.servicenow.com/community/s/cgfwn76974/attachments/cgfwn76974/common-service-data-model-kb/918/3/CSDM%205%20Information%20Management%20implementation%20Guide%201.0.pdf
+    kind: resmi
+  sn_lc_logical:
+    title: Life-cycle values for intangible/logical entities
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/ZUSH2I5z~HYaT~C_llBy8w
+    kind: resmi
+  sn_lc_physical:
+    title: Life-cycle values for tangible/physical CIs
+    url: https://www.servicenow.com/docs/r/washingtondc/servicenow-platform/common-service-data-model-csdm/csdm-lifecycle-df-tangible-physical.html
+    kind: resmi
+  sn_lc_product:
+    title: Life-cycle values for product entities
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/ZjRDxUxXc_I3_XVpU9yNxQ
+    kind: resmi
+  sn_attestation:
+    title: 'CMDB Data Manager: attestation alanları'
+    url: https://www.servicenow.com/docs/r/zS6yb8e~gR8BPjeviYdV9g/EyIyurbSmol5lZMJcBnVaA
+    kind: resmi
+  sn_storage_host:
+    title: Storage discovery via host (Tokyo)
+    url: https://docs.servicenow.com/bundle/tokyo-it-operations-management/page/product/discovery/reference/r_DataCollDiscoStorageViaHost.html
+    kind: resmi
+  sn_disk_fields:
+    title: Disk alanları (storage_type, size_bytes)
+    url: https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/PG7rkVDwBOwP2kUhCxAFiQ
+    kind: resmi
+  sn_filesystem:
+    title: File system örneği (mount point, file system)
+    url: https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/6WrQ3n9Tg02WOr3hglTXTQ
+    kind: resmi
+  sn_ip_networks:
+    title: Data collected for IP networks (Washington DC)
+    url: https://docs.servicenow.com/bundle/washingtondc-it-operations-management/page/product/discovery/reference/r_DataCollDiscoIPNetworks.html
+    kind: resmi
+  sn_unix_cluster:
+    title: Unix cluster alanları
+    url: https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/Bn2nfXodntEaNSti6ql1eg
+    kind: resmi
+  sn_cluster_id:
+    title: Cluster ID (Pacemaker / Rubrik)
+    url: https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/dIh_OdCpQQPTcsL7u8WfBg
+    kind: resmi
+  sn_container:
+    title: OS-level container alanları (Image ID)
+    url: https://www.servicenow.com/docs/r/AGMjjjnYvvG0sY5d7GEnIw/152AENAYsuy7ErEaILcWNA
+    kind: resmi
+  sn_data_class:
+    title: Data classification (Information Object)
+    url: https://www.servicenow.com/docs/r/5lP9Pa2tE3N8lrzw94z7xA/zcTkA20tZBKazzs9B2074g
+    kind: resmi
+  sn_ident_rules:
+    title: Identification rules (donanım)
+    url: https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/qG5r~lgjzB8eUVVTvbX_fw
+    kind: resmi
+  comm_class_tree:
+    title: 'Topluluk: CI sınıf ağacı dökümü'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/listing-all-ci-classes-instead-of-browsing-through-them/m-p/334532
+    kind: topluluk
+  comm_rack:
+    title: 'Topluluk: Data centers, racks and rack units'
+    url: https://www.servicenow.com/community/it-service-management-forum/cmdb-data-centers-racks-and-rack-units/td-p/719949
+    kind: topluluk
+  comm_rack_units:
+    title: 'Topluluk: Managing space and power of IT racks'
+    url: https://www.servicenow.com/community/cmdb-articles/managing-space-and-power-of-server-it-racks/ta-p/2300919
+    kind: topluluk
+  comm_storage_device:
+    title: 'Topluluk: Storage device tablosu'
+    url: https://www.servicenow.com/community/cmdb-forum/what-is-the-use-of-this-table-storage-device-cmdb-ci-storage/m-p/3015242
+    kind: topluluk
+  comm_k8s_list:
+    title: 'Topluluk: Kubernetes components discovery'
+    url: https://www.servicenow.com/community/itom-articles/kubernetes-components-discovery-using-service-now-discovery/ta-p/2323630
+    kind: topluluk
+  comm_service_discovered:
+    title: 'Topluluk: cmdb_ci_service_discovered vs auto'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/application-service-cmdb-ci-service-discovered-vs-cmdb-ci/m-p/338271
+    kind: topluluk
+  comm_service_calculated:
+    title: 'Topluluk: Service Mapping application service'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/service-mapping-application-service/m-p/3070855
+    kind: topluluk
+  comm_dynamic_group:
+    title: 'Topluluk: Dynamic CI Group = query based service'
+    url: https://www.servicenow.com/community/developer-forum/dynamic-ci-group-actually-quot-query-based-service-quot/m-p/3521616
+    kind: topluluk
+  comm_service_links:
+    title: 'Topluluk: Business/technical service bağları'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/how-business-technical-service-linked-with-business-technical/m-p/3338469
+    kind: topluluk
+  comm_lc_values:
+    title: 'Topluluk: CSDM aşama durumu tanımları'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/csdm-lifecyle-stage-status-descriptions-definitions-for-each/m-p/3522617
+    kind: topluluk
+  comm_lc_util:
+    title: 'Topluluk: LifeCycleUtil ve life_cycle_control'
+    url: https://www.servicenow.com/community/cmdb-forum/csdm-ci-lifecycle-management-lifecycleutil-and-internal-state/m-p/3479422
+    kind: topluluk
+  comm_lc_mapping:
+    title: 'Topluluk: Life cycle migration and mappings'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/life-cycle-standards-migration-and-mappings/m-p/2403645
+    kind: topluluk
+  comm_attested:
+    title: 'Topluluk: attested alanı güncellenmiyor'
+    url: https://www.servicenow.com/community/cmdb-forum/attestation-ci-attested-field-is-not-updating-to-true-and/m-p/2839686
+    kind: topluluk
+  comm_app_owner:
+    title: 'Topluluk: IT application owner betiği'
+    url: https://www.servicenow.com/community/now-platform-articles/script-find-list-of-it-application-owners-without-itil-role/ta-p/2319822
+    kind: topluluk
+  comm_fs_space:
+    title: 'Topluluk: File system available space'
+    url: https://www.servicenow.com/community/cmdb-forum/quot-available-space-quot-field-converting-the-mb-gb-data-into/m-p/2984607
+    kind: topluluk
+  comm_vlan:
+    title: 'Topluluk: VLAN için OOB sınıf'
+    url: https://www.servicenow.com/community/itsm-forum/is-there-any-oob-cmdb-ci-class-for-maintain-vlan-data-network/m-p/582910
+    kind: topluluk
+  comm_vmi_ident:
+    title: 'Topluluk: VM instance kimliği'
+    url: https://www.servicenow.com/community/cmdb-forum/how-vmi-find-corresponding-server-ci-and-how-vmi-deal-with/m-p/226515
+    kind: topluluk
+  comm_vm_server_rel:
+    title: 'Topluluk: Server CI ve VM instance ilişkisi'
+    url: https://www.servicenow.com/community/itom-articles/server-ci-and-vm-instance-ci-relationship-understanding-and/ta-p/2322831
+    kind: topluluk
+  comm_vcenter_rel:
+    title: 'Topluluk: vCenter discovery ilişkileri'
+    url: https://www.servicenow.com/community/servicenow-ai-platform-forum/vcenter-discovery-ci-relationship-missing/m-p/1200951
+    kind: topluluk
+  comm_capability_rel:
+    title: 'Topluluk: Business capability ilişkisi'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/relationship-for-business-capability/m-p/2592492
+    kind: topluluk
+  comm_capability_parent:
+    title: 'Topluluk: Business capability hiyerarşisi'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/relationship-for-business-capability/m-p/2589442
+    kind: topluluk
+  comm_process_rel:
+    title: 'Topluluk: Business process ilişkisi (CSDM 5)'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/clarity-on-csdm-recommended-relation-between-business/td-p/3517465
+    kind: topluluk
+  comm_ba_si_rel:
+    title: 'Topluluk: CSDM 5 iş uygulaması ↔ servis örneği'
+    url: https://www.servicenow.com/community/common-service-data-model-forum/csdm-5-0-business-app-to-service-instance-relationship-change/m-p/3299351
+    kind: topluluk
+  comm_offering_dcg:
+    title: 'Topluluk: Types of services (CSDM)'
+    url: https://www.servicenow.com/community/cmdb-articles/types-of-services-csdm/ta-p/3225320
+    kind: topluluk
+  comm_hw_ident:
+    title: 'Topluluk: Identification and reconciliation rules'
+    url: https://www.servicenow.com/community/cmdb-articles/cmdb-understanding-identification-and-reconciliation-rules-and/ta-p/3520826
+    kind: topluluk
+  comm_azure_vm:
+    title: 'Topluluk: Azure VM ↔ hesap bağı'
+    url: https://www.servicenow.com/community/itom-forum/azure-cloud-discovery-relationship-between-cloud-service-account/m-p/3481142
+    kind: topluluk
+  erm4sn_unix:
+    title: 'erm4sn sözlük dökümü: UNIX Server'
+    url: https://demo.erm4sn.com/table/100/df30a405c0c8cf9d62e994b2510c4f76
+    kind: ucuncu
+  erm4sn_lb:
+    title: 'erm4sn sözlük dökümü: Load Balancer'
+    url: https://demo.erm4sn.com/table/300/64cadb1fd83210100c1d056eb83723c5
+    kind: ucuncu
+  erm4sn_netgear:
+    title: 'erm4sn sözlük dökümü: Network Gear'
+    url: https://demo.erm4sn.com/table/100/e0d6563abb2c411a201c883b9a691f7a
+    kind: ucuncu
+  erm4sn_vccluster:
+    title: 'erm4sn sözlük dökümü: vCenter Cluster'
+    url: https://demo.erm4sn.com/table/100/46e60b3bbbfec78f467a22df3900d2a0
+    kind: ucuncu
+  erm4sn_rack:
+    title: 'erm4sn sözlük dökümü: Rack'
+    url: https://demo.erm4sn.com/table/100/eb0bdf2e512895fc90b96bbd884e839a
+    kind: ucuncu
+  erm4sn_hw:
+    title: 'erm4sn sözlük dökümü: Hardware'
+    url: https://demo.erm4sn.com/table/100/49124d5ef39b5c8485980bcf53a8b776
+    kind: ucuncu
+  erm4sn_volume:
+    title: 'erm4sn sözlük dökümü: Storage Volume / File System'
+    url: https://demo.erm4sn.com/table/100/02eef231d9281a3892ec5f6cc2c6dc25
+    kind: ucuncu
+  erm4sn_storage_server:
+    title: 'erm4sn sözlük dökümü: Storage Server'
+    url: https://demo.erm4sn.com/table/100/78c6cd36a2f91ff3b0acfeca7fb5b123
+    kind: ucuncu
+  erm4sn_computer:
+    title: 'erm4sn sözlük dökümü: Computer'
+    url: https://demo.erm4sn.com/table/100/442bf85f4d776b5a4d8518edeead869a
+    kind: ucuncu
+  snowball_server:
+    title: 'thesnowball.co: cmdb_ci_server alt tabloları'
+    url: https://thesnowball.co/table/cmdb_ci_server
+    kind: ucuncu
+  bmc_lb:
+    title: 'BMC: ServiceNow mapping for load balancer nodes'
+    url: https://docs.bmc.com/docs/discovery/daas/servicenow-mapping-for-load-balancer-nodes-907288290.html
+    kind: ucuncu
+  bmc_host_map:
+    title: 'BMC: ServiceNow mapping for host'
+    url: https://docs.bmc.com/docs/discovery/213/servicenow-mapping-for-host-1024737810.html
+    kind: ucuncu
+  medium_vcenter:
+    title: vCenter discovery (Medium)
+    url: https://macul.medium.com/vcenter-discovery-ff523a0b7f8d
+    kind: ucuncu
+  snowmirror_dm:
+    title: ServiceNow Data Model v3.4 (2016, SnowMirror)
+    url: https://www.snow-mirror.com/wp-content/uploads/2016/07/ServiceNow-Data-Model-v3.4.pdf
+    kind: ucuncu
+  packt:
+    title: 'Packt: ServiceNow CMDB kitabı'
+    url: https://m.itv.qq.com/read/1036700721/74
+    kind: ucuncu
+  sciencelogic_map:
+    title: 'ScienceLogic: ServiceNow CMDB eşlemeleri'
+    url: https://docs.sciencelogic.com/latest/Content/Web_Content_Dev_and_Integration/IS_ServiceNow_CMDB/is_snow_app_mappings.htm
+    kind: ucuncu
+  sciencelogic_pdf:
+    title: ScienceLogic CMDB SyncPack 3.3.2
+    url: https://docs.sciencelogic.com/pdf/sciencelogic_servicenow_cmdb_syncpack_3-3-2.pdf
+    kind: ucuncu
+  paloalto_attr:
+    title: 'Palo Alto: ServiceNow öznitelik başvurusu'
+    url: https://docs.paloaltonetworks.com/iot/integration/attribute-reference/attribute-reference-servicenow
+    kind: ucuncu
+  hashicorp_aks:
+    title: 'HashiCorp: Service Graph Azure kapsamı'
+    url: https://developer.hashicorp.com/terraform/cloud-docs/integrations/service-now/service-graph/resource-coverage/azure
+    kind: ucuncu
+  syncfish_k8s:
+    title: 'Syncfish: GCP CI ilişkileri'
+    url: https://support.syncfish.com.au/cs/rule-2-gcp-ci-to-ci-relationships
+    kind: ucuncu
+items:
+- kind: classes
+  key: cmdb_ci_aix_server
+  verdict: confirmed
+  documented: cmdb_ci_aix_server ← cmdb_ci_unix_server
+  note: UNIX Server alt sınıfı (sözlük dökümü)
+  sources:
+  - erm4sn_unix
+- kind: classes
+  key: cmdb_ci_solaris_server
+  verdict: confirmed
+  documented: cmdb_ci_solaris_server ← cmdb_ci_unix_server
+  sources:
+  - erm4sn_unix
+- kind: classes
+  key: cmdb_ci_hpux_server
+  verdict: confirmed
+  documented: cmdb_ci_hpux_server ← cmdb_ci_unix_server
+  note: Eksik sınıf olarak eklendi
+  sources:
+  - erm4sn_unix
+- kind: classes
+  key: cmdb_ci_esx_server
+  verdict: confirmed
+  documented: cmdb_ci_esx_server ← cmdb_ci_server
+  note: Yalnızca üçüncü taraf kaynak
+  sources:
+  - snowball_server
+  - sn_esx_ny
+- kind: classes
+  key: cmdb_ci_lb
+  verdict: corrected
+  documented: cmdb_ci_lb ← cmdb_ci_server
+  note: Önceki varsayım ağ cihazı altındaydı; iki üçüncü taraf kaynak bilgisayar soyunda gösteriyor
+  sources:
+  - erm4sn_lb
+  - bmc_lb
+- kind: classes
+  key: cmdb_ci_wap_network
+  verdict: confirmed
+  documented: cmdb_ci_wap_network ← cmdb_ci_netgear
+  sources:
+  - sn_wap
+  - erm4sn_netgear
+- kind: classes
+  key: cmdb_ci_vcenter
+  verdict: corrected
+  documented: cmdb_ci_vcenter ← cmdb_ci_appl
+  note: 'vCenter bir uygulama olarak modellenir (önceki varsayım: VM nesnesi)'
+  sources:
+  - medium_vcenter
+  - snowmirror_dm
+- kind: classes
+  key: cmdb_ci_vcenter_object
+  verdict: confirmed
+  documented: cmdb_ci_vcenter_object ← cmdb_ci_vm_object
+  note: Ara sınıf eklendi; üst sınıf sözlük dökümünden
+  sources:
+  - sn_vcenter_object
+  - erm4sn_vccluster
+- kind: classes
+  key: cmdb_ci_vcenter_datacenter
+  verdict: corrected
+  documented: cmdb_ci_vcenter_datacenter ← cmdb_ci_logical_datacenter
+  sources:
+  - sn_vcenter_orlando
+- kind: classes
+  key: cmdb_ci_host_cluster
+  verdict: partial
+  documented: cmdb_ci_host_cluster
+  note: Sınıf resmi belgede bulut bağımsız 'Host Cluster'; üst sınıfı yalnızca sözlük dökümünde
+  sources:
+  - sn_vcenter_orlando
+  - erm4sn_vccluster
+- kind: classes
+  key: cmdb_ci_vcenter_cluster
+  verdict: corrected
+  documented: cmdb_ci_vcenter_cluster ← cmdb_ci_host_cluster
+  sources:
+  - erm4sn_vccluster
+  - sn_vcenter_orlando
+- kind: classes
+  key: cmdb_ci_datastore
+  verdict: partial
+  documented: cmdb_ci_datastore
+  note: vCenter datastore'un üst sınıfı olarak belgede; kendi üst sınıfı görülmedi
+  sources:
+  - sn_vcenter_orlando
+- kind: classes
+  key: cmdb_ci_vcenter_datastore
+  verdict: corrected
+  documented: cmdb_ci_vcenter_datastore ← cmdb_ci_datastore
+  sources:
+  - sn_vcenter_orlando
+- kind: classes
+  key: cmdb_ci_rack
+  verdict: corrected
+  documented: cmdb_ci_rack ← cmdb_ci
+  note: Kabin donanım değil, doğrudan CI
+  sources:
+  - comm_rack
+  - erm4sn_rack
+- kind: classes
+  key: cmdb_ci_storage_device
+  verdict: partial
+  documented: cmdb_ci_storage_device ← cmdb_ci_hardware ?
+  note: Kaynaklar çelişiyor (donanım veya doğrudan CI)
+  sources:
+  - erm4sn_hw
+  - comm_storage_device
+- kind: classes
+  key: cmdb_ci_storage_volume
+  verdict: corrected
+  documented: cmdb_ci_storage_volume ← cmdb_ci
+  note: Depolama cihazının değil CI'ın alt sınıfı
+  sources:
+  - erm4sn_volume
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_storage_server
+  verdict: confirmed
+  documented: cmdb_ci_storage_server ← cmdb_ci_server
+  sources:
+  - erm4sn_storage_server
+- kind: classes
+  key: cmdb_ci_file_system
+  verdict: corrected
+  documented: cmdb_ci_file_system ← cmdb_ci_storage_volume
+  note: Dosya sistemi depolama biriminin alt sınıfı
+  sources:
+  - erm4sn_volume
+- kind: classes
+  key: cmdb_ci_ip_network
+  verdict: partial
+  documented: cmdb_ci_ip_network
+  note: Tablo ve alanları resmi belgede; üst sınıf görülmedi
+  sources:
+  - sn_ip_networks
+- kind: classes
+  key: cmdb_ci_vlan
+  verdict: not_found
+  note: Alan listesi yok; ServiceNow VLAN bilgisini cmdb_vlan_configuration tablosunda da tutuyor
+  sources:
+  - comm_vlan
+- kind: classes
+  key: cmdb_ci_dns_name
+  verdict: not_found
+  note: Arama kotası bitmeden ulaşılamadı
+- kind: classes
+  key: cmdb_ci_cluster
+  verdict: partial
+  documented: cmdb_ci_cluster
+  note: Sınıf var (eşleme belgeleri); üst sınıf görülmedi
+  sources:
+  - sciencelogic_map
+  - bmc_host_map
+- kind: classes
+  key: cmdb_ci_cluster_node
+  verdict: partial
+  documented: cmdb_ci_cluster_node
+  note: Sınıf ve cluster alanı var; üst sınıf görülmedi
+  sources:
+  - bmc_host_map
+- kind: classes
+  key: cmdb_ci_win_cluster
+  verdict: not_found
+  note: Arama kotası bitmeden ulaşılamadı
+- kind: classes
+  key: cmdb_ci_oslv_container
+  verdict: partial
+  documented: cmdb_ci_oslv_container
+  note: Alanları resmi belgede (Container ID, Image ID); üst sınıf görülmedi
+  sources:
+  - sn_container
+- kind: classes
+  key: cmdb_ci_docker_container
+  verdict: not_found
+  note: Arama kotası bitmeden ulaşılamadı
+- kind: classes
+  key: cmdb_ci_kubernetes_cluster
+  verdict: partial
+  documented: cmdb_ci_kubernetes_cluster (Kubernetes Cluster)
+  note: Üst sınıf görülmedi
+  sources:
+  - hashicorp_aks
+  - kb_k8s_ident
+- kind: classes
+  key: cmdb_ci_kubernetes_component
+  verdict: partial
+  documented: cmdb_ci_kubernetes_component
+  note: Sınıf resmi belgede (iş yükü sınıfları bundan türer); kendi üst sınıfı görülmedi
+  sources:
+  - sn_k8s_models
+- kind: classes
+  key: cmdb_ci_kubernetes_workload
+  verdict: confirmed
+  documented: cmdb_ci_kubernetes_workload ← cmdb_ci_kubernetes_component
+  note: Eksik ara sınıf eklendi
+  sources:
+  - sn_k8s_models
+- kind: classes
+  key: cmdb_ci_kubernetes_deployment
+  verdict: corrected
+  documented: cmdb_ci_kubernetes_deployment ← cmdb_ci_kubernetes_workload
+  sources:
+  - sn_k8s_models
+- kind: classes
+  key: cmdb_ci_kubernetes_daemonset
+  verdict: confirmed
+  documented: cmdb_ci_kubernetes_daemonset ← cmdb_ci_kubernetes_workload
+  note: Eklendi
+  sources:
+  - sn_k8s_models
+- kind: classes
+  key: cmdb_ci_kubernetes_statefulset
+  verdict: confirmed
+  documented: cmdb_ci_kubernetes_statefulset ← cmdb_ci_kubernetes_workload
+  note: Eklendi
+  sources:
+  - sn_k8s_models
+- kind: classes
+  key: cmdb_ci_kubernetes_namespace
+  verdict: partial
+  documented: Kubernetes Namespace
+  note: Sınıf resmi belgede kümeye referansla; üst sınıf görülmedi
+  sources:
+  - sn_k8s_otel
+- kind: classes
+  key: cmdb_ci_kubernetes_node
+  verdict: partial
+  documented: cmdb_ci_kubernetes_node
+  note: Yalnızca topluluk listesinde; üst sınıf görülmedi
+  sources:
+  - comm_k8s_list
+- kind: classes
+  key: cmdb_ci_kubernetes_pod
+  verdict: partial
+  documented: cmdb_ci_kubernetes_pod
+  note: Öznitelikleri resmi belgede; üst sınıf görülmedi
+  sources:
+  - sn_k8s_otel
+- kind: classes
+  key: cmdb_ci_kubernetes_service
+  verdict: partial
+  documented: cmdb_ci_kubernetes_service
+  note: Kimlik kuralı KB'de; üst sınıf görülmedi
+  sources:
+  - kb_k8s_ident
+  - comm_k8s_list
+- kind: classes
+  key: cmdb_ci_cloud_service_account
+  verdict: partial
+  documented: cmdb_ci_cloud_service_account
+  note: Alanları resmi belgede; üst sınıf görülmedi
+  sources:
+  - sn_cloud_account
+- kind: classes
+  key: cmdb_ci_logical_datacenter
+  verdict: partial
+  documented: cmdb_ci_logical_datacenter
+  note: AWS, Azure, Google ve vCenter veri merkezleri bundan türer; kendi üst sınıfı görülmedi
+  sources:
+  - sn_logical_dc
+- kind: classes
+  key: cmdb_ci_azure_datacenter
+  verdict: confirmed
+  documented: cmdb_ci_azure_datacenter ← cmdb_ci_logical_datacenter
+  sources:
+  - sn_logical_dc
+  - hashicorp_aks
+- kind: classes
+  key: cmdb_ci_aws_datacenter
+  verdict: confirmed
+  documented: cmdb_ci_aws_datacenter ← cmdb_ci_logical_datacenter
+  sources:
+  - sn_logical_dc
+  - sn_cloud_account
+- kind: classes
+  key: cmdb_ci_pc_hardware
+  verdict: confirmed
+  documented: cmdb_ci_pc_hardware ← cmdb_ci_computer (Personal Computer)
+  sources:
+  - erm4sn_computer
+- kind: classes
+  key: cmdb_ci_printer
+  verdict: confirmed
+  documented: cmdb_ci_printer ← cmdb_ci_hardware
+  note: Yalnızca sözlük dökümü
+  sources:
+  - erm4sn_hw
+- kind: classes
+  key: cmdb_ci_disk
+  verdict: confirmed
+  documented: cmdb_ci_disk ← cmdb_ci_storage_device
+  note: Topluluk sınıf ağacı
+  sources:
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_instance
+  verdict: confirmed
+  documented: cmdb_ci_db_instance ← cmdb_ci_appl
+  sources:
+  - packt
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_mssql_instance
+  verdict: corrected
+  documented: cmdb_ci_db_mssql_instance (MSFT SQL Instance)
+  note: Etiket düzeltildi
+  sources:
+  - sn_mssql
+- kind: classes
+  key: cmdb_ci_db_ora_instance
+  verdict: partial
+  documented: Oracle Instance
+  note: Sınıf topluluk ağacında; tablo adı belgede görülmedi
+  sources:
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_mysql_instance
+  verdict: confirmed
+  documented: cmdb_ci_db_mysql_instance ← cmdb_ci_db_instance
+  sources:
+  - sn_extend_rules
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_postgresql_instance
+  verdict: confirmed
+  documented: cmdb_ci_db_postgresql_instance (PostgreSQL Instance)
+  sources:
+  - sn_postgres
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_db2_instance
+  verdict: partial
+  documented: cmdb_ci_db_db2_instance
+  note: Tablo resmi belgede; etiket ve üst sınıf yalnızca topluluk ağacında
+  sources:
+  - sn_db2
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_database
+  verdict: confirmed
+  documented: cmdb_ci_database ← cmdb_ci
+  sources:
+  - sn_cmdb_schema
+- kind: classes
+  key: cmdb_ci_db_catalog
+  verdict: confirmed
+  documented: cmdb_ci_db_catalog ← cmdb_ci_database (Database Catalog)
+  note: Eklendi
+  sources:
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_mssql_catalog
+  verdict: confirmed
+  documented: cmdb_ci_db_mssql_catalog ← cmdb_ci_db_catalog
+  note: Eklendi
+  sources:
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_db2_catalog
+  verdict: confirmed
+  documented: cmdb_ci_db_db2_catalog ← cmdb_ci_db_catalog
+  note: Eklendi
+  sources:
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_db_mysql_catalog
+  verdict: partial
+  documented: cmdb_ci_db_mysql_catalog
+  note: Tablo resmi örnekte; üst sınıf görülmedi
+  sources:
+  - sn_extend_rules
+- kind: classes
+  key: cmdb_ci_app_server_tomcat
+  verdict: confirmed
+  documented: cmdb_ci_app_server_tomcat (Tomcat)
+  sources:
+  - sn_tomcat
+  - sn_tables
+- kind: classes
+  key: cmdb_ci_app_server_jboss
+  verdict: confirmed
+  documented: cmdb_ci_app_server_jboss (JBoss)
+  sources:
+  - sn_jboss
+- kind: classes
+  key: cmdb_ci_app_server_weblogic
+  verdict: corrected
+  documented: cmdb_ci_app_server_weblogic (BEA Weblogic)
+  note: Etiket düzeltildi
+  sources:
+  - sn_tables_rome
+- kind: classes
+  key: cmdb_ci_app_server_websphere
+  verdict: corrected
+  documented: cmdb_ci_app_server_websphere (IBM Websphere)
+  note: Etiket düzeltildi
+  sources:
+  - sn_tables_rome
+- kind: classes
+  key: cmdb_ci_web_server
+  verdict: partial
+  documented: cmdb_ci_web_server (Web Server)
+  note: Üst sınıf için kaynaklar çelişiyor (uygulama veya uygulama sunucusu)
+  sources:
+  - sn_webserver
+- kind: classes
+  key: cmdb_ci_apache_web_server
+  verdict: confirmed
+  documented: cmdb_ci_apache_web_server ← cmdb_ci_web_server
+  sources:
+  - sn_apache
+- kind: classes
+  key: cmdb_ci_microsoft_iis_web_server
+  verdict: confirmed
+  documented: cmdb_ci_microsoft_iis_web_server
+  sources:
+  - sn_iis
+  - comm_class_tree
+- kind: classes
+  key: cmdb_ci_nginx_web_server
+  verdict: corrected
+  documented: cmdb_ci_nginx_web_server (NGINX Web Server)
+  note: Etiket yazımı düzeltildi
+  sources:
+  - sn_webserver
+- kind: classes
+  key: cmdb_ci_service
+  verdict: partial
+  documented: cmdb_ci_service (Services)
+  note: Üst sınıf belgede görülmedi
+  sources:
+  - sn_services
+- kind: classes
+  key: cmdb_ci_service_business
+  verdict: partial
+  documented: cmdb_ci_service_business
+  note: Üst sınıf belgede görülmedi
+  sources:
+  - comm_service_links
+- kind: classes
+  key: cmdb_ci_service_technical
+  verdict: partial
+  documented: Technology Management Service
+  note: Yokohama ve sonrasında etiket değişti (düzeltildi); üst sınıf görülmedi
+  sources:
+  - sn_tms_label
+- kind: classes
+  key: service_offering
+  verdict: partial
+  documented: service_offering
+  note: Teknik sunumların etiketi 'Technology Management Service Offering'; üst sınıf görülmedi
+  sources:
+  - sn_service_instance
+- kind: classes
+  key: cmdb_ci_service_auto
+  verdict: partial
+  documented: Service Instance
+  note: CSDM 5'te etiket 'Service Instance' (düzeltildi); üst sınıf görülmedi
+  sources:
+  - sn_service_instance
+- kind: classes
+  key: cmdb_ci_service_discovered
+  verdict: confirmed
+  documented: cmdb_ci_service_discovered ← cmdb_ci_service_auto
+  sources:
+  - comm_service_discovered
+- kind: classes
+  key: cmdb_ci_service_calculated
+  verdict: partial
+  documented: Calculated Application Service
+  note: Doğrudan üst sınıf belirsiz (servis örneği veya haritalanmış servis)
+  sources:
+  - comm_service_calculated
+- kind: classes
+  key: cmdb_ci_service_by_tags
+  verdict: partial
+  documented: cmdb_ci_service_by_tags
+  note: Üst sınıf görülmedi
+  sources:
+  - sn_tag_based
+- kind: classes
+  key: cmdb_ci_query_based_service
+  verdict: corrected
+  documented: cmdb_ci_query_based_service ← cmdb_ci_service_auto
+  note: Önceki varsayım cmdb_ci_service
+  sources:
+  - comm_dynamic_group
+- kind: classes
+  key: cmdb_ci_business_app
+  verdict: partial
+  documented: cmdb_ci_business_app
+  note: CSDM 5'te yeniden adlandırma yok; üst sınıf görülmedi
+  sources:
+  - sn_csdm_design
+- kind: classes
+  key: cmdb_ci_business_capability
+  verdict: partial
+  documented: cmdb_ci_business_capability
+  note: Üst sınıf görülmedi
+  sources:
+  - sn_csdm_design
+- kind: classes
+  key: cmdb_ci_business_process
+  verdict: partial
+  documented: cmdb_ci_business_process
+  note: CSDM Foundation alanında; üst sınıf görülmedi
+  sources:
+  - sn_business_process
+- kind: classes
+  key: cmdb_ci_information_object
+  verdict: confirmed
+  documented: cmdb_ci_information_object ← cmdb_ci
+  sources:
+  - sn_info_object
+- kind: fields
+  key: cmdb_ci.life_cycle_stage
+  verdict: confirmed
+  documented: life_cycle_stage
+  note: ServiceNow'da life_cycle_stage tablosuna referans; Evren'de değer listesi (ADR-0019)
+  sources:
+  - comm_lc_util
+- kind: fields
+  key: cmdb_ci.life_cycle_stage_status
+  verdict: confirmed
+  documented: life_cycle_stage_status
+  note: ServiceNow'da referans ve life_cycle_control ile süzülür
+  sources:
+  - comm_lc_util
+- kind: fields
+  key: cmdb_ci.attested
+  verdict: confirmed
+  documented: attested (boolean)
+  note: Eski alan; onaydan sonra güncellenmiyor
+  sources:
+  - comm_attested
+- kind: fields
+  key: cmdb_ci.attested_by
+  verdict: confirmed
+  documented: attested_by
+  note: Onayla otomatik güncellenen alanlardan; hedef tablo kullanıcı
+  sources:
+  - sn_attestation
+  - paloalto_attr
+- kind: fields
+  key: cmdb_ci.attested_date
+  verdict: confirmed
+  documented: attested_date
+  sources:
+  - sn_attestation
+- kind: fields
+  key: cmdb_ci.attestation_status
+  verdict: partial
+  documented: attestation_status
+  note: Asıl onay durumu alanı (eklendi); değer listesi topluluk kaynağından
+  sources:
+  - sn_attestation
+  - comm_attested
+- kind: fields
+  key: cmdb_ci.cost_center
+  verdict: partial
+  documented: cost_center
+  note: Alan var; cmn_cost_center referansı belgede yazılmamış (sys_user.cost_center'dan çıkarım)
+  sources:
+  - paloalto_attr
+- kind: fields
+  key: cmdb_ci_vmware_instance.guest_id
+  verdict: confirmed
+  documented: guest_id (Guest ID)
+  sources:
+  - sn_vmware_guestid
+- kind: fields
+  key: cmdb_ci_vmware_instance.vcenter_uuid
+  verdict: confirmed
+  documented: vcenter_uuid (vCenter Instance UUID)
+  sources:
+  - sn_vmware_fields
+- kind: fields
+  key: cmdb_ci_vmware_instance.bios_uuid
+  verdict: confirmed
+  documented: bios_uuid (BIOS UUID)
+  sources:
+  - sn_vmware_fields
+- kind: fields
+  key: cmdb_ci_vmware_instance.vm_instance_uuid
+  verdict: confirmed
+  documented: vm_instance_uuid
+  note: Eksik alan eklendi; vCenter eşlemesi dolduruyor
+  sources:
+  - sn_vmware_fields
+  - comm_vmi_ident
+- kind: fields
+  key: cmdb_ci_vcenter.instance_uuid
+  verdict: confirmed
+  documented: instance_uuid (Instance UUID)
+  sources:
+  - sn_vcenter_wdc
+- kind: fields
+  key: cmdb_ci_business_app.it_application_owner
+  verdict: confirmed
+  documented: it_application_owner
+  note: Kullanıcı referansı
+  sources:
+  - comm_app_owner
+  - sn_business_app
+- kind: fields
+  key: cmdb_ci_business_app.application_type
+  verdict: partial
+  documented: Application Type
+  note: Etiket belgede; sütun adı görülmedi
+  sources:
+  - sn_business_app
+- kind: fields
+  key: cmdb_ci_business_app.architecture_type
+  verdict: partial
+  documented: Architecture type
+  note: 'Değerler: Web-based, N-Tier, Client Server, Platform Host, Platform Application, SaaS, Other; sütun adı görülmedi'
+  sources:
+  - sn_business_app
+- kind: fields
+  key: cmdb_ci_business_app.install_type
+  verdict: partial
+  documented: Install type
+  note: 'Değerler: On Premise, Cloud, Hybrid, Third Party Hosted; sütun adı görülmedi'
+  sources:
+  - sn_business_app
+- kind: fields
+  key: cmdb_ci_business_app.user_base
+  verdict: partial
+  documented: User base
+  note: Etiket belgede; sütun adı görülmedi
+  sources:
+  - sn_business_app
+- kind: fields
+  key: cmdb_ci_rack.rack_units
+  verdict: partial
+  documented: Rack units
+  note: Etiket topluluk makalesinde; sütun adı görülmedi
+  sources:
+  - comm_rack_units
+- kind: fields
+  key: cmdb_ci_storage_device.computer
+  verdict: confirmed
+  documented: computer → cmdb_ci_computer
+  sources:
+  - sn_storage_host
+- kind: fields
+  key: cmdb_ci_storage_device.storage_type
+  verdict: confirmed
+  documented: storage_type
+  note: Disk sınıfında listeleniyor
+  sources:
+  - sn_disk_fields
+- kind: fields
+  key: cmdb_ci_storage_device.size_bytes
+  verdict: confirmed
+  documented: size_bytes
+  note: Bayt cinsinden boyut
+  sources:
+  - sn_disk_fields
+- kind: fields
+  key: cmdb_ci_file_system.computer
+  verdict: confirmed
+  documented: computer
+  note: Üçüncü taraf örnek kayıt
+  sources:
+  - sciencelogic_pdf
+- kind: fields
+  key: cmdb_ci_file_system.mount_point
+  verdict: confirmed
+  documented: mount_point
+  sources:
+  - sn_filesystem
+- kind: fields
+  key: cmdb_ci_file_system.file_system
+  verdict: confirmed
+  documented: file_system (ör. Ext4)
+  sources:
+  - sn_filesystem
+- kind: fields
+  key: cmdb_ci_file_system.capacity
+  verdict: confirmed
+  documented: capacity (MB, tam sayı)
+  sources:
+  - comm_fs_space
+- kind: fields
+  key: cmdb_ci_file_system.available_space
+  verdict: confirmed
+  documented: available_space (MB, tam sayı)
+  note: Eklendi
+  sources:
+  - comm_fs_space
+- kind: fields
+  key: cmdb_ci_file_system.free_space
+  verdict: corrected
+  documented: free_space (metin)
+  note: Tam sayı değil metin; sayısal boş alan available_space
+  sources:
+  - comm_fs_space
+- kind: fields
+  key: cmdb_ci_ip_network.subnet
+  verdict: confirmed
+  documented: subnet
+  sources:
+  - sn_ip_networks
+- kind: fields
+  key: cmdb_ci_vlan.vlan_id
+  verdict: not_found
+  note: cmdb_ci_vlan alan listesi bulunamadı
+  sources:
+  - comm_vlan
+- kind: fields
+  key: cmdb_ci_cluster.cluster_id
+  verdict: partial
+  documented: cluster_id
+  note: Alt sınıflarda (Unix, Rubrik kümesi) belgede; temel tabloda görülmedi
+  sources:
+  - sn_cluster_id
+  - bmc_host_map
+- kind: fields
+  key: cmdb_ci_cluster.cluster_version
+  verdict: partial
+  documented: cluster_version
+  note: Alt sınıflarda belgede
+  sources:
+  - sn_unix_cluster
+- kind: fields
+  key: cmdb_ci_cluster.cluster_ip
+  verdict: removed
+  note: Belgede yok; küme adresi kök ip_address alanında (sanal IP'ler cmdb_ci_cluster_vip)
+  sources:
+  - sn_unix_cluster
+- kind: fields
+  key: cmdb_ci_cluster_node.cluster
+  verdict: confirmed
+  documented: cluster → cmdb_ci_cluster
+  sources:
+  - bmc_host_map
+- kind: fields
+  key: cmdb_ci_cluster_node.server
+  verdict: partial
+  documented: server
+  note: Sunucu CI'ına referans; hedef tablo belgede yazılmamış
+  sources:
+  - bmc_host_map
+- kind: fields
+  key: cmdb_ci_oslv_container.image
+  verdict: removed
+  note: Belgede 'image' yok; 'image_id' kullanılıyor
+  sources:
+  - sn_container
+- kind: fields
+  key: cmdb_ci_oslv_container.image_id
+  verdict: confirmed
+  documented: image_id (Image ID)
+  note: image yerine
+  sources:
+  - sn_container
+- kind: fields
+  key: cmdb_ci_kubernetes_component.namespace
+  verdict: partial
+  documented: namespace
+  note: Pod ve iş yükü sınıflarında öznitelik; tanımlandığı tablo görülmedi
+  sources:
+  - sn_k8s_otel
+- kind: fields
+  key: cmdb_ci_kubernetes_component.cluster
+  verdict: partial
+  documented: cluster
+  note: Pod özniteliği olarak belgede; tanımlandığı tablo görülmedi
+  sources:
+  - sn_k8s_otel
+- kind: fields
+  key: cmdb_ci_kubernetes_component.k8s_uid
+  verdict: partial
+  documented: k8s_uid
+  note: Pod özniteliği olarak belgede
+  sources:
+  - sn_k8s_otel
+- kind: fields
+  key: cmdb_ci_cloud_service_account.account_id
+  verdict: confirmed
+  documented: account_id (Account Id)
+  sources:
+  - sn_cloud_account
+- kind: fields
+  key: cmdb_ci_cloud_service_account.datacenter_type
+  verdict: confirmed
+  documented: datacenter_type
+  note: Değer bir sınıf adıdır (ör. cmdb_ci_aws_datacenter)
+  sources:
+  - sn_cloud_account
+- kind: fields
+  key: cmdb_ci_cloud_service_account.is_master_account
+  verdict: confirmed
+  documented: is_master_account (Is management account)
+  sources:
+  - sn_cloud_master
+- kind: fields
+  key: cmdb_ci_logical_datacenter.region
+  verdict: confirmed
+  documented: region
+  sources:
+  - sn_logical_dc
+- kind: fields
+  key: cmdb_ci_information_object.data_classification
+  verdict: partial
+  documented: Data classification
+  note: Değerler cmdb_data_classification kayıtları; muhtemelen referans
+  sources:
+  - sn_data_class
+- kind: fields
+  key: cmdb_ci_business_capability.parent
+  verdict: partial
+  documented: parent
+  note: Yetenek hiyerarşisi üst yetenek alanıyla (en fazla 6 düzey)
+  sources:
+  - comm_capability_parent
+  - csdm5_wp
+- kind: choices
+  key: cmdb_ci.life_cycle_stage
+  verdict: corrected
+  documented: Ideation, Design, Build, Purchase, Inventory, Deploy, Operational, End of Operation, Missing, End of Life
+  note: CSDM 5 aşamaları; 'Missing' ayrı aşama
+  sources:
+  - csdm5_wp
+  - sn_lc_logical
+  - sn_lc_physical
+- kind: choices
+  key: cmdb_ci.life_cycle_stage_status
+  verdict: partial
+  documented: 'Operational: In Use, In Maintenance, Pending Retirement, End of Support · End of Operation: Pending Evaluation · Missing: Lost,
+    Stolen · End of Life: Retired, Obsolete, Disposed'
+  note: Önceki varsayılan Draft→Planning→In Progress→Ready dizisi belgede yok; Ideation/Design durumları topluluk kaynağından; eski alan eşlemesi
+    Evren tanımı (ServiceNow life_cycle_mapping N:1)
+  sources:
+  - csdm5_wp
+  - sn_lc_product
+  - comm_lc_values
+  - comm_lc_mapping
+- kind: choices
+  key: cmdb_ci.attestation_status
+  verdict: partial
+  documented: Attested, Rejected, Not Yet Reviewed
+  note: Değerler topluluk kaynağından
+  sources:
+  - comm_attested
+- kind: relationship_types
+  key: Registered on::Has registered
+  verdict: confirmed
+  documented: Registered on::Has registered
+  note: VM örneği (ebeveyn) → ESX
+  sources:
+  - sn_esx_ny
+  - comm_vcenter_rel
+- kind: relationship_types
+  key: Provided by::Provides
+  verdict: confirmed
+  documented: Provided by::Provides
+  note: İş yeteneği → iş uygulaması
+  sources:
+  - comm_capability_rel
+- kind: relationship_types
+  key: Instantiates::Instantiated by
+  verdict: confirmed
+  documented: Instantiates::Instantiated by
+  note: 'Eklendi: misafir sunucu ↔ VM örneği'
+  sources:
+  - comm_vm_server_rel
+- kind: relationship_rules
+  key: cmdb_ci_computer --Virtualized by::Virtualizes--> cmdb_ci_vm_instance
+  verdict: removed
+  note: Misafir sunucu VM örneğine değil ESX'e 'Virtualized by' ile bağlanır
+  sources:
+  - comm_vcenter_rel
+  - comm_vm_server_rel
+- kind: relationship_rules
+  key: cmdb_ci_computer --Virtualized by::Virtualizes--> cmdb_ci_esx_server
+  verdict: confirmed
+  note: Eklendi
+  sources:
+  - comm_vcenter_rel
+  - comm_vm_server_rel
+- kind: relationship_rules
+  key: cmdb_ci_computer --Instantiates::Instantiated by--> cmdb_ci_vm_instance
+  verdict: partial
+  note: Tip belgede; yön yalnızca topluluk kaynağından (sunucu ebeveyn)
+  sources:
+  - comm_vm_server_rel
+- kind: relationship_rules
+  key: cmdb_ci_vm_instance --Registered on::Has registered--> cmdb_ci_server
+  verdict: confirmed
+  note: Belgedeki örnek ESX
+  sources:
+  - sn_esx_ny
+  - comm_vcenter_rel
+- kind: relationship_rules
+  key: cmdb_ci_vm_instance --Hosted on::Hosts--> cmdb_ci_logical_datacenter
+  verdict: partial
+  note: Bulut VM'i hesaba veri merkezi üzerinden bağlanır; tip yazılmamış
+  sources:
+  - comm_azure_vm
+- kind: relationship_rules
+  key: cmdb_ci_vcenter_datacenter --Contains::Contained by--> cmdb_ci_esx_server
+  verdict: confirmed
+  note: 'Eklendi: kümede olmayan ESX veri merkezine bağlanır'
+  sources:
+  - sn_vcenter_orlando
+- kind: relationship_rules
+  key: cmdb_ci_vcenter_cluster --Members::Member of--> cmdb_ci_esx_server
+  verdict: confirmed
+  sources:
+  - sn_vcenter_orlando
+- kind: relationship_rules
+  key: cmdb_ci_vcenter --Contains::Contained by--> cmdb_ci_vcenter_datacenter
+  verdict: not_found
+  note: Eski wiki vCenter → ESX için Manages::Managed by gösteriyor
+- kind: relationship_rules
+  key: cmdb_ci_vcenter_datacenter --Contains::Contained by--> cmdb_ci_vcenter_cluster
+  verdict: partial
+  note: Belgede veri merkezi → ESX var; veri merkezi → küme görülmedi
+  sources:
+  - sn_vcenter_orlando
+- kind: relationship_rules
+  key: cmdb_ci_db_instance --Contains::Contained by--> cmdb_ci_database
+  verdict: confirmed
+  note: 'Belgedeki örnek: MySQL örneği → MySQL kataloğu'
+  sources:
+  - sn_extend_rules
+- kind: relationship_rules
+  key: cmdb_ci_kubernetes_cluster --Contains::Contained by--> cmdb_ci_kubernetes_component
+  verdict: confirmed
+  note: 'Belgedeki örnek: küme → pod'
+  sources:
+  - sn_k8s_otel
+- kind: relationship_rules
+  key: cmdb_ci_kubernetes_namespace --Contains::Contained by--> cmdb_ci_kubernetes_component
+  verdict: partial
+  note: Ad alanı kümeye referansla bağlı; ad alanı → pod ilişki tipi görülmedi
+  sources:
+  - sn_k8s_otel
+  - syncfish_k8s
+- kind: relationship_rules
+  key: cmdb_ci_logical_datacenter --Hosted on::Hosts--> cmdb_ci_cloud_service_account
+  verdict: confirmed
+  sources:
+  - kb_cloud_dc
+- kind: relationship_rules
+  key: cmdb_ci_appl --Runs on::Runs--> cmdb_ci_computer
+  verdict: confirmed
+  note: Bağımlı kimlik deseni (tomcat Runs on donanım)
+  sources:
+  - sn_extend_rules
+- kind: relationship_rules
+  key: cmdb_ci_business_capability --Provided by::Provides--> cmdb_ci_business_app
+  verdict: confirmed
+  sources:
+  - comm_capability_rel
+- kind: relationship_rules
+  key: cmdb_ci_business_capability --Contains::Contained by--> cmdb_ci_business_capability
+  verdict: removed
+  note: Hiyerarşi ilişkiyle değil üst yetenek alanıyla kurulur
+  sources:
+  - comm_capability_parent
+  - csdm5_wp
+- kind: relationship_rules
+  key: cmdb_ci_business_process --Uses::Used by--> cmdb_ci_business_app
+  verdict: removed
+  note: CSDM 5 tip öngörmüyor; platform Depends on::Used by yazar (genel kural kapsar)
+  sources:
+  - comm_process_rel
+- kind: relationship_rules
+  key: cmdb_ci_business_app --Consumes::Consumed by--> cmdb_ci_service_auto
+  verdict: confirmed
+  note: Platformun yazdığı tip (CSDM 4'ten)
+  sources:
+  - comm_ba_si_rel
+- kind: relationship_rules
+  key: cmdb_ci_business_app --Uses::Used by--> cmdb_ci_service_auto
+  verdict: confirmed
+  note: CSDM 5 çiziminde; iki tip de izinli
+  sources:
+  - comm_ba_si_rel
+  - csdm5_wp
+- kind: relationship_rules
+  key: cmdb_ci_business_app --Uses::Used by--> cmdb_ci_information_object
+  verdict: confirmed
+  sources:
+  - csdm5_img
+  - csdm5_wp
+- kind: relationship_rules
+  key: cmdb_ci_business_app --Sends data to::Receives data from--> cmdb_ci_business_app
+  verdict: partial
+  note: Belgede servis örnekleri arası veri akışı için; iş uygulamaları arası tip yazılmamış
+  sources:
+  - csdm5_img
+- kind: relationship_rules
+  key: service_offering --Contains::Contained by--> cmdb_ci_query_based_service
+  verdict: confirmed
+  sources:
+  - comm_offering_dcg
+- kind: relationship_rules
+  key: cmdb_ci_appl --Runs on::Runs--> cmdb_ci_cluster
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_appl --Runs on::Runs--> cmdb_ci_oslv_container
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_cluster --Members::Member of--> cmdb_ci_cluster_node
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_cluster_node --Hosted on::Hosts--> cmdb_ci_computer
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_rack --Contains::Contained by--> cmdb_ci_hardware
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_vlan --Contains::Contained by--> cmdb_ci_ip_network
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_ip_network --Contains::Contained by--> cmdb_ci_ip_address
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_computer --Uses::Used by--> cmdb_ci_storage_volume
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_kubernetes_cluster --Hosted on::Hosts--> cmdb_ci_logical_datacenter
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_kubernetes_node --Hosted on::Hosts--> cmdb_ci_computer
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_kubernetes_pod --Runs on::Runs--> cmdb_ci_kubernetes_node
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_kubernetes_pod --Contains::Contained by--> cmdb_ci_oslv_container
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: relationship_rules
+  key: cmdb_ci_oslv_container --Runs on::Runs--> cmdb_ci_computer
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_hardware
+  verdict: confirmed
+  documented: 100 seri+seri tipi · 200 seri · 300 ad · 400 MAC+ad
+  note: BIOS UUID (150) ve FQDN (280) Evren uzantısı
+  sources:
+  - comm_hw_ident
+  - sn_ident_rules
+- kind: identification
+  key: cmdb_ci_vm_instance
+  verdict: corrected
+  documented: vcenter_uuid + object_id (ayrıca vm_instance_uuid)
+  note: Önceki varsayım korelasyon kimliğiyle başlıyordu; artık Evren uzantısı olarak ikinci sırada
+  sources:
+  - comm_vmi_ident
+- kind: identification
+  key: cmdb_ci_vcenter
+  verdict: evren
+  note: ServiceNow kuralı belgede görülmedi; örnek UUID'si ile Evren tanımı
+- kind: identification
+  key: cmdb_ci_vcenter_datacenter
+  verdict: evren
+  note: vCenter bağlamında nesne kimliği (Evren tanımı)
+- kind: identification
+  key: cmdb_ci_kubernetes_cluster
+  verdict: confirmed
+  documented: name
+  note: ServiceNow Kubernetes Visibility kuralı ada göre; küme kimliği Evren uzantısı
+  sources:
+  - kb_k8s_ident
+- kind: identification
+  key: cmdb_ci_kubernetes_component
+  verdict: partial
+  documented: namespace + name (pod, servis)
+  note: Bağımlı ilişki ve üst sınıf görülmedi
+  sources:
+  - kb_k8s_ident
+- kind: identification
+  key: cmdb_ci_logical_datacenter
+  verdict: corrected
+  documented: 'bağımlı: Hosted on::Hosts → hesap; object_id'
+  note: Önceki varsayım bölgeydi
+  sources:
+  - kb_cloud_dc
+- kind: identification
+  key: cmdb_ci_information_object
+  verdict: confirmed
+  documented: 'bağımsız: name'
+  sources:
+  - sn_info_object
+- kind: identification
+  key: cmdb_ci_appl
+  verdict: confirmed
+  documented: 'bağımlı: Runs on::Runs → donanım'
+  note: Bağımlı kimlik deseni
+  sources:
+  - sn_extend_rules
+- kind: identification
+  key: cmdb_ci_database
+  verdict: partial
+  documented: 'bağımlı: Contains → örnek; name'
+  note: MySQL kataloğu örneğinde belgede; temel kural görülmedi
+  sources:
+  - sn_extend_rules
+- kind: identification
+  key: cmdb_ci_cloud_service_account
+  verdict: partial
+  documented: account_id tekil
+  note: Kimlik girdisi metni görülmedi; KB hesap kimliğinin tekil olması gerektiğini söylüyor
+  sources:
+  - kb_cloud_dc
+- kind: identification
+  key: cmdb_ci_cluster
+  verdict: partial
+  note: Genel küme kuralı görülmedi; Kubernetes kümesi adla tanımlanıyor
+  sources:
+  - kb_k8s_ident
+- kind: identification
+  key: cmdb_ci_ip_network
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_oslv_container
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_file_system
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_cluster_node
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_service
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_business_app
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_business_capability
+  verdict: not_found
+  note: Arama özetlerinde görülmedi
+- kind: identification
+  key: cmdb_ci_business_process
+  verdict: not_found
+  note: Arama özetlerinde görülmedi

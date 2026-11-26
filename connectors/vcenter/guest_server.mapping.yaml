@@ -28,4 +28,7 @@ lookup:
   ip_addresses: {from: "guest.net[*].ipAddress[*]"}
   mac_addresses: {from: "guest.net[*].macAddress"}
 relations:
-  - {type: "Virtualized by::Virtualizes", direction: parent, target: config.instanceUuid, target_class: cmdb_ci_vmware_instance}
+  # ServiceNow modeli (F0-07 doğrulaması): misafir sunucu --Instantiates::Instantiated by--> VM örneği ve
+  # misafir sunucu --Virtualized by::Virtualizes--> ESX sunucusu.
+  - {type: "Instantiates::Instantiated by", direction: parent, target: config.instanceUuid, target_class: cmdb_ci_vmware_instance}
+  - {type: "Virtualized by::Virtualizes", direction: parent, target: runtime.host, target_class: cmdb_ci_esx_server}

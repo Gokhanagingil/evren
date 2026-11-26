@@ -72,19 +72,21 @@ def test_every_class_family_is_defined(metadata):
 # --- Yaşam döngüsü (A4) -----------------------------------------------------------------------------------
 
 
-def test_lifecycle_status_depends_on_stage_and_maps_to_legacy(metadata):
-    stages = {v["value"] for v in metadata.choice_list("cmdb_ci", "life_cycle_stage")["values"]}
+def test_lifecycle_follows_csdm5_and_maps_to_legacy(metadata):
+    """CSDM 5 (F0-07 kanıt defteri): Missing ayrı aşama; Draft→Planning→In Progress→Ready dizisi yok."""
+    stages = [v["value"] for v in metadata.choice_list("cmdb_ci", "life_cycle_stage")["values"]]
     statuses = metadata.choice_list("cmdb_ci", "life_cycle_stage_status")
     assert statuses["depends_on"] == "life_cycle_stage"
-    assert {"Operational", "End of Life"} <= stages
+    assert {"Ideation", "Design", "Build", "Deploy", "Operational", "End of Operation", "Missing", "End of Life"} <= set(stages)
     by_value = {v["value"]: v for v in statuses["values"]}
     assert all(v["dependent_value"] in stages for v in statuses["values"])
+    assert {"Planning", "In Progress", "Ready"}.isdisjoint(by_value)
     assert by_value["In Use"]["dependent_value"] == "Operational"
     assert by_value["In Use"]["legacy"] == {"operational_status": "1", "install_status": "1"}
-    assert by_value["Retired"]["legacy"]["install_status"] == "7"
+    assert by_value["Stolen"]["dependent_value"] == "Missing" and by_value["Lost"]["dependent_value"] == "Missing"
     assert by_value["Stolen"]["legacy"]["install_status"] == "8"
-    # Her aşamanın en az bir durumu vardır
-    assert stages == {v["dependent_value"] for v in statuses["values"]}
+    assert by_value["Retired"]["legacy"]["install_status"] == "7"
+    assert by_value["Pending Evaluation"]["dependent_value"] == "End of Operation"
 
 
 def test_lifecycle_fields_are_choice_fields(metadata):
@@ -235,7 +237,7 @@ def test_verification_backlog_covers_every_kind(metadata):
     backlog = verification_backlog(metadata)
     assert "cmdb_ci_kubernetes_pod" in backlog["classes"]
     assert "cmdb_ci.life_cycle_stage_status" in backlog["choices"]
-    assert "Provided by::Provides" in backlog["relationship_types"]
+    assert backlog["relationship_types"] == []  # Registered on, Provided by, Instantiates belgeyle doğrulandı
     assert any("cmdb_ci_kubernetes_pod" in r for r in backlog["relationship_rules"])
     assert "cmdb_ci_pc_hardware" not in backlog["classes"]
 
@@ -256,7 +258,7 @@ def test_model_view_tree_is_complete_ordered_and_deterministic(metadata):
             assert pos[c["parent"]] < pos[c["name"]]  # ebeveyn önce (derinlik öncelikli)
         assert c["field_count"] == len(metadata.fields_of(c["name"]))
     assert model_view(metadata) == doc
-    assert doc["stats"]["core_columns"] == 39 and doc["stats"]["to_verify"] == sum(len(v) for v in doc["backlog"].values())
+    assert doc["stats"]["core_columns"] == 40 and doc["stats"]["to_verify"] == sum(len(v) for v in doc["backlog"].values())
 
 
 def test_model_view_identification_shows_inheritance_and_context(metadata):
@@ -280,3 +282,62 @@ def test_static_model_file_is_up_to_date(repo_root):
     import build_model
 
     assert (repo_root / "apps/web/content/model.json").read_text(encoding="utf-8") == build_model.render()
+
+
+
+# --- Kanıt defteri (F0-07) ---------------------------------------------------------------------------------
+
+
+def test_verification_ledger_is_consistent_and_covers_every_flag(metadata):
+    from evren_core.metadata import validate_verification
+
+    assert validate_verification(metadata) == []
+    items = metadata.verification["items"]
+    assert len(items) > 150 and all(i.get("sources") for i in items if i["verdict"] not in ("not_found", "evren"))
+    kinds = {s["kind"] for s in metadata.verification["sources"].values()}
+    assert kinds <= {"resmi", "topluluk", "ucuncu"} and "resmi" in kinds
+
+
+def test_verification_ledger_rejects_inconsistencies(metadata):
+    from evren_core.metadata import validate_verification
+
+    md = copy.deepcopy(metadata)
+    items = md.verification["items"]
+    confirmed = next(i for i in items if i["kind"] == "classes" and i["verdict"] == "confirmed")
+    partial = next(i for i in items if i["kind"] == "classes" and i["verdict"] == "partial")
+    removed = next(i for i in items if i["verdict"] == "removed")
+    md.class_map[confirmed["key"]]["verify"] = True            # sonuçlanmış öğe hâlâ işaretli
+    md.class_map[partial["key"]].pop("verify")                 # kısmi öğenin işareti kalkmış
+    items.append({"kind": "classes", "key": "cmdb_ci_yok", "verdict": "confirmed", "sources": ["sn_tables"]})
+    items.append({"kind": "fields", "key": "cmdb_ci.name", "verdict": "confirmed", "sources": ["uydurma"]})
+    items.append({"kind": "classes", "key": "cmdb_ci_server", "verdict": "removed", "sources": ["sn_tables"]})
+    items.append(dict(removed))
+    md.verification["sources"]["http_kaynak"] = {"title": "x", "url": "http://ornek", "kind": "resmi"}
+    errors = "\n".join(validate_verification(md))
+    assert "hâlâ verify: true" in errors
+    assert "verify: true kalmalı" in errors
+    assert "metadata'da böyle bir öğe yok" in errors
+    assert "tanımsız kaynak uydurma" in errors
+    assert "kaldırıldı deniyor ama metadata'da duruyor" in errors
+    assert "tekrarlanan kayıt" in errors
+    assert "https adresi zorunlu" in errors
+
+
+def test_documented_corrections_are_applied(metadata):
+    """Belgeyle düzeltilen başlıca noktalar modelde (F0-07)."""
+    h = metadata.hierarchy
+    assert h.parents["cmdb_ci_vcenter"] == "cmdb_ci_appl"
+    assert h.parents["cmdb_ci_vcenter_datacenter"] == "cmdb_ci_logical_datacenter"
+    assert h.parents["cmdb_ci_file_system"] == "cmdb_ci_storage_volume"
+    assert h.parents["cmdb_ci_rack"] == "cmdb_ci"
+    assert h.parents["cmdb_ci_kubernetes_deployment"] == "cmdb_ci_kubernetes_workload"
+    assert h.parents["cmdb_ci_query_based_service"] == "cmdb_ci_service_auto"
+    fields = metadata.fields_of("cmdb_ci_file_system")
+    assert fields["available_space"]["type"] == "integer" and fields["free_space"]["type"] == "string"
+    assert "cluster_ip" not in metadata.fields_of("cmdb_ci_cluster")
+    assert "image_id" in metadata.fields_of("cmdb_ci_docker_container")
+    rules = metadata.relations
+    assert rules.check("cmdb_ci_linux_server", "Virtualized by::Virtualizes", "cmdb_ci_esx_server").allowed
+    assert not rules.check("cmdb_ci_linux_server", "Virtualized by::Virtualizes", "cmdb_ci_vmware_instance").allowed
+    assert rules.check("cmdb_ci_linux_server", "Instantiates::Instantiated by", "cmdb_ci_vmware_instance").allowed
+    assert not rules.check("cmdb_ci_business_capability", "Contains::Contained by", "cmdb_ci_business_capability").allowed

@@ -151,7 +151,7 @@ chapters:
 details:
   src_vcenter:
     phase: F0
-    text: VMware vCenter'dan VM örnekleri, ESXi hostlar, kümeler ve datastore'lar çekilir. Her VM iki kayıt üretir. Birincisi VM örneğidir (cmdb_ci_vmware_instance). İkincisi misafir işletim sistemi sunucusudur (cmdb_ci_server, virtual=true). İkisi "Virtualized by::Virtualizes" ilişkisiyle bağlanır; bu ServiceNow modeliyle aynıdır.
+    text: VMware vCenter'dan VM örnekleri, ESXi hostlar, kümeler ve datastore'lar çekilir. Her VM iki kayıt üretir. Birincisi VM örneğidir (cmdb_ci_vmware_instance). İkincisi misafir işletim sistemi sunucusudur (cmdb_ci_server, virtual=true). İkisi "Instantiates::Instantiated by" ilişkisiyle, misafir sunucu ESXi host'a "Virtualized by::Virtualizes" ile bağlanır; bu ServiceNow modeliyle aynıdır.
     tech: [vSphere API, "connectors/vcenter/*.mapping.yaml"]
     security: [Salt okunur servis hesabı, Kimlik bilgisi sır kasasında]
   src_bmc:

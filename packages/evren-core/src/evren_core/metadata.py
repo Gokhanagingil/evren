@@ -49,6 +49,8 @@ CORE_COLUMNS: tuple[str, ...] = (
     "life_cycle_stage_status", "comments",
     # 0016 (U4.3): sahiplik ve yönetişim
     "cost_center", "attested", "attested_by", "attested_date",
+    # 0017 (F0-07): ServiceNow'daki asıl onay durumu
+    "attestation_status",
 )
 SYSTEM_COLUMNS = ("sys_created_on", "sys_created_by", "sys_updated_on", "sys_updated_by", "sys_mod_count")
 VALID_TYPES = {"string", "integer", "decimal", "boolean", "glide_date_time", "glide_date", "reference"}
@@ -419,9 +421,11 @@ def validate(md: Metadata) -> ValidationReport:
 
 VERIFICATION_KINDS = ("classes", "fields", "choices", "relationship_types", "relationship_rules", "identification")
 VERDICTS = {"confirmed": "Belgeyle doğrulandı", "corrected": "Belgeye göre düzeltildi",
-            "partial": "Kısmen doğrulandı", "not_found": "Belgede bulunamadı", "evren": "Evren tanımı (ServiceNow'da yok)"}
+            "removed": "Belgede yok; modelden çıkarıldı", "partial": "Kısmen doğrulandı",
+            "not_found": "Belgede bulunamadı", "evren": "Evren tanımı"}
 #: Bu sonuçlarda öğe artık ServiceNow'dan doğrulanacak sayılmaz (verify işareti kalkar).
-SETTLED_VERDICTS = frozenset({"confirmed", "corrected", "evren"})
+SETTLED_VERDICTS = frozenset({"confirmed", "corrected", "removed", "evren"})
+SOURCE_KINDS = {"resmi": "ServiceNow belgesi", "topluluk": "ServiceNow topluluğu", "ucuncu": "Üçüncü taraf"}
 
 
 def _verification_keys(md: Metadata) -> dict[str, set[str]]:
@@ -448,6 +452,8 @@ def validate_verification(md: Metadata) -> list[str]:
     for sid, src in sources.items():
         if not str(src.get("url", "")).startswith("https://"):
             errors.append(f"doğrulama kaynağı {sid}: https adresi zorunlu")
+        if src.get("kind") not in SOURCE_KINDS:
+            errors.append(f"doğrulama kaynağı {sid}: tür {', '.join(SOURCE_KINDS)} olmalı")
     keys = _verification_keys(md)
     flagged = {k: set(v) for k, v in verification_backlog(md).items()}
     seen: set[tuple[str, str]] = set()
@@ -460,6 +466,12 @@ def validate_verification(md: Metadata) -> list[str]:
         if (kind, key) in seen:
             errors.append(f"{where}: tekrarlanan kayıt")
         seen.add((kind, key))
+        if verdict == "removed":
+            if key in keys[kind]:
+                errors.append(f"{where}: kaldırıldı deniyor ama metadata'da duruyor")
+            if not item.get("sources"):
+                errors.append(f"{where}: kaynak zorunlu")
+            continue
         if key not in keys[kind]:
             errors.append(f"{where}: metadata'da böyle bir öğe yok")
             continue
@@ -476,6 +488,9 @@ def validate_verification(md: Metadata) -> list[str]:
             errors.append(f"{where}: belgeyle sonuçlandı ama hâlâ verify: true")
         if verdict not in SETTLED_VERDICTS and key not in flagged[kind]:
             errors.append(f"{where}: {VERDICTS[verdict].lower()}; verify: true kalmalı")
+    for kind, flagged_keys in flagged.items():
+        for key in sorted(flagged_keys - {k for t, k in seen if t == kind}):
+            errors.append(f"doğrulama[{kind}:{key}]: verify: true ama kanıt defterinde kaydı yok")
     return errors
 
 

@@ -26,7 +26,7 @@ rules:
 
   - applies_to: cmdb_ci
     description: Sahiplik onayı — yalnızca Evren'deki onay akışı yazar (U6, F1-17); ServiceNow'dan gelmez
-    attributes: [attested, attested_by, attested_date]
+    attributes: [attested, attested_by, attested_date, attestation_status]
     priorities: {Manual: 10}
 
   - applies_to: cmdb_ci

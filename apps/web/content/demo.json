@@ -1364,6 +1364,10 @@
      {
       "name": "attested_date",
       "label": "Onay tarihi"
+     },
+     {
+      "name": "attestation_status",
+      "label": "Sahiplik onayı durumu"
      }
     ],
     "priorities": {
@@ -1915,30 +1919,60 @@
    {
     "applies_to": "cmdb_ci_vm_instance",
     "class_label": "Sanal makine örneği",
-    "description": "Sanal makine örneği (vCenter nesnesi)",
+    "description": "Sanal makine örneği — vCenter UUID + nesne kimliği (ServiceNow); korelasyon kimliği Evren uzantısı",
     "independent": true,
     "entries": [
      {
       "priority": 100,
       "attributes": [
-       "correlation_id"
+       "vcenter_uuid",
+       "object_id"
       ],
       "evren_extension": false
      },
      {
       "priority": 200,
       "attributes": [
-       "vcenter_uuid",
+       "correlation_id"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_vcenter",
+    "class_label": "vCenter",
+    "description": "vCenter örneği — örnek UUID'si (Evren tanımı; ServiceNow kuralı belgede görülmedi)",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "instance_uuid"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_vcenter_datacenter",
+    "class_label": "vCenter veri merkezi",
+    "description": "vCenter veri merkezi — vCenter bağlamında nesne kimliği (Evren tanımı)",
+    "independent": false,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
        "object_id"
       ],
-      "evren_extension": false
+      "evren_extension": true
      }
     ]
    },
    {
     "applies_to": "cmdb_ci_appl",
     "class_label": "Uygulama",
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "independent": false,
     "entries": [
      {
@@ -2006,6 +2040,28 @@
        "correlation_id"
       ],
       "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_kubernetes_cluster",
+    "class_label": "Kubernetes kümesi",
+    "description": "Kubernetes kümesi — ad (ServiceNow Kubernetes Visibility kuralı); küme kimliği Evren uzantısı",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 90,
+      "attributes": [
+       "cluster_id"
+      ],
+      "evren_extension": true
+     },
+     {
+      "priority": 100,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false
      }
     ]
    },
@@ -2116,7 +2172,7 @@
    {
     "applies_to": "cmdb_ci_information_object",
     "class_label": "Bilgi nesnesi",
-    "description": "Bilgi nesnesi — ad",
+    "description": "Bilgi nesnesi — ad (ServiceNow temel kuralı)",
     "independent": true,
     "entries": [
      {
@@ -2124,7 +2180,7 @@
       "attributes": [
        "name"
       ],
-      "evren_extension": true
+      "evren_extension": false
      }
     ]
    },
@@ -2177,13 +2233,13 @@
    {
     "applies_to": "cmdb_ci_logical_datacenter",
     "class_label": "Mantıksal veri merkezi (bölge)",
-    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında nesne kimliği (ServiceNow; hesap başına bölge başına bir kayıt)",
     "independent": false,
     "entries": [
      {
       "priority": 100,
       "attributes": [
-       "region"
+       "object_id"
       ],
       "evren_extension": false
      }
@@ -2191,7 +2247,7 @@
    },
    {
     "applies_to": "cmdb_ci_database",
-    "class_label": "Veritabanı (katalog)",
+    "class_label": "Veritabanı",
     "description": "Veritabanı kataloğu — veritabanı örneği bağlamında ad",
     "independent": false,
     "entries": [
@@ -2846,7 +2902,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000015",
      "target_name": "ank-bi-03 (Raporlama)"
@@ -3219,7 +3275,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000001a",
      "target_name": "ank-db-04 (Veritabanı)"
@@ -3937,7 +3993,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000007",
      "target_name": "ank-log-01 (Log toplama)"
@@ -4310,7 +4366,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000011",
      "target_name": "ank-web-03 (Web ön yüz)"
@@ -4699,7 +4755,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000005",
      "target_name": "ist-bi-01 (Raporlama)"
@@ -5073,7 +5129,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000000e",
      "target_name": "ist-bi-02 (Raporlama)"
@@ -5452,7 +5508,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000001f",
      "target_name": "ist-bi-04 (Raporlama)"
@@ -5826,7 +5882,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000001",
      "target_name": "ist-db-01 (Veritabanı)"
@@ -6736,7 +6792,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000010",
      "target_name": "ist-db-03 (Veritabanı)"
@@ -7111,7 +7167,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000008",
      "target_name": "ist-erp-02 (ERP uygulama)"
@@ -7858,7 +7914,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000019",
      "target_name": "ist-erp-04 (ERP uygulama)"
@@ -8232,7 +8288,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000000f",
      "target_name": "ist-log-02 (Log toplama)"
@@ -8514,7 +8570,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000017",
      "target_name": "ist-log-03 (Log toplama)"
@@ -9240,7 +9296,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000002",
      "target_name": "ist-web-01 (Web ön yüz)"
@@ -9979,7 +10035,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000001b",
      "target_name": "ist-web-04 (Web ön yüz)"
@@ -11408,12 +11464,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "dbfe379d-0571-946f-f9e8-4b9af54cbab5",
+     "display": "dbfe379d-0571-946f-f9e8-4b9af54cbab5",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "1bb2c64aa76125b7dd3d79f442891f7b",
      "target_name": "ank-bi-03"
@@ -11586,12 +11654,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "55eb7339-15f8-5044-2e8f-8cc469e89ca5",
+     "display": "55eb7339-15f8-5044-2e8f-8cc469e89ca5",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "b091478f6818c85906a48cd88b306f08",
      "target_name": "ANK-CRM-04"
@@ -11764,12 +11844,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "668b10a2-5a9c-23c7-acdc-0810dc4dc73c",
+     "display": "668b10a2-5a9c-23c7-acdc-0810dc4dc73c",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "f9e7e92cb4b46528fa3f589873590516",
      "target_name": "ank-db-04"
@@ -11942,12 +12034,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "cd958298-da03-0b68-ef91-4b08214340e1",
+     "display": "cd958298-da03-0b68-ef91-4b08214340e1",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "d745dcf226c22d6e3a58ff3d395d8bab",
      "target_name": "ANK-DC-02"
@@ -12120,12 +12224,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "dac457b4-c1cd-04ef-c401-d36c71801ad8",
+     "display": "dac457b4-c1cd-04ef-c401-d36c71801ad8",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "f73074bdaa8e5fcf32e54a1868894e02",
      "target_name": "ank-log-01"
@@ -12298,12 +12414,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "69a1ba6f-6233-e903-bc69-375742d8c424",
+     "display": "69a1ba6f-6233-e903-bc69-375742d8c424",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "4eb7baea205049270530f6897e1da053",
      "target_name": "ANK-MUH-01"
@@ -12476,12 +12604,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "9490a7a0-3849-58ea-e343-45227fbefea7",
+     "display": "9490a7a0-3849-58ea-e343-45227fbefea7",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "26017ca49d18939ffc0d7a05f1e6df71",
      "target_name": "ank-web-03"
@@ -12654,12 +12794,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "d2637adf-1e7a-8dd8-7c43-e9e15376f762",
+     "display": "d2637adf-1e7a-8dd8-7c43-e9e15376f762",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "f8a694594583b4555ae2c859cbe68064",
      "target_name": "ist-bi-01"
@@ -12832,12 +12984,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "900007c1-eea4-8f61-06f6-0f942db64677",
+     "display": "900007c1-eea4-8f61-06f6-0f942db64677",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "e54df9eacc9ad7b7bc5cd3c4bfb2f4c1",
      "target_name": "ist-bi-02"
@@ -13010,12 +13174,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "b871fffe-edec-5c31-30be-eeb5b4c26932",
+     "display": "b871fffe-edec-5c31-30be-eeb5b4c26932",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "4cf28de3bd6938c379f7638412d32f1a",
      "target_name": "ist-bi-04"
@@ -13188,12 +13364,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "faec01d5-c4e7-3bed-b8e7-df120e9facb7",
+     "display": "faec01d5-c4e7-3bed-b8e7-df120e9facb7",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "0c7a38326f372c4e7594c6ae0e3f1779",
      "target_name": "IST-CRM-02"
@@ -13366,12 +13554,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "a048f812-dc30-0022-e73f-b9179b284c6d",
+     "display": "a048f812-dc30-0022-e73f-b9179b284c6d",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "e98e3ffb8aff4ae7e599446f66f8c44d",
      "target_name": "IST-CRM-03"
@@ -13544,12 +13744,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "6eaeba16-f59c-aa07-236e-74d18f112c48",
+     "display": "6eaeba16-f59c-aa07-236e-74d18f112c48",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "2186feea402bab89007662533423a4b8",
      "target_name": "ist-db-01"
@@ -13722,12 +13934,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "cab14a21-ccbf-8d1e-a434-c29d460a2a91",
+     "display": "cab14a21-ccbf-8d1e-a434-c29d460a2a91",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "9312131c529e2f077aeec1fe57e28a32",
      "target_name": "ist-db-03"
@@ -13900,12 +14124,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "ae39d40d-3744-faa3-f23f-b0f625eb7636",
+     "display": "ae39d40d-3744-faa3-f23f-b0f625eb7636",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "5cb077a2aaf90c894107711d2befc7f9",
      "target_name": "IST-DC-01"
@@ -14078,12 +14314,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "8ad8da11-e21d-c850-d8de-0e30256d658b",
+     "display": "8ad8da11-e21d-c850-d8de-0e30256d658b",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "f91d9301f6638186e695f4c8a703a216",
      "target_name": "ist-dc-03"
@@ -14256,12 +14504,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "e7df9ddb-1cfe-3d12-86ab-fdd23826f82d",
+     "display": "e7df9ddb-1cfe-3d12-86ab-fdd23826f82d",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "ad9999465bbd3afdc462ad8bfb6f8711",
      "target_name": "IST-DC-04"
@@ -14434,12 +14694,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "4063b741-1c7b-8655-e104-3d37777eb9c6",
+     "display": "4063b741-1c7b-8655-e104-3d37777eb9c6",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "bd64e460809839f64310c7726adc4156",
      "target_name": "ist-erp-02"
@@ -14612,12 +14884,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "8e5d205f-a1dd-f87f-b6d8-25ef9cde38ab",
+     "display": "8e5d205f-a1dd-f87f-b6d8-25ef9cde38ab",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "6738378f8b8c7fc8015fe41a0ac1bd4d",
      "target_name": "ist-erp-04"
@@ -14790,12 +15074,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "228e0db6-332e-1700-d4d9-9b91ad76394c",
+     "display": "228e0db6-332e-1700-d4d9-9b91ad76394c",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "15de32c2a95a4826be374c1b0cfd5e53",
      "target_name": "IST-FILE-01"
@@ -14968,12 +15264,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "cfd1790b-3735-3bc5-8da4-d75ab54837e9",
+     "display": "cfd1790b-3735-3bc5-8da4-d75ab54837e9",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "d106bea2bf5847af99e09099a4c0c80e",
      "target_name": "IST-FILE-03"
@@ -15146,12 +15454,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "4f906171-a182-8d31-114b-0e97c2575aa9",
+     "display": "4f906171-a182-8d31-114b-0e97c2575aa9",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "1c694cf7d754e95270130aba3029dc71",
      "target_name": "IST-FILE-04"
@@ -15324,12 +15644,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "2a7bbaf4-70ec-2ba9-14ef-7c8c3b2ef08b",
+     "display": "2a7bbaf4-70ec-2ba9-14ef-7c8c3b2ef08b",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "1fdd6eaf7df86ddefcc20794a5c67837",
      "target_name": "ist-log-02"
@@ -15502,12 +15834,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "3a907aee-1156-7600-e2dd-6409405f8055",
+     "display": "3a907aee-1156-7600-e2dd-6409405f8055",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "e7e00000000000000000000000000018",
      "target_name": "ist-log-03"
@@ -15680,12 +16024,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "186a81e3-05e0-8f32-5d5b-b164b181852a",
+     "display": "186a81e3-05e0-8f32-5d5b-b164b181852a",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "e7e0000000000000000000000000000c",
      "target_name": "IST-MUH-02"
@@ -15858,12 +16214,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "6eb1bc45-7447-46c1-ff72-e64a47d25071",
+     "display": "6eb1bc45-7447-46c1-ff72-e64a47d25071",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "13517218cdde418e09f77a701d1ee27e",
      "target_name": "IST-MUH-03"
@@ -16036,12 +16404,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "ccc95763-be7e-a2f9-9654-a81504d332cb",
+     "display": "ccc95763-be7e-a2f9-9654-a81504d332cb",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "8bc88d39125b9ca46890a8ae3c0c8791",
      "target_name": "IST-MUH-04"
@@ -16214,12 +16594,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "2394c818-57fd-8491-465d-65ed32e53351",
+     "display": "2394c818-57fd-8491-465d-65ed32e53351",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "5b8999b496b6614c4f10dfa35717b5d9",
      "target_name": "ist-web-01"
@@ -16389,6 +16781,18 @@
      "source": "vCenter",
      "role": "Virtualization",
      "reason": "Uzlaştırma kuralı: vCenter (Virtualization) önceliği 100",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "093f8aba-d038-6c37-60ab-1b38f4a079ec",
+     "display": "093f8aba-d038-6c37-60ab-1b38f4a079ec",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
@@ -16563,12 +16967,24 @@
      "observed_at": "2026-11-25T04:50:00Z",
      "overridden": [],
      "unauthorized": []
+    },
+    {
+     "attribute": "vm_instance_uuid",
+     "label": "VM örnek UUID",
+     "value": "53aea839-5bcb-28b2-4716-fe05babcf9b6",
+     "display": "53aea839-5bcb-28b2-4716-fe05babcf9b6",
+     "source": "vCenter",
+     "role": "Virtualization",
+     "reason": "Kural yok: en güncel gözlem",
+     "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
     }
    ],
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "child",
      "target": "2871d1f4438c70f5237afe1041da2d4d",
      "target_name": "ist-web-04"
@@ -16944,7 +17360,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000001e",
      "target_name": "ank-crm-04 (Müşteri ilişkileri)"
@@ -17352,7 +17768,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000000a",
      "target_name": "ank-dc-02 (Etki alanı denetleyicisi)"
@@ -18136,7 +18552,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000004",
      "target_name": "ank-muh-01 (Muhasebe)"
@@ -18533,7 +18949,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000000d",
      "target_name": "ist-crm-02 (Müşteri ilişkileri)"
@@ -18933,7 +19349,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000014",
      "target_name": "ist-crm-03 (Müşteri ilişkileri)"
@@ -19348,7 +19764,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000003",
      "target_name": "ist-dc-01 (Etki alanı denetleyicisi)"
@@ -19756,7 +20172,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000001c",
      "target_name": "ist-dc-04 (Etki alanı denetleyicisi)"
@@ -20153,7 +20569,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000006",
      "target_name": "ist-file-01 (Dosya sunucusu)"
@@ -20535,7 +20951,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000016",
      "target_name": "ist-file-03 (Dosya sunucusu)"
@@ -20935,7 +21351,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000020",
      "target_name": "ist-file-04 (Dosya sunucusu)"
@@ -21241,7 +21657,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000000b",
      "target_name": "ist-muh-02 (Muhasebe)"
@@ -21652,7 +22068,7 @@
    ],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000013",
      "target_name": "ist-muh-03 (Muhasebe)"
@@ -22060,7 +22476,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e0000000000000000000000000001d",
      "target_name": "ist-muh-04 (Muhasebe)"
@@ -22772,7 +23188,7 @@
    "rejected": [],
    "relations": [
     {
-     "type": "Virtualized by::Virtualizes",
+     "type": "Instantiates::Instantiated by",
      "direction": "parent",
      "target": "e7e00000000000000000000000000012",
      "target_name": "ist-dc-03 (Etki alanı denetleyicisi)"

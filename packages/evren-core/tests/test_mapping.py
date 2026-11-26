@@ -85,7 +85,7 @@ def test_vcenter_produces_vm_instance_and_guest_server(repo_root, now):
     assert guest.class_hint == "cmdb_ci_win_server"
     assert guest.attributes["virtual"] is True
     assert guest.attributes["name"] == "abc_1" and guest.attributes["fqdn"] == "abc_1.corp.sirket.local"
-    assert guest.relations[0].type == "Virtualized by::Virtualizes"
+    assert [r.type for r in guest.relations] == ["Instantiates::Instantiated by", "Virtualized by::Virtualizes"]
     assert guest.relations[0].target_source_key == raw["config"]["instanceUuid"]
 
 

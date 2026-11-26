@@ -101,6 +101,30 @@ Bu sürüm ilk kez bir dal yerleşimini bilerek ServiceNow'a bırakıyor: Kubern
   - ilişki kuralları ve doğrulanacaklar.
 - Şema tasarımcısı panelden "Bu sınıfa alan ekle" ile değişiklik setini o sınıf seçili açar. Yayın akışı değişmez: taslak → onay → yayın, hazırlayan onaylayamaz.
 
+### 8. Herkese açık belgelerle doğrulama (F0-07, 26.11.2026)
+
+Proje sahibinin yönlendirmesiyle adlar ServiceNow örneği beklenmeden herkese açık belgelerden doğrulandı.
+
+- **Kaynaklar:**
+  - ServiceNow belgeleri, KB makaleleri ve CSDM 5 yayınları ("resmi");
+  - ServiceNow Community ("topluluk");
+  - üçüncü taraf sözlük dökümleri ve entegrasyon belgeleri ("üçüncü taraf").
+- **Kanıt defteri:** `metadata/verification.yaml`. Her öğe için sonuç, belgedeki değer, not ve kaynak tutulur: 181 kayıt, 95 kaynak.
+  - Doğrulayıcı defterle `verify` işaretlerinin tutarlılığını zorlar.
+  - Belgeyle sonuçlanan öğede işaret kalmaz; kısmi veya bulunamayan öğede işaret durur.
+  - İşaretli her öğenin defterde kaydı olmalıdır.
+- **Sonuç:** 74 öğe doğrulandı, 18 öğe belgeye göre düzeltildi, 5 öğe kaldırıldı, 2 öğe Evren tanımı olarak işaretlendi. 55 öğe kısmen doğrulandı, 27 öğe bulunamadı; doğrulanacak öğe 130'dan 82'ye indi.
+- **Başlıca düzeltmeler:**
+  - **vCenter sınıf ağacı:** vCenter uygulama sınıfından türer. Veri merkezi mantıksal veri merkezinden, küme host kümesinden, datastore genel datastore sınıfından türer.
+  - **Misafir sunucu ilişkileri:** VM örneğine `Instantiates::Instantiated by`, ESX'e `Virtualized by::Virtualizes`. vCenter eşlemesi değişti.
+  - **VM ve bulut kimliği:** VM örneği vCenter UUID + nesne kimliğiyle, bulut bölgesi hesap bağlamında nesne kimliğiyle tanınır.
+  - **Depolama ve kabin:** kabin ile depolama birimi doğrudan CI'dan türer; dosya sistemi depolama biriminin altındadır.
+  - **Kubernetes:** iş yükü ara sınıfı eklendi; küme adla tanınır.
+  - **CSDM 5 yaşam döngüsü:** belgede olmayan dört durum kaldırıldı. "Missing" ayrı aşama oldu; "End of Operation" ve "End of Support" eklendi.
+  - **Yetenek hiyerarşisi:** ilişkiyle değil üst alanla kurulur.
+  - **Asıl onay alanı:** `attestation_status` (göç 0017).
+- **Sınır:** servicenow.com sayfaları çalışma ortamında doğrudan açılamadı ve arama kotası doldu. Kanıtlar arama özetlerine dayanır; yalnızca üçüncü taraf kaynakla doğrulananlar raporda ayrıca görünür. Kısmi ve bulunamayan öğeler ile kuruma özgü özelleştirmeler canlı kabulde salt okunur sözlük dökümüyle kapanır.
+
 ## Sonuçlar
 
 - U5 bağlayıcıları (vCenter kümeleri, NNMi alt ağları, Defender uç noktaları, Kubernetes, bulut) yazacakları sınıfı bulur.

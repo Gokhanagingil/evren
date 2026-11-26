@@ -14,7 +14,7 @@ Kurallar: `metadata/identification_rules.yaml`, `metadata/reconciliation_rules.y
 | UUID | Biçim; sıfır ve bilinen fabrika UUID'leri reddedilir; **bayt sırası çevrilmiş** biçim de denenir | SMBIOS 2.6 öncesi farkı |
 | MAC | Tek biçim; multicast reddedilir; HSRP/VRRP, VPN ve yerel yönetimli MAC **zayıf** | Paylaşılan sanal MAC iki yönlendiriciyi birleştirmez |
 | IP | Loopback, link-local, multicast reddedilir; IP zayıf kanıttır | DHCP, NAT |
-| Sınıf anahtarı (`attr:<alan>`) | Kurum genelinde tekil sınıf özniteliği: bulut hesap kimliği, küme kimliği, alt ağ. Küçük harf; alt ağ CIDR'ye çevrilir | `10.1.2.5/24` → `subnet=10.1.2.0/24` |
+| Sınıf anahtarı (`attr:<alan>`) | Kurum genelinde tekil sınıf özniteliği: bulut hesap kimliği, küme kimliği, alt ağ, vCenter örnek UUID'si. Küçük harf; alt ağ CIDR'ye çevrilir | `10.1.2.5/24` → `subnet=10.1.2.0/24` |
 
 **Türkçe tuzağı:** Python'da `"İ".lower()` iki karakter döndürür, JavaScript'te `toLowerCase('tr')` ise `I`'yı `ı` yapar. Kimlik anahtarlarında yerel ayardan bağımsız `ascii_fold` kullanılır.
 
@@ -36,13 +36,15 @@ Kurallar: `metadata/identification_rules.yaml`, `metadata/reconciliation_rules.y
 
      | Sınıf | Kural |
      | --- | --- |
-     | VM örneği | korelasyon kimliği; vCenter UUID + nesne kimliği |
+     | VM örneği | vCenter UUID + nesne kimliği (ServiceNow); korelasyon kimliği Evren uzantısı |
+     | vCenter | örnek UUID'si (Evren tanımı) |
      | Bulut hizmet hesabı | hesap kimliği (`account_id`); korelasyon kimliği |
-     | Küme (Kubernetes dahil) | küme kimliği (`cluster_id`); korelasyon kimliği. Ad tek başına yetmez |
+     | Küme | küme kimliği (`cluster_id`); korelasyon kimliği. Ad tek başına yetmez |
+     | Kubernetes kümesi | ad (ServiceNow Kubernetes Visibility kuralı); küme kimliği Evren uzantısı olarak önce |
      | IP ağı | alt ağ (CIDR) |
      | Konteyner | korelasyon kimliği (çalışma zamanı kimliği) |
      | Servis, iş uygulaması, iş yeteneği, iş süreci, bilgi nesnesi | korelasyon kimliği, sonra ad (sınıf ailesi içinde) |
-     | **Bağımlı:** uygulama, ağ adaptörü, Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu | üst CI bağlamında (ör. küme + ad alanı + ad; bilgisayar + bağlama noktası) |
+     | **Bağımlı:** uygulama, ağ adaptörü, Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, vCenter veri merkezi, veritabanı kataloğu | üst CI bağlamında (ör. küme + ad alanı + ad; bilgisayar + bağlama noktası; hesap + nesne kimliği) |
 
    - Öznitelik kayıtta yoksa girdi atlanır.
    - Tek eşleşme varsa çelişki denetimine geçilir.

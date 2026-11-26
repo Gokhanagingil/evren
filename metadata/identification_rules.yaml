@@ -19,15 +19,27 @@ rules:
 
   - applies_to: cmdb_ci_vm_instance
     independent: true
-    description: Sanal makine örneği (vCenter nesnesi)
-    verify: true
+    description: Sanal makine örneği — vCenter UUID + nesne kimliği (ServiceNow); korelasyon kimliği Evren uzantısı
     entries:
-      - {priority: 100, attributes: [correlation_id]}
-      - {priority: 200, attributes: [vcenter_uuid, object_id]}
+      - {priority: 100, attributes: [vcenter_uuid, object_id]}
+      - {priority: 200, attributes: [correlation_id], evren_extension: true}
+
+  - applies_to: cmdb_ci_vcenter
+    independent: true
+    description: vCenter örneği — örnek UUID'si (Evren tanımı; ServiceNow kuralı belgede görülmedi)
+    entries:
+      - {priority: 100, attributes: [instance_uuid], evren_extension: true}
+
+  - applies_to: cmdb_ci_vcenter_datacenter
+    independent: false
+    description: vCenter veri merkezi — vCenter bağlamında nesne kimliği (Evren tanımı)
+    parent_relation: {type: "Contains::Contained by", parent_class: cmdb_ci_vcenter}
+    entries:
+      - {priority: 100, attributes: [object_id], evren_extension: true}
 
   - applies_to: cmdb_ci_appl
     independent: false
-    description: Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır
+    description: Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)
     parent_relation: {type: "Runs on::Runs", parent_class: cmdb_ci_hardware}
     entries:
       - {priority: 100, attributes: [name]}
@@ -56,6 +68,13 @@ rules:
     entries:
       - {priority: 100, attributes: [cluster_id]}
       - {priority: 200, attributes: [correlation_id], evren_extension: true}
+
+  - applies_to: cmdb_ci_kubernetes_cluster
+    independent: true
+    description: Kubernetes kümesi — ad (ServiceNow Kubernetes Visibility kuralı); küme kimliği Evren uzantısı
+    entries:
+      - {priority: 90, attributes: [cluster_id], evren_extension: true}
+      - {priority: 100, attributes: [name]}
 
   - applies_to: cmdb_ci_ip_network
     independent: true
@@ -105,10 +124,9 @@ rules:
 
   - applies_to: cmdb_ci_information_object
     independent: true
-    description: Bilgi nesnesi — ad
-    verify: true
+    description: Bilgi nesnesi — ad (ServiceNow temel kuralı)
     entries:
-      - {priority: 100, attributes: [name], evren_extension: true}
+      - {priority: 100, attributes: [name]}
 
   # Bağımlı CI'lar: yalnızca üst CI bağlamında tekildir. Üst bağlam çözümlemesi U7'de (F1-07);
   # o zamana kadar çözümleyici güvenli varsayılanla "kimlik yetersiz" döner, küresel ad eşleştirmesi yapmaz.
@@ -138,11 +156,10 @@ rules:
 
   - applies_to: cmdb_ci_logical_datacenter
     independent: false
-    description: Bulut bölgesi — hizmet hesabı bağlamında bölge
-    verify: true
+    description: Bulut bölgesi — hizmet hesabı bağlamında nesne kimliği (ServiceNow; hesap başına bölge başına bir kayıt)
     parent_relation: {type: "Hosted on::Hosts", parent_class: cmdb_ci_cloud_service_account}
     entries:
-      - {priority: 100, attributes: [region]}
+      - {priority: 100, attributes: [object_id]}
 
   - applies_to: cmdb_ci_database
     independent: false

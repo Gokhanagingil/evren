@@ -12,7 +12,7 @@ __all__ = ["DEFAULT_FAMILIES", "ClassHierarchy"]
 
 #: Eşleştirmenin yapıldığı aile kökleri. Bir kayıt yalnızca kendi ailesindeki
 #: CI'larla karşılaştırılır (ör. VM örneği ile misafir sunucu ayrı CI'lardır ve
-#: birbirleriyle birleştirilmez; ``Virtualized by::Virtualizes`` ilişkisiyle bağlanır).
+#: birbirleriyle birleştirilmez; ``Instantiates::Instantiated by`` ilişkisiyle bağlanır).
 DEFAULT_FAMILIES: tuple[str, ...] = (
     "cmdb_ci_hardware",
     "cmdb_ci_vm_object",

@@ -1,29 +1,25 @@
 {
  "backlog": {
   "choices": [
-   "cmdb_ci.life_cycle_stage",
-   "cmdb_ci.life_cycle_stage_status"
+   "cmdb_ci.life_cycle_stage_status",
+   "cmdb_ci.attestation_status"
   ],
   "classes": [
-   "cmdb_ci_aix_server",
-   "cmdb_ci_solaris_server",
-   "cmdb_ci_esx_server",
-   "cmdb_ci_lb",
-   "cmdb_ci_wap_network",
-   "cmdb_ci_vcenter",
-   "cmdb_ci_vcenter_datacenter",
-   "cmdb_ci_vcenter_cluster",
-   "cmdb_ci_vcenter_datastore",
-   "cmdb_ci_db_instance",
-   "cmdb_ci_db_mssql_instance",
+   "cmdb_ci_host_cluster",
+   "cmdb_ci_datastore",
    "cmdb_ci_db_ora_instance",
-   "cmdb_ci_service_discovered",
+   "cmdb_ci_service",
+   "cmdb_ci_service_business",
+   "cmdb_ci_service_technical",
+   "cmdb_ci_service_auto",
+   "service_offering",
    "cmdb_ci_business_app",
-   "cmdb_ci_rack",
-   "cmdb_ci_storage_volume",
-   "cmdb_ci_storage_server",
+   "cmdb_ci_storage_device",
+   "cmdb_ci_ip_network",
    "cmdb_ci_vlan",
    "cmdb_ci_dns_name",
+   "cmdb_ci_cluster",
+   "cmdb_ci_cluster_node",
    "cmdb_ci_win_cluster",
    "cmdb_ci_oslv_container",
    "cmdb_ci_docker_container",
@@ -31,67 +27,37 @@
    "cmdb_ci_kubernetes_component",
    "cmdb_ci_kubernetes_namespace",
    "cmdb_ci_kubernetes_node",
-   "cmdb_ci_kubernetes_deployment",
    "cmdb_ci_kubernetes_pod",
    "cmdb_ci_kubernetes_service",
-   "cmdb_ci_azure_datacenter",
-   "cmdb_ci_aws_datacenter",
-   "cmdb_ci_app_server_tomcat",
-   "cmdb_ci_app_server_jboss",
-   "cmdb_ci_app_server_weblogic",
-   "cmdb_ci_app_server_websphere",
-   "cmdb_ci_apache_web_server",
-   "cmdb_ci_microsoft_iis_web_server",
-   "cmdb_ci_nginx_web_server",
-   "cmdb_ci_db_mysql_instance",
-   "cmdb_ci_db_postgresql_instance",
+   "cmdb_ci_cloud_service_account",
+   "cmdb_ci_logical_datacenter",
+   "cmdb_ci_web_server",
    "cmdb_ci_db_db2_instance",
-   "cmdb_ci_database",
+   "cmdb_ci_db_mysql_catalog",
    "cmdb_ci_business_capability",
    "cmdb_ci_business_process",
-   "cmdb_ci_information_object",
-   "cmdb_ci_query_based_service",
    "cmdb_ci_service_calculated",
    "cmdb_ci_service_by_tags"
   ],
   "fields": [
-   "cmdb_ci.life_cycle_stage",
-   "cmdb_ci.life_cycle_stage_status",
-   "cmdb_ci.attested",
-   "cmdb_ci.attested_by",
-   "cmdb_ci.attested_date",
-   "cmdb_ci_vmware_instance.guest_id",
-   "cmdb_ci_vcenter.instance_uuid",
-   "cmdb_ci_business_app.it_application_owner",
+   "cmdb_ci.cost_center",
+   "cmdb_ci.attestation_status",
    "cmdb_ci_business_app.application_type",
    "cmdb_ci_business_app.architecture_type",
    "cmdb_ci_business_app.install_type",
    "cmdb_ci_business_app.user_base",
    "cmdb_ci_rack.rack_units",
-   "cmdb_ci_storage_device.computer",
-   "cmdb_ci_storage_device.storage_type",
-   "cmdb_ci_storage_device.size_bytes",
-   "cmdb_ci_file_system.computer",
-   "cmdb_ci_file_system.mount_point",
-   "cmdb_ci_file_system.file_system",
-   "cmdb_ci_file_system.capacity",
-   "cmdb_ci_file_system.free_space",
-   "cmdb_ci_ip_network.subnet",
    "cmdb_ci_vlan.vlan_id",
    "cmdb_ci_cluster.cluster_id",
    "cmdb_ci_cluster.cluster_version",
-   "cmdb_ci_cluster.cluster_ip",
-   "cmdb_ci_cluster_node.cluster",
    "cmdb_ci_cluster_node.server",
-   "cmdb_ci_oslv_container.image",
    "cmdb_ci_kubernetes_component.namespace",
-   "cmdb_ci_cloud_service_account.datacenter_type",
-   "cmdb_ci_cloud_service_account.is_master_account",
-   "cmdb_ci_logical_datacenter.region",
+   "cmdb_ci_kubernetes_component.cluster",
+   "cmdb_ci_kubernetes_component.k8s_uid",
+   "cmdb_ci_business_capability.parent",
    "cmdb_ci_information_object.data_classification"
   ],
   "identification": [
-   "cmdb_ci_vm_instance",
    "cmdb_ci_cloud_service_account",
    "cmdb_ci_cluster",
    "cmdb_ci_ip_network",
@@ -100,48 +66,33 @@
    "cmdb_ci_business_app",
    "cmdb_ci_business_capability",
    "cmdb_ci_business_process",
-   "cmdb_ci_information_object",
    "cmdb_ci_kubernetes_component",
    "cmdb_ci_file_system",
    "cmdb_ci_cluster_node",
-   "cmdb_ci_logical_datacenter",
    "cmdb_ci_database"
   ],
   "relationship_rules": [
    "cmdb_ci_appl --Runs on::Runs--> cmdb_ci_cluster",
    "cmdb_ci_appl --Runs on::Runs--> cmdb_ci_oslv_container",
-   "cmdb_ci_vm_instance --Registered on::Has registered--> cmdb_ci_server",
+   "cmdb_ci_computer --Instantiates::Instantiated by--> cmdb_ci_vm_instance",
    "cmdb_ci_vm_instance --Hosted on::Hosts--> cmdb_ci_logical_datacenter",
    "cmdb_ci_cluster --Members::Member of--> cmdb_ci_cluster_node",
    "cmdb_ci_cluster_node --Hosted on::Hosts--> cmdb_ci_computer",
    "cmdb_ci_vcenter --Contains::Contained by--> cmdb_ci_vcenter_datacenter",
    "cmdb_ci_vcenter_datacenter --Contains::Contained by--> cmdb_ci_vcenter_cluster",
-   "cmdb_ci_vcenter_cluster --Members::Member of--> cmdb_ci_esx_server",
    "cmdb_ci_rack --Contains::Contained by--> cmdb_ci_hardware",
    "cmdb_ci_vlan --Contains::Contained by--> cmdb_ci_ip_network",
    "cmdb_ci_ip_network --Contains::Contained by--> cmdb_ci_ip_address",
    "cmdb_ci_computer --Uses::Used by--> cmdb_ci_storage_volume",
-   "cmdb_ci_db_instance --Contains::Contained by--> cmdb_ci_database",
-   "cmdb_ci_kubernetes_cluster --Contains::Contained by--> cmdb_ci_kubernetes_component",
    "cmdb_ci_kubernetes_namespace --Contains::Contained by--> cmdb_ci_kubernetes_component",
    "cmdb_ci_kubernetes_cluster --Hosted on::Hosts--> cmdb_ci_logical_datacenter",
    "cmdb_ci_kubernetes_node --Hosted on::Hosts--> cmdb_ci_computer",
    "cmdb_ci_kubernetes_pod --Runs on::Runs--> cmdb_ci_kubernetes_node",
    "cmdb_ci_kubernetes_pod --Contains::Contained by--> cmdb_ci_oslv_container",
    "cmdb_ci_oslv_container --Runs on::Runs--> cmdb_ci_computer",
-   "cmdb_ci_logical_datacenter --Hosted on::Hosts--> cmdb_ci_cloud_service_account",
-   "cmdb_ci_business_capability --Provided by::Provides--> cmdb_ci_business_app",
-   "cmdb_ci_business_capability --Contains::Contained by--> cmdb_ci_business_capability",
-   "cmdb_ci_business_process --Uses::Used by--> cmdb_ci_business_app",
-   "cmdb_ci_business_app --Consumes::Consumed by--> cmdb_ci_service_auto",
-   "cmdb_ci_business_app --Uses::Used by--> cmdb_ci_information_object",
-   "cmdb_ci_business_app --Sends data to::Receives data from--> cmdb_ci_business_app",
-   "service_offering --Contains::Contained by--> cmdb_ci_query_based_service"
+   "cmdb_ci_business_app --Sends data to::Receives data from--> cmdb_ci_business_app"
   ],
-  "relationship_types": [
-   "Registered on::Has registered",
-   "Provided by::Provides"
-  ]
+  "relationship_types": []
  },
  "choices": [
   {
@@ -367,6 +318,16 @@
      "value": "Build"
     },
     {
+     "label": "Purchase",
+     "label_tr": "Satın alma",
+     "value": "Purchase"
+    },
+    {
+     "label": "Inventory",
+     "label_tr": "Envanter",
+     "value": "Inventory"
+    },
+    {
      "label": "Deploy",
      "label_tr": "Devreye alma",
      "value": "Deploy"
@@ -377,12 +338,22 @@
      "value": "Operational"
     },
     {
+     "label": "End of Operation",
+     "label_tr": "Operasyon sonu",
+     "value": "End of Operation"
+    },
+    {
+     "label": "Missing",
+     "label_tr": "Kayıp",
+     "value": "Missing"
+    },
+    {
      "label": "End of Life",
      "label_tr": "Ömür sonu",
      "value": "End of Life"
     }
    ],
-   "verify": true
+   "verify": false
   },
   {
    "depends_on": "life_cycle_stage",
@@ -400,33 +371,22 @@
      "value": "Draft"
     },
     {
+     "dependent_value": "Ideation",
+     "label": "Under Evaluation",
+     "label_tr": "Değerlendiriliyor",
+     "legacy": {
+      "operational_status": "7"
+     },
+     "value": "Under Evaluation"
+    },
+    {
      "dependent_value": "Design",
-     "label": "Planning",
-     "label_tr": "Planlanıyor",
+     "label": "Chartered",
+     "label_tr": "Onaylı proje",
      "legacy": {
       "operational_status": "7"
      },
-     "value": "Planning"
-    },
-    {
-     "dependent_value": "Build",
-     "label": "In Progress",
-     "label_tr": "Yapılıyor",
-     "legacy": {
-      "install_status": "4",
-      "operational_status": "7"
-     },
-     "value": "In Progress"
-    },
-    {
-     "dependent_value": "Deploy",
-     "label": "Ready",
-     "label_tr": "Hazır",
-     "legacy": {
-      "install_status": "1",
-      "operational_status": "5"
-     },
-     "value": "Ready"
+     "value": "Chartered"
     },
     {
      "dependent_value": "Operational",
@@ -459,6 +419,45 @@
      "value": "Pending Retirement"
     },
     {
+     "dependent_value": "Operational",
+     "label": "End of Support",
+     "label_tr": "Destek sona erdi",
+     "legacy": {
+      "install_status": "1",
+      "operational_status": "1"
+     },
+     "value": "End of Support"
+    },
+    {
+     "dependent_value": "End of Operation",
+     "label": "Pending Evaluation",
+     "label_tr": "Değerlendirme bekliyor",
+     "legacy": {
+      "operational_status": "2"
+     },
+     "value": "Pending Evaluation"
+    },
+    {
+     "dependent_value": "Missing",
+     "label": "Lost",
+     "label_tr": "Kayıp",
+     "legacy": {
+      "install_status": "100",
+      "operational_status": "2"
+     },
+     "value": "Lost"
+    },
+    {
+     "dependent_value": "Missing",
+     "label": "Stolen",
+     "label_tr": "Çalıntı",
+     "legacy": {
+      "install_status": "8",
+      "operational_status": "6"
+     },
+     "value": "Stolen"
+    },
+    {
      "dependent_value": "End of Life",
      "label": "Retired",
      "label_tr": "Emekli",
@@ -470,23 +469,13 @@
     },
     {
      "dependent_value": "End of Life",
-     "label": "Missing",
-     "label_tr": "Kayıp",
+     "label": "Obsolete",
+     "label_tr": "Kullanım dışı",
      "legacy": {
-      "install_status": "100",
-      "operational_status": "2"
-     },
-     "value": "Missing"
-    },
-    {
-     "dependent_value": "End of Life",
-     "label": "Stolen",
-     "label_tr": "Çalıntı",
-     "legacy": {
-      "install_status": "8",
+      "install_status": "7",
       "operational_status": "6"
      },
-     "value": "Stolen"
+     "value": "Obsolete"
     },
     {
      "dependent_value": "End of Life",
@@ -500,6 +489,30 @@
     }
    ],
    "verify": true
+  },
+  {
+   "depends_on": null,
+   "element": "attestation_status",
+   "label_tr": "Sahiplik onayı durumu",
+   "table": "cmdb_ci",
+   "values": [
+    {
+     "label": "Not Yet Reviewed",
+     "label_tr": "Henüz incelenmedi",
+     "value": "Not Yet Reviewed"
+    },
+    {
+     "label": "Attested",
+     "label_tr": "Onaylandı",
+     "value": "Attested"
+    },
+    {
+     "label": "Rejected",
+     "label_tr": "Reddedildi",
+     "value": "Rejected"
+    }
+   ],
+   "verify": true
   }
  ],
  "classes": [
@@ -508,14 +521,15 @@
     "cmdb_ci_network_adapter",
     "cmdb_ci_information_object",
     "cmdb_ci_cloud_service_account",
+    "cmdb_ci_storage_volume",
     "cmdb_ci_dns_name",
     "cmdb_ci_hardware",
-    "cmdb_ci_file_system",
     "cmdb_ci_ip_address",
     "cmdb_ci_ip_network",
     "cmdb_ci_business_process",
     "cmdb_ci_business_app",
     "cmdb_ci_business_capability",
+    "cmdb_ci_rack",
     "cmdb_ci_oslv_container",
     "cmdb_ci_kubernetes_component",
     "cmdb_ci_cluster",
@@ -529,7 +543,7 @@
    ],
    "depth": 0,
    "family": null,
-   "field_count": 39,
+   "field_count": 40,
    "fields": [
     {
      "label_tr": "Ad",
@@ -792,8 +806,7 @@
      "name": "life_cycle_stage",
      "sensitivity": "internal",
      "storage": "column",
-     "type": "string",
-     "verify": true
+     "type": "string"
     },
     {
      "choice": true,
@@ -802,8 +815,7 @@
      "name": "life_cycle_stage_status",
      "sensitivity": "internal",
      "storage": "column",
-     "type": "string",
-     "verify": true
+     "type": "string"
     },
     {
      "label_tr": "Yorumlar",
@@ -819,15 +831,15 @@
      "reference": "cmn_cost_center",
      "sensitivity": "internal",
      "storage": "column",
-     "type": "reference"
+     "type": "reference",
+     "verify": true
     },
     {
      "label_tr": "Sahiplik onaylandı",
      "name": "attested",
      "sensitivity": "internal",
      "storage": "column",
-     "type": "boolean",
-     "verify": true
+     "type": "boolean"
     },
     {
      "label_tr": "Onaylayan",
@@ -835,15 +847,23 @@
      "reference": "sys_user",
      "sensitivity": "internal",
      "storage": "column",
-     "type": "reference",
-     "verify": true
+     "type": "reference"
     },
     {
      "label_tr": "Onay tarihi",
      "name": "attested_date",
      "sensitivity": "internal",
      "storage": "column",
-     "type": "glide_date_time",
+     "type": "glide_date_time"
+    },
+    {
+     "choice": true,
+     "label_tr": "Sahiplik onayı durumu",
+     "max_length": 40,
+     "name": "attestation_status",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string",
      "verify": true
     }
    ],
@@ -859,7 +879,7 @@
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_network_adapter",
-   "field_count": 42,
+   "field_count": 43,
    "fields": [
     {
      "indexed": true,
@@ -918,7 +938,7 @@
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_information_object",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [
     {
      "label_tr": "Veri sınıflandırması",
@@ -933,33 +953,33 @@
    "identification": {
     "applies_to": "cmdb_ci_information_object",
     "context": null,
-    "description": "Bilgi nesnesi — ad",
+    "description": "Bilgi nesnesi — ad (ServiceNow temel kuralı)",
     "entries": [
      {
       "attributes": [
        "name"
       ],
-      "evren_extension": true,
+      "evren_extension": false,
       "priority": 100,
       "search_table": null
      }
     ],
     "independent": true,
     "inherited": false,
-    "verify": true
+    "verify": false
    },
    "label": "Information Object",
    "label_tr": "Bilgi nesnesi",
    "name": "cmdb_ci_information_object",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_information_object",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_cloud_service_account",
-   "field_count": 42,
+   "field_count": 43,
    "fields": [
     {
      "indexed": true,
@@ -976,16 +996,14 @@
      "name": "datacenter_type",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "string",
-     "verify": true
+     "type": "string"
     },
     {
      "label_tr": "Ana hesap",
      "name": "is_master_account",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "boolean",
-     "verify": true
+     "type": "boolean"
     }
    ],
    "identification": {
@@ -1019,13 +1037,111 @@
    "name": "cmdb_ci_cloud_service_account",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_cloud_service_account",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_file_system"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_storage_volume",
+   "field_count": 40,
+   "fields": [],
+   "identification": null,
+   "label": "Storage Volume",
+   "label_tr": "Depolama birimi",
+   "name": "cmdb_ci_storage_volume",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_storage_volume",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_storage_volume",
+   "field_count": 46,
+   "fields": [
+    {
+     "indexed": true,
+     "label_tr": "Bağlı bilgisayar",
+     "name": "computer",
+     "reference": "cmdb_ci_computer",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Bağlama noktası",
+     "max_length": 1000,
+     "name": "mount_point",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Dosya sistemi tipi",
+     "max_length": 40,
+     "name": "file_system",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Kapasite (MB)",
+     "name": "capacity",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Kullanılabilir alan (MB)",
+     "name": "available_space",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Boş alan (metin)",
+     "max_length": 40,
+     "name": "free_space",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_file_system",
+    "context": {
+     "field": "computer",
+     "kind": "reference"
+    },
+    "description": "Dosya sistemi — bağlı bilgisayar bağlamında bağlama noktası",
+    "entries": [
+     {
+      "attributes": [
+       "mount_point"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "File System",
+   "label_tr": "Dosya sistemi",
+   "name": "cmdb_ci_file_system",
+   "parent": "cmdb_ci_storage_volume",
+   "sn_view": "sn.cmdb_ci_file_system",
    "verify": false
   },
   {
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_dns_name",
-   "field_count": 39,
+   "field_count": 40,
    "fields": [],
    "identification": null,
    "label": "DNS Name",
@@ -1040,12 +1156,11 @@
     "cmdb_ci_netgear",
     "cmdb_ci_computer",
     "cmdb_ci_storage_device",
-    "cmdb_ci_rack",
     "cmdb_ci_printer"
    ],
    "depth": 1,
    "family": "cmdb_ci_hardware",
-   "field_count": 42,
+   "field_count": 43,
    "fields": [
     {
      "label_tr": "Donanım durumu",
@@ -1144,12 +1259,11 @@
     "cmdb_ci_ip_firewall",
     "cmdb_ci_wap_network",
     "cmdb_ci_ip_router",
-    "cmdb_ci_ip_switch",
-    "cmdb_ci_lb"
+    "cmdb_ci_ip_switch"
    ],
    "depth": 2,
    "family": "cmdb_ci_hardware",
-   "field_count": 46,
+   "field_count": 47,
    "fields": [
     {
      "label_tr": "Yönlendirme yapabilir",
@@ -1251,7 +1365,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_hardware",
-   "field_count": 46,
+   "field_count": 47,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -1324,7 +1438,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_hardware",
-   "field_count": 46,
+   "field_count": 47,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -1391,13 +1505,13 @@
    "name": "cmdb_ci_wap_network",
    "parent": "cmdb_ci_netgear",
    "sn_view": "sn.cmdb_ci_wap_network",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_hardware",
-   "field_count": 46,
+   "field_count": 47,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -1470,7 +1584,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_hardware",
-   "field_count": 46,
+   "field_count": 47,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -1540,86 +1654,13 @@
    "verify": false
   },
   {
-   "children": [],
-   "depth": 3,
-   "family": "cmdb_ci_hardware",
-   "field_count": 46,
-   "fields": [],
-   "identification": {
-    "applies_to": "cmdb_ci_hardware",
-    "context": null,
-    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
-    "entries": [
-     {
-      "attributes": [
-       "serial_number",
-       "serial_number_type"
-      ],
-      "evren_extension": false,
-      "priority": 100,
-      "search_table": "cmdb_serial_number"
-     },
-     {
-      "attributes": [
-       "bios_uuid"
-      ],
-      "evren_extension": true,
-      "priority": 150,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "serial_number"
-      ],
-      "evren_extension": false,
-      "priority": 200,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "fqdn"
-      ],
-      "evren_extension": true,
-      "priority": 280,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "name"
-      ],
-      "evren_extension": false,
-      "priority": 300,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "mac_address",
-       "name"
-      ],
-      "evren_extension": false,
-      "priority": 400,
-      "search_table": "cmdb_ci_network_adapter"
-     }
-    ],
-    "independent": true,
-    "inherited": true,
-    "verify": false
-   },
-   "label": "Load Balancer",
-   "label_tr": "Yük dengeleyici",
-   "name": "cmdb_ci_lb",
-   "parent": "cmdb_ci_netgear",
-   "sn_view": "sn.cmdb_ci_lb",
-   "verify": true
-  },
-  {
    "children": [
     "cmdb_ci_pc_hardware",
     "cmdb_ci_server"
    ],
    "depth": 2,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [
     {
      "label_tr": "Host adı",
@@ -1794,7 +1835,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -1869,11 +1910,12 @@
     "cmdb_ci_esx_server",
     "cmdb_ci_linux_server",
     "cmdb_ci_unix_server",
-    "cmdb_ci_win_server"
+    "cmdb_ci_win_server",
+    "cmdb_ci_lb"
    ],
    "depth": 3,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -1946,7 +1988,7 @@
    "children": [],
    "depth": 4,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2013,13 +2055,13 @@
    "name": "cmdb_ci_storage_server",
    "parent": "cmdb_ci_server",
    "sn_view": "sn.cmdb_ci_storage_server",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 4,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2086,13 +2128,13 @@
    "name": "cmdb_ci_esx_server",
    "parent": "cmdb_ci_server",
    "sn_view": "sn.cmdb_ci_esx_server",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 4,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2164,11 +2206,12 @@
   {
    "children": [
     "cmdb_ci_aix_server",
+    "cmdb_ci_hpux_server",
     "cmdb_ci_solaris_server"
    ],
    "depth": 4,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2241,7 +2284,7 @@
    "children": [],
    "depth": 5,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2308,13 +2351,86 @@
    "name": "cmdb_ci_aix_server",
    "parent": "cmdb_ci_unix_server",
    "sn_view": "sn.cmdb_ci_aix_server",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 5,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "HP-UX Server",
+   "label_tr": "HP-UX sunucu",
+   "name": "cmdb_ci_hpux_server",
+   "parent": "cmdb_ci_unix_server",
+   "sn_view": "sn.cmdb_ci_hpux_server",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 5,
+   "family": "cmdb_ci_hardware",
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2381,13 +2497,13 @@
    "name": "cmdb_ci_solaris_server",
    "parent": "cmdb_ci_unix_server",
    "sn_view": "sn.cmdb_ci_solaris_server",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 4,
    "family": "cmdb_ci_hardware",
-   "field_count": 55,
+   "field_count": 56,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2457,13 +2573,85 @@
    "verify": false
   },
   {
+   "children": [],
+   "depth": 4,
+   "family": "cmdb_ci_hardware",
+   "field_count": 56,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Load Balancer",
+   "label_tr": "Yük dengeleyici",
+   "name": "cmdb_ci_lb",
+   "parent": "cmdb_ci_server",
+   "sn_view": "sn.cmdb_ci_lb",
+   "verify": false
+  },
+  {
    "children": [
-    "cmdb_ci_storage_volume",
     "cmdb_ci_disk"
    ],
    "depth": 2,
    "family": "cmdb_ci_hardware",
-   "field_count": 45,
+   "field_count": 46,
    "fields": [
     {
      "indexed": true,
@@ -2472,8 +2660,7 @@
      "reference": "cmdb_ci_computer",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "reference",
-     "verify": true
+     "type": "reference"
     },
     {
      "label_tr": "Depolama tipi",
@@ -2481,16 +2668,14 @@
      "name": "storage_type",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "string",
-     "verify": true
+     "type": "string"
     },
     {
      "label_tr": "Boyut (bayt)",
      "name": "size_bytes",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "integer",
-     "verify": true
+     "type": "integer"
     }
    ],
    "identification": {
@@ -2558,86 +2743,13 @@
    "name": "cmdb_ci_storage_device",
    "parent": "cmdb_ci_hardware",
    "sn_view": "sn.cmdb_ci_storage_device",
-   "verify": false
-  },
-  {
-   "children": [],
-   "depth": 3,
-   "family": "cmdb_ci_hardware",
-   "field_count": 45,
-   "fields": [],
-   "identification": {
-    "applies_to": "cmdb_ci_hardware",
-    "context": null,
-    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
-    "entries": [
-     {
-      "attributes": [
-       "serial_number",
-       "serial_number_type"
-      ],
-      "evren_extension": false,
-      "priority": 100,
-      "search_table": "cmdb_serial_number"
-     },
-     {
-      "attributes": [
-       "bios_uuid"
-      ],
-      "evren_extension": true,
-      "priority": 150,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "serial_number"
-      ],
-      "evren_extension": false,
-      "priority": 200,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "fqdn"
-      ],
-      "evren_extension": true,
-      "priority": 280,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "name"
-      ],
-      "evren_extension": false,
-      "priority": 300,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "mac_address",
-       "name"
-      ],
-      "evren_extension": false,
-      "priority": 400,
-      "search_table": "cmdb_ci_network_adapter"
-     }
-    ],
-    "independent": true,
-    "inherited": true,
-    "verify": false
-   },
-   "label": "Storage Volume",
-   "label_tr": "Depolama birimi",
-   "name": "cmdb_ci_storage_volume",
-   "parent": "cmdb_ci_storage_device",
-   "sn_view": "sn.cmdb_ci_storage_volume",
    "verify": true
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_hardware",
-   "field_count": 45,
+   "field_count": 46,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2711,88 +2823,6 @@
    "depth": 2,
    "family": "cmdb_ci_hardware",
    "field_count": 43,
-   "fields": [
-    {
-     "label_tr": "Birim (U) sayısı",
-     "name": "rack_units",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "integer",
-     "verify": true
-    }
-   ],
-   "identification": {
-    "applies_to": "cmdb_ci_hardware",
-    "context": null,
-    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
-    "entries": [
-     {
-      "attributes": [
-       "serial_number",
-       "serial_number_type"
-      ],
-      "evren_extension": false,
-      "priority": 100,
-      "search_table": "cmdb_serial_number"
-     },
-     {
-      "attributes": [
-       "bios_uuid"
-      ],
-      "evren_extension": true,
-      "priority": 150,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "serial_number"
-      ],
-      "evren_extension": false,
-      "priority": 200,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "fqdn"
-      ],
-      "evren_extension": true,
-      "priority": 280,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "name"
-      ],
-      "evren_extension": false,
-      "priority": 300,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "mac_address",
-       "name"
-      ],
-      "evren_extension": false,
-      "priority": 400,
-      "search_table": "cmdb_ci_network_adapter"
-     }
-    ],
-    "independent": true,
-    "inherited": true,
-    "verify": false
-   },
-   "label": "Rack",
-   "label_tr": "Kabin (rack)",
-   "name": "cmdb_ci_rack",
-   "parent": "cmdb_ci_hardware",
-   "sn_view": "sn.cmdb_ci_rack",
-   "verify": true
-  },
-  {
-   "children": [],
-   "depth": 2,
-   "family": "cmdb_ci_hardware",
-   "field_count": 42,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_hardware",
@@ -2864,87 +2894,8 @@
   {
    "children": [],
    "depth": 1,
-   "family": "cmdb_ci_file_system",
-   "field_count": 44,
-   "fields": [
-    {
-     "indexed": true,
-     "label_tr": "Bağlı bilgisayar",
-     "name": "computer",
-     "reference": "cmdb_ci_computer",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "reference",
-     "verify": true
-    },
-    {
-     "label_tr": "Bağlama noktası",
-     "max_length": 1000,
-     "name": "mount_point",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "string",
-     "verify": true
-    },
-    {
-     "label_tr": "Dosya sistemi tipi",
-     "max_length": 40,
-     "name": "file_system",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "string",
-     "verify": true
-    },
-    {
-     "label_tr": "Kapasite (MB)",
-     "name": "capacity",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "integer",
-     "verify": true
-    },
-    {
-     "label_tr": "Boş alan (MB)",
-     "name": "free_space",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "integer",
-     "verify": true
-    }
-   ],
-   "identification": {
-    "applies_to": "cmdb_ci_file_system",
-    "context": {
-     "field": "computer",
-     "kind": "reference"
-    },
-    "description": "Dosya sistemi — bağlı bilgisayar bağlamında bağlama noktası",
-    "entries": [
-     {
-      "attributes": [
-       "mount_point"
-      ],
-      "evren_extension": false,
-      "priority": 100,
-      "search_table": null
-     }
-    ],
-    "independent": false,
-    "inherited": false,
-    "verify": true
-   },
-   "label": "File System",
-   "label_tr": "Dosya sistemi",
-   "name": "cmdb_ci_file_system",
-   "parent": "cmdb_ci",
-   "sn_view": "sn.cmdb_ci_file_system",
-   "verify": false
-  },
-  {
-   "children": [],
-   "depth": 1,
    "family": "cmdb_ci_ip_address",
-   "field_count": 42,
+   "field_count": 43,
    "fields": [
     {
      "label_tr": "IP sürümü",
@@ -2982,7 +2933,7 @@
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_ip_network",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [
     {
      "label_tr": "Alt ağ (CIDR)",
@@ -2990,8 +2941,7 @@
      "name": "subnet",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "string",
-     "verify": true
+     "type": "string"
     }
    ],
    "identification": {
@@ -3017,13 +2967,13 @@
    "name": "cmdb_ci_ip_network",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_ip_network",
-   "verify": false
+   "verify": true
   },
   {
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_business_process",
-   "field_count": 39,
+   "field_count": 40,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_business_process",
@@ -3054,7 +3004,7 @@
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_business_app",
-   "field_count": 44,
+   "field_count": 45,
    "fields": [
     {
      "label_tr": "BT uygulama sahibi",
@@ -3062,8 +3012,7 @@
      "reference": "sys_user",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "reference",
-     "verify": true
+     "type": "reference"
     },
     {
      "label_tr": "Uygulama tipi",
@@ -3139,8 +3088,18 @@
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_business_capability",
-   "field_count": 39,
-   "fields": [],
+   "field_count": 41,
+   "fields": [
+    {
+     "label_tr": "Üst yetenek",
+     "name": "parent",
+     "reference": "cmdb_ci_business_capability",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference",
+     "verify": true
+    }
+   ],
    "identification": {
     "applies_to": "cmdb_ci_business_capability",
     "context": null,
@@ -3167,21 +3126,43 @@
    "verify": true
   },
   {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_rack",
+   "field_count": 41,
+   "fields": [
+    {
+     "label_tr": "Birim (U) sayısı",
+     "name": "rack_units",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer",
+     "verify": true
+    }
+   ],
+   "identification": null,
+   "label": "Rack",
+   "label_tr": "Kabin (rack)",
+   "name": "cmdb_ci_rack",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_rack",
+   "verify": false
+  },
+  {
    "children": [
     "cmdb_ci_docker_container"
    ],
    "depth": 1,
    "family": "cmdb_ci_oslv_container",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [
     {
-     "label_tr": "İmaj",
-     "max_length": 1000,
-     "name": "image",
+     "label_tr": "İmaj kimliği",
+     "max_length": 255,
+     "name": "image_id",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "string",
-     "verify": true
+     "type": "string"
     }
    ],
    "identification": {
@@ -3213,7 +3194,7 @@
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_oslv_container",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_oslv_container",
@@ -3243,19 +3224,39 @@
   {
    "children": [
     "cmdb_ci_kubernetes_namespace",
-    "cmdb_ci_kubernetes_deployment",
     "cmdb_ci_kubernetes_node",
+    "cmdb_ci_kubernetes_workload",
     "cmdb_ci_kubernetes_pod",
     "cmdb_ci_kubernetes_service"
    ],
    "depth": 1,
    "family": "cmdb_ci_kubernetes_component",
-   "field_count": 40,
+   "field_count": 43,
    "fields": [
     {
      "label_tr": "Ad alanı",
      "max_length": 255,
      "name": "namespace",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "indexed": true,
+     "label_tr": "Kubernetes kümesi",
+     "name": "cluster",
+     "reference": "cmdb_ci_kubernetes_cluster",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference",
+     "verify": true
+    },
+    {
+     "indexed": true,
+     "label_tr": "Kubernetes UID",
+     "max_length": 100,
+     "name": "k8s_uid",
      "sensitivity": "internal",
      "storage": "jsonb",
      "type": "string",
@@ -3296,7 +3297,7 @@
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_kubernetes_component",
-   "field_count": 40,
+   "field_count": 43,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_kubernetes_component",
@@ -3332,43 +3333,7 @@
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_kubernetes_component",
-   "field_count": 40,
-   "fields": [],
-   "identification": {
-    "applies_to": "cmdb_ci_kubernetes_component",
-    "context": {
-     "kind": "relation",
-     "parent_class": "cmdb_ci_kubernetes_cluster",
-     "type": "Contains::Contained by"
-    },
-    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
-    "entries": [
-     {
-      "attributes": [
-       "namespace",
-       "name"
-      ],
-      "evren_extension": false,
-      "priority": 100,
-      "search_table": null
-     }
-    ],
-    "independent": false,
-    "inherited": true,
-    "verify": true
-   },
-   "label": "Kubernetes Deployment",
-   "label_tr": "Kubernetes dağıtımı",
-   "name": "cmdb_ci_kubernetes_deployment",
-   "parent": "cmdb_ci_kubernetes_component",
-   "sn_view": "sn.cmdb_ci_kubernetes_deployment",
-   "verify": true
-  },
-  {
-   "children": [],
-   "depth": 2,
-   "family": "cmdb_ci_kubernetes_component",
-   "field_count": 40,
+   "field_count": 43,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_kubernetes_component",
@@ -3401,10 +3366,158 @@
    "verify": true
   },
   {
+   "children": [
+    "cmdb_ci_kubernetes_daemonset",
+    "cmdb_ci_kubernetes_deployment",
+    "cmdb_ci_kubernetes_statefulset"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Workload",
+   "label_tr": "Kubernetes iş yükü",
+   "name": "cmdb_ci_kubernetes_workload",
+   "parent": "cmdb_ci_kubernetes_component",
+   "sn_view": "sn.cmdb_ci_kubernetes_workload",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes DaemonSet",
+   "label_tr": "Kubernetes DaemonSet",
+   "name": "cmdb_ci_kubernetes_daemonset",
+   "parent": "cmdb_ci_kubernetes_workload",
+   "sn_view": "sn.cmdb_ci_kubernetes_daemonset",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Deployment",
+   "label_tr": "Kubernetes dağıtımı",
+   "name": "cmdb_ci_kubernetes_deployment",
+   "parent": "cmdb_ci_kubernetes_workload",
+   "sn_view": "sn.cmdb_ci_kubernetes_deployment",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes StatefulSet",
+   "label_tr": "Kubernetes StatefulSet",
+   "name": "cmdb_ci_kubernetes_statefulset",
+   "parent": "cmdb_ci_kubernetes_workload",
+   "sn_view": "sn.cmdb_ci_kubernetes_statefulset",
+   "verify": false
+  },
+  {
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_kubernetes_component",
-   "field_count": 40,
+   "field_count": 43,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_kubernetes_component",
@@ -3440,7 +3553,7 @@
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_kubernetes_component",
-   "field_count": 40,
+   "field_count": 43,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_kubernetes_component",
@@ -3498,15 +3611,6 @@
      "storage": "jsonb",
      "type": "string",
      "verify": true
-    },
-    {
-     "label_tr": "Küme IP adresi",
-     "max_length": 255,
-     "name": "cluster_ip",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "string",
-     "verify": true
     }
    ],
    "identification": {
@@ -3540,7 +3644,7 @@
    "name": "cmdb_ci_cluster",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_cluster",
-   "verify": false
+   "verify": true
   },
   {
    "children": [],
@@ -3549,30 +3653,30 @@
    "field_count": 42,
    "fields": [],
    "identification": {
-    "applies_to": "cmdb_ci_cluster",
+    "applies_to": "cmdb_ci_kubernetes_cluster",
     "context": null,
-    "description": "Küme (Windows, vCenter dışı, Kubernetes) — küme kimliği; ad tek başına yetmez",
+    "description": "Kubernetes kümesi — ad (ServiceNow Kubernetes Visibility kuralı); küme kimliği Evren uzantısı",
     "entries": [
      {
       "attributes": [
        "cluster_id"
       ],
-      "evren_extension": false,
-      "priority": 100,
+      "evren_extension": true,
+      "priority": 90,
       "search_table": null
      },
      {
       "attributes": [
-       "correlation_id"
+       "name"
       ],
-      "evren_extension": true,
-      "priority": 200,
+      "evren_extension": false,
+      "priority": 100,
       "search_table": null
      }
     ],
     "independent": true,
-    "inherited": true,
-    "verify": true
+    "inherited": false,
+    "verify": false
    },
    "label": "Kubernetes Cluster",
    "label_tr": "Kubernetes kümesi",
@@ -3624,7 +3728,7 @@
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_cluster_node",
-   "field_count": 41,
+   "field_count": 42,
    "fields": [
     {
      "indexed": true,
@@ -3633,8 +3737,7 @@
      "reference": "cmdb_ci_cluster",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "reference",
-     "verify": true
+     "type": "reference"
     },
     {
      "label_tr": "Sunucu",
@@ -3672,16 +3775,17 @@
    "name": "cmdb_ci_cluster_node",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_cluster_node",
-   "verify": false
+   "verify": true
   },
   {
    "children": [
     "cmdb_ci_aws_datacenter",
-    "cmdb_ci_azure_datacenter"
+    "cmdb_ci_azure_datacenter",
+    "cmdb_ci_vcenter_datacenter"
    ],
    "depth": 1,
    "family": "cmdb_ci_logical_datacenter",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [
     {
      "label_tr": "Bölge",
@@ -3689,8 +3793,7 @@
      "name": "region",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "string",
-     "verify": true
+     "type": "string"
     }
    ],
    "identification": {
@@ -3700,11 +3803,11 @@
      "parent_class": "cmdb_ci_cloud_service_account",
      "type": "Hosted on::Hosts"
     },
-    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında nesne kimliği (ServiceNow; hesap başına bölge başına bir kayıt)",
     "entries": [
      {
       "attributes": [
-       "region"
+       "object_id"
       ],
       "evren_extension": false,
       "priority": 100,
@@ -3713,20 +3816,20 @@
     ],
     "independent": false,
     "inherited": false,
-    "verify": true
+    "verify": false
    },
    "label": "Logical Datacenter",
    "label_tr": "Mantıksal veri merkezi (bölge)",
    "name": "cmdb_ci_logical_datacenter",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_logical_datacenter",
-   "verify": false
+   "verify": true
   },
   {
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_logical_datacenter",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_logical_datacenter",
@@ -3735,11 +3838,11 @@
      "parent_class": "cmdb_ci_cloud_service_account",
      "type": "Hosted on::Hosts"
     },
-    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında nesne kimliği (ServiceNow; hesap başına bölge başına bir kayıt)",
     "entries": [
      {
       "attributes": [
-       "region"
+       "object_id"
       ],
       "evren_extension": false,
       "priority": 100,
@@ -3748,20 +3851,20 @@
     ],
     "independent": false,
     "inherited": true,
-    "verify": true
+    "verify": false
    },
    "label": "AWS Datacenter",
    "label_tr": "AWS bölgesi",
    "name": "cmdb_ci_aws_datacenter",
    "parent": "cmdb_ci_logical_datacenter",
    "sn_view": "sn.cmdb_ci_aws_datacenter",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_logical_datacenter",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_logical_datacenter",
@@ -3770,11 +3873,11 @@
      "parent_class": "cmdb_ci_cloud_service_account",
      "type": "Hosted on::Hosts"
     },
-    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında nesne kimliği (ServiceNow; hesap başına bölge başına bir kayıt)",
     "entries": [
      {
       "attributes": [
-       "region"
+       "object_id"
       ],
       "evren_extension": false,
       "priority": 100,
@@ -3783,26 +3886,59 @@
     ],
     "independent": false,
     "inherited": true,
-    "verify": true
+    "verify": false
    },
    "label": "Azure Datacenter",
    "label_tr": "Azure bölgesi",
    "name": "cmdb_ci_azure_datacenter",
    "parent": "cmdb_ci_logical_datacenter",
    "sn_view": "sn.cmdb_ci_azure_datacenter",
-   "verify": true
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_logical_datacenter",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_vcenter_datacenter",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_vcenter",
+     "type": "Contains::Contained by"
+    },
+    "description": "vCenter veri merkezi — vCenter bağlamında nesne kimliği (Evren tanımı)",
+    "entries": [
+     {
+      "attributes": [
+       "object_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": false
+   },
+   "label": "VMware vCenter Datacenter",
+   "label_tr": "vCenter veri merkezi",
+   "name": "cmdb_ci_vcenter_datacenter",
+   "parent": "cmdb_ci_logical_datacenter",
+   "sn_view": "sn.cmdb_ci_vcenter_datacenter",
+   "verify": false
   },
   {
    "children": [
+    "cmdb_ci_datastore",
     "cmdb_ci_vm_instance",
-    "cmdb_ci_vcenter",
-    "cmdb_ci_vcenter_datastore",
-    "cmdb_ci_vcenter_cluster",
-    "cmdb_ci_vcenter_datacenter"
+    "cmdb_ci_vcenter_object"
    ],
    "depth": 1,
    "family": "cmdb_ci_vm_object",
-   "field_count": 39,
+   "field_count": 40,
    "fields": [],
    "identification": null,
    "label": "Virtual Machine Object",
@@ -3814,11 +3950,41 @@
   },
   {
    "children": [
+    "cmdb_ci_vcenter_datastore"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 40,
+   "fields": [],
+   "identification": null,
+   "label": "Datastore",
+   "label_tr": "Datastore",
+   "name": "cmdb_ci_datastore",
+   "parent": "cmdb_ci_vm_object",
+   "sn_view": "sn.cmdb_ci_datastore",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 40,
+   "fields": [],
+   "identification": null,
+   "label": "VMware vCenter Datastore",
+   "label_tr": "vCenter datastore",
+   "name": "cmdb_ci_vcenter_datastore",
+   "parent": "cmdb_ci_datastore",
+   "sn_view": "sn.cmdb_ci_vcenter_datastore",
+   "verify": false
+  },
+  {
+   "children": [
     "cmdb_ci_vmware_instance"
    ],
    "depth": 2,
    "family": "cmdb_ci_vm_object",
-   "field_count": 45,
+   "field_count": 46,
    "fields": [
     {
      "label_tr": "vCPU",
@@ -3867,11 +4033,12 @@
    "identification": {
     "applies_to": "cmdb_ci_vm_instance",
     "context": null,
-    "description": "Sanal makine örneği (vCenter nesnesi)",
+    "description": "Sanal makine örneği — vCenter UUID + nesne kimliği (ServiceNow); korelasyon kimliği Evren uzantısı",
     "entries": [
      {
       "attributes": [
-       "correlation_id"
+       "vcenter_uuid",
+       "object_id"
       ],
       "evren_extension": false,
       "priority": 100,
@@ -3879,17 +4046,16 @@
      },
      {
       "attributes": [
-       "vcenter_uuid",
-       "object_id"
+       "correlation_id"
       ],
-      "evren_extension": false,
+      "evren_extension": true,
       "priority": 200,
       "search_table": null
      }
     ],
     "independent": true,
     "inherited": false,
-    "verify": true
+    "verify": false
    },
    "label": "Virtual Machine Instance",
    "label_tr": "Sanal makine örneği",
@@ -3902,7 +4068,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_vm_object",
-   "field_count": 51,
+   "field_count": 53,
    "fields": [
     {
      "label_tr": "vCenter",
@@ -3923,6 +4089,15 @@
     },
     {
      "indexed": true,
+     "label_tr": "VM örnek UUID",
+     "max_length": 100,
+     "name": "vm_instance_uuid",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "indexed": true,
      "label_tr": "BIOS UUID",
      "max_length": 100,
      "name": "bios_uuid",
@@ -3936,8 +4111,7 @@
      "name": "guest_id",
      "sensitivity": "internal",
      "storage": "jsonb",
-     "type": "string",
-     "verify": true
+     "type": "string"
     },
     {
      "label_tr": "Şablon",
@@ -3958,11 +4132,12 @@
    "identification": {
     "applies_to": "cmdb_ci_vm_instance",
     "context": null,
-    "description": "Sanal makine örneği (vCenter nesnesi)",
+    "description": "Sanal makine örneği — vCenter UUID + nesne kimliği (ServiceNow); korelasyon kimliği Evren uzantısı",
     "entries": [
      {
       "attributes": [
-       "correlation_id"
+       "vcenter_uuid",
+       "object_id"
       ],
       "evren_extension": false,
       "priority": 100,
@@ -3970,17 +4145,16 @@
      },
      {
       "attributes": [
-       "vcenter_uuid",
-       "object_id"
+       "correlation_id"
       ],
-      "evren_extension": false,
+      "evren_extension": true,
       "priority": 200,
       "search_table": null
      }
     ],
     "independent": true,
     "inherited": true,
-    "verify": true
+    "verify": false
    },
    "label": "VMware Virtual Machine Instance",
    "label_tr": "VMware sanal makine",
@@ -3990,90 +4164,61 @@
    "verify": false
   },
   {
-   "children": [],
-   "depth": 2,
-   "family": "cmdb_ci_vm_object",
-   "field_count": 41,
-   "fields": [
-    {
-     "label_tr": "Adres",
-     "max_length": 1000,
-     "name": "url",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "string"
-    },
-    {
-     "label_tr": "Örnek UUID",
-     "max_length": 100,
-     "name": "instance_uuid",
-     "sensitivity": "internal",
-     "storage": "jsonb",
-     "type": "string",
-     "verify": true
-    }
+   "children": [
+    "cmdb_ci_host_cluster"
    ],
-   "identification": null,
-   "label": "VMware vCenter Instance",
-   "label_tr": "vCenter",
-   "name": "cmdb_ci_vcenter",
-   "parent": "cmdb_ci_vm_object",
-   "sn_view": "sn.cmdb_ci_vcenter",
-   "verify": true
-  },
-  {
-   "children": [],
    "depth": 2,
    "family": "cmdb_ci_vm_object",
-   "field_count": 39,
+   "field_count": 40,
    "fields": [],
    "identification": null,
-   "label": "VMware vCenter Datastore",
-   "label_tr": "vCenter datastore",
-   "name": "cmdb_ci_vcenter_datastore",
+   "label": "VMware vCenter Object",
+   "label_tr": "vCenter nesnesi",
+   "name": "cmdb_ci_vcenter_object",
    "parent": "cmdb_ci_vm_object",
-   "sn_view": "sn.cmdb_ci_vcenter_datastore",
+   "sn_view": "sn.cmdb_ci_vcenter_object",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_vcenter_cluster"
+   ],
+   "depth": 3,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 40,
+   "fields": [],
+   "identification": null,
+   "label": "Host Cluster",
+   "label_tr": "Host kümesi",
+   "name": "cmdb_ci_host_cluster",
+   "parent": "cmdb_ci_vcenter_object",
+   "sn_view": "sn.cmdb_ci_host_cluster",
    "verify": true
   },
   {
    "children": [],
-   "depth": 2,
+   "depth": 4,
    "family": "cmdb_ci_vm_object",
-   "field_count": 39,
+   "field_count": 40,
    "fields": [],
    "identification": null,
    "label": "VMware vCenter Cluster",
    "label_tr": "vCenter kümesi",
    "name": "cmdb_ci_vcenter_cluster",
-   "parent": "cmdb_ci_vm_object",
+   "parent": "cmdb_ci_host_cluster",
    "sn_view": "sn.cmdb_ci_vcenter_cluster",
-   "verify": true
-  },
-  {
-   "children": [],
-   "depth": 2,
-   "family": "cmdb_ci_vm_object",
-   "field_count": 39,
-   "fields": [],
-   "identification": null,
-   "label": "VMware vCenter Datacenter",
-   "label_tr": "vCenter veri merkezi",
-   "name": "cmdb_ci_vcenter_datacenter",
-   "parent": "cmdb_ci_vm_object",
-   "sn_view": "sn.cmdb_ci_vcenter_datacenter",
-   "verify": true
+   "verify": false
   },
   {
    "children": [
-    "cmdb_ci_query_based_service",
     "cmdb_ci_service_business",
+    "cmdb_ci_service_auto",
     "service_offering",
-    "cmdb_ci_service_technical",
-    "cmdb_ci_service_auto"
+    "cmdb_ci_service_technical"
    ],
    "depth": 1,
    "family": "cmdb_ci_service",
-   "field_count": 41,
+   "field_count": 42,
    "fields": [
     {
      "label_tr": "Servis sınıflandırması",
@@ -4123,52 +4268,13 @@
    "name": "cmdb_ci_service",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_service",
-   "verify": false
-  },
-  {
-   "children": [],
-   "depth": 2,
-   "family": "cmdb_ci_service",
-   "field_count": 41,
-   "fields": [],
-   "identification": {
-    "applies_to": "cmdb_ci_service",
-    "context": null,
-    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
-    "entries": [
-     {
-      "attributes": [
-       "correlation_id"
-      ],
-      "evren_extension": true,
-      "priority": 100,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "name"
-      ],
-      "evren_extension": true,
-      "priority": 200,
-      "search_table": null
-     }
-    ],
-    "independent": true,
-    "inherited": true,
-    "verify": true
-   },
-   "label": "Dynamic CI Group",
-   "label_tr": "Dinamik CI grubu",
-   "name": "cmdb_ci_query_based_service",
-   "parent": "cmdb_ci_service",
-   "sn_view": "sn.cmdb_ci_query_based_service",
    "verify": true
   },
   {
    "children": [],
    "depth": 2,
    "family": "cmdb_ci_service",
-   "field_count": 41,
+   "field_count": 42,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_service",
@@ -4201,95 +4307,18 @@
    "name": "cmdb_ci_service_business",
    "parent": "cmdb_ci_service",
    "sn_view": "sn.cmdb_ci_service_business",
-   "verify": false
-  },
-  {
-   "children": [],
-   "depth": 2,
-   "family": "cmdb_ci_service",
-   "field_count": 41,
-   "fields": [],
-   "identification": {
-    "applies_to": "cmdb_ci_service",
-    "context": null,
-    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
-    "entries": [
-     {
-      "attributes": [
-       "correlation_id"
-      ],
-      "evren_extension": true,
-      "priority": 100,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "name"
-      ],
-      "evren_extension": true,
-      "priority": 200,
-      "search_table": null
-     }
-    ],
-    "independent": true,
-    "inherited": true,
-    "verify": true
-   },
-   "label": "Service Offering",
-   "label_tr": "Servis sunumu",
-   "name": "service_offering",
-   "parent": "cmdb_ci_service",
-   "sn_view": "sn.service_offering",
-   "verify": false
-  },
-  {
-   "children": [],
-   "depth": 2,
-   "family": "cmdb_ci_service",
-   "field_count": 41,
-   "fields": [],
-   "identification": {
-    "applies_to": "cmdb_ci_service",
-    "context": null,
-    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
-    "entries": [
-     {
-      "attributes": [
-       "correlation_id"
-      ],
-      "evren_extension": true,
-      "priority": 100,
-      "search_table": null
-     },
-     {
-      "attributes": [
-       "name"
-      ],
-      "evren_extension": true,
-      "priority": 200,
-      "search_table": null
-     }
-    ],
-    "independent": true,
-    "inherited": true,
-    "verify": true
-   },
-   "label": "Technical Service",
-   "label_tr": "Teknik servis",
-   "name": "cmdb_ci_service_technical",
-   "parent": "cmdb_ci_service",
-   "sn_view": "sn.cmdb_ci_service_technical",
-   "verify": false
+   "verify": true
   },
   {
    "children": [
+    "cmdb_ci_query_based_service",
     "cmdb_ci_service_by_tags",
     "cmdb_ci_service_discovered",
     "cmdb_ci_service_calculated"
    ],
    "depth": 2,
    "family": "cmdb_ci_service",
-   "field_count": 41,
+   "field_count": 42,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_service",
@@ -4317,18 +4346,57 @@
     "inherited": true,
     "verify": true
    },
-   "label": "Application Service",
-   "label_tr": "Uygulama servisi",
+   "label": "Service Instance",
+   "label_tr": "Servis örneği (uygulama servisi)",
    "name": "cmdb_ci_service_auto",
    "parent": "cmdb_ci_service",
    "sn_view": "sn.cmdb_ci_service_auto",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_service",
+   "field_count": 42,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Dynamic CI Group",
+   "label_tr": "Dinamik CI grubu",
+   "name": "cmdb_ci_query_based_service",
+   "parent": "cmdb_ci_service_auto",
+   "sn_view": "sn.cmdb_ci_query_based_service",
    "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_service",
-   "field_count": 41,
+   "field_count": 42,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_service",
@@ -4367,7 +4435,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_service",
-   "field_count": 41,
+   "field_count": 42,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_service",
@@ -4400,13 +4468,13 @@
    "name": "cmdb_ci_service_discovered",
    "parent": "cmdb_ci_service_auto",
    "sn_view": "sn.cmdb_ci_service_discovered",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_service",
-   "field_count": 41,
+   "field_count": 42,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_service",
@@ -4442,14 +4510,93 @@
    "verify": true
   },
   {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_service",
+   "field_count": 42,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Service Offering",
+   "label_tr": "Servis sunumu",
+   "name": "service_offering",
+   "parent": "cmdb_ci_service",
+   "sn_view": "sn.service_offering",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_service",
+   "field_count": 42,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Technology Management Service",
+   "label_tr": "Teknoloji yönetim servisi",
+   "name": "cmdb_ci_service_technical",
+   "parent": "cmdb_ci_service",
+   "sn_view": "sn.cmdb_ci_service_technical",
+   "verify": true
+  },
+  {
    "children": [
     "cmdb_ci_app_server",
+    "cmdb_ci_vcenter",
     "cmdb_ci_db_instance",
     "cmdb_ci_web_server"
    ],
    "depth": 1,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [
     {
      "label_tr": "Sürüm",
@@ -4491,7 +4638,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4522,7 +4669,7 @@
    ],
    "depth": 2,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4531,7 +4678,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4557,7 +4704,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4566,7 +4713,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4586,13 +4733,13 @@
    "name": "cmdb_ci_app_server_jboss",
    "parent": "cmdb_ci_app_server",
    "sn_view": "sn.cmdb_ci_app_server_jboss",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4601,7 +4748,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4621,13 +4768,13 @@
    "name": "cmdb_ci_app_server_tomcat",
    "parent": "cmdb_ci_app_server",
    "sn_view": "sn.cmdb_ci_app_server_tomcat",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4636,7 +4783,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4651,18 +4798,18 @@
     "inherited": true,
     "verify": false
    },
-   "label": "WebLogic",
+   "label": "BEA Weblogic",
    "label_tr": "WebLogic",
    "name": "cmdb_ci_app_server_weblogic",
    "parent": "cmdb_ci_app_server",
    "sn_view": "sn.cmdb_ci_app_server_weblogic",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4671,7 +4818,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4686,12 +4833,61 @@
     "inherited": true,
     "verify": false
    },
-   "label": "WebSphere",
+   "label": "IBM Websphere",
    "label_tr": "WebSphere",
    "name": "cmdb_ci_app_server_websphere",
    "parent": "cmdb_ci_app_server",
    "sn_view": "sn.cmdb_ci_app_server_websphere",
-   "verify": true
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_appl",
+   "field_count": 46,
+   "fields": [
+    {
+     "label_tr": "Adres",
+     "max_length": 1000,
+     "name": "url",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "indexed": true,
+     "label_tr": "Örnek UUID",
+     "max_length": 100,
+     "name": "instance_uuid",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_vcenter",
+    "context": null,
+    "description": "vCenter örneği — örnek UUID'si (Evren tanımı; ServiceNow kuralı belgede görülmedi)",
+    "entries": [
+     {
+      "attributes": [
+       "instance_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": false
+   },
+   "label": "VMware vCenter Instance",
+   "label_tr": "vCenter",
+   "name": "cmdb_ci_vcenter",
+   "parent": "cmdb_ci_appl",
+   "sn_view": "sn.cmdb_ci_vcenter",
+   "verify": false
   },
   {
    "children": [
@@ -4703,7 +4899,7 @@
    ],
    "depth": 2,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4712,7 +4908,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4732,13 +4928,13 @@
    "name": "cmdb_ci_db_instance",
    "parent": "cmdb_ci_appl",
    "sn_view": "sn.cmdb_ci_db_instance",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4747,7 +4943,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4773,7 +4969,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4782,7 +4978,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4797,18 +4993,18 @@
     "inherited": true,
     "verify": false
    },
-   "label": "MSSQL Instance",
+   "label": "MSFT SQL Instance",
    "label_tr": "MSSQL örneği",
    "name": "cmdb_ci_db_mssql_instance",
    "parent": "cmdb_ci_db_instance",
    "sn_view": "sn.cmdb_ci_db_mssql_instance",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4817,7 +5013,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4837,13 +5033,13 @@
    "name": "cmdb_ci_db_mysql_instance",
    "parent": "cmdb_ci_db_instance",
    "sn_view": "sn.cmdb_ci_db_mysql_instance",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4852,7 +5048,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4878,7 +5074,7 @@
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4887,7 +5083,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4907,7 +5103,7 @@
    "name": "cmdb_ci_db_postgresql_instance",
    "parent": "cmdb_ci_db_instance",
    "sn_view": "sn.cmdb_ci_db_postgresql_instance",
-   "verify": true
+   "verify": false
   },
   {
    "children": [
@@ -4917,7 +5113,7 @@
    ],
    "depth": 2,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4926,7 +5122,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4946,13 +5142,13 @@
    "name": "cmdb_ci_web_server",
    "parent": "cmdb_ci_appl",
    "sn_view": "sn.cmdb_ci_web_server",
-   "verify": false
+   "verify": true
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4961,7 +5157,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -4981,13 +5177,13 @@
    "name": "cmdb_ci_apache_web_server",
    "parent": "cmdb_ci_web_server",
    "sn_view": "sn.cmdb_ci_apache_web_server",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -4996,7 +5192,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -5016,13 +5212,13 @@
    "name": "cmdb_ci_microsoft_iis_web_server",
    "parent": "cmdb_ci_web_server",
    "sn_view": "sn.cmdb_ci_microsoft_iis_web_server",
-   "verify": true
+   "verify": false
   },
   {
    "children": [],
    "depth": 3,
    "family": "cmdb_ci_appl",
-   "field_count": 43,
+   "field_count": 44,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_appl",
@@ -5031,7 +5227,7 @@
      "parent_class": "cmdb_ci_hardware",
      "type": "Runs on::Runs"
     },
-    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır (ServiceNow bağımlı kimlik deseni)",
     "entries": [
      {
       "attributes": [
@@ -5046,18 +5242,20 @@
     "inherited": true,
     "verify": false
    },
-   "label": "Nginx Web Server",
+   "label": "NGINX Web Server",
    "label_tr": "Nginx web sunucusu",
    "name": "cmdb_ci_nginx_web_server",
    "parent": "cmdb_ci_web_server",
    "sn_view": "sn.cmdb_ci_nginx_web_server",
-   "verify": true
+   "verify": false
   },
   {
-   "children": [],
+   "children": [
+    "cmdb_ci_db_catalog"
+   ],
    "depth": 1,
    "family": "cmdb_ci_database",
-   "field_count": 39,
+   "field_count": 40,
    "fields": [],
    "identification": {
     "applies_to": "cmdb_ci_database",
@@ -5082,17 +5280,161 @@
     "verify": true
    },
    "label": "Database",
-   "label_tr": "Veritabanı (katalog)",
+   "label_tr": "Veritabanı",
    "name": "cmdb_ci_database",
    "parent": "cmdb_ci",
    "sn_view": "sn.cmdb_ci_database",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_db_db2_catalog",
+    "cmdb_ci_db_mssql_catalog",
+    "cmdb_ci_db_mysql_catalog"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_database",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_database",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_db_instance",
+     "type": "Contains::Contained by"
+    },
+    "description": "Veritabanı kataloğu — veritabanı örneği bağlamında ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Database Catalog",
+   "label_tr": "Veritabanı kataloğu",
+   "name": "cmdb_ci_db_catalog",
+   "parent": "cmdb_ci_database",
+   "sn_view": "sn.cmdb_ci_db_catalog",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_database",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_database",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_db_instance",
+     "type": "Contains::Contained by"
+    },
+    "description": "Veritabanı kataloğu — veritabanı örneği bağlamında ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "DB2 Catalog",
+   "label_tr": "DB2 kataloğu",
+   "name": "cmdb_ci_db_db2_catalog",
+   "parent": "cmdb_ci_db_catalog",
+   "sn_view": "sn.cmdb_ci_db_db2_catalog",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_database",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_database",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_db_instance",
+     "type": "Contains::Contained by"
+    },
+    "description": "Veritabanı kataloğu — veritabanı örneği bağlamında ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "MSFT SQL Catalog",
+   "label_tr": "MSSQL kataloğu",
+   "name": "cmdb_ci_db_mssql_catalog",
+   "parent": "cmdb_ci_db_catalog",
+   "sn_view": "sn.cmdb_ci_db_mssql_catalog",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_database",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_database",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_db_instance",
+     "type": "Contains::Contained by"
+    },
+    "description": "Veritabanı kataloğu — veritabanı örneği bağlamında ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "MySQL Catalog",
+   "label_tr": "MySQL kataloğu",
+   "name": "cmdb_ci_db_mysql_catalog",
+   "parent": "cmdb_ci_db_catalog",
+   "sn_view": "sn.cmdb_ci_db_mysql_catalog",
    "verify": true
   },
   {
    "children": [],
    "depth": 1,
    "family": "cmdb_ci_vlan",
-   "field_count": 40,
+   "field_count": 41,
    "fields": [
     {
      "label_tr": "VLAN numarası",
@@ -5155,7 +5497,7 @@
    },
    {
     "child": "cmdb_ci_computer",
-    "description": "Yazılım bilgisayarda çalışır",
+    "description": "Yazılım bilgisayarda çalışır (bağımlı kimlik deseni)",
     "parent": "cmdb_ci_appl",
     "type": "Runs on::Runs",
     "verify": false
@@ -5183,17 +5525,24 @@
    },
    {
     "child": "cmdb_ci_vm_instance",
-    "description": "Misafir işletim sistemi sunucusu ↔ VM örneği (vCenter, bulut)",
+    "description": "Misafir sunucu ↔ VM örneği (yön topluluk kaynağından: sunucu ebeveyn)",
+    "parent": "cmdb_ci_computer",
+    "type": "Instantiates::Instantiated by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_esx_server",
+    "description": "Misafir sunucu hipervizör sunucusunda sanallaştırılır",
     "parent": "cmdb_ci_computer",
     "type": "Virtualized by::Virtualizes",
     "verify": false
    },
    {
     "child": "cmdb_ci_server",
-    "description": "VM örneği hipervizöre kayıtlı",
+    "description": "VM örneği hipervizöre kayıtlı (belgedeki örnek: ESX)",
     "parent": "cmdb_ci_vm_instance",
     "type": "Registered on::Has registered",
-    "verify": true
+    "verify": false
    },
    {
     "child": "cmdb_ci_logical_datacenter",
@@ -5239,10 +5588,17 @@
    },
    {
     "child": "cmdb_ci_esx_server",
+    "description": "Kümede olmayan ESX sunucusu veri merkezine bağlanır",
+    "parent": "cmdb_ci_vcenter_datacenter",
+    "type": "Contains::Contained by",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_esx_server",
     "description": null,
     "parent": "cmdb_ci_vcenter_cluster",
     "type": "Members::Member of",
-    "verify": true
+    "verify": false
    },
    {
     "child": "cmdb_ci_hardware",
@@ -5288,17 +5644,17 @@
    },
    {
     "child": "cmdb_ci_database",
-    "description": null,
+    "description": "Veritabanı örneği kataloğu içerir (belgedeki örnek: MySQL)",
     "parent": "cmdb_ci_db_instance",
     "type": "Contains::Contained by",
-    "verify": true
+    "verify": false
    },
    {
     "child": "cmdb_ci_kubernetes_component",
-    "description": null,
+    "description": "Küme bileşenlerini içerir (belgedeki örnek: pod)",
     "parent": "cmdb_ci_kubernetes_cluster",
     "type": "Contains::Contained by",
-    "verify": true
+    "verify": false
    },
    {
     "child": "cmdb_ci_kubernetes_component",
@@ -5347,42 +5703,35 @@
     "description": "Bölge, bulut hesabında/aboneliğinde",
     "parent": "cmdb_ci_logical_datacenter",
     "type": "Hosted on::Hosts",
-    "verify": true
+    "verify": false
    },
    {
     "child": "cmdb_ci_business_app",
     "description": null,
     "parent": "cmdb_ci_business_capability",
     "type": "Provided by::Provides",
-    "verify": true
-   },
-   {
-    "child": "cmdb_ci_business_capability",
-    "description": "Yetenek hiyerarşisi",
-    "parent": "cmdb_ci_business_capability",
-    "type": "Contains::Contained by",
-    "verify": true
-   },
-   {
-    "child": "cmdb_ci_business_app",
-    "description": null,
-    "parent": "cmdb_ci_business_process",
-    "type": "Uses::Used by",
-    "verify": true
+    "verify": false
    },
    {
     "child": "cmdb_ci_service_auto",
-    "description": "İş uygulaması → uygulama servisi (CSDM)",
+    "description": "İş uygulaması → servis örneği (platformun yazdığı tip)",
     "parent": "cmdb_ci_business_app",
     "type": "Consumes::Consumed by",
-    "verify": true
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_service_auto",
+    "description": "İş uygulaması → servis örneği (CSDM 5 çiziminde)",
+    "parent": "cmdb_ci_business_app",
+    "type": "Uses::Used by",
+    "verify": false
    },
    {
     "child": "cmdb_ci_information_object",
     "description": null,
     "parent": "cmdb_ci_business_app",
     "type": "Uses::Used by",
-    "verify": true
+    "verify": false
    },
    {
     "child": "cmdb_ci_business_app",
@@ -5393,10 +5742,10 @@
    },
    {
     "child": "cmdb_ci_query_based_service",
-    "description": "Teknik servis sunumu → dinamik CI grubu",
+    "description": "Teknoloji yönetim servis sunumu → dinamik CI grubu",
     "parent": "service_offering",
     "type": "Contains::Contained by",
-    "verify": true
+    "verify": false
    }
   ]
  },
@@ -5469,29 +5818,2188 @@
   {
    "label_tr": "Kayıtlı::Kayıtlı barındırır",
    "name": "Registered on::Has registered",
-   "verify": true
+   "verify": false
+  },
+  {
+   "label_tr": "Örneklendirir::Örneklendirilir",
+   "name": "Instantiates::Instantiated by",
+   "verify": false
   },
   {
    "label_tr": "Sağlanır::Sağlar",
    "name": "Provided by::Provides",
-   "verify": true
+   "verify": false
   }
  ],
  "stats": {
-  "choice_lists": 6,
-  "classes": 82,
-  "core_columns": 39,
-  "fields": 113,
-  "identification_rules": 18,
+  "choice_lists": 7,
+  "classes": 93,
+  "core_columns": 40,
+  "fields": 118,
+  "identification_rules": 21,
   "reference_tables": 7,
-  "relationship_rules": 36,
-  "relationship_types": 15,
-  "to_verify": 130
+  "relationship_rules": 37,
+  "relationship_types": 16,
+  "to_verify": 82
  },
  "verification": {
-  "checked_on": null,
-  "items": [],
-  "sources": {}
+  "checked_on": "2026-11-26",
+  "items": [
+   {
+    "documented": "cmdb_ci_aix_server ← cmdb_ci_unix_server",
+    "key": "cmdb_ci_aix_server",
+    "kind": "classes",
+    "note": "UNIX Server alt sınıfı (sözlük dökümü)",
+    "sources": [
+     "erm4sn_unix"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_solaris_server ← cmdb_ci_unix_server",
+    "key": "cmdb_ci_solaris_server",
+    "kind": "classes",
+    "sources": [
+     "erm4sn_unix"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_hpux_server ← cmdb_ci_unix_server",
+    "key": "cmdb_ci_hpux_server",
+    "kind": "classes",
+    "note": "Eksik sınıf olarak eklendi",
+    "sources": [
+     "erm4sn_unix"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_esx_server ← cmdb_ci_server",
+    "key": "cmdb_ci_esx_server",
+    "kind": "classes",
+    "note": "Yalnızca üçüncü taraf kaynak",
+    "sources": [
+     "snowball_server",
+     "sn_esx_ny"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_lb ← cmdb_ci_server",
+    "key": "cmdb_ci_lb",
+    "kind": "classes",
+    "note": "Önceki varsayım ağ cihazı altındaydı; iki üçüncü taraf kaynak bilgisayar soyunda gösteriyor",
+    "sources": [
+     "erm4sn_lb",
+     "bmc_lb"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_wap_network ← cmdb_ci_netgear",
+    "key": "cmdb_ci_wap_network",
+    "kind": "classes",
+    "sources": [
+     "sn_wap",
+     "erm4sn_netgear"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_vcenter ← cmdb_ci_appl",
+    "key": "cmdb_ci_vcenter",
+    "kind": "classes",
+    "note": "vCenter bir uygulama olarak modellenir (önceki varsayım: VM nesnesi)",
+    "sources": [
+     "medium_vcenter",
+     "snowmirror_dm"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_vcenter_object ← cmdb_ci_vm_object",
+    "key": "cmdb_ci_vcenter_object",
+    "kind": "classes",
+    "note": "Ara sınıf eklendi; üst sınıf sözlük dökümünden",
+    "sources": [
+     "sn_vcenter_object",
+     "erm4sn_vccluster"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_vcenter_datacenter ← cmdb_ci_logical_datacenter",
+    "key": "cmdb_ci_vcenter_datacenter",
+    "kind": "classes",
+    "sources": [
+     "sn_vcenter_orlando"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_host_cluster",
+    "key": "cmdb_ci_host_cluster",
+    "kind": "classes",
+    "note": "Sınıf resmi belgede bulut bağımsız 'Host Cluster'; üst sınıfı yalnızca sözlük dökümünde",
+    "sources": [
+     "sn_vcenter_orlando",
+     "erm4sn_vccluster"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_vcenter_cluster ← cmdb_ci_host_cluster",
+    "key": "cmdb_ci_vcenter_cluster",
+    "kind": "classes",
+    "sources": [
+     "erm4sn_vccluster",
+     "sn_vcenter_orlando"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_datastore",
+    "key": "cmdb_ci_datastore",
+    "kind": "classes",
+    "note": "vCenter datastore'un üst sınıfı olarak belgede; kendi üst sınıfı görülmedi",
+    "sources": [
+     "sn_vcenter_orlando"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_vcenter_datastore ← cmdb_ci_datastore",
+    "key": "cmdb_ci_vcenter_datastore",
+    "kind": "classes",
+    "sources": [
+     "sn_vcenter_orlando"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_rack ← cmdb_ci",
+    "key": "cmdb_ci_rack",
+    "kind": "classes",
+    "note": "Kabin donanım değil, doğrudan CI",
+    "sources": [
+     "comm_rack",
+     "erm4sn_rack"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_storage_device ← cmdb_ci_hardware ?",
+    "key": "cmdb_ci_storage_device",
+    "kind": "classes",
+    "note": "Kaynaklar çelişiyor (donanım veya doğrudan CI)",
+    "sources": [
+     "erm4sn_hw",
+     "comm_storage_device"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_storage_volume ← cmdb_ci",
+    "key": "cmdb_ci_storage_volume",
+    "kind": "classes",
+    "note": "Depolama cihazının değil CI'ın alt sınıfı",
+    "sources": [
+     "erm4sn_volume",
+     "comm_class_tree"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_storage_server ← cmdb_ci_server",
+    "key": "cmdb_ci_storage_server",
+    "kind": "classes",
+    "sources": [
+     "erm4sn_storage_server"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_file_system ← cmdb_ci_storage_volume",
+    "key": "cmdb_ci_file_system",
+    "kind": "classes",
+    "note": "Dosya sistemi depolama biriminin alt sınıfı",
+    "sources": [
+     "erm4sn_volume"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_ip_network",
+    "key": "cmdb_ci_ip_network",
+    "kind": "classes",
+    "note": "Tablo ve alanları resmi belgede; üst sınıf görülmedi",
+    "sources": [
+     "sn_ip_networks"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_vlan",
+    "kind": "classes",
+    "note": "Alan listesi yok; ServiceNow VLAN bilgisini cmdb_vlan_configuration tablosunda da tutuyor",
+    "sources": [
+     "comm_vlan"
+    ],
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_dns_name",
+    "kind": "classes",
+    "note": "Arama kotası bitmeden ulaşılamadı",
+    "verdict": "not_found"
+   },
+   {
+    "documented": "cmdb_ci_cluster",
+    "key": "cmdb_ci_cluster",
+    "kind": "classes",
+    "note": "Sınıf var (eşleme belgeleri); üst sınıf görülmedi",
+    "sources": [
+     "sciencelogic_map",
+     "bmc_host_map"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_cluster_node",
+    "key": "cmdb_ci_cluster_node",
+    "kind": "classes",
+    "note": "Sınıf ve cluster alanı var; üst sınıf görülmedi",
+    "sources": [
+     "bmc_host_map"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_win_cluster",
+    "kind": "classes",
+    "note": "Arama kotası bitmeden ulaşılamadı",
+    "verdict": "not_found"
+   },
+   {
+    "documented": "cmdb_ci_oslv_container",
+    "key": "cmdb_ci_oslv_container",
+    "kind": "classes",
+    "note": "Alanları resmi belgede (Container ID, Image ID); üst sınıf görülmedi",
+    "sources": [
+     "sn_container"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_docker_container",
+    "kind": "classes",
+    "note": "Arama kotası bitmeden ulaşılamadı",
+    "verdict": "not_found"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_cluster (Kubernetes Cluster)",
+    "key": "cmdb_ci_kubernetes_cluster",
+    "kind": "classes",
+    "note": "Üst sınıf görülmedi",
+    "sources": [
+     "hashicorp_aks",
+     "kb_k8s_ident"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_component",
+    "key": "cmdb_ci_kubernetes_component",
+    "kind": "classes",
+    "note": "Sınıf resmi belgede (iş yükü sınıfları bundan türer); kendi üst sınıfı görülmedi",
+    "sources": [
+     "sn_k8s_models"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_workload ← cmdb_ci_kubernetes_component",
+    "key": "cmdb_ci_kubernetes_workload",
+    "kind": "classes",
+    "note": "Eksik ara sınıf eklendi",
+    "sources": [
+     "sn_k8s_models"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_deployment ← cmdb_ci_kubernetes_workload",
+    "key": "cmdb_ci_kubernetes_deployment",
+    "kind": "classes",
+    "sources": [
+     "sn_k8s_models"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_daemonset ← cmdb_ci_kubernetes_workload",
+    "key": "cmdb_ci_kubernetes_daemonset",
+    "kind": "classes",
+    "note": "Eklendi",
+    "sources": [
+     "sn_k8s_models"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_statefulset ← cmdb_ci_kubernetes_workload",
+    "key": "cmdb_ci_kubernetes_statefulset",
+    "kind": "classes",
+    "note": "Eklendi",
+    "sources": [
+     "sn_k8s_models"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "Kubernetes Namespace",
+    "key": "cmdb_ci_kubernetes_namespace",
+    "kind": "classes",
+    "note": "Sınıf resmi belgede kümeye referansla; üst sınıf görülmedi",
+    "sources": [
+     "sn_k8s_otel"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_node",
+    "key": "cmdb_ci_kubernetes_node",
+    "kind": "classes",
+    "note": "Yalnızca topluluk listesinde; üst sınıf görülmedi",
+    "sources": [
+     "comm_k8s_list"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_pod",
+    "key": "cmdb_ci_kubernetes_pod",
+    "kind": "classes",
+    "note": "Öznitelikleri resmi belgede; üst sınıf görülmedi",
+    "sources": [
+     "sn_k8s_otel"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_kubernetes_service",
+    "key": "cmdb_ci_kubernetes_service",
+    "kind": "classes",
+    "note": "Kimlik kuralı KB'de; üst sınıf görülmedi",
+    "sources": [
+     "kb_k8s_ident",
+     "comm_k8s_list"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_cloud_service_account",
+    "key": "cmdb_ci_cloud_service_account",
+    "kind": "classes",
+    "note": "Alanları resmi belgede; üst sınıf görülmedi",
+    "sources": [
+     "sn_cloud_account"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_logical_datacenter",
+    "key": "cmdb_ci_logical_datacenter",
+    "kind": "classes",
+    "note": "AWS, Azure, Google ve vCenter veri merkezleri bundan türer; kendi üst sınıfı görülmedi",
+    "sources": [
+     "sn_logical_dc"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_azure_datacenter ← cmdb_ci_logical_datacenter",
+    "key": "cmdb_ci_azure_datacenter",
+    "kind": "classes",
+    "sources": [
+     "sn_logical_dc",
+     "hashicorp_aks"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_aws_datacenter ← cmdb_ci_logical_datacenter",
+    "key": "cmdb_ci_aws_datacenter",
+    "kind": "classes",
+    "sources": [
+     "sn_logical_dc",
+     "sn_cloud_account"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_pc_hardware ← cmdb_ci_computer (Personal Computer)",
+    "key": "cmdb_ci_pc_hardware",
+    "kind": "classes",
+    "sources": [
+     "erm4sn_computer"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_printer ← cmdb_ci_hardware",
+    "key": "cmdb_ci_printer",
+    "kind": "classes",
+    "note": "Yalnızca sözlük dökümü",
+    "sources": [
+     "erm4sn_hw"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_disk ← cmdb_ci_storage_device",
+    "key": "cmdb_ci_disk",
+    "kind": "classes",
+    "note": "Topluluk sınıf ağacı",
+    "sources": [
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_instance ← cmdb_ci_appl",
+    "key": "cmdb_ci_db_instance",
+    "kind": "classes",
+    "sources": [
+     "packt",
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_mssql_instance (MSFT SQL Instance)",
+    "key": "cmdb_ci_db_mssql_instance",
+    "kind": "classes",
+    "note": "Etiket düzeltildi",
+    "sources": [
+     "sn_mssql"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "Oracle Instance",
+    "key": "cmdb_ci_db_ora_instance",
+    "kind": "classes",
+    "note": "Sınıf topluluk ağacında; tablo adı belgede görülmedi",
+    "sources": [
+     "comm_class_tree"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_db_mysql_instance ← cmdb_ci_db_instance",
+    "key": "cmdb_ci_db_mysql_instance",
+    "kind": "classes",
+    "sources": [
+     "sn_extend_rules",
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_postgresql_instance (PostgreSQL Instance)",
+    "key": "cmdb_ci_db_postgresql_instance",
+    "kind": "classes",
+    "sources": [
+     "sn_postgres",
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_db2_instance",
+    "key": "cmdb_ci_db_db2_instance",
+    "kind": "classes",
+    "note": "Tablo resmi belgede; etiket ve üst sınıf yalnızca topluluk ağacında",
+    "sources": [
+     "sn_db2",
+     "comm_class_tree"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_database ← cmdb_ci",
+    "key": "cmdb_ci_database",
+    "kind": "classes",
+    "sources": [
+     "sn_cmdb_schema"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_catalog ← cmdb_ci_database (Database Catalog)",
+    "key": "cmdb_ci_db_catalog",
+    "kind": "classes",
+    "note": "Eklendi",
+    "sources": [
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_mssql_catalog ← cmdb_ci_db_catalog",
+    "key": "cmdb_ci_db_mssql_catalog",
+    "kind": "classes",
+    "note": "Eklendi",
+    "sources": [
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_db2_catalog ← cmdb_ci_db_catalog",
+    "key": "cmdb_ci_db_db2_catalog",
+    "kind": "classes",
+    "note": "Eklendi",
+    "sources": [
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_db_mysql_catalog",
+    "key": "cmdb_ci_db_mysql_catalog",
+    "kind": "classes",
+    "note": "Tablo resmi örnekte; üst sınıf görülmedi",
+    "sources": [
+     "sn_extend_rules"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_app_server_tomcat (Tomcat)",
+    "key": "cmdb_ci_app_server_tomcat",
+    "kind": "classes",
+    "sources": [
+     "sn_tomcat",
+     "sn_tables"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_app_server_jboss (JBoss)",
+    "key": "cmdb_ci_app_server_jboss",
+    "kind": "classes",
+    "sources": [
+     "sn_jboss"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_app_server_weblogic (BEA Weblogic)",
+    "key": "cmdb_ci_app_server_weblogic",
+    "kind": "classes",
+    "note": "Etiket düzeltildi",
+    "sources": [
+     "sn_tables_rome"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_app_server_websphere (IBM Websphere)",
+    "key": "cmdb_ci_app_server_websphere",
+    "kind": "classes",
+    "note": "Etiket düzeltildi",
+    "sources": [
+     "sn_tables_rome"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_web_server (Web Server)",
+    "key": "cmdb_ci_web_server",
+    "kind": "classes",
+    "note": "Üst sınıf için kaynaklar çelişiyor (uygulama veya uygulama sunucusu)",
+    "sources": [
+     "sn_webserver"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_apache_web_server ← cmdb_ci_web_server",
+    "key": "cmdb_ci_apache_web_server",
+    "kind": "classes",
+    "sources": [
+     "sn_apache"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_microsoft_iis_web_server",
+    "key": "cmdb_ci_microsoft_iis_web_server",
+    "kind": "classes",
+    "sources": [
+     "sn_iis",
+     "comm_class_tree"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "cmdb_ci_nginx_web_server (NGINX Web Server)",
+    "key": "cmdb_ci_nginx_web_server",
+    "kind": "classes",
+    "note": "Etiket yazımı düzeltildi",
+    "sources": [
+     "sn_webserver"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_service (Services)",
+    "key": "cmdb_ci_service",
+    "kind": "classes",
+    "note": "Üst sınıf belgede görülmedi",
+    "sources": [
+     "sn_services"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_service_business",
+    "key": "cmdb_ci_service_business",
+    "kind": "classes",
+    "note": "Üst sınıf belgede görülmedi",
+    "sources": [
+     "comm_service_links"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Technology Management Service",
+    "key": "cmdb_ci_service_technical",
+    "kind": "classes",
+    "note": "Yokohama ve sonrasında etiket değişti (düzeltildi); üst sınıf görülmedi",
+    "sources": [
+     "sn_tms_label"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "service_offering",
+    "key": "service_offering",
+    "kind": "classes",
+    "note": "Teknik sunumların etiketi 'Technology Management Service Offering'; üst sınıf görülmedi",
+    "sources": [
+     "sn_service_instance"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Service Instance",
+    "key": "cmdb_ci_service_auto",
+    "kind": "classes",
+    "note": "CSDM 5'te etiket 'Service Instance' (düzeltildi); üst sınıf görülmedi",
+    "sources": [
+     "sn_service_instance"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_service_discovered ← cmdb_ci_service_auto",
+    "key": "cmdb_ci_service_discovered",
+    "kind": "classes",
+    "sources": [
+     "comm_service_discovered"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "Calculated Application Service",
+    "key": "cmdb_ci_service_calculated",
+    "kind": "classes",
+    "note": "Doğrudan üst sınıf belirsiz (servis örneği veya haritalanmış servis)",
+    "sources": [
+     "comm_service_calculated"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_service_by_tags",
+    "key": "cmdb_ci_service_by_tags",
+    "kind": "classes",
+    "note": "Üst sınıf görülmedi",
+    "sources": [
+     "sn_tag_based"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_query_based_service ← cmdb_ci_service_auto",
+    "key": "cmdb_ci_query_based_service",
+    "kind": "classes",
+    "note": "Önceki varsayım cmdb_ci_service",
+    "sources": [
+     "comm_dynamic_group"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "cmdb_ci_business_app",
+    "key": "cmdb_ci_business_app",
+    "kind": "classes",
+    "note": "CSDM 5'te yeniden adlandırma yok; üst sınıf görülmedi",
+    "sources": [
+     "sn_csdm_design"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_business_capability",
+    "key": "cmdb_ci_business_capability",
+    "kind": "classes",
+    "note": "Üst sınıf görülmedi",
+    "sources": [
+     "sn_csdm_design"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_business_process",
+    "key": "cmdb_ci_business_process",
+    "kind": "classes",
+    "note": "CSDM Foundation alanında; üst sınıf görülmedi",
+    "sources": [
+     "sn_business_process"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cmdb_ci_information_object ← cmdb_ci",
+    "key": "cmdb_ci_information_object",
+    "kind": "classes",
+    "sources": [
+     "sn_info_object"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "life_cycle_stage",
+    "key": "cmdb_ci.life_cycle_stage",
+    "kind": "fields",
+    "note": "ServiceNow'da life_cycle_stage tablosuna referans; Evren'de değer listesi (ADR-0019)",
+    "sources": [
+     "comm_lc_util"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "life_cycle_stage_status",
+    "key": "cmdb_ci.life_cycle_stage_status",
+    "kind": "fields",
+    "note": "ServiceNow'da referans ve life_cycle_control ile süzülür",
+    "sources": [
+     "comm_lc_util"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "attested (boolean)",
+    "key": "cmdb_ci.attested",
+    "kind": "fields",
+    "note": "Eski alan; onaydan sonra güncellenmiyor",
+    "sources": [
+     "comm_attested"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "attested_by",
+    "key": "cmdb_ci.attested_by",
+    "kind": "fields",
+    "note": "Onayla otomatik güncellenen alanlardan; hedef tablo kullanıcı",
+    "sources": [
+     "sn_attestation",
+     "paloalto_attr"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "attested_date",
+    "key": "cmdb_ci.attested_date",
+    "kind": "fields",
+    "sources": [
+     "sn_attestation"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "attestation_status",
+    "key": "cmdb_ci.attestation_status",
+    "kind": "fields",
+    "note": "Asıl onay durumu alanı (eklendi); değer listesi topluluk kaynağından",
+    "sources": [
+     "sn_attestation",
+     "comm_attested"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cost_center",
+    "key": "cmdb_ci.cost_center",
+    "kind": "fields",
+    "note": "Alan var; cmn_cost_center referansı belgede yazılmamış (sys_user.cost_center'dan çıkarım)",
+    "sources": [
+     "paloalto_attr"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "guest_id (Guest ID)",
+    "key": "cmdb_ci_vmware_instance.guest_id",
+    "kind": "fields",
+    "sources": [
+     "sn_vmware_guestid"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "vcenter_uuid (vCenter Instance UUID)",
+    "key": "cmdb_ci_vmware_instance.vcenter_uuid",
+    "kind": "fields",
+    "sources": [
+     "sn_vmware_fields"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "bios_uuid (BIOS UUID)",
+    "key": "cmdb_ci_vmware_instance.bios_uuid",
+    "kind": "fields",
+    "sources": [
+     "sn_vmware_fields"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "vm_instance_uuid",
+    "key": "cmdb_ci_vmware_instance.vm_instance_uuid",
+    "kind": "fields",
+    "note": "Eksik alan eklendi; vCenter eşlemesi dolduruyor",
+    "sources": [
+     "sn_vmware_fields",
+     "comm_vmi_ident"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "instance_uuid (Instance UUID)",
+    "key": "cmdb_ci_vcenter.instance_uuid",
+    "kind": "fields",
+    "sources": [
+     "sn_vcenter_wdc"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "it_application_owner",
+    "key": "cmdb_ci_business_app.it_application_owner",
+    "kind": "fields",
+    "note": "Kullanıcı referansı",
+    "sources": [
+     "comm_app_owner",
+     "sn_business_app"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "Application Type",
+    "key": "cmdb_ci_business_app.application_type",
+    "kind": "fields",
+    "note": "Etiket belgede; sütun adı görülmedi",
+    "sources": [
+     "sn_business_app"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Architecture type",
+    "key": "cmdb_ci_business_app.architecture_type",
+    "kind": "fields",
+    "note": "Değerler: Web-based, N-Tier, Client Server, Platform Host, Platform Application, SaaS, Other; sütun adı görülmedi",
+    "sources": [
+     "sn_business_app"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Install type",
+    "key": "cmdb_ci_business_app.install_type",
+    "kind": "fields",
+    "note": "Değerler: On Premise, Cloud, Hybrid, Third Party Hosted; sütun adı görülmedi",
+    "sources": [
+     "sn_business_app"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "User base",
+    "key": "cmdb_ci_business_app.user_base",
+    "kind": "fields",
+    "note": "Etiket belgede; sütun adı görülmedi",
+    "sources": [
+     "sn_business_app"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Rack units",
+    "key": "cmdb_ci_rack.rack_units",
+    "kind": "fields",
+    "note": "Etiket topluluk makalesinde; sütun adı görülmedi",
+    "sources": [
+     "comm_rack_units"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "computer → cmdb_ci_computer",
+    "key": "cmdb_ci_storage_device.computer",
+    "kind": "fields",
+    "sources": [
+     "sn_storage_host"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "storage_type",
+    "key": "cmdb_ci_storage_device.storage_type",
+    "kind": "fields",
+    "note": "Disk sınıfında listeleniyor",
+    "sources": [
+     "sn_disk_fields"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "size_bytes",
+    "key": "cmdb_ci_storage_device.size_bytes",
+    "kind": "fields",
+    "note": "Bayt cinsinden boyut",
+    "sources": [
+     "sn_disk_fields"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "computer",
+    "key": "cmdb_ci_file_system.computer",
+    "kind": "fields",
+    "note": "Üçüncü taraf örnek kayıt",
+    "sources": [
+     "sciencelogic_pdf"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "mount_point",
+    "key": "cmdb_ci_file_system.mount_point",
+    "kind": "fields",
+    "sources": [
+     "sn_filesystem"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "file_system (ör. Ext4)",
+    "key": "cmdb_ci_file_system.file_system",
+    "kind": "fields",
+    "sources": [
+     "sn_filesystem"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "capacity (MB, tam sayı)",
+    "key": "cmdb_ci_file_system.capacity",
+    "kind": "fields",
+    "sources": [
+     "comm_fs_space"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "available_space (MB, tam sayı)",
+    "key": "cmdb_ci_file_system.available_space",
+    "kind": "fields",
+    "note": "Eklendi",
+    "sources": [
+     "comm_fs_space"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "free_space (metin)",
+    "key": "cmdb_ci_file_system.free_space",
+    "kind": "fields",
+    "note": "Tam sayı değil metin; sayısal boş alan available_space",
+    "sources": [
+     "comm_fs_space"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "subnet",
+    "key": "cmdb_ci_ip_network.subnet",
+    "kind": "fields",
+    "sources": [
+     "sn_ip_networks"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_vlan.vlan_id",
+    "kind": "fields",
+    "note": "cmdb_ci_vlan alan listesi bulunamadı",
+    "sources": [
+     "comm_vlan"
+    ],
+    "verdict": "not_found"
+   },
+   {
+    "documented": "cluster_id",
+    "key": "cmdb_ci_cluster.cluster_id",
+    "kind": "fields",
+    "note": "Alt sınıflarda (Unix, Rubrik kümesi) belgede; temel tabloda görülmedi",
+    "sources": [
+     "sn_cluster_id",
+     "bmc_host_map"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cluster_version",
+    "key": "cmdb_ci_cluster.cluster_version",
+    "kind": "fields",
+    "note": "Alt sınıflarda belgede",
+    "sources": [
+     "sn_unix_cluster"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_cluster.cluster_ip",
+    "kind": "fields",
+    "note": "Belgede yok; küme adresi kök ip_address alanında (sanal IP'ler cmdb_ci_cluster_vip)",
+    "sources": [
+     "sn_unix_cluster"
+    ],
+    "verdict": "removed"
+   },
+   {
+    "documented": "cluster → cmdb_ci_cluster",
+    "key": "cmdb_ci_cluster_node.cluster",
+    "kind": "fields",
+    "sources": [
+     "bmc_host_map"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "server",
+    "key": "cmdb_ci_cluster_node.server",
+    "kind": "fields",
+    "note": "Sunucu CI'ına referans; hedef tablo belgede yazılmamış",
+    "sources": [
+     "bmc_host_map"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_oslv_container.image",
+    "kind": "fields",
+    "note": "Belgede 'image' yok; 'image_id' kullanılıyor",
+    "sources": [
+     "sn_container"
+    ],
+    "verdict": "removed"
+   },
+   {
+    "documented": "image_id (Image ID)",
+    "key": "cmdb_ci_oslv_container.image_id",
+    "kind": "fields",
+    "note": "image yerine",
+    "sources": [
+     "sn_container"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "namespace",
+    "key": "cmdb_ci_kubernetes_component.namespace",
+    "kind": "fields",
+    "note": "Pod ve iş yükü sınıflarında öznitelik; tanımlandığı tablo görülmedi",
+    "sources": [
+     "sn_k8s_otel"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "cluster",
+    "key": "cmdb_ci_kubernetes_component.cluster",
+    "kind": "fields",
+    "note": "Pod özniteliği olarak belgede; tanımlandığı tablo görülmedi",
+    "sources": [
+     "sn_k8s_otel"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "k8s_uid",
+    "key": "cmdb_ci_kubernetes_component.k8s_uid",
+    "kind": "fields",
+    "note": "Pod özniteliği olarak belgede",
+    "sources": [
+     "sn_k8s_otel"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "account_id (Account Id)",
+    "key": "cmdb_ci_cloud_service_account.account_id",
+    "kind": "fields",
+    "sources": [
+     "sn_cloud_account"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "datacenter_type",
+    "key": "cmdb_ci_cloud_service_account.datacenter_type",
+    "kind": "fields",
+    "note": "Değer bir sınıf adıdır (ör. cmdb_ci_aws_datacenter)",
+    "sources": [
+     "sn_cloud_account"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "is_master_account (Is management account)",
+    "key": "cmdb_ci_cloud_service_account.is_master_account",
+    "kind": "fields",
+    "sources": [
+     "sn_cloud_master"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "region",
+    "key": "cmdb_ci_logical_datacenter.region",
+    "kind": "fields",
+    "sources": [
+     "sn_logical_dc"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "Data classification",
+    "key": "cmdb_ci_information_object.data_classification",
+    "kind": "fields",
+    "note": "Değerler cmdb_data_classification kayıtları; muhtemelen referans",
+    "sources": [
+     "sn_data_class"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "parent",
+    "key": "cmdb_ci_business_capability.parent",
+    "kind": "fields",
+    "note": "Yetenek hiyerarşisi üst yetenek alanıyla (en fazla 6 düzey)",
+    "sources": [
+     "comm_capability_parent",
+     "csdm5_wp"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Ideation, Design, Build, Purchase, Inventory, Deploy, Operational, End of Operation, Missing, End of Life",
+    "key": "cmdb_ci.life_cycle_stage",
+    "kind": "choices",
+    "note": "CSDM 5 aşamaları; 'Missing' ayrı aşama",
+    "sources": [
+     "csdm5_wp",
+     "sn_lc_logical",
+     "sn_lc_physical"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "Operational: In Use, In Maintenance, Pending Retirement, End of Support · End of Operation: Pending Evaluation · Missing: Lost, Stolen · End of Life: Retired, Obsolete, Disposed",
+    "key": "cmdb_ci.life_cycle_stage_status",
+    "kind": "choices",
+    "note": "Önceki varsayılan Draft→Planning→In Progress→Ready dizisi belgede yok; Ideation/Design durumları topluluk kaynağından; eski alan eşlemesi Evren tanımı (ServiceNow life_cycle_mapping N:1)",
+    "sources": [
+     "csdm5_wp",
+     "sn_lc_product",
+     "comm_lc_values",
+     "comm_lc_mapping"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Attested, Rejected, Not Yet Reviewed",
+    "key": "cmdb_ci.attestation_status",
+    "kind": "choices",
+    "note": "Değerler topluluk kaynağından",
+    "sources": [
+     "comm_attested"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "Registered on::Has registered",
+    "key": "Registered on::Has registered",
+    "kind": "relationship_types",
+    "note": "VM örneği (ebeveyn) → ESX",
+    "sources": [
+     "sn_esx_ny",
+     "comm_vcenter_rel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "Provided by::Provides",
+    "key": "Provided by::Provides",
+    "kind": "relationship_types",
+    "note": "İş yeteneği → iş uygulaması",
+    "sources": [
+     "comm_capability_rel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "Instantiates::Instantiated by",
+    "key": "Instantiates::Instantiated by",
+    "kind": "relationship_types",
+    "note": "Eklendi: misafir sunucu ↔ VM örneği",
+    "sources": [
+     "comm_vm_server_rel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_computer --Virtualized by::Virtualizes--> cmdb_ci_vm_instance",
+    "kind": "relationship_rules",
+    "note": "Misafir sunucu VM örneğine değil ESX'e 'Virtualized by' ile bağlanır",
+    "sources": [
+     "comm_vcenter_rel",
+     "comm_vm_server_rel"
+    ],
+    "verdict": "removed"
+   },
+   {
+    "key": "cmdb_ci_computer --Virtualized by::Virtualizes--> cmdb_ci_esx_server",
+    "kind": "relationship_rules",
+    "note": "Eklendi",
+    "sources": [
+     "comm_vcenter_rel",
+     "comm_vm_server_rel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_computer --Instantiates::Instantiated by--> cmdb_ci_vm_instance",
+    "kind": "relationship_rules",
+    "note": "Tip belgede; yön yalnızca topluluk kaynağından (sunucu ebeveyn)",
+    "sources": [
+     "comm_vm_server_rel"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_vm_instance --Registered on::Has registered--> cmdb_ci_server",
+    "kind": "relationship_rules",
+    "note": "Belgedeki örnek ESX",
+    "sources": [
+     "sn_esx_ny",
+     "comm_vcenter_rel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_vm_instance --Hosted on::Hosts--> cmdb_ci_logical_datacenter",
+    "kind": "relationship_rules",
+    "note": "Bulut VM'i hesaba veri merkezi üzerinden bağlanır; tip yazılmamış",
+    "sources": [
+     "comm_azure_vm"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_vcenter_datacenter --Contains::Contained by--> cmdb_ci_esx_server",
+    "kind": "relationship_rules",
+    "note": "Eklendi: kümede olmayan ESX veri merkezine bağlanır",
+    "sources": [
+     "sn_vcenter_orlando"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_vcenter_cluster --Members::Member of--> cmdb_ci_esx_server",
+    "kind": "relationship_rules",
+    "sources": [
+     "sn_vcenter_orlando"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_vcenter --Contains::Contained by--> cmdb_ci_vcenter_datacenter",
+    "kind": "relationship_rules",
+    "note": "Eski wiki vCenter → ESX için Manages::Managed by gösteriyor",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_vcenter_datacenter --Contains::Contained by--> cmdb_ci_vcenter_cluster",
+    "kind": "relationship_rules",
+    "note": "Belgede veri merkezi → ESX var; veri merkezi → küme görülmedi",
+    "sources": [
+     "sn_vcenter_orlando"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_db_instance --Contains::Contained by--> cmdb_ci_database",
+    "kind": "relationship_rules",
+    "note": "Belgedeki örnek: MySQL örneği → MySQL kataloğu",
+    "sources": [
+     "sn_extend_rules"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_kubernetes_cluster --Contains::Contained by--> cmdb_ci_kubernetes_component",
+    "kind": "relationship_rules",
+    "note": "Belgedeki örnek: küme → pod",
+    "sources": [
+     "sn_k8s_otel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_kubernetes_namespace --Contains::Contained by--> cmdb_ci_kubernetes_component",
+    "kind": "relationship_rules",
+    "note": "Ad alanı kümeye referansla bağlı; ad alanı → pod ilişki tipi görülmedi",
+    "sources": [
+     "sn_k8s_otel",
+     "syncfish_k8s"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_logical_datacenter --Hosted on::Hosts--> cmdb_ci_cloud_service_account",
+    "kind": "relationship_rules",
+    "sources": [
+     "kb_cloud_dc"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_appl --Runs on::Runs--> cmdb_ci_computer",
+    "kind": "relationship_rules",
+    "note": "Bağımlı kimlik deseni (tomcat Runs on donanım)",
+    "sources": [
+     "sn_extend_rules"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_business_capability --Provided by::Provides--> cmdb_ci_business_app",
+    "kind": "relationship_rules",
+    "sources": [
+     "comm_capability_rel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_business_capability --Contains::Contained by--> cmdb_ci_business_capability",
+    "kind": "relationship_rules",
+    "note": "Hiyerarşi ilişkiyle değil üst yetenek alanıyla kurulur",
+    "sources": [
+     "comm_capability_parent",
+     "csdm5_wp"
+    ],
+    "verdict": "removed"
+   },
+   {
+    "key": "cmdb_ci_business_process --Uses::Used by--> cmdb_ci_business_app",
+    "kind": "relationship_rules",
+    "note": "CSDM 5 tip öngörmüyor; platform Depends on::Used by yazar (genel kural kapsar)",
+    "sources": [
+     "comm_process_rel"
+    ],
+    "verdict": "removed"
+   },
+   {
+    "key": "cmdb_ci_business_app --Consumes::Consumed by--> cmdb_ci_service_auto",
+    "kind": "relationship_rules",
+    "note": "Platformun yazdığı tip (CSDM 4'ten)",
+    "sources": [
+     "comm_ba_si_rel"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_business_app --Uses::Used by--> cmdb_ci_service_auto",
+    "kind": "relationship_rules",
+    "note": "CSDM 5 çiziminde; iki tip de izinli",
+    "sources": [
+     "comm_ba_si_rel",
+     "csdm5_wp"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_business_app --Uses::Used by--> cmdb_ci_information_object",
+    "kind": "relationship_rules",
+    "sources": [
+     "csdm5_img",
+     "csdm5_wp"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_business_app --Sends data to::Receives data from--> cmdb_ci_business_app",
+    "kind": "relationship_rules",
+    "note": "Belgede servis örnekleri arası veri akışı için; iş uygulamaları arası tip yazılmamış",
+    "sources": [
+     "csdm5_img"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "service_offering --Contains::Contained by--> cmdb_ci_query_based_service",
+    "kind": "relationship_rules",
+    "sources": [
+     "comm_offering_dcg"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_appl --Runs on::Runs--> cmdb_ci_cluster",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_appl --Runs on::Runs--> cmdb_ci_oslv_container",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_cluster --Members::Member of--> cmdb_ci_cluster_node",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_cluster_node --Hosted on::Hosts--> cmdb_ci_computer",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_rack --Contains::Contained by--> cmdb_ci_hardware",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_vlan --Contains::Contained by--> cmdb_ci_ip_network",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_ip_network --Contains::Contained by--> cmdb_ci_ip_address",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_computer --Uses::Used by--> cmdb_ci_storage_volume",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_kubernetes_cluster --Hosted on::Hosts--> cmdb_ci_logical_datacenter",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_kubernetes_node --Hosted on::Hosts--> cmdb_ci_computer",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_kubernetes_pod --Runs on::Runs--> cmdb_ci_kubernetes_node",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_kubernetes_pod --Contains::Contained by--> cmdb_ci_oslv_container",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_oslv_container --Runs on::Runs--> cmdb_ci_computer",
+    "kind": "relationship_rules",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "documented": "100 seri+seri tipi · 200 seri · 300 ad · 400 MAC+ad",
+    "key": "cmdb_ci_hardware",
+    "kind": "identification",
+    "note": "BIOS UUID (150) ve FQDN (280) Evren uzantısı",
+    "sources": [
+     "comm_hw_ident",
+     "sn_ident_rules"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "vcenter_uuid + object_id (ayrıca vm_instance_uuid)",
+    "key": "cmdb_ci_vm_instance",
+    "kind": "identification",
+    "note": "Önceki varsayım korelasyon kimliğiyle başlıyordu; artık Evren uzantısı olarak ikinci sırada",
+    "sources": [
+     "comm_vmi_ident"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "key": "cmdb_ci_vcenter",
+    "kind": "identification",
+    "note": "ServiceNow kuralı belgede görülmedi; örnek UUID'si ile Evren tanımı",
+    "verdict": "evren"
+   },
+   {
+    "key": "cmdb_ci_vcenter_datacenter",
+    "kind": "identification",
+    "note": "vCenter bağlamında nesne kimliği (Evren tanımı)",
+    "verdict": "evren"
+   },
+   {
+    "documented": "name",
+    "key": "cmdb_ci_kubernetes_cluster",
+    "kind": "identification",
+    "note": "ServiceNow Kubernetes Visibility kuralı ada göre; küme kimliği Evren uzantısı",
+    "sources": [
+     "kb_k8s_ident"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "namespace + name (pod, servis)",
+    "key": "cmdb_ci_kubernetes_component",
+    "kind": "identification",
+    "note": "Bağımlı ilişki ve üst sınıf görülmedi",
+    "sources": [
+     "kb_k8s_ident"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "bağımlı: Hosted on::Hosts → hesap; object_id",
+    "key": "cmdb_ci_logical_datacenter",
+    "kind": "identification",
+    "note": "Önceki varsayım bölgeydi",
+    "sources": [
+     "kb_cloud_dc"
+    ],
+    "verdict": "corrected"
+   },
+   {
+    "documented": "bağımsız: name",
+    "key": "cmdb_ci_information_object",
+    "kind": "identification",
+    "sources": [
+     "sn_info_object"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "bağımlı: Runs on::Runs → donanım",
+    "key": "cmdb_ci_appl",
+    "kind": "identification",
+    "note": "Bağımlı kimlik deseni",
+    "sources": [
+     "sn_extend_rules"
+    ],
+    "verdict": "confirmed"
+   },
+   {
+    "documented": "bağımlı: Contains → örnek; name",
+    "key": "cmdb_ci_database",
+    "kind": "identification",
+    "note": "MySQL kataloğu örneğinde belgede; temel kural görülmedi",
+    "sources": [
+     "sn_extend_rules"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "documented": "account_id tekil",
+    "key": "cmdb_ci_cloud_service_account",
+    "kind": "identification",
+    "note": "Kimlik girdisi metni görülmedi; KB hesap kimliğinin tekil olması gerektiğini söylüyor",
+    "sources": [
+     "kb_cloud_dc"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_cluster",
+    "kind": "identification",
+    "note": "Genel küme kuralı görülmedi; Kubernetes kümesi adla tanımlanıyor",
+    "sources": [
+     "kb_k8s_ident"
+    ],
+    "verdict": "partial"
+   },
+   {
+    "key": "cmdb_ci_ip_network",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_oslv_container",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_file_system",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_cluster_node",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_service",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_business_app",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_business_capability",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   },
+   {
+    "key": "cmdb_ci_business_process",
+    "kind": "identification",
+    "note": "Arama özetlerinde görülmedi",
+    "verdict": "not_found"
+   }
+  ],
+  "sources": {
+   "bmc_host_map": {
+    "kind": "ucuncu",
+    "title": "BMC: ServiceNow mapping for host",
+    "url": "https://docs.bmc.com/docs/discovery/213/servicenow-mapping-for-host-1024737810.html"
+   },
+   "bmc_lb": {
+    "kind": "ucuncu",
+    "title": "BMC: ServiceNow mapping for load balancer nodes",
+    "url": "https://docs.bmc.com/docs/discovery/daas/servicenow-mapping-for-load-balancer-nodes-907288290.html"
+   },
+   "comm_app_owner": {
+    "kind": "topluluk",
+    "title": "Topluluk: IT application owner betiği",
+    "url": "https://www.servicenow.com/community/now-platform-articles/script-find-list-of-it-application-owners-without-itil-role/ta-p/2319822"
+   },
+   "comm_attested": {
+    "kind": "topluluk",
+    "title": "Topluluk: attested alanı güncellenmiyor",
+    "url": "https://www.servicenow.com/community/cmdb-forum/attestation-ci-attested-field-is-not-updating-to-true-and/m-p/2839686"
+   },
+   "comm_azure_vm": {
+    "kind": "topluluk",
+    "title": "Topluluk: Azure VM ↔ hesap bağı",
+    "url": "https://www.servicenow.com/community/itom-forum/azure-cloud-discovery-relationship-between-cloud-service-account/m-p/3481142"
+   },
+   "comm_ba_si_rel": {
+    "kind": "topluluk",
+    "title": "Topluluk: CSDM 5 iş uygulaması ↔ servis örneği",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/csdm-5-0-business-app-to-service-instance-relationship-change/m-p/3299351"
+   },
+   "comm_capability_parent": {
+    "kind": "topluluk",
+    "title": "Topluluk: Business capability hiyerarşisi",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/relationship-for-business-capability/m-p/2589442"
+   },
+   "comm_capability_rel": {
+    "kind": "topluluk",
+    "title": "Topluluk: Business capability ilişkisi",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/relationship-for-business-capability/m-p/2592492"
+   },
+   "comm_class_tree": {
+    "kind": "topluluk",
+    "title": "Topluluk: CI sınıf ağacı dökümü",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/listing-all-ci-classes-instead-of-browsing-through-them/m-p/334532"
+   },
+   "comm_dynamic_group": {
+    "kind": "topluluk",
+    "title": "Topluluk: Dynamic CI Group = query based service",
+    "url": "https://www.servicenow.com/community/developer-forum/dynamic-ci-group-actually-quot-query-based-service-quot/m-p/3521616"
+   },
+   "comm_fs_space": {
+    "kind": "topluluk",
+    "title": "Topluluk: File system available space",
+    "url": "https://www.servicenow.com/community/cmdb-forum/quot-available-space-quot-field-converting-the-mb-gb-data-into/m-p/2984607"
+   },
+   "comm_hw_ident": {
+    "kind": "topluluk",
+    "title": "Topluluk: Identification and reconciliation rules",
+    "url": "https://www.servicenow.com/community/cmdb-articles/cmdb-understanding-identification-and-reconciliation-rules-and/ta-p/3520826"
+   },
+   "comm_k8s_list": {
+    "kind": "topluluk",
+    "title": "Topluluk: Kubernetes components discovery",
+    "url": "https://www.servicenow.com/community/itom-articles/kubernetes-components-discovery-using-service-now-discovery/ta-p/2323630"
+   },
+   "comm_lc_mapping": {
+    "kind": "topluluk",
+    "title": "Topluluk: Life cycle migration and mappings",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/life-cycle-standards-migration-and-mappings/m-p/2403645"
+   },
+   "comm_lc_util": {
+    "kind": "topluluk",
+    "title": "Topluluk: LifeCycleUtil ve life_cycle_control",
+    "url": "https://www.servicenow.com/community/cmdb-forum/csdm-ci-lifecycle-management-lifecycleutil-and-internal-state/m-p/3479422"
+   },
+   "comm_lc_values": {
+    "kind": "topluluk",
+    "title": "Topluluk: CSDM aşama durumu tanımları",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/csdm-lifecyle-stage-status-descriptions-definitions-for-each/m-p/3522617"
+   },
+   "comm_offering_dcg": {
+    "kind": "topluluk",
+    "title": "Topluluk: Types of services (CSDM)",
+    "url": "https://www.servicenow.com/community/cmdb-articles/types-of-services-csdm/ta-p/3225320"
+   },
+   "comm_process_rel": {
+    "kind": "topluluk",
+    "title": "Topluluk: Business process ilişkisi (CSDM 5)",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/clarity-on-csdm-recommended-relation-between-business/td-p/3517465"
+   },
+   "comm_rack": {
+    "kind": "topluluk",
+    "title": "Topluluk: Data centers, racks and rack units",
+    "url": "https://www.servicenow.com/community/it-service-management-forum/cmdb-data-centers-racks-and-rack-units/td-p/719949"
+   },
+   "comm_rack_units": {
+    "kind": "topluluk",
+    "title": "Topluluk: Managing space and power of IT racks",
+    "url": "https://www.servicenow.com/community/cmdb-articles/managing-space-and-power-of-server-it-racks/ta-p/2300919"
+   },
+   "comm_service_calculated": {
+    "kind": "topluluk",
+    "title": "Topluluk: Service Mapping application service",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/service-mapping-application-service/m-p/3070855"
+   },
+   "comm_service_discovered": {
+    "kind": "topluluk",
+    "title": "Topluluk: cmdb_ci_service_discovered vs auto",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/application-service-cmdb-ci-service-discovered-vs-cmdb-ci/m-p/338271"
+   },
+   "comm_service_links": {
+    "kind": "topluluk",
+    "title": "Topluluk: Business/technical service bağları",
+    "url": "https://www.servicenow.com/community/common-service-data-model-forum/how-business-technical-service-linked-with-business-technical/m-p/3338469"
+   },
+   "comm_storage_device": {
+    "kind": "topluluk",
+    "title": "Topluluk: Storage device tablosu",
+    "url": "https://www.servicenow.com/community/cmdb-forum/what-is-the-use-of-this-table-storage-device-cmdb-ci-storage/m-p/3015242"
+   },
+   "comm_vcenter_rel": {
+    "kind": "topluluk",
+    "title": "Topluluk: vCenter discovery ilişkileri",
+    "url": "https://www.servicenow.com/community/servicenow-ai-platform-forum/vcenter-discovery-ci-relationship-missing/m-p/1200951"
+   },
+   "comm_vlan": {
+    "kind": "topluluk",
+    "title": "Topluluk: VLAN için OOB sınıf",
+    "url": "https://www.servicenow.com/community/itsm-forum/is-there-any-oob-cmdb-ci-class-for-maintain-vlan-data-network/m-p/582910"
+   },
+   "comm_vm_server_rel": {
+    "kind": "topluluk",
+    "title": "Topluluk: Server CI ve VM instance ilişkisi",
+    "url": "https://www.servicenow.com/community/itom-articles/server-ci-and-vm-instance-ci-relationship-understanding-and/ta-p/2322831"
+   },
+   "comm_vmi_ident": {
+    "kind": "topluluk",
+    "title": "Topluluk: VM instance kimliği",
+    "url": "https://www.servicenow.com/community/cmdb-forum/how-vmi-find-corresponding-server-ci-and-how-vmi-deal-with/m-p/226515"
+   },
+   "csdm5_img": {
+    "kind": "resmi",
+    "title": "CSDM 5 Information Management Implementation Guide",
+    "url": "https://www.servicenow.com/community/s/cgfwn76974/attachments/cgfwn76974/common-service-data-model-kb/918/3/CSDM%205%20Information%20Management%20implementation%20Guide%201.0.pdf"
+   },
+   "csdm5_wp": {
+    "kind": "resmi",
+    "title": "CSDM 5 white paper (ServiceNow CSDM ekibi, 2025)",
+    "url": "https://www.servicenow.com/community/s/cgfwn76974/attachments/cgfwn76974/common-service-data-model-kb/744/3/CSDM%205%20w%20links.pdf"
+   },
+   "erm4sn_computer": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: Computer",
+    "url": "https://demo.erm4sn.com/table/100/442bf85f4d776b5a4d8518edeead869a"
+   },
+   "erm4sn_hw": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: Hardware",
+    "url": "https://demo.erm4sn.com/table/100/49124d5ef39b5c8485980bcf53a8b776"
+   },
+   "erm4sn_lb": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: Load Balancer",
+    "url": "https://demo.erm4sn.com/table/300/64cadb1fd83210100c1d056eb83723c5"
+   },
+   "erm4sn_netgear": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: Network Gear",
+    "url": "https://demo.erm4sn.com/table/100/e0d6563abb2c411a201c883b9a691f7a"
+   },
+   "erm4sn_rack": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: Rack",
+    "url": "https://demo.erm4sn.com/table/100/eb0bdf2e512895fc90b96bbd884e839a"
+   },
+   "erm4sn_storage_server": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: Storage Server",
+    "url": "https://demo.erm4sn.com/table/100/78c6cd36a2f91ff3b0acfeca7fb5b123"
+   },
+   "erm4sn_unix": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: UNIX Server",
+    "url": "https://demo.erm4sn.com/table/100/df30a405c0c8cf9d62e994b2510c4f76"
+   },
+   "erm4sn_vccluster": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: vCenter Cluster",
+    "url": "https://demo.erm4sn.com/table/100/46e60b3bbbfec78f467a22df3900d2a0"
+   },
+   "erm4sn_volume": {
+    "kind": "ucuncu",
+    "title": "erm4sn sözlük dökümü: Storage Volume / File System",
+    "url": "https://demo.erm4sn.com/table/100/02eef231d9281a3892ec5f6cc2c6dc25"
+   },
+   "hashicorp_aks": {
+    "kind": "ucuncu",
+    "title": "HashiCorp: Service Graph Azure kapsamı",
+    "url": "https://developer.hashicorp.com/terraform/cloud-docs/integrations/service-now/service-graph/resource-coverage/azure"
+   },
+   "kb_cloud_dc": {
+    "kind": "resmi",
+    "title": "KB2203635 Bulut veri merkezi bağımlı CI",
+    "url": "https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB2203635"
+   },
+   "kb_k8s_ident": {
+    "kind": "resmi",
+    "title": "KB1166200 Kubernetes kimlik kuralları",
+    "url": "https://support.servicenow.com/kb?id=kb_article_view&sysparm_article=KB1166200"
+   },
+   "medium_vcenter": {
+    "kind": "ucuncu",
+    "title": "vCenter discovery (Medium)",
+    "url": "https://macul.medium.com/vcenter-discovery-ff523a0b7f8d"
+   },
+   "packt": {
+    "kind": "ucuncu",
+    "title": "Packt: ServiceNow CMDB kitabı",
+    "url": "https://m.itv.qq.com/read/1036700721/74"
+   },
+   "paloalto_attr": {
+    "kind": "ucuncu",
+    "title": "Palo Alto: ServiceNow öznitelik başvurusu",
+    "url": "https://docs.paloaltonetworks.com/iot/integration/attribute-reference/attribute-reference-servicenow"
+   },
+   "sciencelogic_map": {
+    "kind": "ucuncu",
+    "title": "ScienceLogic: ServiceNow CMDB eşlemeleri",
+    "url": "https://docs.sciencelogic.com/latest/Content/Web_Content_Dev_and_Integration/IS_ServiceNow_CMDB/is_snow_app_mappings.htm"
+   },
+   "sciencelogic_pdf": {
+    "kind": "ucuncu",
+    "title": "ScienceLogic CMDB SyncPack 3.3.2",
+    "url": "https://docs.sciencelogic.com/pdf/sciencelogic_servicenow_cmdb_syncpack_3-3-2.pdf"
+   },
+   "sn_apache": {
+    "kind": "resmi",
+    "title": "Create a CI type (Apache Web Server)",
+    "url": "https://www.servicenow.com/docs/r/it-operations-management/discovery-and-service-mapping-patterns/t_CreateCITypeForSM.html"
+   },
+   "sn_attestation": {
+    "kind": "resmi",
+    "title": "CMDB Data Manager: attestation alanları",
+    "url": "https://www.servicenow.com/docs/r/zS6yb8e~gR8BPjeviYdV9g/EyIyurbSmol5lZMJcBnVaA"
+   },
+   "sn_business_app": {
+    "kind": "resmi",
+    "title": "Business Application alanları",
+    "url": "https://www.servicenow.com/docs/r/U2CVwXuy001wBq~XyYjcSg/SGyYP3JTlCbQT_p7cXaGLw"
+   },
+   "sn_business_process": {
+    "kind": "resmi",
+    "title": "CSDM Foundation: Business Process",
+    "url": "https://www.servicenow.com/docs/r/4AA65edJ2a~o5pASflQppQ/9HN8yRmsn2lT9egJsLwDNw"
+   },
+   "sn_cloud_account": {
+    "kind": "resmi",
+    "title": "Cloud service account alanları",
+    "url": "https://www.servicenow.com/docs/r/LZHoJyH9VPKmhdIph_6gSw/xjf5Yf3PcuHMTgAcx30Pkw"
+   },
+   "sn_cloud_master": {
+    "kind": "resmi",
+    "title": "Management account (is_master_account)",
+    "url": "https://www.servicenow.com/docs/r/sPnEbors95h6DhgBlE~f0A/mJA2xJSWBxeFATgS~CH2qw"
+   },
+   "sn_cluster_id": {
+    "kind": "resmi",
+    "title": "Cluster ID (Pacemaker / Rubrik)",
+    "url": "https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/dIh_OdCpQQPTcsL7u8WfBg"
+   },
+   "sn_cmdb_schema": {
+    "kind": "resmi",
+    "title": "CMDB schema model (Zurich)",
+    "url": "https://www.servicenow.com/docs/r/zurich/servicenow-platform/configuration-management-database-cmdb/c_ConfigurationManagementDatabase.html"
+   },
+   "sn_container": {
+    "kind": "resmi",
+    "title": "OS-level container alanları (Image ID)",
+    "url": "https://www.servicenow.com/docs/r/AGMjjjnYvvG0sY5d7GEnIw/152AENAYsuy7ErEaILcWNA"
+   },
+   "sn_csdm_design": {
+    "kind": "resmi",
+    "title": "CSDM Design & Planning domain",
+    "url": "https://www.servicenow.com/docs/r/zS6yb8e~gR8BPjeviYdV9g/jmgdE30lYIDRQPojDKOzmA"
+   },
+   "sn_data_class": {
+    "kind": "resmi",
+    "title": "Data classification (Information Object)",
+    "url": "https://www.servicenow.com/docs/r/5lP9Pa2tE3N8lrzw94z7xA/zcTkA20tZBKazzs9B2074g"
+   },
+   "sn_db2": {
+    "kind": "resmi",
+    "title": "Db2 discovery",
+    "url": "https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/akQ09WsUequnMEW_K8uGwA"
+   },
+   "sn_disk_fields": {
+    "kind": "resmi",
+    "title": "Disk alanları (storage_type, size_bytes)",
+    "url": "https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/PG7rkVDwBOwP2kUhCxAFiQ"
+   },
+   "sn_esx_ny": {
+    "kind": "resmi",
+    "title": "Discover ESX servers (New York)",
+    "url": "https://docs.servicenow.com/bundle/newyork-it-operations-management/page/product/discovery/reference/r_DiscoverESXServers.html"
+   },
+   "sn_extend_rules": {
+    "kind": "resmi",
+    "title": "Extend classes and rules (MySQL katalog örneği)",
+    "url": "https://www.servicenow.com/docs/r/GCPjp~ldPTNRN99oH1DYFg/4ZC39BuKWkwpCOZ3pPjVmQ"
+   },
+   "sn_filesystem": {
+    "kind": "resmi",
+    "title": "File system örneği (mount point, file system)",
+    "url": "https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/6WrQ3n9Tg02WOr3hglTXTQ"
+   },
+   "sn_ident_rules": {
+    "kind": "resmi",
+    "title": "Identification rules (donanım)",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/qG5r~lgjzB8eUVVTvbX_fw"
+   },
+   "sn_iis": {
+    "kind": "resmi",
+    "title": "IIS discovery",
+    "url": "https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/C6EAy1b3edQSp87o37xTEw"
+   },
+   "sn_info_object": {
+    "kind": "resmi",
+    "title": "Information Object sınıfı ve kimlik kuralı",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/mw4CSdwsch2UGhO6z3u7SA"
+   },
+   "sn_ip_networks": {
+    "kind": "resmi",
+    "title": "Data collected for IP networks (Washington DC)",
+    "url": "https://docs.servicenow.com/bundle/washingtondc-it-operations-management/page/product/discovery/reference/r_DataCollDiscoIPNetworks.html"
+   },
+   "sn_jboss": {
+    "kind": "resmi",
+    "title": "JBoss discovery",
+    "url": "https://www.servicenow.com/docs/r/sPnEbors95h6DhgBlE~f0A/XSDHUo82Bd6gEjME5q1gLQ"
+   },
+   "sn_k8s_models": {
+    "kind": "resmi",
+    "title": "Kubernetes extension classes (iş yükü sınıfları)",
+    "url": "https://www.servicenow.com/docs/r/u7nZu9GEUxWr9UkuDmbe6w/xk7fLrbNrphPSB2Cludc9w"
+   },
+   "sn_k8s_otel": {
+    "kind": "resmi",
+    "title": "CMDB classes targeted in Service Graph Connector for OpenTelemetry",
+    "url": "https://www.servicenow.com/docs/r/servicenow-platform/service-graph-connectors/sgc-cmdb-opentelemetry-classes.html"
+   },
+   "sn_lc_logical": {
+    "kind": "resmi",
+    "title": "Life-cycle values for intangible/logical entities",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/ZUSH2I5z~HYaT~C_llBy8w"
+   },
+   "sn_lc_physical": {
+    "kind": "resmi",
+    "title": "Life-cycle values for tangible/physical CIs",
+    "url": "https://www.servicenow.com/docs/r/washingtondc/servicenow-platform/common-service-data-model-csdm/csdm-lifecycle-df-tangible-physical.html"
+   },
+   "sn_lc_product": {
+    "kind": "resmi",
+    "title": "Life-cycle values for product entities",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/ZjRDxUxXc_I3_XVpU9yNxQ"
+   },
+   "sn_logical_dc": {
+    "kind": "resmi",
+    "title": "Logical datacenter alanları",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/D6BxExd37UlOt3v9N19FKA"
+   },
+   "sn_mssql": {
+    "kind": "resmi",
+    "title": "MSSQL data collected (Zurich)",
+    "url": "https://www.servicenow.com/docs/r/zurich/it-operations-management/itom-visibility/mssql-data-collected-pattern.html"
+   },
+   "sn_postgres": {
+    "kind": "resmi",
+    "title": "PostgreSQL Instance classifier",
+    "url": "https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/jkzUSVdGAOkpHG2dzg~Dpg"
+   },
+   "sn_service_instance": {
+    "kind": "resmi",
+    "title": "Service Instance [cmdb_ci_service_auto] (CSDM 5)",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/iHT9SvSAjIhuKWFdxOMovw"
+   },
+   "sn_services": {
+    "kind": "resmi",
+    "title": "Services filtresi (cmdb_ci_service)",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/fCzi~LXiQLYrfA2F~6ZGvg"
+   },
+   "sn_storage_host": {
+    "kind": "resmi",
+    "title": "Storage discovery via host (Tokyo)",
+    "url": "https://docs.servicenow.com/bundle/tokyo-it-operations-management/page/product/discovery/reference/r_DataCollDiscoStorageViaHost.html"
+   },
+   "sn_tables": {
+    "kind": "resmi",
+    "title": "CMDB tables descriptions",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/1GLrH0vZKHQqi0lHfIjuTw"
+   },
+   "sn_tables_rome": {
+    "kind": "resmi",
+    "title": "CMDB tables descriptions (Rome)",
+    "url": "https://docs.servicenow.com/bundle/rome-servicenow-platform/page/product/configuration-management/reference/cmdb-tables-details.html"
+   },
+   "sn_tag_based": {
+    "kind": "resmi",
+    "title": "Tag-Based Application Service",
+    "url": "https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/SSIknIrJtQivv~ZyMHm6GA"
+   },
+   "sn_tms_label": {
+    "kind": "resmi",
+    "title": "Technology Management Service etiketi (Yokohama+)",
+    "url": "https://www.servicenow.com/docs/r/Ir~NPf1dr8MGFXQE6QlBoQ/Wgjm2oZyU_EDSzzV8oit3g"
+   },
+   "sn_tomcat": {
+    "kind": "resmi",
+    "title": "Tomcat discovery",
+    "url": "https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/a5X5aupb0AxmmQLnnHhFOQ"
+   },
+   "sn_unix_cluster": {
+    "kind": "resmi",
+    "title": "Unix cluster alanları",
+    "url": "https://www.servicenow.com/docs/r/Tm19yM2Ui3~uN9XFBacppg/Bn2nfXodntEaNSti6ql1eg"
+   },
+   "sn_vcenter_object": {
+    "kind": "resmi",
+    "title": "VMware vCenter Object [cmdb_ci_vcenter_object] class",
+    "url": "https://www.servicenow.com/docs/r/q4dSP2Icgr1SFv5wanVXvQ/0PNbmxuBMN0NcKLqpjiaYQ"
+   },
+   "sn_vcenter_orlando": {
+    "kind": "resmi",
+    "title": "Data collected by Discovery on vCenter (Orlando)",
+    "url": "https://docs.servicenow.com/bundle/orlando-it-operations-management/page/product/discovery/reference/r_VCenterDataCollected.html"
+   },
+   "sn_vcenter_wdc": {
+    "kind": "resmi",
+    "title": "Data collected by Discovery on vCenter (Washington DC)",
+    "url": "https://www.servicenow.com/docs/bundle/washingtondc-it-operations-management/page/product/discovery/reference/r_VCenterDataCollected.html"
+   },
+   "sn_vmware_fields": {
+    "kind": "resmi",
+    "title": "VMware VM instance alanları",
+    "url": "https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/I36sx4Q7d3sXn_42C28bdg"
+   },
+   "sn_vmware_guestid": {
+    "kind": "resmi",
+    "title": "VMware VM instance (Guest ID)",
+    "url": "https://www.servicenow.com/docs/r/LZHoJyH9VPKmhdIph_6gSw/MrxGJ1ymu0tR1YLAO8gLPw"
+   },
+   "sn_wap": {
+    "kind": "resmi",
+    "title": "Cisco WAP discovery (Xanadu)",
+    "url": "https://www.servicenow.com/docs/bundle/xanadu-it-operations-management/page/product/service-mapping/reference/cisco-waps-discovery.html"
+   },
+   "sn_webserver": {
+    "kind": "resmi",
+    "title": "Web Server / NGINX discovery",
+    "url": "https://www.servicenow.com/docs/r/guxhDnVk8OUAJKLm7WZsYA/DusphftU8nW_yg49bVx3Kw"
+   },
+   "snowball_server": {
+    "kind": "ucuncu",
+    "title": "thesnowball.co: cmdb_ci_server alt tabloları",
+    "url": "https://thesnowball.co/table/cmdb_ci_server"
+   },
+   "snowmirror_dm": {
+    "kind": "ucuncu",
+    "title": "ServiceNow Data Model v3.4 (2016, SnowMirror)",
+    "url": "https://www.snow-mirror.com/wp-content/uploads/2016/07/ServiceNow-Data-Model-v3.4.pdf"
+   },
+   "syncfish_k8s": {
+    "kind": "ucuncu",
+    "title": "Syncfish: GCP CI ilişkileri",
+    "url": "https://support.syncfish.com.au/cs/rule-2-gcp-ci-to-ci-relationships"
+   }
+  }
  },
  "version": 1
 }

@@ -47,19 +47,24 @@ choices:
       - {value: Defender, label: Microsoft Defender, label_tr: Microsoft Defender}
       - {value: ServiceNow, label: ServiceNow, label_tr: ServiceNow}
       - {value: Manual, label: Manual Entry, label_tr: Elle giriş}
-  # CSDM 5 yaşam döngüsü (ADR-0019). Aşama durumu aşamaya bağımlıdır (ServiceNow sys_choice.dependent_value).
-  # legacy: bu durumdaki CI'ın eski alanlarda taşıması gereken değer. ServiceNow replikası ve eski raporlar
-  # operational_status / install_status okumaya devam eder; Evren tutarlılığı buradan denetler (U7).
-  # Kesin değerler kurum örneğinden doğrulanmalıdır (life_cycle_stage / life_cycle_stage_status tabloları).
+  # CSDM 5 yaşam döngüsü (ADR-0019; kaynaklar metadata/verification.yaml). Aşama durumu aşamaya bağımlıdır
+  # (ServiceNow sys_choice.dependent_value; ServiceNow'da geçerli çiftler life_cycle_control tablosundadır).
+  # Aşama listesi CSDM 5 belgelerinden; durumlar yalnızca belgede görülenlerdir. Varlık (asset) durumları
+  # (Donated, Sold, Vendor Credit, Buy Out, In Transit, Reserved…) CMDB kapsamı dışında bırakıldı.
+  # legacy: Evren'in eski alanlarla tutarlılık eşlemesi. ServiceNow bunu life_cycle_mapping tablosunda N:1 tutar;
+  # birebir değer çiftleri belgede doğrulanmadı (Evren tanımı).
   - table: cmdb_ci
     element: life_cycle_stage
-    verify: true
     values:
       - {value: Ideation, label: Ideation, label_tr: Fikir}
       - {value: Design, label: Design, label_tr: Tasarım}
       - {value: Build, label: Build, label_tr: Yapım}
+      - {value: Purchase, label: Purchase, label_tr: Satın alma}
+      - {value: Inventory, label: Inventory, label_tr: Envanter}
       - {value: Deploy, label: Deploy, label_tr: Devreye alma}
       - {value: Operational, label: Operational, label_tr: Operasyonel}
+      - {value: End of Operation, label: End of Operation, label_tr: Operasyon sonu}
+      - {value: Missing, label: Missing, label_tr: Kayıp}
       - {value: End of Life, label: End of Life, label_tr: Ömür sonu}
   - table: cmdb_ci
     element: life_cycle_stage_status
@@ -67,13 +72,23 @@ choices:
     verify: true
     values:
       - {value: Draft, label: Draft, label_tr: Taslak, dependent_value: Ideation, legacy: {operational_status: "7"}}
-      - {value: Planning, label: Planning, label_tr: Planlanıyor, dependent_value: Design, legacy: {operational_status: "7"}}
-      - {value: In Progress, label: In Progress, label_tr: Yapılıyor, dependent_value: Build, legacy: {operational_status: "7", install_status: "4"}}
-      - {value: Ready, label: Ready, label_tr: Hazır, dependent_value: Deploy, legacy: {operational_status: "5", install_status: "1"}}
+      - {value: Under Evaluation, label: Under Evaluation, label_tr: Değerlendiriliyor, dependent_value: Ideation, legacy: {operational_status: "7"}}
+      - {value: Chartered, label: Chartered, label_tr: Onaylı proje, dependent_value: Design, legacy: {operational_status: "7"}}
       - {value: In Use, label: In Use, label_tr: Kullanımda, dependent_value: Operational, legacy: {operational_status: "1", install_status: "1"}}
       - {value: In Maintenance, label: In Maintenance, label_tr: Bakımda, dependent_value: Operational, legacy: {operational_status: "3", install_status: "3"}}
       - {value: Pending Retirement, label: Pending Retirement, label_tr: Emeklilik bekliyor, dependent_value: Operational, legacy: {operational_status: "1", install_status: "1"}}
+      - {value: End of Support, label: End of Support, label_tr: Destek sona erdi, dependent_value: Operational, legacy: {operational_status: "1", install_status: "1"}}
+      - {value: Pending Evaluation, label: Pending Evaluation, label_tr: Değerlendirme bekliyor, dependent_value: End of Operation, legacy: {operational_status: "2"}}
+      - {value: Lost, label: Lost, label_tr: Kayıp, dependent_value: Missing, legacy: {operational_status: "2", install_status: "100"}}
+      - {value: Stolen, label: Stolen, label_tr: Çalıntı, dependent_value: Missing, legacy: {operational_status: "6", install_status: "8"}}
       - {value: Retired, label: Retired, label_tr: Emekli, dependent_value: End of Life, legacy: {operational_status: "6", install_status: "7"}}
-      - {value: Missing, label: Missing, label_tr: Kayıp, dependent_value: End of Life, legacy: {operational_status: "2", install_status: "100"}}
-      - {value: Stolen, label: Stolen, label_tr: Çalıntı, dependent_value: End of Life, legacy: {operational_status: "6", install_status: "8"}}
+      - {value: Obsolete, label: Obsolete, label_tr: Kullanım dışı, dependent_value: End of Life, legacy: {operational_status: "6", install_status: "7"}}
       - {value: Disposed, label: Disposed, label_tr: İmha edildi, dependent_value: End of Life, legacy: {operational_status: "6", install_status: "7"}}
+  # Sahiplik onayı durumu (ServiceNow CMDB Data Manager onayı; değerler topluluk kaynağından).
+  - table: cmdb_ci
+    element: attestation_status
+    verify: true
+    values:
+      - {value: Not Yet Reviewed, label: Not Yet Reviewed, label_tr: Henüz incelenmedi}
+      - {value: Attested, label: Attested, label_tr: Onaylandı}
+      - {value: Rejected, label: Rejected, label_tr: Reddedildi}

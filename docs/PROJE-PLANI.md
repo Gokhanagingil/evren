@@ -30,8 +30,8 @@
 
 ## Sıradaki adımlar (fazlara göre)
 
-1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli öğelerin (sınıf, alan, seçim listesi, ilişki tipi/kuralı) doğrulanması — _Planlandı_  
-   Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
+1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli öğelerin (sınıf, alan, seçim listesi, ilişki tipi/kuralı) doğrulanması — _Devam ediyor_  
+   Sizden gereken: Kalan 82 öğe ve kurum özelleştirmeleri için ServiceNow salt okunur servis hesabı (sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma) — canlı kabulde
 1. **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_  
    Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
 1. **F0-08** ServiceNow CMDB ve referans verilerinin ilk yüklemesi (sys_id korunarak, salt okunur) — _Planlandı_  
@@ -45,7 +45,7 @@
 
 | Adım | Gereken | Durum |
 | --- | --- | --- |
-| F0-07 | ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma | Planlandı |
+| F0-07 | Kalan 82 öğe ve kurum özelleştirmeleri için ServiceNow salt okunur servis hesabı (sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma) — canlı kabulde | Devam ediyor |
 | F0-09 | Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı | Devam ediyor |
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Planlandı |
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Planlandı |
@@ -86,8 +86,9 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Not: Demo verisi çekirdeğin gerçek hattından üretilir (tools/build_demo.py); kalıcı kararlar API ile (F0-09, F0-10).
 - [x] **F0-06** CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM
   - Not: 25.11.2026: hash'li kilitler (14 gün bekleme), imaj digest'i, gitleaks istisnası olumsuz testli; iki iş akışı yeşil.
-- [ ] **F0-07** ServiceNow metadata dışa aktarımı; işaretli öğelerin (sınıf, alan, seçim listesi, ilişki tipi/kuralı) doğrulanması — _Planlandı_
-  - Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
+- [ ] **F0-07** ServiceNow metadata dışa aktarımı; işaretli öğelerin (sınıf, alan, seçim listesi, ilişki tipi/kuralı) doğrulanması — _Devam ediyor_
+  - Not: 26.11.2026: herkese açık ServiceNow belgeleriyle doğrulandı (proje sahibinin yönlendirmesi; instance gerekmedi). Kanıt defteri metadata/verification.yaml: 181 kayıt, 95 kaynak; 74 doğrulandı, 18 düzeltildi, 5 kaldırıldı, 2 Evren tanımı; 55 kısmi + 27 bulunamadı (82 öğe işaretli kaldı). Kalanlar ve kuruma özgü özelleştirmeler canlı kabulde salt okunur sözlük dökümüyle (U10).
+  - Sizden gereken: Kalan 82 öğe ve kurum özelleştirmeleri için ServiceNow salt okunur servis hesabı (sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma) — canlı kabulde
 - [ ] **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_
   - Not: Kod ve testler tamam (services/api, ADR-0010, ADR-0012): okuma uç noktaları, kalıcı kuyruk kararı, birleştirmeyi ayırma, elle düzenleme (Manual kaynak kaydı, alan başına sonuç), Entra OIDC + PKCE, rol eşlemesi, girişte SoD; arayüz API modunda çalışıyor. Canlı Entra kaydıyla kabul bekliyor. Makine hesapları ve ilişki düzenleme sırada.
   - Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı

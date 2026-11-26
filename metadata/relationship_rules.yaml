@@ -4,7 +4,7 @@
 # "sunucu, uygulamanın üzerinde çalışır" gibi ters ilişki ya da anlamsız sınıf çifti golden record'a girmez.
 #
 # Biçim: parent --type--> child. Tip "ebeveyn tanımlayıcı::çocuk tanımlayıcı" biçimindedir ve ebeveyn
-# tanımlayıcı ebeveynin ağzından okunur: "uygulama Runs on sunucu", "sunucu Virtualized by VM örneği".
+# tanımlayıcı ebeveynin ağzından okunur: "uygulama Runs on sunucu", "misafir sunucu Virtualized by ESX sunucusu".
 # Kural alt sınıflara kalıtılır: cmdb_ci_appl → cmdb_ci_computer kuralı Tomcat → Linux sunucu için de geçerlidir.
 #
 # enforcement:
@@ -21,14 +21,16 @@ rules:
      description: "Genel bağımlılık: hizmetten altyapıya her düzeyde (CSDM)"}
 
   # --- Hesaplama ve sanallaştırma ----------------------------------------
-  - {parent: cmdb_ci_appl, type: "Runs on::Runs", child: cmdb_ci_computer, description: "Yazılım bilgisayarda çalışır"}
+  - {parent: cmdb_ci_appl, type: "Runs on::Runs", child: cmdb_ci_computer, description: "Yazılım bilgisayarda çalışır (bağımlı kimlik deseni)"}
   - {parent: cmdb_ci_appl, type: "Runs on::Runs", child: cmdb_ci_cluster, verify: true, description: "Kümelenmiş yazılım"}
   - {parent: cmdb_ci_appl, type: "Runs on::Runs", child: cmdb_ci_oslv_container, verify: true}
   - {parent: cmdb_ci_appl, type: "Sends data to::Receives data from", child: cmdb_ci_appl, description: "Entegrasyon"}
-  - {parent: cmdb_ci_computer, type: "Virtualized by::Virtualizes", child: cmdb_ci_vm_instance,
-     description: "Misafir işletim sistemi sunucusu ↔ VM örneği (vCenter, bulut)"}
-  - {parent: cmdb_ci_vm_instance, type: "Registered on::Has registered", child: cmdb_ci_server, verify: true,
-     description: "VM örneği hipervizöre kayıtlı"}
+  - {parent: cmdb_ci_computer, type: "Instantiates::Instantiated by", child: cmdb_ci_vm_instance, verify: true,
+     description: "Misafir sunucu ↔ VM örneği (yön topluluk kaynağından: sunucu ebeveyn)"}
+  - {parent: cmdb_ci_computer, type: "Virtualized by::Virtualizes", child: cmdb_ci_esx_server,
+     description: "Misafir sunucu hipervizör sunucusunda sanallaştırılır"}
+  - {parent: cmdb_ci_vm_instance, type: "Registered on::Has registered", child: cmdb_ci_server,
+     description: "VM örneği hipervizöre kayıtlı (belgedeki örnek: ESX)"}
   - {parent: cmdb_ci_vm_instance, type: "Hosted on::Hosts", child: cmdb_ci_logical_datacenter, verify: true,
      description: "Bulut VM'i bölgede barınır"}
   - {parent: cmdb_ci_computer, type: "Cluster of::Cluster", child: cmdb_ci_cluster}
@@ -36,7 +38,9 @@ rules:
   - {parent: cmdb_ci_cluster_node, type: "Hosted on::Hosts", child: cmdb_ci_computer, verify: true}
   - {parent: cmdb_ci_vcenter, type: "Contains::Contained by", child: cmdb_ci_vcenter_datacenter, verify: true}
   - {parent: cmdb_ci_vcenter_datacenter, type: "Contains::Contained by", child: cmdb_ci_vcenter_cluster, verify: true}
-  - {parent: cmdb_ci_vcenter_cluster, type: "Members::Member of", child: cmdb_ci_esx_server, verify: true}
+  - {parent: cmdb_ci_vcenter_datacenter, type: "Contains::Contained by", child: cmdb_ci_esx_server,
+     description: "Kümede olmayan ESX sunucusu veri merkezine bağlanır"}
+  - {parent: cmdb_ci_vcenter_cluster, type: "Members::Member of", child: cmdb_ci_esx_server}
 
   # --- Veri merkezi, ağ ve depolama --------------------------------------
   - {parent: cmdb_ci_rack, type: "Contains::Contained by", child: cmdb_ci_hardware, verify: true}
@@ -46,10 +50,12 @@ rules:
   - {parent: cmdb_ci_ip_network, type: "Contains::Contained by", child: cmdb_ci_ip_address, verify: true}
   - {parent: cmdb_ci_computer, type: "Uses::Used by", child: cmdb_ci_storage_volume, verify: true,
      description: "Sunucu SAN/NAS birimini kullanır"}
-  - {parent: cmdb_ci_db_instance, type: "Contains::Contained by", child: cmdb_ci_database, verify: true}
+  - {parent: cmdb_ci_db_instance, type: "Contains::Contained by", child: cmdb_ci_database,
+     description: "Veritabanı örneği kataloğu içerir (belgedeki örnek: MySQL)"}
 
   # --- Konteyner ve Kubernetes -------------------------------------------
-  - {parent: cmdb_ci_kubernetes_cluster, type: "Contains::Contained by", child: cmdb_ci_kubernetes_component, verify: true}
+  - {parent: cmdb_ci_kubernetes_cluster, type: "Contains::Contained by", child: cmdb_ci_kubernetes_component,
+     description: "Küme bileşenlerini içerir (belgedeki örnek: pod)"}
   - {parent: cmdb_ci_kubernetes_namespace, type: "Contains::Contained by", child: cmdb_ci_kubernetes_component, verify: true}
   - {parent: cmdb_ci_kubernetes_cluster, type: "Hosted on::Hosts", child: cmdb_ci_logical_datacenter, verify: true}
   - {parent: cmdb_ci_kubernetes_node, type: "Hosted on::Hosts", child: cmdb_ci_computer, verify: true}
@@ -58,17 +64,18 @@ rules:
   - {parent: cmdb_ci_oslv_container, type: "Runs on::Runs", child: cmdb_ci_computer, verify: true}
 
   # --- Bulut --------------------------------------------------------------
-  - {parent: cmdb_ci_logical_datacenter, type: "Hosted on::Hosts", child: cmdb_ci_cloud_service_account, verify: true,
+  - {parent: cmdb_ci_logical_datacenter, type: "Hosted on::Hosts", child: cmdb_ci_cloud_service_account,
      description: "Bölge, bulut hesabında/aboneliğinde"}
 
   # --- CSDM ---------------------------------------------------------------
-  - {parent: cmdb_ci_business_capability, type: "Provided by::Provides", child: cmdb_ci_business_app, verify: true}
-  - {parent: cmdb_ci_business_capability, type: "Contains::Contained by", child: cmdb_ci_business_capability, verify: true,
-     description: "Yetenek hiyerarşisi"}
-  - {parent: cmdb_ci_business_process, type: "Uses::Used by", child: cmdb_ci_business_app, verify: true}
-  - {parent: cmdb_ci_business_app, type: "Consumes::Consumed by", child: cmdb_ci_service_auto, verify: true,
-     description: "İş uygulaması → uygulama servisi (CSDM)"}
-  - {parent: cmdb_ci_business_app, type: "Uses::Used by", child: cmdb_ci_information_object, verify: true}
+  - {parent: cmdb_ci_business_capability, type: "Provided by::Provides", child: cmdb_ci_business_app}
+  # Yetenek hiyerarşisi ilişki değil üst yetenek alanıdır (cmdb_ci_business_capability.parent).
+  # İş süreci → iş uygulaması için CSDM 5 tip öngörmez; platform Depends on::Used by yazar (genel kural kapsar).
+  - {parent: cmdb_ci_business_app, type: "Consumes::Consumed by", child: cmdb_ci_service_auto,
+     description: "İş uygulaması → servis örneği (platformun yazdığı tip)"}
+  - {parent: cmdb_ci_business_app, type: "Uses::Used by", child: cmdb_ci_service_auto,
+     description: "İş uygulaması → servis örneği (CSDM 5 çiziminde)"}
+  - {parent: cmdb_ci_business_app, type: "Uses::Used by", child: cmdb_ci_information_object}
   - {parent: cmdb_ci_business_app, type: "Sends data to::Receives data from", child: cmdb_ci_business_app, verify: true}
-  - {parent: service_offering, type: "Contains::Contained by", child: cmdb_ci_query_based_service, verify: true,
-     description: "Teknik servis sunumu → dinamik CI grubu"}
+  - {parent: service_offering, type: "Contains::Contained by", child: cmdb_ci_query_based_service,
+     description: "Teknoloji yönetim servis sunumu → dinamik CI grubu"}
