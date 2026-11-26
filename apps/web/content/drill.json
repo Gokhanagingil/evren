@@ -15,7 +15,7 @@
  },
  "note": "Sentetik tatbikat: Keşif-B gerçek bir ürün değildir. Aynı adımlar gerçek bir ürün değişiminde data_sources.yaml'daki yaşam döngüsü değişiklikleriyle (taslak → onay → yayın) uygulanır.",
  "rules_sha256": {
-  "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+  "metadata/reconciliation_rules.yaml": "85d84df81e4ca7b1b1e4a90933d7e625f16e2d4224ecfe8fbb3cd5c0aa52f1e7",
   "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
  },
  "phases": [
@@ -47,7 +47,7 @@
    "retire_preview": [],
    "orphaned_by_attribute": [],
    "rules_sha256": {
-    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/reconciliation_rules.yaml": "85d84df81e4ca7b1b1e4a90933d7e625f16e2d4224ecfe8fbb3cd5c0aa52f1e7",
     "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
@@ -150,7 +150,7 @@
    "retire_preview": [],
    "orphaned_by_attribute": [],
    "rules_sha256": {
-    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/reconciliation_rules.yaml": "85d84df81e4ca7b1b1e4a90933d7e625f16e2d4224ecfe8fbb3cd5c0aa52f1e7",
     "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
@@ -381,7 +381,7 @@
    ],
    "orphaned_by_attribute": [],
    "rules_sha256": {
-    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/reconciliation_rules.yaml": "85d84df81e4ca7b1b1e4a90933d7e625f16e2d4224ecfe8fbb3cd5c0aa52f1e7",
     "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
@@ -676,7 +676,7 @@
     }
    ],
    "rules_sha256": {
-    "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
+    "metadata/reconciliation_rules.yaml": "85d84df81e4ca7b1b1e4a90933d7e625f16e2d4224ecfe8fbb3cd5c0aa52f1e7",
     "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
@@ -738,11 +738,15 @@
   "asset_tag": "Varlık etiketi",
   "assigned_to": "Atanan kişi",
   "assignment_group": "Atama grubu",
+  "attested": "Sahiplik onaylandı",
+  "attested_by": "Onaylayan",
+  "attested_date": "Onay tarihi",
   "category": "Kategori",
   "change_control": "Onay grubu",
   "comments": "Yorumlar",
   "company": "Şirket",
   "correlation_id": "Korelasyon kimliği",
+  "cost_center": "Maliyet merkezi",
   "cpu_core_count": "Çekirdek sayısı",
   "cpu_count": "CPU sayısı",
   "cpu_speed": "CPU hızı (MHz)",

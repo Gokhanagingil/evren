@@ -10,9 +10,15 @@ def test_seed_metadata_is_valid(metadata):
 
 
 def test_ddl_core_columns_match_metadata(repo_root):
+    """0001'deki tablo tanımı + sonraki göçlerdeki ``ALTER TABLE cmdb.cmdb_ci ADD COLUMN`` (dosya sırasıyla)."""
     ddl = (repo_root / "db/migrations/0001_core.sql").read_text(encoding="utf-8")
     body = ddl.split("CREATE TABLE cmdb.cmdb_ci (", 1)[1].split("class_attributes", 1)[0]
     columns = [m.group(1) for m in re.finditer(r"^\s{2}([a-z_]+)\s+\S", body, re.M)]
+    for path in sorted((repo_root / "db/migrations").glob("*.sql")):
+        if path.name.startswith("0001_"):
+            continue
+        columns += re.findall(r"^ALTER TABLE cmdb\.cmdb_ci ADD COLUMN (?:IF NOT EXISTS )?([a-z_]+)",
+                              path.read_text(encoding="utf-8"), re.M)
     assert tuple(c for c in columns if c not in ("sys_id", "sys_class_name")) == CORE_COLUMNS
 
 

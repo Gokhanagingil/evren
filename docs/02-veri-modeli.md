@@ -42,11 +42,21 @@ Eşleştirme adayları aile içinde aranır. Aile listesinde olmayan bir dal, `c
 - Her durum, eski iki alanda taşınması gereken değeri bilir (`legacy`). ServiceNow replikası ve eski raporlar bu alanları okur. Evren tutarsızlığı bu eşlemeden denetler (U7).
 - ServiceNow'da bu iki alan referans tablosudur; replika değeri ilgili kaydın sys_id'sine çevirir.
 
+## Sahiplik ve yönetişim alanları
+
+| Alan | Anlamı | Kim yazar |
+| --- | --- | --- |
+| `owned_by`, `managed_by`, `support_group`, `assignment_group`, `change_control` | Sahip, yöneten, destek, atama ve onay grubu | Evren (elle) ve geçişte ServiceNow |
+| `cost_center` → `cmn_cost_center` | Maliyet merkezi | Evren (elle) ve geçişte ServiceNow |
+| `attested`, `attested_by`, `attested_date` | Sahiplik onayı: CI sahibinin "bu kayıt doğru ve benim" beyanı | Yalnızca Evren'deki onay akışı (U6, F1-17) |
+
+Keşif ve izleme araçları bu alanları yazamaz (kural 5, `reconciliation_rules.yaml`). Bir aracın denemesi golden record'u değiştirmez, kaynak bilgisinde "yetkisiz" olarak görünür.
+
 ## Fiziksel tasarım: hibrit şema
 
 | Katman | Nerede | Ne zaman |
 | --- | --- | --- |
-| Çekirdek alanlar (35) | `cmdb.cmdb_ci` fiziksel kolonları | Tüm sınıflarda ortak, sık sorgulanan |
+| Çekirdek alanlar (39) | `cmdb.cmdb_ci` fiziksel kolonları | Tüm sınıflarda ortak, sık sorgulanan; kök alan eklemek göç ister (0001 + sonraki `ADD COLUMN`) |
 | Sınıfa özgü alanlar | `cmdb.cmdb_ci.class_attributes` (JSONB) | `ram`, `cpu_count`, `can_route`… |
 | Sık sorgulanan JSONB alanı | `indexed: true` → ifade indeksi | `bios_uuid`, `vcenter_uuid`, `ram` |
 
@@ -89,7 +99,7 @@ ServiceNow hangi sınıfın hangi sınıfa hangi tiple bağlanacağını yalnız
 
 ## Referans veriler
 
-`ref.sys_user`, `ref.sys_user_group`, `ref.cmn_location`, `ref.core_company`, `ref.cmn_department` ve `ref.cmdb_model` ServiceNow'dan aynı sys_id'lerle yansıtılır.
+`ref.sys_user`, `ref.sys_user_group`, `ref.cmn_location`, `ref.core_company`, `ref.cmn_department`, `ref.cmdb_model` ve `ref.cmn_cost_center` ServiceNow'dan aynı sys_id'lerle yansıtılır.
 
 - CI üzerindeki referans alanları yumuşak referanstır; ServiceNow'da da yabancı anahtar yoktur.
 - Kopuk referanslar CMDB sağlığında "yetim referans" metriği olarak izlenir.

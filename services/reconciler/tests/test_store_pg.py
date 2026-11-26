@@ -197,3 +197,23 @@ def test_identity_key_type_constraint_rejects_unknown_types(conn):
                      "VALUES ('attr:Kötü Alan', 'x', repeat('0', 32))")
     with pytest.raises(psycopg.errors.CheckViolation), conn.transaction():
         conn.execute("INSERT INTO ingest.identity_key (key_type, value, ci_sys_id) VALUES ('hostname', 'x', repeat('0', 32))")
+
+
+def test_ownership_fields_follow_governance(as_reconciler, metadata):
+    """U4.3: maliyet merkezini ITSM yazar, keşif ezemez; sahiplik onayını yalnızca Manual (onay akışı) yazar."""
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    cc, other = "cc" + "0" * 30, "cd" + "0" * 30
+    sn = store.apply(rec("ServiceNow", "sn-own", uuid.uuid4(), name="srv-own", serial_number="CZJ0000077",
+                         cost_center=cc, attested="true"))
+    bmc = store.apply(rec("BMC", "b-own", uuid.uuid4(), name="srv-own", serial_number="CZJ0000077",
+                          cost_center=other, attested=True))
+    assert bmc.ci_sys_id == sn.ci_sys_id
+    row = fetch(as_reconciler, "SELECT cost_center, attested, attested_by FROM cmdb.cmdb_ci WHERE sys_id = %s",
+                sn.ci_sys_id)[0]
+    assert row == (cc, None, None)
+    winners, conflicts = fetch(as_reconciler, "SELECT winners, conflicts FROM cmdb.ci_reconciliation_state "
+                                              "WHERE ci_sys_id = %s", sn.ci_sys_id)[0]
+    # Yetkili kaynak değer verdi: keşif aracının denemesi kazanan kararda "yetkisiz" olarak durur
+    assert winners["cost_center"]["source"] == "ServiceNow" and "BMC" in winners["cost_center"]["unauthorized"]
+    # Onayı yazmaya yetkili hiçbir kaynak yok: değer yazılmaz, iki deneme de çakışma olarak raporlanır
+    assert {"ServiceNow", "BMC"} == {a[0] for a in conflicts["attested"]}

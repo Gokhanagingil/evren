@@ -1,6 +1,6 @@
 # DURUM — Evren CMDB
 
-**Son güncelleme:** 26.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 13/54 plan adımı tamamlandı, 4'ü sürüyor (~%28; 26.11'de 9 eksik madde eklendi) · **Bileşen ortalaması (büyük resim):** %48 (CMDB %68) · **Uçtan uca izlek:** 3/10 tamam, U4 sürüyor (U4.1 sınıf kütüphanesi ve U4.2 kimlik kuralları tamam; sırada U4.3 sahiplik kök alanları)
+**Son güncelleme:** 26.11.2026  ·  **Etkin faz:** F0 — Temel ve gölge mod  ·  **İlerleme:** 13/54 plan adımı tamamlandı, 4'ü sürüyor (~%28; 26.11'de 9 eksik madde eklendi) · **Bileşen ortalaması (büyük resim):** %48 (CMDB %68) · **Uçtan uca izlek:** 3/10 tamam, U4 sürüyor (U4.1 sınıf kütüphanesi, U4.2 kimlik kuralları, U4.3 sahiplik alanları tamam; sırada U4.4 sınıf gezgini)
 
 Adım adım plan: [`docs/PROJE-PLANI.md`](docs/PROJE-PLANI.md) ve uygulamadaki **Yol Haritası** sayfası. Tek kaynak `apps/web/content/roadmap.json`; plan `python tools/build_plan.py` ile üretilir. Bu dosya ve o dosya birlikte güncellenir.
 
@@ -110,6 +110,11 @@ Doğrulanınca bu bölümden kaldırılacak.
   - İzinli ilişki kuralları: `metadata/relationship_rules.yaml` (36 kural, ürün adı yok) → `meta.cmdb_rel_rule`; `evren_core.relations.RelationRules` kalıtımlı denetim (izinli / yön ters / izinsiz), Türkçe ipucu, iki yönlü öneri; zorlama kipi `warn`. Yeni ilişki tipi `Provided by::Provides` (verify).
   - `verification_backlog()`: ServiceNow'dan doğrulanacak 113 öğe türüne göre (sınıf, alan, seçim listesi, ilişki tipi/kuralı, kimlik kuralı); `load_metadata --check` özetinde görünür.
   - **Bulunup düzeltilen:** demo üreticisi ters yönlü ilişkileri eklerken eklediği kaydı yeniden çeviriyordu; sunucu aynı VM ile hem ebeveyn hem çocuk görünüyordu. Bağlayıcı eşlemelerindeki ve demo verisindeki her ilişki artık kurallarla test ediliyor.
+- **U4.3 sahiplik ve yönetişim kök alanları (tamamlandı)** (ADR-0019 §6, göç `0016_ownership.sql`).
+  - `cmdb_ci` kök kolonları: `cost_center` (→ yeni `ref.cmn_cost_center`), `attested`, `attested_by`, `attested_date`. `CORE_COLUMNS` 35 → 39; DDL testi artık sonraki göçlerdeki `ADD COLUMN` satırlarını da sırayla okuyor.
+  - Uzlaştırma: maliyet merkezi yönetişim alanı (Manual, ITSM); onay alanlarını yalnızca Manual yazar. Gerçek PostgreSQL testi: keşif aracının maliyet merkezi denemesi kazanan kararda "yetkisiz", onay denemeleri çakışma olarak raporlanıyor, golden record değişmiyor.
+  - API: maliyet merkezi referans araması ve düzenleme formunda (yönetişimli); onay alanları formda yok (onay akışı U6). Yaşam döngüsü durumu değer listesinden doğrulanıyor (etiket gönderilirse 422).
+  - Demo: dört maliyet merkezi (destek grubuna bağlı; kimlikleri ayrı ve deterministik, var olan demo sys_id'leri değişmedi), ServiceNow eşlemesine `cost_center`.
 - **U4.2 yeni sınıfların kimlik kuralları (tamamlandı)** (ADR-0019 §5, göç `0015_class_identity_keys.sql`).
   - Sınıfa özgü kimlik anahtarı: `IdentityKeys.class_keys` → aday dizininde `attr:account_id`, `attr:cluster_id`, `attr:subnet`. Eşleşme +8, aynı alanda farklı değer −5 ve çelişki (kural eşleşse bile otomatik birleştirme yok). Alt ağ CIDR'ye çevrilir (`10.1.2.5/24` → `10.1.2.0/24`), geçersiz değer anahtar üretmez.
   - Bağlam öznitelikleri (ad alanı, bağlama noktası, bölge, VLAN) yalnızca bağımlı kurallarda; küresel dizine girmez.
@@ -155,7 +160,7 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Gerçek veritabanı: `ReconcilerStore.rereconcile_source` (yaşam döngüsü/rol sırası değişince bağlı CI'ları yeniden uzlaştırır; emekli kaynağın tek başına verdiği alanlar silinmez, sayılır), `tests/test_product_swap_pg.py`.
 - **Testlerin yakaladığı güvenlik hatası (düzeltildi):** yetki reddi bir veritabanı işleminin içinde yazıldığında işlem geri alınınca denetim kaydı da kayboluyordu. Ret olayı artık işlem içindeyse ayrı bağlantıyla yazılır (`Ctx.security_event`) ve yetki denetimleri işlem dışında yapılır.
 - **Arayüz düzeltmesi:** tarih-saat öznitelikleri (ilk/son keşif) ham ISO yerine yerel biçimde.
-- **Doğrulama (26.11.2026, U4.1 sonrası, PostgreSQL 16, CI ile aynı sırada):** çekirdek birim 225 (yeni: veri modeli 31, sınıf kimliği 24) + PostgreSQL 64 (yeni: yetki sınırı 6, tohum ve yabancı anahtar 1), uzlaştırıcı 52 (yeni: sınıf anahtarı uçtan uca, tür kısıtı), demo yükleme, API 77, alım geçidi + dizinleyici 29, tarayıcı 14 demo + 9 API modu — hepsi geçti; `ruff` temiz.
+- **Doğrulama (26.11.2026, U4.3 sonrası, PostgreSQL 16, CI ile aynı sırada):** çekirdek birim 225 (yeni: veri modeli 31, sınıf kimliği 24) + PostgreSQL 64 (yeni: yetki sınırı 6, tohum ve yabancı anahtar 1), uzlaştırıcı 53 (yeni: sınıf anahtarı uçtan uca, tür kısıtı, sahiplik yönetişimi), API 78 (yeni: maliyet merkezi, yaşam döngüsü değer doğrulaması), demo yükleme, alım geçidi + dizinleyici 29, tarayıcı 14 demo + 9 API modu — hepsi geçti; `ruff` temiz.
 - **Doğrulama (25.11.2026, U3 sonrası):** çekirdek 225 (+ gerçek OpenSearch'le 15 alaka testi), uzlaştırıcı 50, API 77 (arama dahil), alım geçidi 20, dizinleyici 9 (Entra olumsuz senaryoları, çalışan, gölge mod raporu, kanıt bütünlüğü, değişiklik setleri ve görevler ayrılığı dahil), tarayıcı 23 (14 demo modu + 9 API modu; Ctrl+K Türkçe arama dahil: gerçek uvicorn + PostgreSQL, sıkı CSP altında; ayırma, elle düzenleme, gölge mod raporu ve kanıt, değişiklik seti akışı uçtan uca; tüm sayfalar 390 px'te taşmasız) — hepsi geçti; `ruff` ve bandit eşiği temiz; konteyner yığını duman testi geçti. bandit, pip-audit, gitleaks ve Trivy GitHub güvenlik iş akışında çalışır.
 
 ## Bilinen eksikler ve sınırlar
@@ -172,7 +177,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 - Üretim dağıtım tanımı (Kubernetes manifesti, Helm, VM betiği) yok: hedef ortam kararını bekliyor (U10). Geliştirme yığınında Kafka ve OpenSearch şifresiz, düz metin (yalnızca 127.0.0.1). İmaj imzalama (cosign) ve imaj kayıt defteri yok (hedef ortamla). Bu sanal geliştirme ortamında Debian deposuna erişim olmadığı için yerel imaj `EVREN_BUILD_OS_UPDATES=0` ile derlendi; güvenlik güncellemeli derleme ve Trivy imaj kapısı yalnızca CI'da doğrulanır.
 - Oturum iptali çerez süresine bağlı (8 saat); anında iptal için sunucu tarafı iptal listesi gerekir (ADR-0010).
 - Bağımlı CI kimliği (uygulama, ağ adaptörü) uygulanmadı; çözümleyici bilinçli olarak `insufficient` döner.
-- U4'te eklenen bağımlı sınıflar (Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu) üst bağlamda çözümlenmiyor; "kimlik yetersiz" döner (U7). IP ağı kuralı alt ağı kurum genelinde tekil sayar; VRF çakışması olan kurumda bağımlı kurala çevrilmeli. İzinli ilişki kuralları tanımlı ve testli ama golden record'a yazımda henüz uygulanmıyor (U7). Yaşam döngüsü ile eski durum alanlarının tutarlılık denetimi U7'de. Elle düzenleme formunda aşama durumu, seçilen aşamaya göre süzülmüyor (U6). Sınıf ağacı/alan gezgini yok (U4.4). Yeni sınıf adları ve kurallarıyla birlikte 127 öğe ServiceNow örneğinden doğrulanmadı (F0-07).
+- U4'te eklenen bağımlı sınıflar (Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu) üst bağlamda çözümlenmiyor; "kimlik yetersiz" döner (U7). IP ağı kuralı alt ağı kurum genelinde tekil sayar; VRF çakışması olan kurumda bağımlı kurala çevrilmeli. İzinli ilişki kuralları tanımlı ve testli ama golden record'a yazımda henüz uygulanmıyor (U7). Yaşam döngüsü ile eski durum alanlarının tutarlılık denetimi U7'de. Elle düzenleme formunda aşama durumu, seçilen aşamaya göre süzülmüyor (U6). Sınıf ağacı/alan gezgini yok (U4.4). Yeni sınıf adları, kurallar ve onay alanlarıyla birlikte 130 öğe ServiceNow örneğinden doğrulanmadı (F0-07).
 - Encoded query dot-walk desteklemiyor; açık hata döner.
 - BMC Helix Discovery, NNMi, vCenter ve ServiceNow alan adları gerçek API çıktısıyla doğrulanmadı (`verify: true`).
 - Skor ağırlıkları sentetik senaryolarla ayarlandı; gerçek kuyruk kararlarıyla kalibre edilmeli.
@@ -183,7 +188,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 1. ~~**U1 Altyapı yığını**~~ — tamamlandı (ADR-0016).
 2. ~~**U2 Olay omurgası**~~ — tamamlandı (ADR-0017).
 3. ~~**U3 Arama**~~ — tamamlandı (ADR-0018).
-4. **U4 CMDB veri modeli** *(sürüyor)* — ~~U4.1 sınıf kütüphanesi, CSDM, yaşam döngüsü, ilişki kuralları~~, ~~U4.2 yeni sınıfların kimlik kuralları~~ (ADR-0019). Sırada: **U4.3** kök sahiplik alanları (maliyet merkezi referansı, sertifikasyon tarihi/durumu; göç + `CORE_COLUMNS`); **U4.4** sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle; ilişki kuralları ve doğrulama listesi görünür). (F0-17, F0-07)
+4. **U4 CMDB veri modeli** *(sürüyor)* — ~~U4.1 sınıf kütüphanesi, CSDM, yaşam döngüsü, ilişki kuralları~~, ~~U4.2 yeni sınıfların kimlik kuralları~~ (ADR-0019). ~~U4.3 kök sahiplik alanları~~. Sırada: **U4.4** sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle; ilişki kuralları ve doğrulama listesi görünür). (F0-17, F0-07)
 5. **U5 Bağlayıcılar ve kaynak yönetimi** — 6 kaynak istemcisi (kaydedilmiş örneklerle), arayüzden çalıştırma/zamanlama, bağlayıcı kimliği yönetimi, ham yük arşivi (F1-14).
 6. **U6 Elle girdi** — CI oluşturma, ilişki, CSV içe aktarma.
 7. **U7 yaşam döngüsü ve ilişkiler**, **U8 yönetim ekranları** (+ gözlemlenebilirlik F1-15, SIEM F1-16), **U9 ServiceNow replika ve MCP yapısı**.

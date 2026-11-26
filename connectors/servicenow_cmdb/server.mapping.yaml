@@ -41,6 +41,7 @@ attributes:
   used_for: {from: used_for}
   location: {from: location}
   company: {from: company}
+  cost_center: {from: cost_center}
   operational_status: {from: operational_status, transform: int}
   install_status: {from: install_status, transform: int}
   short_description: {from: short_description}

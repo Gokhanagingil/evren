@@ -59,6 +59,12 @@ classes:
       - {name: life_cycle_stage, type: string, max_length: 100, choice: true, label_tr: Yaşam döngüsü aşaması, storage: column, verify: true}
       - {name: life_cycle_stage_status, type: string, max_length: 100, choice: true, label_tr: Aşama durumu, storage: column, verify: true}
       - {name: comments, type: string, max_length: 4000, label_tr: Yorumlar, storage: column}
+      # Sahiplik ve yönetişim (U4.3, ADR-0019). Göç 0016 ile kolon; keşif araçları ezemez (kural 5).
+      # attested*: sahiplik onayı (CI sahibinin "bu kayıt doğru" beyanı); yalnızca onay akışı yazar (U6, F1-17).
+      - {name: cost_center, type: reference, reference: cmn_cost_center, label_tr: Maliyet merkezi, storage: column}
+      - {name: attested, type: boolean, label_tr: Sahiplik onaylandı, storage: column, verify: true}
+      - {name: attested_by, type: reference, reference: sys_user, label_tr: Onaylayan, storage: column, verify: true}
+      - {name: attested_date, type: glide_date_time, label_tr: Onay tarihi, storage: column, verify: true}
 
   # --- Donanım ------------------------------------------------------------
   - name: cmdb_ci_hardware
@@ -697,3 +703,4 @@ reference_tables:
   - {name: core_company, label_tr: Şirket, display: name}
   - {name: cmn_department, label_tr: Departman, display: name}
   - {name: cmdb_model, label_tr: Model, display: display_name}
+  - {name: cmn_cost_center, label_tr: Maliyet merkezi, display: name}

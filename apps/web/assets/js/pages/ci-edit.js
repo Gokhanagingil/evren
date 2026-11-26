@@ -7,8 +7,8 @@ import { ROLE_TR, editCi, refSearch } from '../lib/data.js';
 
 const NONE = '';
 /** Yönetişimde en sık düzenlenen alanlar önce; kalanlar ada göre. */
-const FIRST = ['support_group', 'owned_by', 'managed_by', 'assignment_group', 'used_for', 'operational_status',
-  'install_status', 'life_cycle_stage', 'location', 'short_description'];
+const FIRST = ['support_group', 'owned_by', 'managed_by', 'assignment_group', 'cost_center', 'used_for',
+  'operational_status', 'install_status', 'life_cycle_stage', 'life_cycle_stage_status', 'location', 'short_description'];
 const order = (f) => (FIRST.includes(f.attribute) ? FIRST.indexOf(f.attribute) : FIRST.length);
 
 function hintText(f) {

@@ -33,7 +33,7 @@ from evren_core.circuit_breaker import evaluate_run
 from evren_core.connectors import FieldMapping
 from evren_core.identity import IdentityEngine, IdentityResolver, InMemoryCandidateIndex, InMemoryLinkStore, Outcome, RuleSet
 from evren_core.identity.adapters import source_record_from_ingest
-from evren_core.metadata import load_metadata
+from evren_core.metadata import load_metadata, sys_id_for
 from evren_core.reconcile import Reconciler, SourceValues
 
 OUT = REPO_ROOT / "apps" / "web" / "content" / "demo.json"
@@ -51,6 +51,14 @@ GROUPS = {
 }
 USERS = ["Ayşe Demir (demo)", "Mehmet Kaya (demo)", "Zeynep Arslan (demo)", "Burak Çelik (demo)", "Elif Şahin (demo)"]
 LOCATIONS = {"ist": "İstanbul VM-1", "ank": "Ankara Felaket Kurtarma"}
+#: Destek grubunun bağlı olduğu maliyet merkezi (U4.3). Kimlikler ayrı ve deterministik üretilir;
+#: Gen dizisini kaydırmaz, var olan demo sys_id'leri değişmez.
+COST_CENTERS = {
+    "Sunucu Operasyon": "MM-110 Sunucu altyapısı (demo)",
+    "Veritabanı Yönetimi": "MM-120 Veri platformu (demo)",
+    "Ağ Operasyon": "MM-130 Ağ altyapısı (demo)",
+    "Uygulama Destek": "MM-210 Uygulama hizmetleri (demo)",
+}
 APPS = [
     ("erp", "ERP uygulama", "linux", "Uygulama Destek"),
     ("db", "Veritabanı", "linux", "Veritabanı Yönetimi"),
@@ -186,6 +194,7 @@ def sn_server(g: Gen, h: Host, refs: dict[str, str], sys_id: str | None = None, 
         "ip_address": h.ip, "serial_number": serial if serial is not None else h.serial, "os": OS[h.family][1],
         "support_group": ref_id(refs, "group", h.group), "owned_by": ref_id(refs, "user", h.owner) if h.owner else "",
         "used_for": h.used_for, "location": ref_id(refs, "location", LOCATIONS[h.site]),
+        "cost_center": ref_id(refs, "cost_center", COST_CENTERS[h.group]),
         "operational_status": "1", "install_status": "1", "short_description": h.role_tr,
         "mac_address": h.mac,
     }
@@ -311,6 +320,8 @@ def feed(sink: Sink) -> tuple[dict[str, str], list[Host]]:
         refs[f"user:{label}"] = g.hex()
     for label in LOCATIONS.values():
         refs[f"location:{label}"] = g.hex()
+    for label in COST_CENTERS.values():
+        refs[f"cost_center:{label}"] = sys_id_for("demo", "cmn_cost_center", label)
 
     sn_seen = NOW - timedelta(minutes=20)
     vc_seen = NOW - timedelta(hours=1, minutes=10)
@@ -341,6 +352,7 @@ def feed(sink: Sink) -> tuple[dict[str, str], list[Host]]:
                "serial_number": net_serials[name], "support_group": refs["group:Ağ Operasyon"],
                "owned_by": refs[f"user:{USERS[1]}"], "used_for": "Production",
                "location": refs[f"location:{LOCATIONS['ist' if name.startswith('IST') else 'ank']}"],
+               "cost_center": refs[f"cost_center:{COST_CENTERS['Ağ Operasyon']}"],
                "operational_status": "1", "install_status": "1"}
         sink.ingest("servicenow_cmdb/server.mapping.yaml", raw, sn_seen, import_sys_id=sid)
 

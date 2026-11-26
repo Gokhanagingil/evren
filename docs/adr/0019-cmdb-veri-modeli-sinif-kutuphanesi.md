@@ -76,6 +76,16 @@ Bu sürüm ilk kez bir dal yerleşimini bilerek ServiceNow'a bırakıyor: Kubern
   - üst bağlamı olmayan bağımlı kural,
   - referans olmayan `parent_reference`.
 
+### 6. Sahiplik ve yönetişim kök alanları (U4.3)
+
+- `cmdb_ci` kök alanlarına `cost_center` eklendi; `cmn_cost_center` tablosuna referanstır. Sahiplik onayı için `attested`, `attested_by` ve `attested_date` eklendi; ServiceNow adlarıyla, `verify: true`.
+- Kök alan fiziksel kolon olduğu için göç gerekti (0016). `CORE_COLUMNS` ve DDL testi artık 0001'deki tanımı ve sonraki göçlerdeki `ADD COLUMN` satırlarını sırayla birlikte okur.
+- Referans tablosu `ref.cmn_cost_center` ServiceNow'dan aynı sys_id'lerle yansıtılır; okuma yetkisi `evren_readonly`'de, yazma `evren_app_sync`'te.
+- Uzlaştırma kuralları:
+  - `cost_center` yönetişim alanıdır (Manual 10, ITSM 50).
+  - Onay alanlarını **yalnızca Manual** yazar: ServiceNow'daki onay bilgisi Evren'e taşınmaz, Evren onay akışı tek kaynaktır.
+  - Elle düzenleme formunda onay alanları yoktur; onaylar U6'da gelecek onay akışından geçer (F1-17).
+
 ## Sonuçlar
 
 - U5 bağlayıcıları (vCenter kümeleri, NNMi alt ağları, Defender uç noktaları, Kubernetes, bulut) yazacakları sınıfı bulur.

@@ -35,6 +35,11 @@ def test_detail_lists_editable_fields_by_permission(editor, reader):
     assert fields["used_for"]["choices"] and fields["used_for"]["governed"] is True
     assert fields["os"]["governed"] is False and fields["os"]["authority"][0] == "Discovery"
     assert "last_discovered" not in fields and "discovery_source" not in fields
+    # U4.3: maliyet merkezi yönetişim alanıdır; sahiplik onayı yalnızca onay akışıyla değişir
+    assert fields["cost_center"]["governed"] is True and fields["cost_center"]["reference"] == "cmn_cost_center"
+    assert not {"attested", "attested_by", "attested_date"} & set(fields)
+    stage = fields["life_cycle_stage_status"]["choices"]
+    assert {"value": "In Use", "label": "Kullanımda"} in stage
     ro = reader.get(f"/api/v1/ci/{ci}").json()
     assert ro["can_edit"] is False and ro["editable"] == []
 
@@ -161,3 +166,17 @@ def test_summary_reports_pending_requests_and_worker_state(editor):
         worker.run_once(conn)  # tek tur: istekleri uygular ve nabız yazar (durdurulmadı → çalışıyor sayılır)
     after = editor.get("/api/v1/summary").json()["worker"]
     assert after["state"] == "ok" and after["pending"]["edits"] == 0 and after["last_seen"]
+
+
+def test_cost_center_ref_search_and_lifecycle_value_validation(editor):
+    items = editor.get("/api/v1/ref/cmn_cost_center", params={"q": "MM-110"}).json()["items"]
+    assert items and items[0]["name"].startswith("MM-110")
+    ci, _ = make_ci()
+    bad = editor.patch(f"/api/v1/ci/{ci}", json={"attributes": {"life_cycle_stage_status": "Kullanımda"},
+                                                 "idempotency_key": _key()}, headers=CSRF)
+    assert bad.status_code == 422  # değer listede yok (etiket değil, değer gönderilir)
+    ok = editor.patch(f"/api/v1/ci/{ci}", json={"attributes": {"life_cycle_stage": "Operational",
+                                                               "life_cycle_stage_status": "In Use",
+                                                               "cost_center": items[0]["sys_id"]},
+                                                "idempotency_key": _key()}, headers=CSRF)
+    assert ok.status_code == 202, ok.text

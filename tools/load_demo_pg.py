@@ -104,7 +104,7 @@ def seed_history(conn: psycopg.Connection[Any], counts: dict[str, int]) -> None:
 
 
 def seed_refs(conn: psycopg.Connection[Any], refs: dict[str, str], role: str | None) -> None:
-    """Referans verileri (grup, kişi, konum): üretimde sn-sync yansıtır; burada aynı rolle (evren_app_sync)."""
+    """Referans verileri (grup, kişi, konum, maliyet merkezi): üretimde sn-sync yansıtır; burada aynı rolle (evren_app_sync)."""
     # Çağıranın rolü ne olursa olsun (uzlaştırıcı ref.* tablolarına yazamaz) senkron rolüne geçilir, sonra geri dönülür.
     current = conn.execute("SELECT current_user").fetchone()[0]  # type: ignore[index]
     with conn.transaction():
@@ -122,6 +122,9 @@ def seed_refs(conn: psycopg.Connection[Any], refs: dict[str, str], role: str | N
                 elif kind == "location":
                     cur.execute("INSERT INTO ref.cmn_location (sys_id, name) VALUES (%s, %s) ON CONFLICT DO NOTHING",
                                 (sys_id, label))
+                elif kind == "cost_center":
+                    cur.execute("INSERT INTO ref.cmn_cost_center (sys_id, name, source) VALUES (%s, %s, 'evren') "
+                                "ON CONFLICT DO NOTHING", (sys_id, label))
         conn.execute(psycopg.sql.SQL("SET ROLE {}").format(psycopg.sql.Identifier(role or current)))
 
 

@@ -38,7 +38,7 @@ __all__ = [
     "verification_backlog",
 ]
 
-#: cmdb.cmdb_ci fiziksel kolonları (DDL ile birebir; testler doğrular).
+#: cmdb.cmdb_ci fiziksel kolonları (0001 + sonraki göçlerdeki ADD COLUMN, sırasıyla; testler doğrular).
 CORE_COLUMNS: tuple[str, ...] = (
     "name", "short_description", "serial_number", "asset_tag", "ip_address", "mac_address", "fqdn", "dns_domain",
     "operational_status", "install_status", "used_for", "discovery_source", "first_discovered", "last_discovered",
@@ -46,6 +46,8 @@ CORE_COLUMNS: tuple[str, ...] = (
     "change_control", "managed_by", "owned_by", "assigned_to", "duplicate_of", "correlation_id", "object_id",
     "category", "subcategory", "install_date", "warranty_expiration", "life_cycle_stage",
     "life_cycle_stage_status", "comments",
+    # 0016 (U4.3): sahiplik ve yönetişim
+    "cost_center", "attested", "attested_by", "attested_date",
 )
 SYSTEM_COLUMNS = ("sys_created_on", "sys_created_by", "sys_updated_on", "sys_updated_by", "sys_mod_count")
 VALID_TYPES = {"string", "integer", "decimal", "boolean", "glide_date_time", "glide_date", "reference"}
@@ -641,6 +643,7 @@ def generate_seed_sql(md: Metadata) -> str:
 _CORE_TYPES = {
     "operational_status": "integer", "install_status": "integer", "first_discovered": "glide_date_time",
     "last_discovered": "glide_date_time", "install_date": "glide_date_time", "warranty_expiration": "glide_date",
+    "attested": "boolean", "attested_date": "glide_date_time",
 }
 
 

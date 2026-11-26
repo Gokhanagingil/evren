@@ -21,8 +21,13 @@ rules:
     description: Yönetişim öznitelikleri
     attributes: [support_group, assignment_group, change_control, owned_by, managed_by, assigned_to,
                  used_for, location, company, department, short_description, comments,
-                 life_cycle_stage, life_cycle_stage_status, category, subcategory, asset_tag]
+                 life_cycle_stage, life_cycle_stage_status, category, subcategory, asset_tag, cost_center]
     priorities: {Manual: 10, ITSM: 50}
+
+  - applies_to: cmdb_ci
+    description: Sahiplik onayı — yalnızca Evren'deki onay akışı yazar (U6, F1-17); ServiceNow'dan gelmez
+    attributes: [attested, attested_by, attested_date]
+    priorities: {Manual: 10}
 
   - applies_to: cmdb_ci
     description: Durum alanları — kaynaklar doğrudan yazamaz; Evren eskime kuralı öneri üretir

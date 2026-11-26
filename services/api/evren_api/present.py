@@ -18,7 +18,7 @@ COVERAGE_ROLES: dict[str, tuple[str, ...]] = {
     "security": ("EndpointSecurity",),
     "itsm": ("ITSM",),
 }
-REF_TABLES = ("sys_user", "sys_user_group", "cmn_location", "core_company", "cmn_department")
+REF_TABLES = ("sys_user", "sys_user_group", "cmn_location", "core_company", "cmn_department", "cmn_cost_center")
 
 
 class Presenter:

@@ -1329,6 +1329,10 @@
      {
       "name": "asset_tag",
       "label": "Varlık etiketi"
+     },
+     {
+      "name": "cost_center",
+      "label": "Maliyet merkezi"
      }
     ],
     "priorities": {
@@ -1341,6 +1345,33 @@
      ],
      "ITSM": [
       "ServiceNow"
+     ]
+    }
+   },
+   {
+    "applies_to": "cmdb_ci",
+    "class_label": "Konfigürasyon Öğesi",
+    "description": "Sahiplik onayı — yalnızca Evren'deki onay akışı yazar (U6, F1-17); ServiceNow'dan gelmez",
+    "attributes": [
+     {
+      "name": "attested",
+      "label": "Sahiplik onaylandı"
+     },
+     {
+      "name": "attested_by",
+      "label": "Onaylayan"
+     },
+     {
+      "name": "attested_date",
+      "label": "Onay tarihi"
+     }
+    ],
+    "priorities": {
+     "Manual": 10
+    },
+    "sources": {
+     "Manual": [
+      "Manual"
      ]
     }
    },
@@ -2322,6 +2353,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "7f450d6c60d1dc6716d6828429a5a5e9",
+     "display": "MM-130 Ağ altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "firmware_version",
      "label": "Firmware sürümü",
      "value": "FortiOS 7.2.8",
@@ -2520,6 +2563,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -2885,6 +2940,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -3245,6 +3312,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 8,
@@ -3575,6 +3654,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -3940,6 +4031,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -4298,6 +4401,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -4686,6 +4801,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -5037,6 +5164,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -5415,6 +5554,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -5754,6 +5905,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "install_status",
      "label": "Kurulum durumu",
      "value": 1,
@@ -5936,6 +6099,18 @@
      "role": "Discovery",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-24T20:24:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -6273,6 +6448,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "9d9712faa38787c318b514cae49215c3",
+     "display": "MM-120 Veri platformu (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -6652,6 +6839,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -7014,6 +7213,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 8,
@@ -7359,6 +7570,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -7733,6 +7956,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -8373,6 +8608,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 8,
@@ -8717,6 +8964,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -9075,6 +9334,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -9420,6 +9691,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -9791,6 +10074,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "7f450d6c60d1dc6716d6828429a5a5e9",
+     "display": "MM-130 Ağ altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "firmware_version",
      "label": "Firmware sürümü",
      "value": "Cisco IOS-XR 7.8.2",
@@ -9985,6 +10280,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "7f450d6c60d1dc6716d6828429a5a5e9",
+     "display": "MM-130 Ağ altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "firmware_version",
      "label": "Firmware sürümü",
      "value": "Cisco NX-OS nxos.9.3.10",
@@ -10168,6 +10475,18 @@
        "display": "ist-dc1-acc-sw11"
       }
      ],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "7f450d6c60d1dc6716d6828429a5a5e9",
+     "display": "MM-130 Ağ altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
      "unauthorized": []
     },
     {
@@ -10355,6 +10674,18 @@
        "display": "ist-dc1-acc-sw12"
       }
      ],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "7f450d6c60d1dc6716d6828429a5a5e9",
+     "display": "MM-130 Ağ altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
      "unauthorized": []
     },
     {
@@ -10553,6 +10884,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "7f450d6c60d1dc6716d6828429a5a5e9",
+     "display": "MM-130 Ağ altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "firmware_version",
      "label": "Firmware sürümü",
      "value": "Cisco NX-OS nxos.9.3.10",
@@ -10745,6 +11088,18 @@
        "display": "ist-dc1-core-sw02"
       }
      ],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "7f450d6c60d1dc6716d6828429a5a5e9",
+     "display": "MM-130 Ağ altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
      "unauthorized": []
     },
     {
@@ -16305,6 +16660,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -16701,6 +17068,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -17091,6 +17470,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 8,
@@ -17457,6 +17848,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -17851,6 +18254,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -18230,6 +18645,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -18627,6 +19054,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -19033,6 +19472,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -19423,6 +19874,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -19800,6 +20263,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -20172,6 +20647,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },
@@ -20870,6 +21357,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -21277,6 +21776,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 1,
@@ -21662,6 +22173,18 @@
      "unauthorized": []
     },
     {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "029a151ee2d58e507e26a1732f381f2a",
+     "display": "MM-210 Uygulama hizmetleri (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
      "attribute": "cpu_core_count",
      "label": "Çekirdek sayısı",
      "value": 8,
@@ -22022,6 +22545,18 @@
      "role": "Virtualization",
      "reason": "Kural yok: en güncel gözlem",
      "observed_at": "2026-11-25T04:50:00Z",
+     "overridden": [],
+     "unauthorized": []
+    },
+    {
+     "attribute": "cost_center",
+     "label": "Maliyet merkezi",
+     "value": "2e369b6ba102cf9cf75030499f543dc2",
+     "display": "MM-110 Sunucu altyapısı (demo)",
+     "source": "ServiceNow",
+     "role": "ITSM",
+     "reason": "Uzlaştırma kuralı: ServiceNow (ITSM) önceliği 50",
+     "observed_at": "2026-11-25T05:40:00Z",
      "overridden": [],
      "unauthorized": []
     },

@@ -32,7 +32,9 @@ from .present import REF_TABLES
 __all__ = ["EditPolicy", "EditableField"]
 
 SYSTEM_MANAGED = frozenset({"discovery_source", "first_discovered", "last_discovered", "duplicate_of",
-                            "sys_class_name"})
+                            "sys_class_name",
+                            # Sahiplik onayı yalnızca onay akışıyla değişir (U6, F1-17); düzenleme formunda yok
+                            "attested", "attested_by", "attested_date"})
 SUPPORTED_TYPES = frozenset({"string", "integer", "decimal", "boolean", "reference", "glide_date", "glide_date_time"})
 _IDENT = re.compile(r"^[a-z_][a-z0-9_]{0,79}$")
 _SYSID = re.compile(r"^[0-9a-f]{32}$")

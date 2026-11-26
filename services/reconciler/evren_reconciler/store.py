@@ -46,9 +46,10 @@ __all__ = ["ApplyResult", "ReconcilerStore"]
 _SYSID = re.compile(r"^[0-9a-f]{32}$")
 REFERENCE_COLUMNS = frozenset({
     "manufacturer", "model_id", "location", "company", "department", "support_group", "assignment_group",
-    "change_control", "managed_by", "owned_by", "assigned_to",
+    "change_control", "managed_by", "owned_by", "assigned_to", "cost_center", "attested_by",
 })
 SMALLINT_COLUMNS = frozenset({"operational_status", "install_status"})
+BOOLEAN_COLUMNS = frozenset({"attested"})
 #: Kaynak tarafından yazılamaz; uzlaştırıcı türetir veya özel işlemle değişir.
 SYSTEM_MANAGED = frozenset({"discovery_source", "first_discovered", "last_discovered", "duplicate_of"})
 DISCOVERY_ROLES = frozenset({"Discovery", "Virtualization", "Network"})
@@ -444,6 +445,12 @@ class ReconcilerStore:
                     return "column", int(value)
                 except (TypeError, ValueError):
                     return None
+            if attribute in BOOLEAN_COLUMNS:
+                if isinstance(value, bool):
+                    return "column", value
+                text = str(value).strip().lower()
+                return ("column", text in ("true", "1", "yes", "evet")) if text in (
+                    "true", "false", "1", "0", "yes", "no", "evet", "hayır") else None
             return "column", value if isinstance(value, str) else str(value)
         if fdef is None or fdef.get("storage", "jsonb") != "jsonb":
             return None
