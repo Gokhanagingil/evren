@@ -27,6 +27,7 @@ from .identity.rules import ATTRIBUTE_KEY_TYPES
 from .relations import ENFORCEMENT_MODES, RelationRules
 from .schedule import CronError, CronSchedule
 from .sources import SourceRegistry, SourceRegistryError
+from .staleness import StalenessPolicy, validate_staleness
 
 __all__ = [
     "CORE_COLUMNS",
@@ -120,6 +121,11 @@ class Metadata:
     def attestation_policy(self) -> AttestationPolicy:
         """Sahiplik onayı politikası (ADR-0027); dosya yoksa onay kapalı."""
         return AttestationPolicy.from_document(self.attestation or None)
+
+    @property
+    def staleness_policy(self) -> StalenessPolicy:
+        """Eskime kuralları (ADR-0028): ``reconciliation_rules.yaml`` → ``staleness``."""
+        return StalenessPolicy.from_rules((self.reconciliation or {}).get("staleness", []))
 
     @property
     def relations(self) -> RelationRules:
@@ -435,11 +441,7 @@ def validate(md: Metadata) -> ValidationReport:
             r.errors.append(f"Veri tazeleme kuralı geçersiz: {d}")
         if float(d["effective_days"]) <= 0:
             r.errors.append(f"Veri tazeleme süresi pozitif olmalı: {d}")
-    for s in rec.get("staleness", []):
-        if s["applies_to"] not in known:
-            r.errors.append(f"Eskime kuralı sınıfı tanımsız: {s['applies_to']}")
-        if s["absent_candidate_after_days"] <= s["stale_after_days"]:
-            r.errors.append(f"{s['applies_to']}: absent_candidate_after_days > stale_after_days olmalı")
+    r.errors.extend(validate_staleness(rec.get("staleness", []), md.hierarchy))
     r.errors.extend(validate_change_control(
         md.change_control, roles=role_set, hierarchy=md.hierarchy, fields_of=md.fields_of,
         products=sorted(_product_words(md))))

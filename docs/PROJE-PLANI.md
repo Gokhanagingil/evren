@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 17/55 adım tamamlandı
+**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 18/55 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -22,7 +22,7 @@
 - [x] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Tamamlandı_ (ilgili: F0-17, F0-07, F1-11)
 - [x] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Tamamlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
 - [x] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Tamamlandı_ (ilgili: F1-21, F1-17)
-- [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07, F1-19)
+- [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Devam ediyor_ (ilgili: F1-06, F1-07, F1-19)
 - [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-20)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09)
@@ -125,7 +125,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 5/21 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 6/21 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -142,7 +142,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: 26.11.2026 (ADR-0025, U5.5, göç 0021): servicenow_change bağlayıcısı (change_request + task_ci, açık ve son 30 gün, delta; durum/onay/tür Evren sözlüğüne çevrilir), yalnızca değişiklik rolüyle ref.sn_change_request ve ref.sn_task_ci; gözlemci rolünün kendi kaydındaki izlenen öznitelik değişikliği insight.config_change'e; bekleme süresinden sonra onaylı pencereye göre karar, unauthorized_change anomalisi, sonradan gelen kayıtla kanıtlı kapanış, devre kesici açıkken bastırma; CI ayrıntısında değişiklik denetimi, Veri sorumlusu kararı (anomaly_review), CMDB-05. Simülatör, uzlaştırıcı, API, tarayıcı ve yığın duman testiyle sınandı. Gerçek ServiceNow kabulü U10.
   - Sizden gereken: ServiceNow change_request ve task_ci okuma izni
 - [ ] **F1-05** Uzlaştırma kuralları ve "bu değer nereden geldi?" görünümü — _Planlandı_
-- [ ] **F1-06** Devre kesici ve eskime işletimi; tatbikat — _Planlandı_
+- [x] **F1-06** Devre kesici ve eskime işletimi; tatbikat
+  - Not: 26.11.2026 (ADR-0028, U7.1, göç 0026): yalnızca gözlemci roller (keşif, izleme, güvenlik; ITSM/elle/platform canlı tutmaz); bütün gözlemciler görmüyor ve son çalışmaları tam ve OK ise eskimiş → emekliye ayırma adayı (insight.staleness_case), aksi hâlde bastırılır; golden record kendiliğinden değişmez; Veri sorumlusu gerekçeyle emekliye ayırır (yaşam döngüsü Manual kaydına, neden staleness) veya korur; uzlaştırıcı uygulama anında yeniden denetler; yeniden görülme öneriyi kapatır, emekli CI görülürse anomali. Tatbikat: gerçek devre kesiciyle 5 senaryolu PostgreSQL testi (test_staleness_pg). Eskime sayfası ve CI panelinde bölüm.
 - [ ] **F1-07** Bağımlı CI kimliği (uygulama, ağ adaptörü) — _Planlandı_
 - [ ] **F1-08** OpenSearch araması ve CI 360° ekranı — _Devam ediyor_
   - Not: Arama tamam (U3, ADR-0018); CI 360° ekranı (ilişkiler, etki) U7'de.

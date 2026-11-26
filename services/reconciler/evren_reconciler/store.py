@@ -43,6 +43,9 @@ from evren_core.identity.index import CandidateProfile
 from evren_core.metadata import CORE_COLUMNS, Metadata
 from evren_core.reconcile import Reconciler, SourceValues
 from evren_core.reference import ROLE_TABLES, ReferenceDataError, coerce_reference, is_reference
+from evren_core.staleness import RETIRED_VALUES
+from evren_core.staleness import Observation as Sighting
+from evren_core.staleness import Verdict as StaleVerdict
 
 from .pg_identity import PostgresCandidateIndex, PostgresLinkStore, keys_from_json
 
@@ -157,6 +160,8 @@ class ReconcilerStore:
         self.clock = clock or (lambda: datetime.now(UTC))
         self.policy = metadata.change_policy
         self.attestation = metadata.attestation_policy
+        self.staleness = metadata.staleness_policy
+        self._retired_cis: set[str] = set()  # son eskime taramasında yaşam döngüsü zaten emekli olan CI'lar
 
     # ------------------------------------------------------------------ çalışma yaşam döngüsü
     def start_run(self, run_id: UUID, data_source: str, *, mode: str = "snapshot",
@@ -1136,7 +1141,8 @@ class ReconcilerStore:
     def _ci_name(cur: psycopg.Cursor[Any], ci: str) -> str:
         cur.execute("SELECT name FROM cmdb.cmdb_ci WHERE sys_id = %s", (ci,))
         row = cur.fetchone()
-        return (row[0] if row else None) or ci
+        name = (row["name"] if isinstance(row, dict) else row[0]) if row else None  # imleç dict_row olabilir
+        return name or ci
 
     def _create_candidates(self, cur: psycopg.Cursor[Any], res: Resolution, cls: str,
                            name: str) -> list[dict[str, Any]]:
@@ -1369,16 +1375,170 @@ class ReconcilerStore:
         return set(row[0]) if row and row[0] else set()
 
     def apply_requests(self, limit: int = 100) -> dict[str, list[ApplyResult]]:
-        """Tüm insan isteklerini bir tur uygular: elle oluşturma, elle düzenleme, elle ilişki, sahiplik onayı, kuyruk
-        kararı, ayırma (bu sırayla)."""
+        """Tüm insan isteklerini bir tur uygular: elle oluşturma, elle düzenleme, elle ilişki, sahiplik onayı, eskime
+        kararı, kuyruk kararı, ayırma (bu sırayla)."""
         return {"create": self.apply_manual_creates(limit), "manual": self.apply_manual_edits(limit),
                 "relation": self.apply_manual_relations(limit), "attest": self.apply_attestations(limit),
-                "decision": self.apply_decisions(limit), "split": self.apply_splits(limit)}
+                "retire": self.apply_retirements(limit), "decision": self.apply_decisions(limit),
+                "split": self.apply_splits(limit)}
+
+    # ------------------------------------------------------------------ eskime işletimi (ADR-0028)
+    def _observer_sources(self) -> list[str]:
+        reg = self.registry
+        return sorted(n for n in reg.sources if reg.counts_for_staleness(n))
+
+    def _source_health(self, cur: psycopg.Cursor[Any]) -> dict[str, bool]:
+        """Kaynak başına son çalışma tamamlandı ve devre kesici OK mi (yürüyen çalışma sağlıklı sayılmaz)."""
+        cur.execute("""SELECT DISTINCT ON (data_source) data_source, completed IS TRUE AND breaker_state = 'ok'
+                         FROM ingest.source_run ORDER BY data_source, started_at DESC""")
+        return dict(cur.fetchall())
+
+    def staleness_verdicts(self, ci_ids: list[str] | None = None) -> dict[str, tuple[str, StaleVerdict]]:
+        """CI başına eskime kararı (ADR-0028). ``ci_ids`` verilmezse en az bir gözlemci kaydı ``missing`` olan CI'lar
+        ile açık veya emekli önerisi olan CI'lar değerlendirilir. Döner: CI → (sınıf, karar)."""
+        observers = self._observer_sources()
+        now = self.clock()
+        with self.conn.cursor() as cur:
+            health = self._source_health(cur)
+            scope = sql.SQL("l.ci_sys_id = ANY(%s::bpchar[])") if ci_ids is not None else sql.SQL(
+                """l.ci_sys_id IN (SELECT l2.ci_sys_id FROM ingest.identity_link l2
+                                     JOIN ingest.source_record s2 USING (data_source, source_key)
+                                    WHERE l2.active AND s2.status = 'missing' AND l2.data_source = ANY(%s)
+                                   UNION SELECT ci_sys_id FROM insight.staleness_case
+                                    WHERE status = 'open' OR status = 'retired' AND reappeared_at IS NULL)""")
+            cur.execute(sql.SQL("""SELECT ci.sys_id, ci.sys_class_name, sr.data_source, sr.last_seen, sr.status,
+                                          COALESCE(ci.life_cycle_stage = 'End of Life' OR ci.install_status = 7, false)
+                                     FROM cmdb.cmdb_ci ci
+                                     LEFT JOIN ingest.identity_link l ON l.ci_sys_id = ci.sys_id AND l.active
+                                                                     AND l.data_source = ANY(%s)
+                                     LEFT JOIN ingest.source_record sr USING (data_source, source_key)
+                                    WHERE ci.sys_id IN (SELECT l.ci_sys_id FROM ingest.identity_link l WHERE {scope})
+                                       OR ci.sys_id = ANY(%s::bpchar[])""").format(scope=scope),
+                        [observers, ci_ids if ci_ids is not None else observers, ci_ids or []])
+            rows = cur.fetchall()
+        by_ci: dict[str, tuple[str, list[Sighting]]] = {}
+        self._retired_cis = set()
+        for ci, cls, ds, seen, status, retired in rows:
+            entry = by_ci.setdefault(ci, (cls, []))
+            if retired:
+                self._retired_cis.add(ci)
+            if ds is not None and status in ("active", "missing"):
+                entry[1].append(Sighting(ds, seen, status, health.get(ds, False)))
+        return {ci: (cls, self.staleness.evaluate(cls, obs, self.hierarchy, now)) for ci, (cls, obs) in by_ci.items()}
+
+    def evaluate_staleness(self) -> dict[str, int]:
+        """Eskime önerilerini açar, ilerletir ve kapatır (ADR-0028). Golden record'a yazmaz.
+
+        * eskimiş / aday: CI başına tek açık öneri (aşama ilerler, son görülme güncellenir); aynı son görülme için
+          "korunan" öneri yeniden açılmaz,
+        * görülüyor: açık öneri ``recovered`` olur; emekli CI yeniden görüldüyse ``retired_ci_seen`` anomalisi,
+        * bastırılan (kaynak sağlıksız): öneriye dokunulmaz (kural 4)."""
+        counts = {"opened": 0, "advanced": 0, "recovered": 0, "suppressed": 0, "reappeared": 0}
+        verdicts = self.staleness_verdicts()
+        if not verdicts:
+            return counts
+        now = self.clock()
+        with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as cur:
+            cur.execute("""SELECT DISTINCT ON (ci_sys_id) sys_id, ci_sys_id, stage, status, last_seen, closed_at,
+                                  reappeared_at
+                             FROM insight.staleness_case WHERE ci_sys_id = ANY(%s::bpchar[])
+                            ORDER BY ci_sys_id, opened_at DESC""", (list(verdicts),))
+            latest = {r["ci_sys_id"]: r for r in cur.fetchall()}
+            for ci, (_cls, v) in sorted(verdicts.items()):
+                case = latest.get(ci)
+                obs = Jsonb([o.as_json() for o in v.observations])
+                if v.outcome == "suppressed":
+                    counts["suppressed"] += 1
+                elif v.outcome == "seen":
+                    if case and case["status"] == "open":
+                        cur.execute("""UPDATE insight.staleness_case SET status = 'recovered', closed_at = %s,
+                                              updated_at = %s, observations = %s WHERE sys_id = %s""",
+                                    (now, now, obs, case["sys_id"]))
+                        counts["recovered"] += 1
+                    elif (case and case["status"] == "retired" and case["reappeared_at"] is None
+                          and v.last_seen and v.last_seen > case["closed_at"]):
+                        cur.execute("UPDATE insight.staleness_case SET reappeared_at = %s, updated_at = %s "
+                                    "WHERE sys_id = %s", (v.last_seen, now, case["sys_id"]))
+                        name = self._ci_name(cur, ci)
+                        cur.execute(
+                            """INSERT INTO insight.anomaly (kind, severity, ci_sys_id, detected_at, details, explanation)
+                               VALUES ('retired_ci_seen', 'medium', %s, %s, %s, %s)""",
+                            (ci, now, Jsonb({"case": case["sys_id"], "observations": obs.obj}),
+                             f"Emekliye ayrılan '{name}' yeniden görüldü; CI kendiliğinden canlandırılmadı. "
+                             "Yaşam döngüsünü düzenle penceresinden düzeltin veya kaynağı denetleyin."))
+                        counts["reappeared"] += 1
+                elif v.stage:
+                    if case and case["status"] == "open":
+                        if case["stage"] != v.stage or case["last_seen"] != v.last_seen:
+                            cur.execute("""UPDATE insight.staleness_case SET stage = %s, last_seen = %s,
+                                                  observations = %s, updated_at = %s WHERE sys_id = %s""",
+                                        (v.stage, v.last_seen, obs, now, case["sys_id"]))
+                            counts["advanced"] += case["stage"] != v.stage
+                    elif ci not in self._retired_cis and not (case and case["status"] in ("dismissed", "retired")
+                                                              and case["last_seen"] == v.last_seen):
+                        assert v.rule is not None
+                        cur.execute("""INSERT INTO insight.staleness_case (ci_sys_id, stage, rule_class, last_seen,
+                                                                         observations, opened_at, updated_at)
+                                       VALUES (%s, %s, %s, %s, %s, %s, %s)""",
+                                    (ci, v.stage, v.rule.applies_to, v.last_seen, obs, now, now))
+                        counts["opened"] += 1
+        return counts
+
+    def apply_retirements(self, limit: int = 100) -> list[ApplyResult]:
+        """Eskime önerisine verilen insan kararlarını uygular (ADR-0028 §4).
+
+        Uygulama anında yeniden denetlenir: öneri hâlâ açık mı, emekliye ayırmada aşama aday mı ve karar şimdi de
+        "aday" mı (CI yeniden görülmemiş, gözlemci kaynaklar sağlıklı; kural 4). Emekliye ayırma yaşam döngüsü
+        alanlarını Manual kaydına yazar (neden ``staleness``); koruma öneriyi kapatır. CI silinmez."""
+        def reject(cur: psycopg.Cursor[Any], req: dict[str, Any], note: str) -> ApplyResult:
+            cur.execute("""UPDATE ingest.retirement_request SET status = 'rejected', result_note = %s, applied_at = now()
+                            WHERE sys_id = %s""", (note, req["sys_id"]))
+            return ApplyResult("retire_rejected", req["ci_sys_id"], [], note)
+
+        def handle(req: dict[str, Any]) -> ApplyResult:
+            ci = req["ci_sys_id"]
+            now = self.clock()
+            with self.conn.cursor(row_factory=dict_row) as cur:
+                cur.execute("""SELECT c.sys_id, c.stage, c.status, ci.sys_class_name FROM insight.staleness_case c
+                                 JOIN cmdb.cmdb_ci ci ON ci.sys_id = c.ci_sys_id
+                                WHERE c.sys_id = %s FOR UPDATE OF c""", (req["case_sys_id"],))
+                case = cur.fetchone()
+                if case is None or case["status"] != "open":
+                    return reject(cur, req, "Öneri artık açık değil; karar uygulanmadı")
+                changes: list[Any] = []
+                if req["action"] == "retire":
+                    cls, verdict = self.staleness_verdicts([ci]).get(ci, (case["sys_class_name"], None))
+                    if verdict is None or verdict.outcome == "seen":
+                        return reject(cur, req, "CI yeniden görüldü; emekliye ayrılmadı")
+                    if verdict.outcome == "suppressed":
+                        return reject(cur, req, "Gözlemci kaynaklardan birinin son çalışması sağlıklı değil (devre "
+                                                "kesici); emekliye ayırma bekletildi")
+                    if verdict.outcome != "candidate":
+                        return reject(cur, req, "CI henüz emekliye ayırma adayı değil; emekliye ayrılmadı")
+                    changes = self._write_manual_values(ci, cls, dict(RETIRED_VALUES), req["requested_by"], "staleness")
+                    status, note = "retired", "Emekliye ayrıldı (yaşam döngüsü: End of Life / Retired); CI silinmedi"
+                else:
+                    status, note = "dismissed", "Korundu; CI yeniden görülüp kaybolmadıkça öneri açılmaz"
+                cur.execute("""UPDATE insight.staleness_case SET status = %s, closed_at = %s, updated_at = %s,
+                                      decided_by = %s, decision_note = %s WHERE sys_id = %s""",
+                            (status, now, now, req["requested_by"], req["note"], case["sys_id"]))
+                cur.execute("""UPDATE ingest.retirement_request SET status = 'applied', result_note = %s,
+                                      applied_at = now() WHERE sys_id = %s""", (note, req["sys_id"]))
+            return ApplyResult(f"retire_{status}", ci, changes, note)
+
+        def fail(cur: psycopg.Cursor[Any], req: dict[str, Any], note: str) -> None:
+            cur.execute("""UPDATE ingest.retirement_request SET status = 'rejected', result_note = %s, applied_at = now()
+                            WHERE sys_id = %s""", (note, req["sys_id"]))
+
+        return self._drain("retire", """
+            SELECT sys_id, case_sys_id, ci_sys_id, action, note, requested_by FROM ingest.retirement_request
+             WHERE status = 'pending' ORDER BY requested_at, sys_id LIMIT 1 FOR UPDATE SKIP LOCKED""",
+                           handle, fail, limit)
 
     # ------------------------------------------------------------------ sahiplik onayı (ADR-0027)
-    def _write_attestation(self, ci: str, cls: str, values: dict[str, Any], actor: str) -> list[Any]:
-        """Onay alanlarını CI'ın Manual kaynak kaydına yazar ve uzlaştırır (neden ``attestation``). Diğer elle
-        değerler ve elle ilişkiler korunur."""
+    def _write_manual_values(self, ci: str, cls: str, values: dict[str, Any], actor: str, reason: str) -> list[Any]:
+        """Sistem akışının (sahiplik onayı, eskime kararı) değerlerini CI'ın Manual kaynak kaydına yazar ve uzlaştırır;
+        değişim nedeni ``reason``. Diğer elle değerler ve elle ilişkiler korunur."""
         with self.conn.cursor() as tcur:  # çağıranın imleci dict_row olabilir
             tcur.execute("SELECT attributes, relations FROM ingest.source_record WHERE data_source = 'Manual' "
                          "AND source_key = %s", (ci,))
@@ -1389,7 +1549,7 @@ class ReconcilerStore:
         saved = self.actor
         self.actor = actor
         try:
-            return self._process(record, attach_to=ci, method="manual", change_reason="attestation").changes
+            return self._process(record, attach_to=ci, method="manual", change_reason=reason).changes
         finally:
             self.actor = saved
 
@@ -1421,7 +1581,7 @@ class ReconcilerStore:
                 attested = req["decision"] == "attested"
                 values = {"attestation_status": ATTESTED if attested else REJECTED, "attested": attested,
                           "attested_by": req["attester_user"], "attested_date": now.isoformat()}
-                changes = self._write_attestation(ci, cls, values, req["requested_by"])
+                changes = self._write_manual_values(ci, cls, values, req["requested_by"], "attestation")
                 assert pol is not None
                 if attested:
                     until = (now + pol.period).astimezone(LOCAL_TZ).strftime("%d.%m.%Y")
@@ -1490,7 +1650,8 @@ class ReconcilerStore:
             due = cur.fetchall()
         for ci, cls, owner_changed in due:
             with self.conn.transaction():
-                self._write_attestation(ci, cls, {"attestation_status": NOT_REVIEWED, "attested": False}, self.actor)
+                self._write_manual_values(ci, cls, {"attestation_status": NOT_REVIEWED, "attested": False}, self.actor,
+                                          "attestation")
             counts["owner_changed" if owner_changed else "expired"] += 1
         return counts
 

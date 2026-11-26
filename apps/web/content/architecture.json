@@ -391,10 +391,12 @@
       "kind_label": "Güvenlik denetimi",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Kısmi bir vCenter çalışması binlerce CI'ı emekliye ayıramaz. Taban çizgisinden sapan, tamamlanmamış veya hatalı çalışma karantinaya alınır. Bildirilen kayıtları zamanında tamamlanmayan ya da terk edilen çalışma eksik sayılır. Delta çalışmasında yalnızca tamamlanma ve hata oranı denetlenir.",
+      "text": "Kısmi bir vCenter çalışması binlerce CI'ı emekliye ayıramaz. Taban çizgisinden sapan, tamamlanmamış veya hatalı çalışma karantinaya alınır. Bildirilen kayıtları zamanında tamamlanmayan ya da terk edilen çalışma eksik sayılır. Delta çalışmasında yalnızca tamamlanma ve hata oranı denetlenir. Eskime önerisi yalnızca bütün gözlemci kaynaklar CI'ı görmüyor ve son çalışmaları OK iken ilerler; emekliye ayırma Veri sorumlusunun kararıdır, uzlaştırıcı uygulama anında yeniden denetler (ADR-0028).",
       "tech": [
         "evren_core.circuit_breaker",
-        "Medyan + MAD"
+        "Medyan + MAD",
+        "evren_core.staleness",
+        "insight.staleness_case"
       ],
       "security": [
         "Yıkıcı işlem yalnızca OK durumunda"

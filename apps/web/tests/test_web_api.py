@@ -768,3 +768,68 @@ def test_attestation_page_mobile_has_no_horizontal_overflow(browser, base_url):
     pg.wait_for_selector("#attCards .metric")
     assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
     context.close()
+
+
+def test_staleness_page_dismiss_and_retire_recheck_with_keyboard(page, base_url):
+    """U7.1 (ADR-0028): aday ve eskimiş öneriler; "Koru…" gerekçeyle (Enter), "Emekliye ayır…" uzlaştırıcı yeniden
+    denetler (CI görülüyorsa uygulanmaz); CI panelinde Eskime bölümü; Esc pencereyi kapatır."""
+    from scenarios import apply_pending_retirements, make_stale_case
+
+    cand_ci, cand_name, _ = make_stale_case("candidate")
+    _, stale_name, stale_case = make_stale_case("stale", days=20)
+    stop = threading.Event()
+
+    def worker():
+        while not stop.is_set():
+            apply_pending_retirements()
+            stop.wait(0.3)
+
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
+    try:
+        page.goto(base_url + "/#/eskime")
+        expect(page.locator("#staleCards")).to_contain_text("Emekliye ayırma adayı")
+        expect(page.locator("#staleSources")).to_contain_text("BMC")
+        page.fill("#staleSearch", cand_name)
+        expect(page.locator("#staleTable")).to_contain_text(cand_name)
+        assert "null" not in page.locator("main").inner_text()
+        shot(page, "web_api_staleness")
+        # Eskimiş öneriyi koru (klavye)
+        page.locator("#tab-stale").click()
+        page.fill("#staleSearch", stale_name)
+        expect(page.locator("#staleTable")).to_contain_text(stale_name)
+        expect(page.locator(f'button[data-retire="{stale_case}"]')).to_have_count(0)  # eskimiş: emekliye ayrılamaz
+        page.locator(f'button[data-dismiss="{stale_case}"]').focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#staleNote")).to_be_focused()
+        page.keyboard.press("Enter")
+        expect(page.locator("#staleNote")).to_have_attribute("aria-invalid", "true")  # gerekçesiz gönderilmez
+        page.keyboard.type("Felaket kurtarma yedeği")
+        page.keyboard.press("Enter")
+        expect(page.locator("#staleStatus")).to_contain_text("Korundu", timeout=20000)
+        # CI panelinden emekliye ayır: CI'ın keşif kaydı görülüyor, uzlaştırıcı uygulamaz
+        page.goto(base_url + f"/#/ci/{cand_ci}")
+        box = page.locator("#ciStaleness")
+        expect(box).to_contain_text("Emekliye ayırma adayı")
+        page.locator("#ciRetire").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#staleNote")).to_be_focused()
+        page.keyboard.press("Escape")
+        expect(page.locator("#staleNote")).to_have_count(0)
+        page.locator("#ciRetire").click()
+        page.fill("#staleNote", "Donanım iade edildi")
+        page.keyboard.press("Enter")
+        expect(page.locator("#toast")).to_contain_text("yeniden görüldü", timeout=20000)
+        expect(page.locator("#ciStaleness")).to_contain_text("Emekliye ayırma adayı")  # CI emekliye ayrılmadı
+    finally:
+        stop.set()
+        t.join(timeout=5)
+
+
+def test_staleness_page_mobile_has_no_horizontal_overflow(browser, base_url):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, locale="tr-TR")
+    pg = context.new_page()
+    pg.goto(base_url + "/#/eskime")
+    pg.wait_for_selector("#staleCards .metric")
+    assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+    context.close()

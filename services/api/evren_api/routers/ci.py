@@ -28,6 +28,7 @@ from .attestation import ci_attestation
 from .insight import ANOMALY_STATUS
 from .manual import manual_relation_keys
 from .platform import _SERVER, _and, _coverage_sql, _not
+from .staleness import ci_staleness
 
 router = APIRouter(prefix="/api/v1", tags=["ci"])
 
@@ -313,6 +314,7 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         "coverage": coverage, "unauthorized_count": len(rejected), "change_control": change_control,
         "unauthorized_changes": change_control["open_unauthorized"],
         "attestation": ci_attestation(ctx, sys_id, cls, doc),
+        "staleness": ci_staleness(ctx, sys_id, cls),
         "golden_version": doc.get("golden_version"), "sys_updated_on": doc.get("sys_updated_on"),
         **({"security_posture": posture} if posture is not None else {}),
     }

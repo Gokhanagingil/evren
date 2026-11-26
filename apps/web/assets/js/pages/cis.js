@@ -4,6 +4,7 @@ import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/d
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
 import { OUTCOME, ROLE_TR, attest, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
 import { STATE_TONE, openRejectDialog, waitForRequests } from './attestation.js';
+import { STAGE_TONE, observationList, openDecisionDialog, sendDecision } from './staleness.js';
 import { openEditDialog } from './ci-edit.js';
 import { openCreateDialog } from './ci-create.js';
 import { openImportDialog } from './ci-import.js';
@@ -263,6 +264,31 @@ export async function renderCis(view, param) {
       actions));
   }
 
+  // Eskime (U7.1, ADR-0028): açık öneri veya son karar; Veri sorumlusuna Emekliye ayır / Koru
+  function stalenessSection(c, opener) {
+    const s = c.staleness;
+    if (mode !== 'api' || !s?.case) return null;
+    const k = s.case;
+    const decide = (action) => openDecisionDialog({ name: c.name, action, onSend: async (note) => {
+      try {
+        await sendDecision(k.id, action, note);
+        await open(c.sys_id, opener);
+        document.getElementById('ciStaleness')?.focus();
+      } catch (err) {
+        toast(`Kaydedilemedi: ${err.message}`);
+      }
+    } });
+    return section('Eskime', h('div', { id: 'ciStaleness', tabindex: '-1' },
+      h('div', { class: 'pills' }, pill(k.status === 'open' ? k.stage_label : k.status_label, k.status === 'open' ? STAGE_TONE[k.stage] : 'neutral'),
+        k.pending ? pill('Karar uygulanıyor', 'neutral') : null, k.reappeared_at ? pill('Emekliye ayrıldıktan sonra yeniden görüldü', 'warn') : null),
+      k.status === 'open' ? h('p', { class: 'small' }, `Gözlemci kaynakların hiçbiri ${k.days_since} gündür görmüyor (son görülme ${formatDateTime(k.last_seen)}). Kural: ${k.rule_label}, ${s.rule ? `${s.rule.stale_after_days} gün eskimiş, ${s.rule.candidate_after_days} gün aday` : ''}.`) : null,
+      k.decided_by ? h('p', { class: 'small muted' }, `Karar: ${k.decided_by} · ${k.decision_note || ''}`) : null,
+      observationList(k.observations),
+      s.can_decide ? h('div', { class: 'link-actions' },
+        s.can_retire ? h('button', { class: 'btn secondary small', type: 'button', id: 'ciRetire', onclick: () => decide('retire') }, 'Emekliye ayır…') : null,
+        h('button', { class: 'btn ghost small', type: 'button', id: 'ciStaleDismiss', onclick: () => decide('dismiss') }, 'Koru…')) : null));
+  }
+
   function reviewFor(c, opener) {
     if (mode !== 'api' || !c.change_control?.can_review) return null;
     const send = async (a, status, note) => {
@@ -377,6 +403,7 @@ export async function renderCis(view, param) {
           h('div', { class: 'attrs' }, c.attributes.map(attrRow))),
         c.security_posture ? postureSection(c.security_posture) : null,
         changeSection(c.change_control, reviewFor(c, opener)),
+        stalenessSection(c, opener),
         attestationSection(c, opener),
         relationSection(c, opener),
         section('Kaynak kayıtları ve kimlik kararı', h('ul', { class: 'mini', id: 'ciLinks' }, c.links.map((l) => linkItem(c, l))),

@@ -28,6 +28,7 @@ from typing import Any
 
 __all__ = [
     "LIFECYCLES",
+    "OBSERVER_KINDS",
     "ROLE_KINDS",
     "DataSource",
     "SourceRegistry",
@@ -36,6 +37,8 @@ __all__ = [
 ]
 
 ROLE_KINDS = frozenset({"discovery", "monitoring", "security", "itsm", "manual", "platform"})
+#: CI'ı gerçekten gözleyen rol türleri: eskimede "görüyor mu" sorusuna yalnızca bunlar katılır (ADR-0028)
+OBSERVER_KINDS = frozenset({"discovery", "monitoring", "security"})
 LIFECYCLES = ("active", "shadow", "retiring", "retired")
 LIFECYCLE_TR = {"active": "Etkin", "shadow": "Gölge", "retiring": "Devrediliyor", "retired": "Emekli"}
 _NAME = re.compile(r"^[A-Za-z][A-Za-z0-9_.-]{1,63}$")
@@ -166,8 +169,9 @@ class SourceRegistry:
         return self.writes_attributes(name) and self.source(name).lifecycle == "active"
 
     def counts_for_staleness(self, name: str) -> bool:
-        """Eskime kararında "bu kaynak CI'ı görüyor mu" sorusuna katılır mı?"""
-        return self.writes_attributes(name)
+        """Eskime kararında "bu kaynak CI'ı görüyor mu" sorusuna katılır mı (ADR-0028)? Yalnızca gözlemci roller
+        (keşif, izleme, güvenlik türü) ve etkin/devredilen kaynak: ITSM, elle giriş ve platform CI'ı "canlı" tutmaz."""
+        return self.writes_attributes(name) and self.roles[self.role_of(name)].kind in OBSERVER_KINDS
 
     def sources_in_role(self, role: str, *, include_inactive: bool = False) -> list[DataSource]:
         items = [s for s in self.sources.values() if s.role == role

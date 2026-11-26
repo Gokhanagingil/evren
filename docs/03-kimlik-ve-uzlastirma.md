@@ -124,7 +124,12 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
   - Değişim oranı ≥ %35 (eşleme hatası belirtisi).
   - Taban çizgisine göre ≥ %15 düşüş.
 - Yeterli geçmiş yoksa **WARN** verilir ve eskime bekletilir.
-- Eskime yalnızca `OK` çalışmalarda ve **tüm** yetkili kaynaklar CI'ı görmüyorsa durum önerisi üretir. CI silinmez.
+- Eskime yalnızca `OK` çalışmalarda ve **tüm** gözlemci kaynaklar CI'ı görmüyorsa öneri üretir. CI silinmez (ADR-0028):
+  - Gözlemci roller keşif, sanallaştırma, ağ, izleme ve uç nokta güvenliğidir. ITSM, elle giriş ve platform CI'ı "canlı" tutmaz. Gözlemci kaydı olmayan CI eskimeye girmez.
+  - Kural sınıf hiyerarşisinde en yakın atadan alınır (`staleness`). Süre `stale_after_days` değerini geçerse öneri **eskimiş**, `absent_candidate_after_days` değerini geçerse **emekliye ayırma adayı** olur (`insight.staleness_case`; CI başına tek açık öneri).
+  - Bağlı gözlemci kaynaklardan birinin son çalışması tamamlanmamışsa veya `OK` değilse karar bastırılır; öneri ne ilerler ne kapanır.
+  - Golden record kendiliğinden değişmez. Veri sorumlusu gerekçeyle **emekliye ayırır** ya da **korur**. Emekliye ayırmada yaşam döngüsü (End of Life / Retired, `install_status` 7, `operational_status` 6) Manual kaydına yazılır; değişim nedeni `staleness`. Uzlaştırıcı uygulama anında aday durumunu ve devre kesiciyi yeniden denetler.
+  - CI yeniden görülünce açık öneri kapanır. Emekli CI yeniden görülürse `retired_ci_seen` anomalisi açılır; CI kendiliğinden canlanmaz.
 
 ## 6. Yetkisiz değişiklik (ADR-0025)
 

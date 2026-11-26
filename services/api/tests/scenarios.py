@@ -2,10 +2,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import psycopg
+from psycopg.types.json import Jsonb
 
 from evren_core.envelope import IngestRecord
 from evren_core.metadata import load_metadata
@@ -158,3 +159,26 @@ def apply_pending_attestations() -> list[str]:
     with psycopg.connect(autocommit=True) as conn:
         conn.execute("SET ROLE evren_app_reconciler")
         return [r.outcome for r in ReconcilerStore(conn, md).apply_attestations()]
+
+
+def make_stale_case(stage: str = "candidate", days: int = 50) -> tuple[str, str, str]:
+    """Testin kendine ait CI'ı ve onun için açık eskime önerisi (U7.1). Öneri sahip rolüyle eklenir (uzlaştırıcının
+    yazacağı satırın aynısı); CI'ın keşif kaydı ``active`` olduğu için uzlaştırıcı emekliye ayırmayı reddeder.
+    Döner: (CI sys_id, ad, öneri sys_id)."""
+    ci, name = make_ci()
+    seen = datetime.now(UTC).replace(microsecond=0) - timedelta(days=days)
+    with psycopg.connect(autocommit=True) as conn:
+        (case,) = conn.execute(
+            """INSERT INTO insight.staleness_case (ci_sys_id, stage, rule_class, last_seen, observations)
+               VALUES (%s, %s, 'cmdb_ci_hardware', %s, %s) RETURNING sys_id""",
+            (ci, stage, seen, Jsonb([{"data_source": "BMC", "last_seen": seen.isoformat(), "status": "missing",
+                                      "source_ok": True}]))).fetchone()
+    return ci, name, case
+
+
+def apply_pending_retirements() -> list[str]:
+    """Uzlaştırıcıyı bir tur çalıştırır (eskime kararları); sonuç türlerini döner (U7.1)."""
+    md = load_metadata(REPO / "metadata")
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        return [r.outcome for r in ReconcilerStore(conn, md).apply_retirements()]

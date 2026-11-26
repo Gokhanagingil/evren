@@ -286,6 +286,20 @@ export function attest({ items, decision, reason = null, note = null }) {
 }
 export const attestationRequests = (ids) => api(`/api/v1/attestation-requests?ids=${ids.map(encodeURIComponent).join(',')}`);
 
+// Eskime işletimi (U7.1, ADR-0028): yalnızca API modunda
+export const stalenessSummary = () => api('/api/v1/staleness/summary');
+export function stalenessCases(view, q = '') {
+  const p = new URLSearchParams({ view, limit: '500' });
+  if (q) p.set('q', q);
+  return api(`/api/v1/staleness/cases?${p}`);
+}
+export function stalenessDecision(caseId, action, note) {
+  return api(`/api/v1/staleness/${encodeURIComponent(caseId)}/decision`, {
+    method: 'POST', body: JSON.stringify({ action, note, idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+export const retirementStatus = (id) => api(`/api/v1/retirement-requests/${encodeURIComponent(id)}`);
+
 export async function reviewAnomaly(id, status, note) {
   return api(`/api/v1/anomalies/${encodeURIComponent(id)}/review`, {
     method: 'POST', body: JSON.stringify({ status, note: note || null }),

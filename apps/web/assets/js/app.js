@@ -8,6 +8,7 @@ import { renderQueue } from './pages/queue.js';
 import { renderCis } from './pages/cis.js';
 import { renderControls } from './pages/controls.js';
 import { renderAttestation } from './pages/attestation.js';
+import { renderStaleness } from './pages/staleness.js';
 import { renderShadow } from './pages/shadow.js';
 import { renderSchema } from './pages/schema.js';
 import { renderModel } from './pages/model.js';
@@ -28,6 +29,8 @@ const ROUTES = {
     help: 'ServiceNow uyumlu sınıf ağacı. Bir sınıfa tıklayın veya Tab ile gelip Enter\'a basın: alanları (kalıtılanlar dahil), kimlik kuralı, izinli ilişkiler ve SQL görünümü açılır. Değişiklik yalnızca değişiklik setiyle yapılır.' },
   'sahiplik-onayi': { title: 'Sahiplik Onayı', icon: 'check', render: renderAttestation,
     help: 'CI sahibi kaydı dönemsel olarak onaylar veya gerekçeyle reddeder. "Bende" görünümünde toplu onay; sahipsiz ve reddedilen CI\'lar Veri sorumlusu içindir. Onay uzlaştırıcıdan geçer.' },
+  eskime: { title: 'Eskime', icon: 'clock', render: renderStaleness,
+    help: 'Gözlemci kaynakların (keşif, sanallaştırma, ağ, izleme, uç nokta) hiçbirinin uzun süredir görmediği CI\'lar. Kaynakların son çalışması sağlıklı değilse öneri ilerlemez. Emekliye ayırma veya koruma Veri sorumlusunun gerekçeli kararıdır; CI silinmez.' },
   kontroller: { title: 'GRC Kontrolleri', icon: 'shield', render: renderControls,
     help: 'GRC Platformu\'na giden CMDB tabanlı kontrol sonuçları. Kaynak verisi kısmi toplandıysa sonuç "kesin değil" olur.' },
   'golge-mod': { title: 'Gölge Mod Raporu', icon: 'layers', render: renderShadow,
@@ -48,7 +51,7 @@ const ROUTES = {
 
 const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk'] },
-  { group: 'CMDB', items: ['ci', 'sahiplik-onayi', 'veri-modeli', 'kontroller', 'golge-mod'] },
+  { group: 'CMDB', items: ['ci', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];

@@ -275,6 +275,16 @@ def test_segregation_of_duties_enforced():
         ("evren_readonly", "SELECT count(*) FROM ingest.attestation_request"),
         ("evren_app_connector", "SELECT count(*) FROM ingest.attestation_request"),
         ("evren_app_mcp", "SELECT count(*) FROM ingest.attestation_request"),
+        # 0026 (ADR-0028): eskime önerisini yalnızca uzlaştırıcı yazar; API karar isteğinin sonucunu yazamaz
+        ("evren_app_api", "UPDATE insight.staleness_case SET status = 'retired' WHERE false"),
+        ("evren_app_api", "INSERT INTO insight.staleness_case (ci_sys_id, stage, rule_class, last_seen) "
+                          "SELECT sys_id, 'candidate', 'x', now() FROM cmdb.cmdb_ci WHERE false"),
+        ("evren_app_api", "UPDATE ingest.retirement_request SET status = 'applied' WHERE false"),
+        ("evren_app_reconciler", "UPDATE ingest.retirement_request SET action = 'retire' WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM insight.staleness_case WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM insight.staleness_case"),
+        ("evren_app_mcp", "SELECT count(*) FROM ingest.retirement_request"),
+        ("evren_app_connector", "SELECT count(*) FROM insight.staleness_case"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
         ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
@@ -332,6 +342,11 @@ def test_least_privilege_boundaries(role, statement):
                                  "WHERE false"),
         ("evren_auditor_ro", "SELECT decision, reason, attester_user FROM ingest.attestation_request"),
         ("evren_app_api", "SELECT sys_id FROM ref.sys_user WHERE entra_oid IS NULL LIMIT 1"),
+        ("evren_app_api", "SELECT stage, observations FROM insight.staleness_case"),
+        ("evren_app_api", "INSERT INTO ingest.retirement_request (case_sys_id, ci_sys_id, action, note, requested_by) "
+                          "SELECT sys_id, ci_sys_id, 'dismiss', 'x', 'x' FROM insight.staleness_case WHERE false"),
+        ("evren_app_reconciler", "UPDATE insight.staleness_case SET status = 'recovered', closed_at = now() WHERE false"),
+        ("evren_auditor_ro", "SELECT action, note FROM ingest.retirement_request"),
     ],
 )
 def test_allowed_paths_work(role, statement):
@@ -387,6 +402,7 @@ def test_credential_view_has_no_secret_column():
     assert "token_sha256" not in cols and "token_hint" in cols and cols.endswith("state")
     assert psql("SELECT count(*) FROM iam.permission WHERE resource = 'data_source' AND operation = 'connector_read'") == "2"
     assert psql("SELECT string_agg(role, ',') FROM iam.permission WHERE operation = 'attest'") == "evren_ci_owner"
+    assert psql("SELECT string_agg(role, ',') FROM iam.permission WHERE operation = 'retire'") == "evren_data_steward"
 
 
 INSTANCE = ("INSERT INTO ingest.connector_instance (name, connector, data_source, schedule, schedule_tz, "

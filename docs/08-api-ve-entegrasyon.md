@@ -112,6 +112,14 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/attestation-requests?ids=a,b,…`: isteklerin durumu (`pending | applied | rejected`) ve uzlaştırıcının notu.
 - CI ayrıntısında `attestation`: durum, politika, son onay (kişi adı, tarih), geçerlilik sonu, sorumlular, son istekler, açık ret anomalisi, `can_attest`, `blocker` ve `blocker_code`.
 
+### Eskime (ADR-0028)
+
+- `GET /api/v1/staleness/summary`: öneri sayıları (`candidate`, `stale`, `retired`, `dismissed`, `recovered`, `reappeared`), kurallar (sınıf ve süreler), gözlemci kaynakların son çalışma sağlığı (`ok`, `unhealthy`, `none`) ve `can_decide`.
+- `GET /api/v1/staleness/cases?view=candidate|stale|retired|dismissed&q=`: öneriler (son görülme, gün, kaynak başına gözlem, karar). Okuma izni olmayan sınıfın CI'ı listelenmez.
+- `POST /api/v1/staleness/{id}/decision` (CSRF, `idempotency_key`, `retire` izni): `{"action": "retire" | "dismiss", "note": "…"}` → `202`. Hatalar: `409 aday_degil` (eskimiş aşamada emekliye ayrılamaz), `409 oneri_kapali`, `409 bekleyen_istek`, `422` (gerekçe boş), `403`, `404`.
+- `GET /api/v1/retirement-requests/{id}`: `pending | applied | rejected` ve uzlaştırıcının notu (ör. "CI yeniden görüldü", "devre kesici").
+- CI ayrıntısında `staleness`: son öneri, kural, `can_decide`, `can_retire`.
+
 ### Değişiklik denetimi (ADR-0025)
 
 - `GET /api/v1/ci/{sys_id}` yanıtındaki `change_control`:

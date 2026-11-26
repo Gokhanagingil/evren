@@ -20,6 +20,7 @@ Olay omurgası (U2, ADR-0017):
 * Her turda alım geçidinden kapanışı istenen çalışmalar kapatılır (``finalize_ready_runs``).
 * Her turda yetkisiz değişiklik gözlemleri değerlendirilir (``evaluate_config_changes``, ADR-0025).
 * Her turda süresi dolan sahiplik onayları geçersiz kılınır (``expire_attestations``, ADR-0027).
+* Eskime önerileri ``EVREN_STALENESS_SECONDS`` aralığıyla değerlendirilir (``evaluate_staleness``, ADR-0028).
 * ``EVREN_KAFKA_BOOTSTRAP`` tanımlıysa outbox olayları Kafka'ya yayınlanır (outbox'a yazım çalışanı uyandırır).
 * Kaynak kayıtlarının Kafka'dan alımı ayrı süreçtir: ``python -m evren_reconciler.worker --ingest`` (``IngestWorker``);
   bölüm sayısı kadar örnek paralel çalışabilir.
@@ -73,6 +74,7 @@ class WorkerConfig:
     health_file: str | None = None
     kafka: KafkaSettings | None = None
     consumer_group: str = "evren-reconciler"
+    staleness_seconds: int = 600  # eskime değerlendirme aralığı (ADR-0028)
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None, **overrides: Any) -> WorkerConfig:
@@ -87,6 +89,9 @@ class WorkerConfig:
         poll = int(env.get("EVREN_WORKER_POLL_SECONDS", "30"))
         if not 1 <= poll <= 3600:
             raise ConfigError("EVREN_WORKER_POLL_SECONDS 1–3600 aralığında olmalı")
+        staleness = int(env.get("EVREN_STALENESS_SECONDS", "600"))
+        if not 0 <= staleness <= 86400:
+            raise ConfigError("EVREN_STALENESS_SECONDS 0–86400 aralığında olmalı")
         kafka = None
         if env.get("EVREN_KAFKA_BOOTSTRAP"):
             try:
@@ -97,7 +102,7 @@ class WorkerConfig:
             "conninfo": conninfo, "role": env.get("EVREN_DB_ROLE", "evren_app_reconciler"), "poll_seconds": poll,
             "metadata_dir": Path(env.get("EVREN_METADATA_DIR", str(REPO_ROOT / "metadata"))),
             "health_file": env.get("EVREN_WORKER_HEALTH_FILE") or None, "kafka": kafka,
-            "consumer_group": env.get("EVREN_KAFKA_CONSUMER_GROUP", "evren-reconciler")}
+            "consumer_group": env.get("EVREN_KAFKA_CONSUMER_GROUP", "evren-reconciler"), "staleness_seconds": staleness}
         values.update(overrides)
         return cls(**values)
 
@@ -115,6 +120,7 @@ class Worker:
         self.processed = 0
         self.failed = 0
         self.started_at: float | None = None
+        self._staleness_at: float | None = None  # son eskime değerlendirmesi (monotonic)
         if outbox is None and config.kafka is not None and self.kind == "requests":
             outbox = OutboxPublisher(KafkaPublisher(config.kafka, f"evren-outbox-{config.worker_id}"), self.md)
         self.outbox = outbox
@@ -132,8 +138,9 @@ class Worker:
     def run_once(self, conn: psycopg.Connection[Any]) -> dict[str, int]:
         """Bekleyen tüm istekleri uygular (her tür ``batch`` kadar, iş kalmayana dek)."""
         store = ReconcilerStore(conn, self.md)
-        totals = {"create": 0, "manual": 0, "relation": 0, "attest": 0, "decision": 0, "split": 0, "failed": 0,
-                  "runs_closed": 0, "published": 0, "config_changes": 0, "attestations_expired": 0}
+        totals = {"create": 0, "manual": 0, "relation": 0, "attest": 0, "retire": 0, "decision": 0, "split": 0,
+                  "failed": 0, "runs_closed": 0, "published": 0, "config_changes": 0, "attestations_expired": 0,
+                  "staleness": 0}
         while not self.stop.is_set():
             results = store.apply_requests(self.config.batch)
             done = 0
@@ -159,6 +166,16 @@ class Worker:
         if totals["attestations_expired"]:
             log.info("sahiplik onayı geçersiz kılındı: süre=%d sahip değişti=%d", expired["expired"],
                      expired["owner_changed"])
+        # Eskime (ADR-0028): öneriler dönemsel açılır/ilerler/kapanır; 0 = her tur
+        mono = time.monotonic()
+        if self._staleness_at is None or mono - self._staleness_at >= self.config.staleness_seconds:
+            self._staleness_at = mono
+            stale = store.evaluate_staleness()
+            totals["staleness"] = sum(stale.values())
+            if stale["opened"] or stale["advanced"] or stale["reappeared"]:
+                log.info("eskime: açılan=%d ilerleyen=%d kapanan=%d bastırılan=%d yeniden görülen emekli=%d",
+                         stale["opened"], stale["advanced"], stale["recovered"], stale["suppressed"],
+                         stale["reappeared"])
         if self.outbox is not None:
             try:
                 totals["published"] = self.outbox.publish_pending(conn)
@@ -167,8 +184,8 @@ class Worker:
         if self.config.health_file:
             # Konteyner sağlık denetimi: dosyanın değişme zamanı son turu gösterir (tools/../deploy/evren.py).
             Path(self.config.health_file).touch()
-        handled = (totals["create"] + totals["manual"] + totals["relation"] + totals["attest"] + totals["decision"]
-                   + totals["split"])
+        handled = (totals["create"] + totals["manual"] + totals["relation"] + totals["attest"] + totals["retire"]
+                   + totals["decision"] + totals["split"])
         self.processed += handled
         self.failed += totals["failed"]
         self._heartbeat(conn, failed_now=totals["failed"] > 0)
