@@ -60,9 +60,9 @@ def test_vcenter_records_reconcile_into_hosts_vms_and_relations(as_reconciler, m
         SELECT p.name, t.name, ch.name FROM cmdb.cmdb_rel_ci r
           JOIN cmdb.cmdb_ci p ON p.sys_id = r.parent JOIN cmdb.cmdb_ci ch ON ch.sys_id = r.child
           JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type
-         WHERE r.discovery_source = 'vCenter' AND p.name IN ('ist-app-02', 'ist-app-02 (Uygulama)')
-         ORDER BY 1, 2""")
-    assert rels == [("ist-app-02", "Instantiates::Instantiated by", "ist-app-02 (Uygulama)"),
+         WHERE r.discovery_source = 'vCenter' AND p.name IN ('ist-app-02', 'ist-app-02 (Uygulama)')""")
+    # sıralama Python'da: veritabanı harmanlaması (C / en_US) sonucu etkilemesin
+    assert sorted(rels) == [("ist-app-02", "Instantiates::Instantiated by", "ist-app-02 (Uygulama)"),
                     ("ist-app-02", "Virtualized by::Virtualizes", "esx01"),
                     ("ist-app-02 (Uygulama)", "Registered on::Has registered", "esx01")]
     assert not fetch(as_reconciler, "SELECT 1 FROM cmdb.cmdb_ci WHERE name = 'sablon-rhel9'")  # şablon CI değil
@@ -87,12 +87,12 @@ def test_zabbix_and_vcenter_samples_merge_the_same_server(as_reconciler, metadat
         store.apply_all(gw.sent)
         store.finish_run(run_id)
     merged = fetch(as_reconciler, """
-        SELECT l.ci_sys_id, array_agg(l.data_source || ':' || l.source_key ORDER BY l.data_source)
+        SELECT l.ci_sys_id, array_agg(l.data_source || ':' || l.source_key)
           FROM ingest.identity_link l
          WHERE l.active AND (l.data_source, l.source_key) IN (('Zabbix', '20502'),
                ('vCenter', 'guest:5003A1B2-C3D4-E5F6-0718-293A4B5C6D7E'), ('Zabbix', '20504'),
                ('vCenter', 'guest:5003A1B2-C3D4-E5F6-0718-293A4B5C6D80'))
-         GROUP BY 1 ORDER BY 2""")
-    assert [links for _ci, links in merged] == [
+         GROUP BY 1""")
+    assert sorted(sorted(links) for _ci, links in merged) == [  # harmanlamadan bağımsız
         ["Zabbix:20502", "vCenter:guest:5003A1B2-C3D4-E5F6-0718-293A4B5C6D7E"],
         ["Zabbix:20504", "vCenter:guest:5003A1B2-C3D4-E5F6-0718-293A4B5C6D80"]]
