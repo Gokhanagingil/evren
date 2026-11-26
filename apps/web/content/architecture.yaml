@@ -46,7 +46,7 @@ chapters:
     nodes:
       - {id: change_filter, kind: engine, col: 0, row: 0, label: Değişim süzgeci, sub: ["İçerik özeti aynıysa", "işlem yok"]}
       - {id: normalize, kind: engine, col: 1, row: 0, label: Normalizasyon, sub: ["abc_1 · abc-1 · abc_1@local", "→ abc-1"]}
-      - {id: identity, kind: engine, col: 2, row: 0, span: 2, label: Kimlik çözümleme, sub: ["IRE kuralları + olasılıksal skor", "+ çelişki denetimi"]}
+      - {id: identity, kind: engine, col: 2, row: 0, span: 2, label: Kimlik çözümleme, sub: ["IRE kuralları + olasılıksal skor", "+ çelişki denetimi + bağımlı CI"]}
       - {id: reconcile, kind: engine, col: 4, row: 0, label: Uzlaştırma, sub: ["Öncelik · veri tazeleme", "· eskime"]}
       - {id: breaker, kind: security, col: 5, row: 0, label: Devre kesici, sub: ["Kısmi çalışma", "CI emekliye ayırmaz"]}
       - {id: match_queue, kind: human, col: 2, row: 1, span: 2, label: Eşleştirme kuyruğu, sub: ["Yan yana karşılaştırma, açıklama", "birleştir / ayır (geri alınabilir)"]}
@@ -218,7 +218,7 @@ details:
     security: []
   identity:
     phase: F0
-    text: Önce ServiceNow IRE semantiğindeki tanımlama kuralları denenir, sonra olasılıksal skor. Ad eşleşse bile seri, UUID, işletim sistemi, sınıf veya FQDN çelişiyorsa otomatik birleştirme yapılmaz. "srv-01" ile "srv-02" ayrı cihazdır.
+    text: Önce ServiceNow IRE semantiğindeki tanımlama kuralları denenir, sonra olasılıksal skor. Ad eşleşse bile seri, UUID, işletim sistemi, sınıf veya FQDN çelişiyorsa otomatik birleştirme yapılmaz. "srv-01" ile "srv-02" ayrı cihazdır. Bağımlı CI'lar (ağ adaptörü, uygulama) ana CI bağlamında yerel anahtarla tanınır; anahtar küresel dizine girmez (ADR-0029).
     tech: ["evren_core.identity", "metadata/identification_rules.yaml"]
     security: [Birleştirme bağlantıdır, geri alınabilir]
   reconcile:

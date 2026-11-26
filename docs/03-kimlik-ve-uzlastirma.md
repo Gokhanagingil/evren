@@ -78,7 +78,11 @@ Kurallar: `metadata/identification_rules.yaml`, `metadata/reconciliation_rules.y
    - Otomatik birleştirme: ≥ 0,97 **ve** ikinci adaydan en az 0,10 fark.
    - İnceleme: ≥ 0,35.
    - Altı: yeni CI.
-6. **Bağımlı sınıflar** (uygulama, ağ adaptörü, Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu) yalnızca üst CI bağlamında tanımlanır. Bu uygulanana kadar `insufficient` döner (F1-07, U7). Bağlam öznitelikleri (ad alanı, bağlama noktası, bölge, VLAN) küresel aday dizinine girmez: `default` ad alanı yüzlerce kümede vardır.
+6. **Bağımlı sınıflar** (uygulama, ağ adaptörü, Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu) yalnızca ana CI bağlamında tanımlanır (ADR-0029):
+   - Kayıt ana kaydını alım zarfındaki `parent` alanıyla bildirir. Uzlaştırıcı ana CI'ı ana kaydın kimlik bağından bulur.
+   - Yerel anahtar (MAC, ad, bağlama noktası…) ana CI bağlamında `ingest.dependent_key` tablosunda aranır ve küresel dizine hiç girmez. Aynı MAC iki cihazda iki ayrı adaptördür; iki kaynak aynı sunucunun aynı adaptörünü bildirirse tek CI olur.
+   - Ana kayıt henüz bağlı değilse kayıt bekletilir ve çalışma sonunda yeniden denenir. Ana kaydı veya anahtar öznitelikleri eksik kayıt "yetersiz" kuyruğuna gider; tahminle CI açılmaz.
+   - Ana CI ile bağ kurala göre kurulur: başvuru alanına (ör. adaptörün `cmdb_ci` alanı) yazılır ya da ilişki olarak eklenir. İlişkinin yönü izinli ilişki kurallarından belirlenir (uygulama `Runs on` sunucu).
 7. **Aile.** Adaylar sınıf ailesi içinde aranır. Aile listesinde olmayan dal, `cmdb_ci`'ın ilk alt sınıfıyla kendi ailesini kurar (ADR-0019).
 
 Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlarıyla kalibre edilir; hedef ölçüt yanlış birleştirme oranı < %0,5.

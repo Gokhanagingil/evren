@@ -15,7 +15,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["IngestEnvelope", "IngestRecord", "LookupData", "RelationRef", "RunEnvelope", "RunSummary", "SecurityPosture"]
+__all__ = ["IngestEnvelope", "IngestRecord", "LookupData", "ParentRef", "RelationRef", "RunEnvelope", "RunSummary",
+           "SecurityPosture"]
 
 DATA_SOURCE_PATTERN = r"^[A-Za-z][A-Za-z0-9_.-]{1,63}$"
 CLASS_PATTERN = r"^[a-z][a-z0-9_]{1,79}$"
@@ -45,6 +46,14 @@ class RelationRef(_Strict):
     target_class_hint: str | None = Field(default=None, pattern=CLASS_PATTERN)
 
 
+class ParentRef(_Strict):
+    """Bağımlı CI'ın ana kaydı (ADR-0029): ağ adaptörünün cihazı, uygulamanın sunucusu. Kimlik ana CI + yerel anahtardır;
+    bağlayıcı sys_id bilmez, ana kaydın kaynak anahtarını verir, uzlaştırıcı çözer."""
+
+    source_key: str = Field(min_length=1, max_length=512)
+    data_source: str | None = Field(default=None, pattern=DATA_SOURCE_PATTERN, description="Boşsa aynı kaynak")
+
+
 class SecurityPosture(_Strict):
     """KISITLI güvenlik duruşu (ADR-0023). Yalnızca ``cmdb.ci_security_posture``'a yazılır; CI özniteliği, kaynak kaydı,
     değişim geçmişi, arama dizini ve olay olmaz. Yalnızca uç nokta güvenliği rolündeki kaynak yazabilir."""
@@ -68,6 +77,8 @@ class IngestRecord(_Strict):
     lookup: LookupData = Field(default_factory=LookupData)
     external_ids: dict[str, str] = Field(default_factory=dict)
     relations: list[RelationRef] = Field(default_factory=list, max_length=512)
+    parent: ParentRef | None = Field(default=None, description="Bağımlı CI'ın ana kaydı (yalnızca bağımlı sınıflarda; "
+                                                               "ADR-0029)")
     deleted: bool = Field(default=False, description="Kaynak nesnenin silindiğini açıkça bildirir (delta modu)")
     observed_at: datetime
     raw_ref: str | None = Field(default=None, max_length=1024, description="Ham yükün arşivdeki konumu")

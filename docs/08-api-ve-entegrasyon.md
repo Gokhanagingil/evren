@@ -112,6 +112,11 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/attestation-requests?ids=a,b,…`: isteklerin durumu (`pending | applied | rejected`) ve uzlaştırıcının notu.
 - CI ayrıntısında `attestation`: durum, politika, son onay (kişi adı, tarih), geçerlilik sonu, sorumlular, son istekler, açık ret anomalisi, `can_attest`, `blocker` ve `blocker_code`.
 
+### Bağımlı CI (ADR-0029)
+
+- Alım zarfında isteğe bağlı `parent: {"source_key": "…", "data_source": null}`: bağımlı sınıfın kaydı ana kaydını bildirir (ör. NNMi arayüzü → düğüm). Eşleme dosyasında `parent: {source_key: {from: …}}`. Bağımlı olmayan sınıfta yok sayılmaz ama kullanılmaz.
+- CI ayrıntısında `dependents` (bu CI'a bağlı CI'lar ve yerel anahtarları) ve `depends_on` (bağımlı CI'ın ana CI'ı); CI'a başvuran alanlar adla gösterilir.
+
 ### Eskime (ADR-0028)
 
 - `GET /api/v1/staleness/summary`: öneri sayıları (`candidate`, `stale`, `retired`, `dismissed`, `recovered`, `reappeared`), kurallar (sınıf ve süreler), gözlemci kaynakların son çalışma sağlığı (`ok`, `unhealthy`, `none`) ve `can_decide`.

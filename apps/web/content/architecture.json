@@ -344,13 +344,13 @@
       "label": "Kimlik çözümleme",
       "sub": [
         "IRE kuralları + olasılıksal skor",
-        "+ çelişki denetimi"
+        "+ çelişki denetimi + bağımlı CI"
       ],
       "kind": "engine",
       "kind_label": "Evren bileşeni",
       "chapter": "sense",
       "phase": "F0",
-      "text": "Önce ServiceNow IRE semantiğindeki tanımlama kuralları denenir, sonra olasılıksal skor. Ad eşleşse bile seri, UUID, işletim sistemi, sınıf veya FQDN çelişiyorsa otomatik birleştirme yapılmaz. \"srv-01\" ile \"srv-02\" ayrı cihazdır.",
+      "text": "Önce ServiceNow IRE semantiğindeki tanımlama kuralları denenir, sonra olasılıksal skor. Ad eşleşse bile seri, UUID, işletim sistemi, sınıf veya FQDN çelişiyorsa otomatik birleştirme yapılmaz. \"srv-01\" ile \"srv-02\" ayrı cihazdır. Bağımlı CI'lar (ağ adaptörü, uygulama) ana CI bağlamında yerel anahtarla tanınır; anahtar küresel dizine girmez (ADR-0029).",
       "tech": [
         "evren_core.identity",
         "metadata/identification_rules.yaml"

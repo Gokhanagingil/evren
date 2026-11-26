@@ -1,4 +1,5 @@
 """Kimlik çözümleme (identification) — ServiceNow IRE semantiği + olasılıksal eşleştirme."""
+from .dependent import dependent_keys, entry_signature
 from .index import CandidateIndex, CandidateProfile, InMemoryCandidateIndex
 from .keys import extract_keys
 from .model import Feature, IdentityKeys, Outcome, Resolution, SourceRecord
@@ -25,6 +26,8 @@ __all__ = [
     "ScoringWeights",
     "SourceRecord",
     "contradictions",
+    "dependent_keys",
+    "entry_signature",
     "extract_keys",
     "jaro_winkler",
     "score",

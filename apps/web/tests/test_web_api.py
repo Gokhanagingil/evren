@@ -533,8 +533,10 @@ def test_create_ci_with_identity_check_using_keyboard(page, base_url):
         expect(page.locator("#ciLinks")).to_contain_text("Manual")
         created = page.evaluate("location.hash").split("/")[-1]
 
-        # aynı seri: yeni CI açılmaz, var olan gösterilir
+        # aynı seri: yeni CI açılmaz, var olan gösterilir. Esc önce açık pencereyi kapatır; pencere kapanınca panel kapanır
+        expect(page.locator(".overlay")).to_have_count(0)
         page.keyboard.press("Escape")
+        expect(page.locator("#detail")).not_to_have_class(re.compile(r"\bopen\b"))
         page.locator("#ciCreate").click()
         page.wait_for_selector("#edit-name")
         page.fill("#edit-name", f"baska-{tag}")
@@ -833,3 +835,18 @@ def test_staleness_page_mobile_has_no_horizontal_overflow(browser, base_url):
     pg.wait_for_selector("#staleCards .metric")
     assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
     context.close()
+
+
+def test_dependent_ci_section_links_parent_and_adapter(page, base_url):
+    """U7.2 (ADR-0029): sunucunun panelinde bağımlı ağ adaptörü (yerel anahtarıyla); adaptörün panelinde ana CI."""
+    from scenarios import make_dependent_pair
+
+    host, _, name = make_dependent_pair()
+    page.goto(base_url + f"/#/ci/{host}")
+    box = page.locator("#ciDependents")
+    expect(box).to_contain_text("Ağ adaptörü")
+    expect(box).to_contain_text("mac_address: 02:00:")
+    box.get_by_role("link", name="eth0").click()
+    expect(page.locator("#ciDependents")).to_contain_text(name)
+    expect(page.locator("#ciDependents")).to_contain_text("bağlamında tanımlanır")
+    shot(page, "web_api_dependent")

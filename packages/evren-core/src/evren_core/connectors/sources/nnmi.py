@@ -113,7 +113,9 @@ class NNMiClient:
 
     def fetch(self, mode: Literal["snapshot", "delta"] = "snapshot",
               since: datetime | None = None) -> Iterator[dict[str, Any]]:
-        """Her çalışma tam listedir: düğümler, sonra arayüzler; düğümler MAC, arayüz sayısı ve L2 komşularıyla verilir."""
+        """Her çalışma tam listedir: düğümler, sonra arayüzler; düğümler MAC, arayüz sayısı ve L2 komşularıyla verilir.
+        MAC'i olan arayüz ayrıca ``_type: Interface`` nesnesi olarak verilir: ağ adaptörü bağımlı CI'dır, kimliği ana
+        düğüm + MAC (ADR-0029); düğümün cihaz kategorisi arayüz eşlemesinin kapsam süzgecine taşınır."""
         nodes = self._all(PATH, "getNodes", get_nodes_envelope, "düğüm")
         for n in nodes:
             if not n.get("uuid"):
@@ -123,6 +125,7 @@ class NNMiClient:
         macs: dict[int, list[str]] = {}
         counts: dict[int, int] = {}
         links: dict[str, set[int]] = {}
+        adapters: list[dict[str, Any]] = []
         for i in ifaces:
             host = i.get("hostedOnId", "")
             if not str(host).isdigit() or int(host) not in by_id:
@@ -132,6 +135,10 @@ class NNMiClient:
             if mac:
                 macs.setdefault(host_id, []).append(mac)
                 counts[host_id] = counts.get(host_id, 0) + 1
+                node = by_id[host_id]
+                adapters.append({**i, "_type": "Interface", "_node_uuid": node["uuid"],
+                                 "_node_category": node.get("deviceCategory", ""),
+                                 "_key": f"{node['uuid']}/if/{i.get('id')}"})
             conn = (i.get("connectionId") or "").strip()
             if conn:
                 links.setdefault(conn, set()).add(host_id)
@@ -144,9 +151,11 @@ class NNMiClient:
                         down.setdefault(a, set()).add(b)
                         up.setdefault(b, set()).add(a)
         for nid, n in by_id.items():
-            yield {**n, "_mac_addresses": sorted(set(macs.get(nid, []))), "_interface_count": counts.get(nid, 0),
+            yield {**n, "_type": "Node", "_mac_addresses": sorted(set(macs.get(nid, []))),
+                   "_interface_count": counts.get(nid, 0),
                    "_l2_down": sorted(by_id[x]["uuid"] for x in down.get(nid, ())),
                    "_l2_up": sorted(by_id[x]["uuid"] for x in up.get(nid, ()))}
+        yield from adapters  # ana düğümden sonra (uzlaştırıcı sırayı gerektirmez; ADR-0029)
 
 
 # ---------------------------------------------------------------------------------------------------- simülatör

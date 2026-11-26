@@ -1,0 +1,19 @@
+# OpenText (Micro Focus) NNMi — Interface → cmdb_ci_network_adapter (U7.2, ADR-0029)
+# Ağ adaptörü bağımlı CI'dır: kimliği ana düğümün CI'ı + MAC'tir (identification_rules.yaml, parent_reference: cmdb_ci).
+# Aynı MAC iki cihazda iki ayrı adaptördür; MAC küresel kimlik dizinine girmez. Yalnızca MAC'i olan arayüz ve yalnızca
+# kapsamdaki ağ cihazının arayüzü (düğüm eşlemesiyle aynı kategori süzgeci). Alan adları kurum sürümünde doğrulanmalı.
+description: Ağ cihazlarının fiziksel arayüzleri (MAC'li)
+verify: true
+data_source: NNMi
+source_key: _key
+class: cmdb_ci_network_adapter
+parent:
+  source_key: {from: _node_uuid}
+require:
+  - {from: _type, matches: "^Interface$"}
+  - {from: physicalAddress, matches: "\\S"}
+include_when:
+  - {from: _node_category, matches: "(?i)switch|router|firewall|loadbalancer|wireless|chassis"}
+attributes:
+  name: {from: ifName, fallback: name, transform: strip}
+  mac_address: {from: physicalAddress, transform: strip}

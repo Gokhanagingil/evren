@@ -70,6 +70,9 @@ class IdentificationRule:
     entries: tuple[IdentifierEntry, ...]
     independent: bool = True
     description: str = ""
+    #: Bağımlı kural (ADR-0029): ana CI ile ilişki tipi ve ana sınıf, ya da ana CI'ı tutan başvuru alanı
+    parent_relation: tuple[str, str] | None = None
+    parent_reference: str | None = None
 
     def ordered(self) -> list[IdentifierEntry]:
         return sorted(self.entries, key=lambda e: e.priority)
@@ -88,8 +91,11 @@ class RuleSet:
                 IdentifierEntry(int(e["priority"]), tuple(e["attributes"]), e.get("search_table"))  # type: ignore[index,arg-type]
                 for e in item["entries"]  # type: ignore[union-attr]
             )
-            rules.append(IdentificationRule(str(item["applies_to"]), entries, bool(item.get("independent", True)),
-                                            str(item.get("description", ""))))
+            rel = item.get("parent_relation")
+            rules.append(IdentificationRule(
+                str(item["applies_to"]), entries, bool(item.get("independent", True)), str(item.get("description", "")),
+                (str(rel["type"]), str(rel["parent_class"])) if isinstance(rel, Mapping) else None,  # type: ignore[index]
+                str(item["parent_reference"]) if item.get("parent_reference") else None))
         return cls(rules, hierarchy)
 
     def for_class(self, class_name: str) -> IdentificationRule | None:

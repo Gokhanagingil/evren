@@ -118,7 +118,7 @@ Bir iş ancak şu koşullar sağlanınca "tamamlandı" sayılır:
 apps/web/                 Arayüz (derlemesiz ES modülleri), içerik: architecture.yaml, roadmap.json
 packages/evren-core/      Saf alan mantığı + testler
   normalize.py            hostname/seri/MAC/UUID/IP normalizasyonu
-  identity/               IRE kuralları, olasılıksal skor, çözümleyici
+  identity/               IRE kuralları, olasılıksal skor, çözümleyici; dependent.py bağımlı CI yerel anahtarı (ADR-0029)
   reconcile.py            öznitelik uzlaştırma (öncelik, veri tazeleme)
   circuit_breaker.py      kaynak sağlığı ve karantina
   encoded_query.py        ServiceNow sysparm_query → güvenli SQL
@@ -145,7 +145,7 @@ packages/evren-core/      Saf alan mantığı + testler
 connectors/<kaynak>/      kaynak başına eşleme dosyaları; samples/ sentetik örnek veri (simülatör)
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
-db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime (tools/migrate.py uygular)
+db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik (tools/migrate.py uygular)
 services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), indexer (arama),
                           connector-runner (şimdi çalıştır + zamanlama; kaynak sırları yalnızca burada, ADR-0021), sn-sync, mcp
 deploy/                   tek imaj (Dockerfile, evren.py giriş noktası), compose geliştirme yığını, Kafka konuları, connectors.dev.yaml

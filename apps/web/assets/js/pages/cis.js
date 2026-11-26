@@ -264,6 +264,20 @@ export async function renderCis(view, param) {
       actions));
   }
 
+  // Bağımlı CI kimliği (U7.2, ADR-0029): ana CI'a bağlı CI'lar (ağ adaptörü, uygulama…) ve bağımlının ana CI'ı
+  function dependentSection(c) {
+    const deps = c.dependents || [];
+    const parents = c.depends_on || [];
+    if (!deps.length && !parents.length) return null;
+    const link = (x) => h('a', { href: `#/ci/${x.sys_id}` }, x.name);
+    return section('Bağımlı CI\'lar', h('div', { id: 'ciDependents' },
+      parents.length ? h('p', { class: 'small' }, 'Bu CI ', parents.map((p, i) => h('span', {}, i ? ', ' : '', link(p), ` (${p.class_label})`)),
+        ' bağlamında tanımlanır: kimliği ana CI ile kendi yerel anahtarıdır.') : null,
+      deps.length ? h('ul', { class: 'mini', 'aria-label': 'Bu CI\'a bağlı CI\'lar' }, deps.map((d) => h('li', {},
+        h('div', { class: 'pills' }, pill(d.class_label, 'neutral')), link(d),
+        d.key ? h('div', { class: 'cell-sub mono' }, d.key) : null))) : null));
+  }
+
   // Eskime (U7.1, ADR-0028): açık öneri veya son karar; Veri sorumlusuna Emekliye ayır / Koru
   function stalenessSection(c, opener) {
     const s = c.staleness;
@@ -406,6 +420,7 @@ export async function renderCis(view, param) {
         stalenessSection(c, opener),
         attestationSection(c, opener),
         relationSection(c, opener),
+        dependentSection(c),
         section('Kaynak kayıtları ve kimlik kararı', h('ul', { class: 'mini', id: 'ciLinks' }, c.links.map((l) => linkItem(c, l))),
           mode === 'api' && c.can_split && c.links.length > 1
             ? h('p', { class: 'muted small' }, 'Yanlış birleştirilmiş bir kaynak kaydını "Ayır" ile bu CI\'dan ayırabilirsiniz.') : null),

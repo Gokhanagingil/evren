@@ -41,6 +41,18 @@
           "title": "Observed At",
           "type": "string"
         },
+        "parent": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ParentRef"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Bağımlı CI'ın ana kaydı (yalnızca bağımlı sınıflarda; ADR-0029)"
+        },
         "posture": {
           "anyOf": [
             {
@@ -134,6 +146,37 @@
         }
       },
       "title": "LookupData",
+      "type": "object"
+    },
+    "ParentRef": {
+      "additionalProperties": false,
+      "description": "Bağımlı CI'ın ana kaydı (ADR-0029): ağ adaptörünün cihazı, uygulamanın sunucusu. Kimlik ana CI + yerel anahtardır;\nbağlayıcı sys_id bilmez, ana kaydın kaynak anahtarını verir, uzlaştırıcı çözer.",
+      "properties": {
+        "data_source": {
+          "anyOf": [
+            {
+              "pattern": "^[A-Za-z][A-Za-z0-9_.-]{1,63}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Boşsa aynı kaynak",
+          "title": "Data Source"
+        },
+        "source_key": {
+          "maxLength": 512,
+          "minLength": 1,
+          "title": "Source Key",
+          "type": "string"
+        }
+      },
+      "required": [
+        "source_key"
+      ],
+      "title": "ParentRef",
       "type": "object"
     },
     "RelationRef": {

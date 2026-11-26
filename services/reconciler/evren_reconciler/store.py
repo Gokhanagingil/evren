@@ -36,10 +36,11 @@ from psycopg.types.json import Jsonb
 from evren_core.attestation import ATTESTED, NOT_REVIEWED, REASONS_TR, REJECTED
 from evren_core.change_control import LOCAL_TZ, ChangeRecord, evaluate
 from evren_core.circuit_breaker import BreakerState, BreakerVerdict, evaluate_run
-from evren_core.envelope import IngestRecord
-from evren_core.identity import IdentityResolver, Outcome, Resolution, RuleSet, extract_keys
+from evren_core.envelope import IngestRecord, RelationRef
+from evren_core.identity import IdentityResolver, Outcome, Resolution, RuleSet, dependent_keys, extract_keys
 from evren_core.identity.adapters import source_record_from_ingest
 from evren_core.identity.index import CandidateProfile
+from evren_core.identity.rules import IdentificationRule
 from evren_core.metadata import CORE_COLUMNS, Metadata
 from evren_core.reconcile import Reconciler, SourceValues
 from evren_core.reference import ROLE_TABLES, ReferenceDataError, coerce_reference, is_reference
@@ -106,7 +107,8 @@ def _record_from_row(row: dict[str, Any]) -> IngestRecord:
     return IngestRecord(
         data_source=row["data_source"], run_id=row["last_run"] or UUID(int=0), source_key=row["source_key"],
         class_hint=row["class_hint"], attributes=row["attributes"], lookup=row["lookup"],
-        external_ids=row["external_ids"], relations=row["relations"], observed_at=row["last_seen"])
+        external_ids=row["external_ids"], relations=row["relations"], observed_at=row["last_seen"],
+        parent=row.get("parent"))
 
 
 def _manual_outcome(name: str, value: Any, winners: dict[str, Any], conflicts: dict[str, Any]) -> dict[str, Any]:
@@ -138,6 +140,8 @@ def _manual_note(outcome: dict[str, dict[str, Any]]) -> str:
 def content_hash(record: IngestRecord) -> str:
     doc = record.model_dump(mode="json", include={"class_hint", "attributes", "lookup", "external_ids", "relations",
                                                   "deleted"})
+    if record.parent is not None:  # ana kaydı olmayan kayıtların özeti değişmez (ADR-0029)
+        doc["parent"] = record.parent.model_dump(mode="json")
     if record.posture is not None:  # duruşu olmayan kayıtların özeti değişmez (ADR-0023)
         doc["posture"] = record.posture.model_dump(mode="json")
     return hashlib.sha256(json.dumps(doc, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
@@ -161,6 +165,7 @@ class ReconcilerStore:
         self.policy = metadata.change_policy
         self.attestation = metadata.attestation_policy
         self.staleness = metadata.staleness_policy
+        self.relation_rules = metadata.relations
         self._retired_cis: set[str] = set()  # son eskime taramasında yaşam döngüsü zaten emekli olan CI'lar
 
     # ------------------------------------------------------------------ çalışma yaşam döngüsü
@@ -183,7 +188,9 @@ class ReconcilerStore:
 
     def finish_run(self, run_id: UUID, *, completed: bool = True, error_count: int = 0,
                    finished_at: datetime | None = None, note: str | None = None) -> BreakerVerdict:
-        """Çalışmayı kapatır: sayaçlar veritabanından, devre kesici kararı, ilişkiler, görülmeyenlerin işaretlenmesi."""
+        """Çalışmayı kapatır: sayaçlar veritabanından, devre kesici kararı, ilişkiler, görülmeyenlerin işaretlenmesi.
+        Önce ana kaydı çalışmada sonradan gelen bağımlı kayıtlar çözülür (ADR-0029)."""
+        self.resolve_deferred_dependents(run_id)
         with self.conn.transaction(), self.conn.cursor() as cur:
             cur.execute("SELECT data_source, mode, finished_at FROM ingest.source_run WHERE run_id = %s FOR UPDATE",
                         (run_id,))
@@ -388,7 +395,10 @@ class ReconcilerStore:
             row = cur.fetchone()
             links = PostgresLinkStore(cur)
             linked = links.get(record.data_source, record.source_key)
-            if row and row[0] == digest and (linked or attach_to is None):
+            dep_rule = self.rules.for_class(record.class_hint) if attach_to is None else None
+            dependent = dep_rule is not None and not dep_rule.independent
+            # Ana kaydı bekleyen bağımlı kayıt içerik değişmese de yeniden denenir (ADR-0029)
+            if row and row[0] == digest and (linked or attach_to is None) and not (dependent and not linked):
                 cur.execute("""UPDATE ingest.source_record SET last_seen = %s, last_run = %s, status = 'active'
                                 WHERE data_source = %s AND source_key = %s""",
                             (record.observed_at, record.run_id, record.data_source, record.source_key))
@@ -396,6 +406,9 @@ class ReconcilerStore:
                     self._touch_discovered(cur, linked, src.name, record.observed_at)
                     self._write_posture(cur, record, linked)  # kuyruk kararından sonra ilk çalışmada da yazılır
                 return ApplyResult("unchanged", linked)
+            if dependent:
+                assert dep_rule is not None
+                return self._process_dependent(cur, record, dep_rule, digest, links, linked, row)
             self._upsert_source_record(cur, record, digest)
             index = PostgresCandidateIndex(cur)
             resolver = IdentityResolver(self.rules, index, links)
@@ -446,6 +459,114 @@ class ReconcilerStore:
             kind = "review" if res.outcome is Outcome.REVIEW else "insufficient"
             self._enqueue(cur, record, res, kind, priority=2 if kind == "review" else 4, note=None)
             return ApplyResult(kind, res.ci_sys_id, [], res.summary_tr)
+
+    # ------------------------------------------------------------------ bağımlı CI kimliği (ADR-0029)
+    def _parent_link(self, record: IngestRecord, rule: IdentificationRule) -> tuple[RelationRef | None, str | None]:
+        """Bağımlı kaydın ana CI ile ilişkisi: ``parent_relation`` kuralında ilişki (yönü ilişki kurallarından; ör.
+        uygulama 'Runs on' sunucu → bu kayıt ebeveyn, vCenter 'Contains' veri merkezi → bu kayıt çocuk) veya
+        ``parent_reference`` kuralında başvuru alanının adı."""
+        if record.parent is None:
+            return None, None
+        if rule.parent_relation is not None:
+            rel_type, parent_class = rule.parent_relation
+            verdict = self.relation_rules.check(record.class_hint, rel_type, parent_class)
+            direction = "child" if verdict.outcome == "reversed" else "parent"
+            return RelationRef(type=rel_type, direction=direction, target_source_key=record.parent.source_key,
+                               target_data_source=record.parent.data_source, target_class_hint=parent_class), None
+        return None, rule.parent_reference
+
+    def _process_dependent(self, cur: psycopg.Cursor[Any], record: IngestRecord, rule: IdentificationRule,
+                           digest: str, links: PostgresLinkStore, linked: str | None,
+                           row: tuple[Any, ...] | None) -> ApplyResult:
+        """Bağımlı sınıfın kaydı (ADR-0029): ana CI bulunur, yerel anahtar ana CI bağlamında aranır; eşleşme yoksa CI
+        açılır. Ana kayıt henüz bağlı değilse kayıt saklanır ve çalışma sonunda yeniden denenir (``deferred``).
+        Anahtarlar küresel kimlik dizinine girmez; ana CI ile ilişki veya başvuru alanı kaynak kaydına eklenir."""
+        src = self.registry.source(record.data_source)
+        if record.parent is None:
+            self._upsert_source_record(cur, record, digest)
+            note = "Bağımlı sınıfın kaydı ana kaydını bildirmedi; bağlayıcı eşlemesine parent eklenmeli"
+            self._enqueue(cur, record, Resolution(Outcome.INSUFFICIENT, reasons=(note,)), "insufficient", priority=4,
+                          note=None)
+            return ApplyResult("insufficient", None, [], note)
+        parent_ci = links.get(record.parent.data_source or record.data_source, record.parent.source_key)
+        if parent_ci is None:
+            self._upsert_source_record(cur, record, digest)
+            return ApplyResult("deferred", None, [], "Ana kayıt henüz bağlı değil; çalışma sonunda yeniden denenir")
+        relation, reference = self._parent_link(record, rule)
+        attrs = dict(record.attributes)
+        if reference:
+            attrs[reference] = parent_ci
+        rels = list(record.relations)
+        if relation is not None and not any(r.type == relation.type and r.target_source_key == relation.target_source_key
+                                            for r in rels):
+            rels.append(relation)
+        stored = record.model_copy(update={"attributes": attrs, "relations": rels})
+        self._upsert_source_record(cur, stored, digest)
+        family = self.hierarchy.family(record.class_hint) or record.class_hint
+        keys = dependent_keys(rule, attrs)
+        empty = keys_from_json({})
+        index = PostgresCandidateIndex(cur)
+        resolver = IdentityResolver(self.rules, index, links)
+        ci = linked
+        how = "bağlı kayıt"
+        if ci is None:
+            for signature, value in keys:
+                cur.execute("""SELECT ci_sys_id FROM ingest.dependent_key WHERE parent_ci_sys_id = %s AND family = %s
+                                  AND signature = %s AND value = %s""", (parent_ci, family, signature, value))
+                hit = cur.fetchone()
+                if hit:
+                    ci, how = hit[0], f"bağımlı: {signature}"
+                    break
+        if ci is None and not keys:
+            note = "Bağımlı CI'ın kimlik öznitelikleri eksik (" + ", ".join(
+                "+".join(e.attributes) for e in rule.ordered()) + ")"
+            self._enqueue(cur, record, Resolution(Outcome.INSUFFICIENT, reasons=(note,)), "insufficient", priority=4,
+                          note=None)
+            return ApplyResult("insufficient", None, [], note)
+        outcome = "linked" if linked else "rule_match"
+        if ci is None:
+            if not self.registry.may_create_ci(record.data_source):
+                kind = "unmatched_shadow" if src.lifecycle == "shadow" else "unmatched_retiring"
+                note = f"{record.data_source} ({src.lifecycle}) yeni bağımlı CI açamaz"
+                self._enqueue(cur, record, Resolution(Outcome.NEW, reasons=(note,)), kind, priority=5, note=None)
+                return ApplyResult(kind, None, [], note)
+            ci, how, outcome = self._create_ci(cur, stored), "yeni bağımlı CI", "new"
+        if not linked:
+            self._attach(cur, index, resolver, stored, empty, ci, method="rule", rule=how, resolution=None)
+        for signature, value in keys:
+            cur.execute("""INSERT INTO ingest.dependent_key (parent_ci_sys_id, family, signature, value, ci_sys_id,
+                                                             data_source)
+                           VALUES (%s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING""",
+                        (parent_ci, family, signature, value, ci, record.data_source))
+        self._close_open_candidates(cur, record, "Bağımlı kimlik çözüldü")
+        return ApplyResult(outcome, ci, self._reconcile(cur, ci, record.run_id),
+                           f"Bağımlı CI: ana CI bağlamında {how}")
+
+    def resolve_deferred_dependents(self, run_id: UUID, *, passes: int = 3) -> dict[str, int]:
+        """Çalışmada ana kaydı henüz bağlı olmadığı için bekletilen bağımlı kayıtları yeniden dener (zincir için
+        birkaç tur: veritabanı → örnek → sunucu). Hâlâ bağlanamayan kayıt beklemede kalır; sonraki çalışmada denenir."""
+        counts = {"resolved": 0, "orphaned": 0}
+        for _ in range(passes):
+            with self.conn.cursor(row_factory=dict_row) as cur:
+                cur.execute("""SELECT sr.* FROM ingest.source_record sr
+                                WHERE sr.last_run = %s AND sr.parent IS NOT NULL AND sr.status <> 'deleted'
+                                  AND NOT EXISTS (SELECT 1 FROM ingest.identity_link l WHERE l.active
+                                                     AND l.data_source = sr.data_source AND l.source_key = sr.source_key)
+                                  AND NOT EXISTS (SELECT 1 FROM ingest.match_candidate m WHERE m.status = 'open'
+                                                     AND m.data_source = sr.data_source AND m.source_key = sr.source_key)
+                                ORDER BY sr.source_key""", (run_id,))
+                rows = cur.fetchall()
+            progress = waiting = 0
+            for row in rows:
+                record = _record_from_row(row).model_copy(update={"run_id": run_id})
+                res = self._process(record, attach_to=None, method=None)
+                progress += bool(res.ci_sys_id)
+                waiting += res.outcome == "deferred"
+            counts["resolved"] += progress
+            counts["orphaned"] = waiting
+            if not progress:
+                break
+        return counts
 
     # ------------------------------------------------------------------ yetkisiz değişiklik (ADR-0025)
     def _observation(self, record: IngestRecord, row: tuple[Any, ...] | None) -> Observation | None:
@@ -662,17 +783,18 @@ class ReconcilerStore:
         cur.execute(
             """INSERT INTO ingest.source_record (data_source, source_key, class_hint, attributes, lookup, external_ids,
                                                  relations, content_hash, raw_ref, status, first_seen, last_seen,
-                                                 last_changed, last_run, first_run, changed_run)
-               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s, %s)
+                                                 last_changed, last_run, first_run, changed_run, parent)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, now(), %s, %s, %s, %s)
                ON CONFLICT (data_source, source_key) DO UPDATE SET class_hint = EXCLUDED.class_hint,
                  attributes = EXCLUDED.attributes, lookup = EXCLUDED.lookup, external_ids = EXCLUDED.external_ids,
                  relations = EXCLUDED.relations, content_hash = EXCLUDED.content_hash, raw_ref = EXCLUDED.raw_ref,
+                 parent = EXCLUDED.parent,
                  status = EXCLUDED.status, last_seen = EXCLUDED.last_seen, last_changed = now(),
                  last_run = EXCLUDED.last_run, changed_run = EXCLUDED.changed_run""",
             (record.data_source, record.source_key, record.class_hint, Jsonb(dumped["attributes"]),
              Jsonb(dumped["lookup"]), Jsonb(dumped["external_ids"]), Jsonb(dumped["relations"]), digest,
              record.raw_ref, "deleted" if record.deleted else "active", record.observed_at, record.observed_at,
-             record.run_id, record.run_id, record.run_id))
+             record.run_id, record.run_id, record.run_id, Jsonb(dumped["parent"]) if dumped.get("parent") else None))
 
     def _profile_class(self, index: PostgresCandidateIndex, ci: str, class_hint: str) -> str:
         try:

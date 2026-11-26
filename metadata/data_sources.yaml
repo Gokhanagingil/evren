@@ -88,7 +88,7 @@ data_sources:
     lifecycle: active
     product: {vendor: OpenText (Micro Focus), name: Network Node Manager i, interface: "SOAP/REST web servisleri (sürüme göre)"}
     connector: nnmi
-    mappings: [connectors/nnmi/mapping.yaml]
+    mappings: [connectors/nnmi/mapping.yaml, connectors/nnmi/interface.mapping.yaml]
     schedule: "0 3 * * *"
     authoritative_for_tr: Ağ cihazları, arayüzler, L2 bağlantıları
   - name: Zabbix

@@ -285,6 +285,13 @@ def test_segregation_of_duties_enforced():
         ("evren_readonly", "SELECT count(*) FROM insight.staleness_case"),
         ("evren_app_mcp", "SELECT count(*) FROM ingest.retirement_request"),
         ("evren_app_connector", "SELECT count(*) FROM insight.staleness_case"),
+        # 0027 (ADR-0029): bağımlı kimlik anahtarlarını yalnızca uzlaştırıcı yazar
+        ("evren_app_api", "INSERT INTO ingest.dependent_key (parent_ci_sys_id, family, signature, value, ci_sys_id, "
+                          "data_source) SELECT sys_id, 'x', 'x', 'x', sys_id, 'NNMi' FROM cmdb.cmdb_ci WHERE false"),
+        ("evren_app_api", "UPDATE ingest.dependent_key SET value = 'x' WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM ingest.dependent_key WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM ingest.dependent_key"),
+        ("evren_app_connector", "SELECT count(*) FROM ingest.dependent_key"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
         ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
@@ -347,6 +354,8 @@ def test_least_privilege_boundaries(role, statement):
                           "SELECT sys_id, ci_sys_id, 'dismiss', 'x', 'x' FROM insight.staleness_case WHERE false"),
         ("evren_app_reconciler", "UPDATE insight.staleness_case SET status = 'recovered', closed_at = now() WHERE false"),
         ("evren_auditor_ro", "SELECT action, note FROM ingest.retirement_request"),
+        ("evren_app_api", "SELECT parent_ci_sys_id, signature, value FROM ingest.dependent_key"),
+        ("evren_app_reconciler", "UPDATE ingest.source_record SET parent = NULL WHERE false"),
     ],
 )
 def test_allowed_paths_work(role, statement):

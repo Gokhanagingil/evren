@@ -392,7 +392,7 @@ def smoke_connector_run(token: str) -> None:
               "kısıtlı güvenlik duruşu yalnızca cmdb.ci_security_posture'da; Güvenlik okuyucu rolüyle görünüyor (ADR-0023)")
 
         step("Bağlayıcı çalıştırıcı: NNMi simülatörü (SOAP getNodes, güvenli XML) → Ağ rolü")
-        _connector_run("nnmi", nn_token, 3)
+        _connector_run("nnmi", nn_token, 10)  # 3 ağ cihazı + 7 MAC'li arayüz (bağımlı CI, ADR-0029)
         _s, sw = http("GET", f"{API}/api/v1/ci/{SN_SWITCH_SYS_ID}")
         check({lk["data_source"] for lk in sw.get("links") or []} >= {"ServiceNow", "Zabbix", "NNMi"},
               f"ağ cihazı: ServiceNow, Zabbix ve NNMi tek CI'da (seri numarası; {SN_SWITCH_SYS_ID})")

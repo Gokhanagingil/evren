@@ -23,7 +23,7 @@ from uuid import UUID
 
 from pydantic import ValidationError
 
-from ..envelope import IngestRecord, LookupData, RelationRef, SecurityPosture
+from ..envelope import IngestRecord, LookupData, ParentRef, RelationRef, SecurityPosture
 
 __all__ = ["TRANSFORMS", "FieldMapping", "MappingError", "resolve_path"]
 
@@ -169,6 +169,8 @@ class FieldMapping:
     include_when: list[tuple[str, re.Pattern[str]]] = field(default_factory=list)
     require: list[tuple[str, re.Pattern[str]]] = field(default_factory=list)
     posture: dict[str, FieldSpec] = field(default_factory=dict)  # kısıtlı güvenlik duruşu (ADR-0023)
+    parent: FieldSpec | None = None  # bağımlı CI'ın ana kaydının kaynak anahtarı (ADR-0029)
+    parent_data_source: str | None = None
 
     @classmethod
     def from_dict(cls, doc: Mapping[str, Any]) -> FieldMapping:
@@ -176,7 +178,8 @@ class FieldMapping:
             if required not in doc:
                 raise MappingError(f"Eşleme dosyasında '{required}' zorunlu")
         unknown = set(doc) - {"data_source", "source_key", "class", "class_rules", "include_when", "require",
-                              "attributes", "lookup", "external_ids", "relations", "description", "verify", "posture"}
+                              "attributes", "lookup", "external_ids", "relations", "description", "verify", "posture",
+                              "parent"}
         if unknown:
             raise MappingError(f"Eşleme dosyasında bilinmeyen anahtarlar: {sorted(unknown)}")
         lookup_keys = set((doc.get("lookup") or {}).keys())
@@ -201,6 +204,8 @@ class FieldMapping:
             include_when=[(w["from"], re.compile(w["matches"])) for w in doc.get("include_when", [])],
             require=[(w["from"], re.compile(w["matches"])) for w in doc.get("require", [])],
             posture={k: FieldSpec.parse(v) for k, v in (doc.get("posture") or {}).items()},
+            parent=FieldSpec.parse(doc["parent"]["source_key"]) if doc.get("parent") else None,
+            parent_data_source=(doc.get("parent") or {}).get("data_source"),
         )
 
     @staticmethod
@@ -251,6 +256,12 @@ class FieldMapping:
                     type=rel["type"], direction=rel["direction"], target_source_key=str(t),
                     target_data_source=rel.get("target_data_source"), target_class_hint=rel.get("target_class"),
                 ))
+        parent = None
+        if self.parent is not None:
+            pk = self.parent.extract(raw)
+            if pk in (None, ""):
+                raise MappingError("Bağımlı kaydın ana kayıt anahtarı boş (ADR-0029)")
+            parent = ParentRef(source_key=str(pk), data_source=self.parent_data_source)
         posture_values = {k: v for k, spec in self.posture.items() if (v := spec.extract(raw)) not in (None, "", [])}
         try:
             posture = SecurityPosture(**posture_values) if posture_values else None
@@ -265,6 +276,7 @@ class FieldMapping:
             lookup=LookupData(**lookup),
             external_ids=external,
             relations=relations,
+            parent=parent,
             observed_at=observed_at,
             posture=posture,
         )

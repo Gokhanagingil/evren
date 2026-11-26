@@ -2,13 +2,16 @@
 # NNMi API'si sürüme göre değişir (SOAP NodeBeanService / InterfaceBeanService / REST). Alan adları kurumdaki
 # sürümle doğrulanmalıdır (verify). Arayüzler istemcide düğüme katılır (F1-03): _mac_addresses kimlik eşleşmesine,
 # _interface_count fiziksel arayüz sayısına, _l2_down/_l2_up aynı L2 bağlantısını paylaşan komşulara gider (kimliği
-# küçük uç üst; iki uçtan gelen kayıt aynı ilişkiyi üretir). Ağ adaptörü ayrı CI değildir (bağımlı CI kimliği, U7);
-# kapsam dışındaki komşuya (ör. sunucu) giden bağlantı, o uç NNMi kaydı olmadığından yazılmaz.
+# küçük uç üst; iki uçtan gelen kayıt aynı ilişkiyi üretir). MAC'i olan arayüz ayrıca ağ adaptörü CI'ı olur
+# (interface.mapping.yaml; bağımlı CI kimliği, ADR-0029). Kapsam dışındaki komşuya (ör. sunucu) giden bağlantı, o uç NNMi
+# kaydı olmadığından yazılmaz.
 description: Ağ cihazları (switch, router, firewall, yük dengeleyici, kablosuz)
 verify: true
 data_source: NNMi
 source_key: uuid
 class: cmdb_ci_netgear
+require:
+  - {from: _type, matches: "^Node$"}
 include_when:
   - {from: deviceCategory, matches: "(?i)switch|router|firewall|loadbalancer|wireless|chassis"}
 class_rules:

@@ -66,7 +66,8 @@ def test_request_envelope_contains_only_integers():
 def test_pages_by_id_until_empty_page():
     sim = NNMiSimulator.from_dir(SAMPLES)
     rows = list(client(sim).fetch())
-    assert [r["id"] for r in rows] == ["1001", "1004", "1007", "1010"]
+    assert [r["id"] for r in rows if r["_type"] == "Node"] == ["1001", "1004", "1007", "1010"]
+    assert [r["_type"] for r in rows][:4] == ["Node"] * 4  # arayüzler düğümlerden sonra (ADR-0029)
     assert sim.calls == [(0, 2), (1004, 2), (1010, 2),  # düğümler, sonra arayüzler (aynı anahtar sırası)
                          (0, 2), (3002, 2), (3004, 2), (3101, 2), (3201, 2), (3301, 2)]
     assert sim.paths == [PATH] * 3 + [IFACE_PATH] * 6
@@ -78,7 +79,7 @@ UUID = {"1001": "3c6d2a1e-9b7f-4a50-8c21-6e0f1d2b3a40", "1004": "4d7e3b2f-0c80-4
 
 def test_interfaces_give_macs_count_and_l2_neighbours():
     """F1-03: arayüzler düğüme MAC, arayüz sayısı ve L2 komşusu olarak katılır; küçük kimlikli uç üst."""
-    rows = {r["id"]: r for r in client(page_size=3).fetch()}
+    rows = {r["id"]: r for r in client(page_size=3).fetch() if r["_type"] == "Node"}
     sw, rt, srv = rows["1001"], rows["1004"], rows["1010"]
     assert sw["_mac_addresses"] == ["70:6D:15:AA:00:01", "70:6D:15:AA:00:02", "70:6D:15:AA:00:0A", "70:6D:15:AA:00:FF"]
     assert sw["_interface_count"] == 4  # MAC'i olmayan sanal arayüz (Vlan10) sayılmaz
@@ -93,6 +94,7 @@ def test_interface_of_unknown_node_is_ignored_and_envelope_is_integer_only():
     sim = NNMiSimulator(doc["nodes"], interfaces=[*doc["interfaces"], extra])
     rows = {r["id"]: r for r in client(sim).fetch()}
     assert "AA:BB:CC:DD:EE:FF" not in json.dumps(rows) and rows["1004"]["_l2_up"] == [UUID["1001"]]
+    assert "3999" not in rows  # kapsam dışı düğümün arayüzü adaptör de olmaz
     env = get_interfaces_envelope(3002, 2).decode()
     assert "getInterfaces" in env and "<value>3002</value>" in env
     with pytest.raises(ValueError):
@@ -129,9 +131,18 @@ def test_missing_auth_is_401():
 def test_mapping_keeps_network_devices_only(tmp_path):
     out = tmp_path / "k.ndjson"
     report = run(client(), out)
-    assert report.completed and report.fetched == 4 and report.sent == 3
-    assert report.by_class == {"cmdb_ci_ip_switch": 1, "cmdb_ci_ip_router": 1, "cmdb_ci_ip_firewall": 1}
-    recs = {r["attributes"]["name"]: r for r in (json.loads(x) for x in out.read_text(encoding="utf-8").splitlines())}
+    # 4 düğüm + 8 MAC'li arayüz; sunucu düğümü ve onun arayüzü kapsam dışı (ağ cihazı değil)
+    assert report.completed and report.fetched == 12 and report.sent == 10
+    assert report.by_class == {"cmdb_ci_ip_switch": 1, "cmdb_ci_ip_router": 1, "cmdb_ci_ip_firewall": 1,
+                               "cmdb_ci_network_adapter": 7}
+    lines = [json.loads(x) for x in out.read_text(encoding="utf-8").splitlines()]
+    adapters = [r for r in lines if r["class_hint"] == "cmdb_ci_network_adapter"]
+    gi1 = next(r for r in adapters if r["attributes"]["name"] == "Gi1/0/1")
+    # Bağımlı CI: ana düğümün kaynak anahtarı, MAC; MAC küresel kimlik için lookup'a girmez (ADR-0029)
+    assert gi1["parent"] == {"source_key": UUID["1001"], "data_source": None}
+    assert gi1["attributes"]["mac_address"] == "70:6D:15:AA:00:01" and gi1["source_key"] == f"{UUID['1001']}/if/3001"
+    assert not gi1["lookup"]["mac_addresses"] and all(r["parent"] for r in adapters)
+    recs = {r["attributes"]["name"]: r for r in lines if r["class_hint"] != "cmdb_ci_network_adapter"}
     sw = recs["IST-DC2-CORE-SW01"]
     assert sw["attributes"]["serial_number"] == "FDO2213X0AB" and sw["external_ids"]["nnmi_uuid"].startswith("3c6d")
     assert "systemObjectId" not in json.dumps(sw)  # sysObjectID kimlik değildir, kayda girmez

@@ -182,3 +182,24 @@ def apply_pending_retirements() -> list[str]:
     with psycopg.connect(autocommit=True) as conn:
         conn.execute("SET ROLE evren_app_reconciler")
         return [r.outcome for r in ReconcilerStore(conn, md).apply_retirements()]
+
+
+def make_dependent_pair() -> tuple[str, str, str]:
+    """Testin kendine ait sunucusu ve ona bağlı ağ adaptörü (U7.2, ADR-0029; keşif kaynağı, tek çalışma).
+    Döner: (sunucu sys_id, adaptör sys_id, sunucu adı)."""
+    from evren_core.envelope import ParentRef
+    md = load_metadata(REPO / "metadata")
+    tag = uuid.uuid4().hex[:8]
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        store = ReconcilerStore(conn, md)
+        run = store.start_run(uuid.uuid4(), "BMC")
+        now = datetime.now(UTC)
+        host = store.apply(IngestRecord(data_source="BMC", run_id=run, source_key=f"dp-{tag}", observed_at=now,
+                                        class_hint="cmdb_ci_linux_server",
+                                        attributes={"name": f"dp-{tag}", "serial_number": f"CZD{tag}"}))
+        nic = store.apply(IngestRecord(data_source="BMC", run_id=run, source_key=f"dp-{tag}/eth0", observed_at=now,
+                                       class_hint="cmdb_ci_network_adapter", parent=ParentRef(source_key=f"dp-{tag}"),
+                                       attributes={"name": "eth0", "mac_address": f"02:00:{tag[:2]}:{tag[2:4]}:"
+                                                                                   f"{tag[4:6]}:{tag[6:8]}"}))
+    return host.ci_sys_id, nic.ci_sys_id, f"dp-{tag}"

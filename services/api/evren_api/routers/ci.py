@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import base64
 import json
+import re
 from typing import Any
 
 import psycopg
@@ -235,6 +236,16 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         pending_relations = [{"id": i, "action": a, "type": t, "direction": d, "target": tid,
                               "target_name": tn or "(adsız)", "requested_by": by, "requested_at": at.isoformat()}
                              for i, a, t, d, tid, tn, by, at in cur.fetchall()]
+        # Bağımlı CI kimliği (ADR-0029): bu CI'a bağlı bağımlılar ve bağımlıysa ana CI'ı
+        cur.execute("""SELECT k.ci_sys_id, c.name, c.sys_class_name,
+                              string_agg(DISTINCT k.signature || ': ' || k.value, ' · ')
+                         FROM ingest.dependent_key k JOIN cmdb.cmdb_ci c ON c.sys_id = k.ci_sys_id
+                        WHERE k.parent_ci_sys_id = %s GROUP BY 1, 2, 3 ORDER BY c.sys_class_name, lower(c.name)
+                        LIMIT 500""", (sys_id,))
+        dep_rows = cur.fetchall()
+        cur.execute("""SELECT DISTINCT k.parent_ci_sys_id, c.name, c.sys_class_name FROM ingest.dependent_key k
+                         JOIN cmdb.cmdb_ci c ON c.sys_id = k.parent_ci_sys_id WHERE k.ci_sys_id = %s""", (sys_id,))
+        parent_rows = cur.fetchall()
     fields = md.fields_of(cls)
     values: dict[str, Any] = {}
     for name in fields:
@@ -244,6 +255,14 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
     refs = pres.resolve_refs(ctx.conn, [v for v in values.values() if isinstance(v, str)] +
                              [v for att in conflicts.values() if isinstance(att, list) for _, v in att
                               if isinstance(v, str)])
+    # CI'a başvuran alanlar (ör. ağ adaptörünün bağlı olduğu CI): okuma izni olan sınıfta CI adıyla gösterilir
+    ci_refs = [v for n, v in values.items() if isinstance(v, str) and v not in refs and re.match(_SYSID, v)
+               and str(fields[n].get("reference") or "").startswith("cmdb_ci")]
+    if ci_refs:
+        with ctx.conn.cursor() as cur:
+            cur.execute("SELECT sys_id, name, sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = ANY(%s::bpchar[])",
+                        (ci_refs,))
+            refs.update({sid: name or "(adsız)" for sid, name, c in cur.fetchall() if ctx.grant(c, "read").allowed})
     attrs = []
     derived = {"discovery_source": "İlk keşfeden kaynak", "first_discovered": "Bağlı kaynakların ilk görülme zamanı",
                "last_discovered": "Keşif rollerindeki kaynakların son gözlem zamanı"}
@@ -314,6 +333,10 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         "coverage": coverage, "unauthorized_count": len(rejected), "change_control": change_control,
         "unauthorized_changes": change_control["open_unauthorized"],
         "attestation": ci_attestation(ctx, sys_id, cls, doc),
+        "dependents": [{"sys_id": d, "name": n or "(adsız)", "class": c, "class_label": pres.class_label(c), "key": k}
+                       for d, n, c, k in dep_rows if ctx.grant(c, "read").allowed],
+        "depends_on": [{"sys_id": d, "name": n or "(adsız)", "class": c, "class_label": pres.class_label(c)}
+                       for d, n, c in parent_rows if ctx.grant(c, "read").allowed],
         "staleness": ci_staleness(ctx, sys_id, cls),
         "golden_version": doc.get("golden_version"), "sys_updated_on": doc.get("sys_updated_on"),
         **({"security_posture": posture} if posture is not None else {}),

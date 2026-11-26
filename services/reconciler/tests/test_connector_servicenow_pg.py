@@ -327,6 +327,14 @@ def test_nnmi_l2_connections_become_relations_between_network_devices(as_reconci
     keys = {v for (v,) in fetch(as_reconciler, """SELECT value FROM ingest.identity_key WHERE ci_sys_id = %s
                                                    AND key_type = 'mac'""", SWITCH)}
     assert {"70:6d:15:aa:00:01", "70:6d:15:aa:00:ff"} <= keys
+    # MAC'li arayüzler switch'e bağlı ağ adaptörü CI'ı olur (bağımlı kimlik: switch + MAC; ADR-0029)
+    adapters = fetch(as_reconciler, """SELECT ci.name, ci.mac_address FROM ingest.dependent_key k
+                                         JOIN cmdb.cmdb_ci ci ON ci.sys_id = k.ci_sys_id
+                                        WHERE k.parent_ci_sys_id = %s ORDER BY ci.name""", SWITCH)
+    assert sorted(a for a, _ in adapters) == ["Eth1/10", "Gi1/0/1", "Gi1/0/2", "mgmt0"]
+    assert {m.lower() for _, m in adapters} >= {"70:6d:15:aa:00:01", "70:6d:15:aa:00:ff"}
+    assert fetch(as_reconciler, """SELECT count(*) FROM cmdb.cmdb_ci WHERE sys_class_name = 'cmdb_ci_network_adapter'
+                                      AND class_attributes->>'cmdb_ci' = %s""", SWITCH)[0][0] == 4
     again = run(store, "nnmi")[1]
     assert {r.outcome for r in again} == {"unchanged"}
     assert len(fetch(as_reconciler, "SELECT 1 FROM cmdb.cmdb_rel_ci WHERE discovery_source = 'NNMi'")) == 2

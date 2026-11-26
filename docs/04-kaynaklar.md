@@ -125,7 +125,7 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - Sayfalama: `id GT SON` + `maxObjects`. Kimlikler artan sırada gelmezse çalışma durur.
   - XML `safe_xml` ile ayrıştırılır (DTD/varlık reddi). Süzgeç biçimi kurum sürümünde doğrulanacak (F1-03).
   - Arayüzler (F1-03): `InterfaceBeanService.getInterfaces` aynı süzgeçle. Düğüme MAC adresleri (kimlik eşleşmesi) ve fiziksel arayüz sayısı eklenir. Aynı `connectionId`'yi paylaşan arayüzlerin düğümleri arasında "Connects to::Connected by" ilişkisi yazılır; kimliği küçük uç üsttür, iki uçtan aynı ilişki gelir.
-  - Henüz yok: ağ adaptörü CI'ı (bağımlı CI kimliği, U7). NNMi kapsamı dışındaki uca (sunucu) giden bağlantı yazılmaz. `connectionId` ve arayüz alan adları kurum sürümünde doğrulanacak.
+  - MAC'i olan arayüz `cmdb_ci_network_adapter` kaydı olarak gönderilir (`interface.mapping.yaml`; ana kayıt düğüm, kimlik düğüm CI'ı + MAC; ADR-0029). Henüz yok: NNMi kapsamı dışındaki uca (sunucu) giden bağlantı yazılmaz. `connectionId` ve arayüz alan adları kurum sürümünde doğrulanacak.
 
 ## BMC Helix Discovery (F1) — Keşif rolü
 

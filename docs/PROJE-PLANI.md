@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 18/55 adım tamamlandı
+**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 19/55 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -125,7 +125,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 6/21 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 7/21 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -144,7 +144,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-05** Uzlaştırma kuralları ve "bu değer nereden geldi?" görünümü — _Planlandı_
 - [x] **F1-06** Devre kesici ve eskime işletimi; tatbikat
   - Not: 26.11.2026 (ADR-0028, U7.1, göç 0026): yalnızca gözlemci roller (keşif, izleme, güvenlik; ITSM/elle/platform canlı tutmaz); bütün gözlemciler görmüyor ve son çalışmaları tam ve OK ise eskimiş → emekliye ayırma adayı (insight.staleness_case), aksi hâlde bastırılır; golden record kendiliğinden değişmez; Veri sorumlusu gerekçeyle emekliye ayırır (yaşam döngüsü Manual kaydına, neden staleness) veya korur; uzlaştırıcı uygulama anında yeniden denetler; yeniden görülme öneriyi kapatır, emekli CI görülürse anomali. Tatbikat: gerçek devre kesiciyle 5 senaryolu PostgreSQL testi (test_staleness_pg). Eskime sayfası ve CI panelinde bölüm.
-- [ ] **F1-07** Bağımlı CI kimliği (uygulama, ağ adaptörü) — _Planlandı_
+- [x] **F1-07** Bağımlı CI kimliği (uygulama, ağ adaptörü)
+  - Not: 26.11.2026 (ADR-0029, U7.2, göç 0027): alım zarfında parent (ana kaydın kaynak anahtarı); uzlaştırıcı ana CI'ı bulur, yerel anahtarı ana CI bağlamında ingest.dependent_key'de arar (küresel dizine girmez), ana kayıt sonra gelirse çalışma sonunda çözer, eksik veri tahmin edilmez; başvuru alanı veya ilişki (yön ilişki kurallarından). NNMi MAC'li arayüzleri ağ adaptörü CI'ı olur; CI ayrıntısında bağımlı CI'lar.
 - [ ] **F1-08** OpenSearch araması ve CI 360° ekranı — _Devam ediyor_
   - Not: Arama tamam (U3, ADR-0018); CI 360° ekranı (ilişkiler, etki) U7'de.
 - [ ] **F1-09** CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam — _Planlandı_
