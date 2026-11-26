@@ -5,6 +5,7 @@ import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from 
 import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
 import { openEditDialog } from './ci-edit.js';
 import { openCreateDialog } from './ci-create.js';
+import { confirmRemoveRelation, openAddRelationDialog } from './ci-relations.js';
 
 // KISITLI güvenlik duruşu (ADR-0023): API yalnızca Güvenlik okuyucu/Denetçi rolüne döndürür; her gösterim denetim izinde.
 const POSTURE_TONE = { None: 'good', Informational: 'good', Low: 'good', Medium: 'warn', High: 'bad' };
@@ -202,6 +203,27 @@ export async function renderCis(view, param) {
     });
   }
 
+  /** İlişkiler: kaynağı görünür; API modunda izinli kural varsa elle ilişki eklenir, elle girilmiş olan kaldırılır (U6.2). */
+  function relationSection(c, opener) {
+    const canAdd = mode === 'api' && c.can_relate;
+    const pending = c.pending_relations || [];
+    if (!c.relations.length && !pending.length && !canAdd) return null;
+    const reopen = () => open(c.sys_id, opener);
+    const verb = (r) => (r.direction === 'parent' ? r.type.split('::')[0] : r.type.split('::')[1]);
+    return section('İlişkiler',
+      c.relations.length ? h('ul', { class: 'mini', id: 'ciRelations' }, c.relations.map((r) => h('li', {},
+        h('span', { class: 'muted' }, `${verb(r)} · `), h('a', { href: `#/ci/${r.target}` }, r.target_name), ' ',
+        r.source ? srcChip(r.source, roleOf[r.source] || (r.source === 'Manual' ? 'Manual' : null)) : null,
+        r.manual && r.source !== 'Manual' ? pill('elle de girildi', 'neutral') : null,
+        mode === 'api' && c.can_unrelate && r.manual ? h('button', { class: 'btn ghost small', type: 'button',
+          'data-unrelate': r.target, onclick: () => confirmRemoveRelation(c, r, reopen) }, 'Kaldır') : null))) : null,
+      pending.length ? h('ul', { class: 'mini', id: 'ciPendingRelations' }, pending.map((p) => h('li', {},
+        pill(p.action === 'add' ? 'Ekleme bekliyor' : 'Kaldırma bekliyor', 'warn'), ` ${verb(p)} · ${p.target_name}`,
+        h('span', { class: 'cell-sub' }, `${p.requested_by} · ${formatDateTime(p.requested_at)}`)))) : null,
+      canAdd ? h('div', { class: 'panel-actions' }, h('button', { class: 'btn secondary small', type: 'button', id: 'relAdd',
+        onclick: () => openAddRelationDialog(c, reopen) }, 'İlişki ekle…')) : null);
+  }
+
   /** Yetkisiz değişiklik kararı (ADR-0025): yanlış alarm gerekçe ister; karar sizin adınızla denetim izine yazılır. */
   function reviewFor(c, opener) {
     if (mode !== 'api' || !c.change_control?.can_review) return null;
@@ -317,9 +339,7 @@ export async function renderCis(view, param) {
           h('div', { class: 'attrs' }, c.attributes.map(attrRow))),
         c.security_posture ? postureSection(c.security_posture) : null,
         changeSection(c.change_control, reviewFor(c, opener)),
-        c.relations.length ? section('İlişkiler', h('ul', { class: 'mini' }, c.relations.map((r) => h('li', {},
-          h('span', { class: 'muted' }, `${r.direction === 'parent' ? r.type.split('::')[0] : r.type.split('::')[1]} · `),
-          h('a', { href: `#/ci/${r.target}` }, r.target_name))))) : null,
+        relationSection(c, opener),
         section('Kaynak kayıtları ve kimlik kararı', h('ul', { class: 'mini', id: 'ciLinks' }, c.links.map((l) => linkItem(c, l))),
           mode === 'api' && c.can_split && c.links.length > 1
             ? h('p', { class: 'muted small' }, 'Yanlış birleştirilmiş bir kaynak kaydını "Ayır" ile bu CI\'dan ayırabilirsiniz.') : null),

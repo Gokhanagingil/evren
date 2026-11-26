@@ -1014,17 +1014,19 @@ class ReconcilerStore:
         def handle(req: dict[str, Any]) -> ApplyResult:
             ci = req["ci_sys_id"]
             with self.conn.cursor(row_factory=dict_row) as dcur:
-                dcur.execute("SELECT attributes FROM ingest.source_record WHERE data_source = 'Manual' "
+                dcur.execute("SELECT attributes, relations FROM ingest.source_record WHERE data_source = 'Manual' "
                              "AND source_key = %s", (ci,))
                 prev = dcur.fetchone()
                 merged = dict(prev["attributes"]) if prev else {}
+                relations = list(prev["relations"] or []) if prev else []  # elle ilişkiler korunur (ADR-0026)
                 for name, value in req["attributes"].items():
                     if value is None:
                         merged.pop(name, None)
                     else:
                         merged[name] = value
                 record = IngestRecord(data_source="Manual", run_id=uuid4(), source_key=ci,
-                                      class_hint=req["sys_class_name"], attributes=merged, observed_at=self.clock())
+                                      class_hint=req["sys_class_name"], attributes=merged, relations=relations,
+                                      observed_at=self.clock())
                 actor = self.actor
                 self.actor = req["requested_by"]  # bağın ve değişimin sahibi insan
                 try:
@@ -1158,6 +1160,113 @@ class ReconcilerStore:
                for ci, prob in found.items() if ci in rows]
         return sorted(out, key=lambda c: (-(c["probability"] or 0), c["name"] or ""))[:10]
 
+    # ------------------------------------------------------------------ elle ilişki (ADR-0026 §5)
+    def apply_manual_relations(self, limit: int = 100) -> list[ApplyResult]:
+        """API'nin kaydettiği elle ilişki ekleme/kaldırma isteklerini uygular (ADR-0026 §5).
+
+        * İlişki CI'ın ``Manual`` kaynak kaydının ilişki listesinde durur (hedef CI sys_id'siyle); ``cmdb_rel_ci``'a
+          ``Manual`` kaynağıyla yazılır. İzinli ilişki kuralı (ADR-0019) elle girişte zorunludur: ters yön veya kuralsız
+          ilişki reddedilir.
+        * Kaldırma yalnızca elle girilmiş ilişkiye uygulanır; satır yalnızca ``Manual`` kaynaklıysa silinir (keşfin
+          bildirdiği ilişki kaynağından kalkar).
+        * İki uçta da değişim geçmişine ``relation`` kaydı (neden ``manual``, kişi isteyen) ve CI olayı yazılır."""
+        def handle(req: dict[str, Any]) -> ApplyResult:
+            ci, target, rel_type, direction = req["ci_sys_id"], req["target_sys_id"], req["type"], req["direction"]
+            parent, child = (ci, target) if direction == "parent" else (target, ci)
+            with self.conn.cursor() as cur:
+                cur.execute("SELECT sys_id, sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = ANY(%s::bpchar[])",
+                            ([parent, child],))
+                classes = dict(cur.fetchall())
+                cur.execute("SELECT sys_id FROM cmdb.cmdb_rel_type WHERE name = %s", (rel_type,))
+                type_row = cur.fetchone()
+                if len(classes) != 2 or type_row is None:
+                    note = "CI veya ilişki tipi bulunamadı"
+                    self._finish_relation(cur, req, "rejected", note)
+                    return ApplyResult("relation_rejected", ci, [], note)
+                ref = {"type": rel_type, "direction": direction, "target_source_key": target,
+                       "target_data_source": "Manual", "target_class_hint": classes[target]}
+                # Elle ilişki hangi uçtan eklendiyse o CI'ın Manual kaydında durur; iki uçtan da bulunur.
+                holder, attrs, relations, same = ci, {}, [], []
+                for end, end_dir, other in ((ci, direction, target),
+                                            (target, "child" if direction == "parent" else "parent", ci)):
+                    end_attrs, end_rels = self._manual_record(cur, end)
+                    found = [r for r in end_rels if (r.get("type"), r.get("direction"), r.get("target_source_key"))
+                             == (rel_type, end_dir, other)]
+                    if end == ci:
+                        attrs, relations = end_attrs, end_rels
+                    if found:
+                        holder, attrs, relations, same = end, end_attrs, end_rels, found
+                        break
+                if req["action"] == "add":
+                    verdict = self.md.relations.check(classes[parent], rel_type, classes[child])
+                    if not verdict.allowed:
+                        note = verdict.message(classes[parent], rel_type, classes[child])
+                        self._finish_relation(cur, req, "rejected", note)
+                        return ApplyResult("relation_rejected", ci, [], note)
+                    if not same:
+                        relations.append(ref)
+                    cur.execute(
+                        """INSERT INTO cmdb.cmdb_rel_ci (parent, child, type, discovery_source, first_discovered,
+                                                        last_discovered)
+                           VALUES (%s, %s, %s, 'Manual', %s, %s) ON CONFLICT (parent, child, type) DO NOTHING""",
+                        (parent, child, type_row[0], self.clock(), self.clock()))
+                    note = ("İlişki eklendi." if cur.rowcount else
+                            "İlişki zaten vardı (başka bir kaynaktan); elle kayıt da eklendi.")
+                    old, new = None, {"type": rel_type, "parent": parent, "child": child}
+                else:
+                    if not same:
+                        note = "Bu ilişki elle girilmemiş; keşfin bildirdiği ilişki elle kaldırılamaz"
+                        self._finish_relation(cur, req, "rejected", note)
+                        return ApplyResult("relation_rejected", ci, [], note)
+                    relations = [r for r in relations if r not in same]
+                    cur.execute("""DELETE FROM cmdb.cmdb_rel_ci WHERE parent = %s AND child = %s AND type = %s
+                                     AND discovery_source = 'Manual'""", (parent, child, type_row[0]))
+                    note = ("İlişki kaldırıldı." if cur.rowcount else
+                            "Elle kayıt kaldırıldı; ilişkiyi başka bir kaynak da bildirdiği için satır kalır.")
+                    old, new = {"type": rel_type, "parent": parent, "child": child}, None
+                actor = self.actor
+                self.actor = req["requested_by"]
+                try:
+                    record = IngestRecord(data_source="Manual", run_id=uuid4(), source_key=holder,
+                                          class_hint=classes[holder], attributes=attrs, relations=relations,
+                                          observed_at=self.clock())
+                    self._process(record, attach_to=holder, method="manual")
+                    for end in (ci, target):
+                        cur.execute(
+                            """INSERT INTO audit.ci_change (ci_sys_id, sys_class_name, attribute, old_value, new_value,
+                                                           data_source, actor, reason, correlation)
+                               VALUES (%s, %s, 'relation', %s, %s, 'Manual', %s, 'manual', %s)""",
+                            (end, classes[end], Jsonb(old), Jsonb(new), self.actor,
+                             Jsonb({"request": req["sys_id"]})))
+                        self._outbox(cur, end, "cmdb.ci.changed.v1", {
+                            "sys_id": end, "class": classes[end], "run_id": None,
+                            "changes": [{"attribute": "relation", "old": old, "new": new, "source": "Manual"}]})
+                finally:
+                    self.actor = actor
+                self._finish_relation(cur, req, "applied", note)
+                return ApplyResult("relation", ci, [], note)
+
+        def fail(cur: psycopg.Cursor[Any], req: dict[str, Any], note: str) -> None:
+            self._finish_relation(cur, req, "rejected", note)
+
+        return self._drain("relation", """
+            SELECT sys_id, ci_sys_id, target_sys_id, type, direction, action, requested_by FROM ingest.manual_relation
+             WHERE status = 'pending' ORDER BY requested_at, sys_id
+             LIMIT 1 FOR UPDATE SKIP LOCKED""", handle, fail, limit)
+
+    @staticmethod
+    def _manual_record(cur: psycopg.Cursor[Any], ci: str) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        """CI'ın Manual kaynak kaydının öznitelikleri ve ilişki listesi (yoksa boş)."""
+        cur.execute("""SELECT attributes, relations FROM ingest.source_record
+                        WHERE data_source = 'Manual' AND source_key = %s""", (ci,))
+        row = cur.fetchone()
+        return (dict(row[0] or {}), list(row[1] or [])) if row else ({}, [])
+
+    @staticmethod
+    def _finish_relation(cur: psycopg.Cursor[Any], req: dict[str, Any], status: str, note: str) -> None:
+        cur.execute("""UPDATE ingest.manual_relation SET status = %s, result_note = %s, applied_at = now()
+                        WHERE sys_id = %s""", (status, note, req["sys_id"]))
+
     # ------------------------------------------------------------------ birleştirmeyi ayırma (split)
     def apply_splits(self, limit: int = 100) -> list[ApplyResult]:
         """API'nin kaydettiği ayırma isteklerini uygular (CLAUDE.md kural 3: birleştirme geri alınabilir).
@@ -1256,9 +1365,11 @@ class ReconcilerStore:
         return set(row[0]) if row and row[0] else set()
 
     def apply_requests(self, limit: int = 100) -> dict[str, list[ApplyResult]]:
-        """Tüm insan isteklerini bir tur uygular: elle oluşturma, elle düzenleme, kuyruk kararı, ayırma (bu sırayla)."""
+        """Tüm insan isteklerini bir tur uygular: elle oluşturma, elle düzenleme, elle ilişki, kuyruk kararı, ayırma
+        (bu sırayla)."""
         return {"create": self.apply_manual_creates(limit), "manual": self.apply_manual_edits(limit),
-                "decision": self.apply_decisions(limit), "split": self.apply_splits(limit)}
+                "relation": self.apply_manual_relations(limit), "decision": self.apply_decisions(limit),
+                "split": self.apply_splits(limit)}
 
     def _split_blocker(self, cur: psycopg.Cursor[Any], req: dict[str, Any]) -> str | None:
         cur.execute("SELECT active, ci_sys_id, method FROM ingest.identity_link WHERE sys_id = %s FOR UPDATE",

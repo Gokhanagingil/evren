@@ -199,6 +199,22 @@ export async function createStatus(id) {
   return api(`/api/v1/ci-requests/${encodeURIComponent(id)}`);
 }
 
+/** Elle ilişki (U6.2, ADR-0026; yalnızca API modu): izinli ilişkiler, ekleme/kaldırma isteği ve durumu. */
+export async function relationOptions(ciId) {
+  return api(`/api/v1/ci/${encodeURIComponent(ciId)}/relation-options`);
+}
+
+export async function requestRelation(ciId, { action, type, direction, target, note }) {
+  return api(`/api/v1/ci/${encodeURIComponent(ciId)}/relations`, {
+    method: 'POST',
+    body: JSON.stringify({ action, type, direction, target, note: note || null, idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+
+export async function relationStatus(id) {
+  return api(`/api/v1/relation-requests/${encodeURIComponent(id)}`);
+}
+
 /** Referans verisi araması (grup, kişi, konum…). */
 export async function refSearch(table, q = '', limit = 200) {
   const p = new URLSearchParams({ limit: String(limit) });

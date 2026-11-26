@@ -592,3 +592,55 @@ def test_create_dialog_mobile_has_no_horizontal_overflow(browser, base_url):
     assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
     assert pg.evaluate("document.querySelector('.dialog').scrollWidth - document.querySelector('.dialog').clientWidth") <= 1
     context.close()
+
+
+def test_manual_relation_add_and_remove_with_keyboard(page, base_url):
+    """U6.2 (ADR-0026 §5): CI panelinden izinli ilişki eklenir (Manual kaynağıyla) ve kaldırılır; klavyeyle."""
+    import uuid as _uuid
+
+    import psycopg
+    from scenarios import apply_pending_relations
+
+    tag = _uuid.uuid4().hex[:6]
+    with psycopg.connect(autocommit=True) as conn:
+        app = conn.execute("INSERT INTO cmdb.cmdb_ci (sys_class_name, name) VALUES ('cmdb_ci_appl', %s) RETURNING sys_id",
+                           (f"web-app-{tag}",)).fetchone()[0]
+        conn.execute("INSERT INTO cmdb.cmdb_ci (sys_class_name, name) VALUES ('cmdb_ci_linux_server', %s)",
+                     (f"web-srv-{tag}",))
+    stop = threading.Event()
+
+    def worker():
+        while not stop.is_set():
+            apply_pending_relations()
+            stop.wait(0.3)
+
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
+    try:
+        page.goto(base_url + f"/#/ci/{app}")
+        page.wait_for_selector("#relAdd")
+        page.locator("#relAdd").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#relKind")).to_be_focused()
+        label = page.locator("#relKind option", has_text="Üzerinde çalışır → Bilgisayar").first.inner_text()
+        page.select_option("#relKind", label=label)
+        page.fill("#relSearch", f"web-srv-{tag}")
+        expect(page.locator("#relTarget option")).to_have_text([f"web-srv-{tag} · Linux sunucu"])
+        page.locator("#relSearch").press("ArrowDown")
+        expect(page.locator("#relTarget")).to_be_focused()
+        shot(page, "web_api_relation_dialog")
+        page.keyboard.press("Enter")
+        expect(page.locator("#toast")).to_contain_text("İlişki eklendi.")
+        rel = page.locator("#ciRelations li", has_text=f"web-srv-{tag}")
+        expect(rel).to_contain_text("Runs on")
+        expect(rel).to_contain_text("Manual")
+        rel.locator("button[data-unrelate]").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#unrelNote")).to_be_focused()
+        page.fill("#unrelNote", "Uygulama taşındı (webtest)")
+        page.keyboard.press("Enter")
+        expect(page.locator("#toast")).to_contain_text("İlişki kaldırıldı.")
+        expect(page.locator("#ciRelations")).to_have_count(0)
+    finally:
+        stop.set()
+        t.join(timeout=5)

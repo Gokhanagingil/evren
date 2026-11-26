@@ -250,6 +250,12 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "UPDATE ingest.manual_create SET requested_by = 'x' WHERE false"),
         ("evren_app_reconciler", "DELETE FROM ingest.manual_create WHERE false"),
         ("evren_readonly", "SELECT count(*) FROM ingest.manual_create"),
+        # 0023 (ADR-0026 §5): elle ilişki isteği; sonucu uzlaştırıcı yazar, API ilişki tablosuna doğrudan yazamaz
+        ("evren_app_api", "UPDATE ingest.manual_relation SET status = 'applied' WHERE false"),
+        ("evren_app_api", "INSERT INTO cmdb.cmdb_rel_ci (parent, child, type) SELECT sys_id, sys_id, sys_id "
+                          "FROM cmdb.cmdb_ci WHERE false"),
+        ("evren_app_reconciler", "UPDATE ingest.manual_relation SET action = 'add' WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM ingest.manual_relation"),
         ("evren_app_connector", "SELECT count(*) FROM ingest.manual_create"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),

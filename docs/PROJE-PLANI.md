@@ -164,7 +164,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-19** Zaman içinde sorgu: CI'ın geçmiş bir andaki hâli ve değişiklik zaman çizelgesi — _Planlandı_
 - [ ] **F1-20** Ölçek ve yük testi: 40.000 sunucu + 100.000 ağ cihazı hacmiyle alım, uzlaştırma ve arama — _Planlandı_
 - [ ] **F1-21** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — kimlik çözümlemesi ve uzlaştırmadan geçer — _Devam ediyor_
-  - Not: 26.11.2026 (ADR-0026, U6.1, göç 0022): arayüzden CI oluşturma tamam — istek ingest.manual_create'e, uzlaştırıcı kimlik çözümlemesinden geçirir (kesin eşleşme açılmaz, belirsiz eşleşme veya aynı ad gerekçeli karar ister), açılan CI'ın kimlik anahtarları dizine girer, keşif sonradan bağlanır. Sırada: U6.2 elle ilişki, U6.3 CSV.
+  - Not: 26.11.2026 (ADR-0026, U6.1, göç 0022): arayüzden CI oluşturma tamam — istek ingest.manual_create'e, uzlaştırıcı kimlik çözümlemesinden geçirir (kesin eşleşme açılmaz, belirsiz eşleşme veya aynı ad gerekçeli karar ister), açılan CI'ın kimlik anahtarları dizine girer, keşif sonradan bağlanır. U6.2 elle ilişki tamam (göç 0023): izinli ilişki kuralı zorunlu, ilişki CI'ın Manual kaydında ve cmdb_rel_ci'da Manual kaynağıyla, yalnızca elle girilmiş ilişki kaldırılır, iki uçta değişim geçmişi. Sırada: U6.3 CSV.
 
 **Çıkış kriterleri**
 

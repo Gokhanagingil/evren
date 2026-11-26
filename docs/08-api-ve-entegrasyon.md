@@ -87,6 +87,13 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/ci-requests/{id}`: `status` = `pending | created | duplicate | needs_decision | rejected`, `result_ci` (açılan veya var olan CI), `candidates` (belirsiz eşleşmede; ad, sınıf, olasılık), `result_note`.
 - Uzlaştırıcı isteği kimlik çözümlemesinden geçirir: kesin eşleşmede CI açılmaz (zorlanamaz), belirsiz eşleşmede veya kimlik anahtarı olmadan aynı ailede aynı adda karar istenir; açılan CI'ın kimlik anahtarları dizine girer.
 
+### Elle ilişki (ADR-0026 §5)
+
+- `GET /api/v1/ci/{sys_id}/relation-options`: bu CI için izinli ilişkiler (ilişki kuralları, sınıf kalıtımıyla; `direction`, `type`, Türkçe fiil, karşı sınıf) ve `can_add`/`can_remove`.
+- `POST /api/v1/ci/{sys_id}/relations` (CSRF, `idempotency_key`): `{"action": "add" | "remove", "type": "Runs on::Runs", "direction": "parent" | "child", "target": "<sys_id>", "note": "…"}` → `202`. Hatalar: `422 iliski_kurali` (ters yön veya kural yok; ileti hangisi olduğunu söyler), `422 ayni_ci`, `422 iliski_tipi_yok`, `409 iliski_var`, `409 elle_iliski_degil` (keşfin ilişkisi elle kaldırılamaz), `409 bekleyen_istek`, `403`.
+- `GET /api/v1/relation-requests/{id}`: `pending | applied | rejected` ve uzlaştırıcının notu.
+- CI ayrıntısında her ilişki `source` (yazan kaynak) ve `manual` (elle girilmiş mi; iki uçtaki Manual kayıtlardan) taşır; `pending_relations`, `can_relate`, `can_unrelate`.
+
 ### Değişiklik denetimi (ADR-0025)
 
 - `GET /api/v1/ci/{sys_id}` yanıtındaki `change_control`:

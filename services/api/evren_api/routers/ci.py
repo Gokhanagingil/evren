@@ -25,6 +25,7 @@ from ..errors import ApiError
 from ..idempotency import remember, replay, request_hash
 from ..present import COVERAGE_ROLES
 from .insight import ANOMALY_STATUS
+from .manual import manual_relation_keys
 from .platform import _SERVER, _and, _coverage_sql, _not
 
 router = APIRouter(prefix="/api/v1", tags=["ci"])
@@ -208,13 +209,30 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                    "applied_at": done.isoformat() if done else None, "side": side, "ci_sys_id": src_ci}
                   for i, st, ds, key, by, at, res, note, done, side, src_ci in cur.fetchall()]
         cur.execute(
-            """SELECT t.name, 'parent', r.child, c.name FROM cmdb.cmdb_rel_ci r JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type
-                 JOIN cmdb.cmdb_ci c ON c.sys_id = r.child WHERE r.parent = %s
+            """SELECT t.name, 'parent', r.child, c.name, r.discovery_source FROM cmdb.cmdb_rel_ci r
+                 JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type JOIN cmdb.cmdb_ci c ON c.sys_id = r.child
+                WHERE r.parent = %s
                UNION ALL
-               SELECT t.name, 'child', r.parent, c.name FROM cmdb.cmdb_rel_ci r JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type
-                 JOIN cmdb.cmdb_ci c ON c.sys_id = r.parent WHERE r.child = %s""", (sys_id, sys_id))
-        relations = [{"type": t, "direction": d, "target": tid, "target_name": tn or "(adsız)"}
-                     for t, d, tid, tn in cur.fetchall()]
+               SELECT t.name, 'child', r.parent, c.name, r.discovery_source FROM cmdb.cmdb_rel_ci r
+                 JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type JOIN cmdb.cmdb_ci c ON c.sys_id = r.parent
+                WHERE r.child = %s""", (sys_id, sys_id))
+        rel_rows = cur.fetchall()
+        manual_rels = manual_relation_keys(ctx.conn, sys_id)
+        relations = [{"type": t, "direction": d, "target": tid, "target_name": tn or "(adsız)", "source": src,
+                      "manual": (t, d, tid) in manual_rels}
+                     for t, d, tid, tn, src in rel_rows]
+        cur.execute(
+            """SELECT r.sys_id, r.action, r.type, CASE WHEN r.ci_sys_id = %s THEN r.direction
+                        WHEN r.direction = 'parent' THEN 'child' ELSE 'parent' END,
+                      CASE WHEN r.ci_sys_id = %s THEN r.target_sys_id ELSE r.ci_sys_id END, c.name, r.requested_by,
+                      r.requested_at
+                 FROM ingest.manual_relation r
+                 JOIN cmdb.cmdb_ci c ON c.sys_id = CASE WHEN r.ci_sys_id = %s THEN r.target_sys_id ELSE r.ci_sys_id END
+                WHERE r.status = 'pending' AND (r.ci_sys_id = %s OR r.target_sys_id = %s)
+                ORDER BY r.requested_at""", (sys_id, sys_id, sys_id, sys_id, sys_id))
+        pending_relations = [{"id": i, "action": a, "type": t, "direction": d, "target": tid,
+                              "target_name": tn or "(adsız)", "requested_by": by, "requested_at": at.isoformat()}
+                             for i, a, t, d, tid, tn, by, at in cur.fetchall()]
     fields = md.fields_of(cls)
     values: dict[str, Any] = {}
     for name in fields:
@@ -278,6 +296,8 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         "owned_by": refs.get(doc.get("owned_by") or "", doc.get("owned_by")) if doc.get("owned_by") else None,
         "operational_status": pres.choice("operational_status", doc.get("operational_status")),
         "sources": sorted(roles), "attributes": attrs, "rejected": rejected, "relations": relations,
+        "pending_relations": pending_relations, "can_relate": ctx.grant("cmdb_rel_ci", "create").allowed,
+        "can_unrelate": ctx.grant("cmdb_rel_ci", "delete").allowed,
         "links": [{"data_source": ds, "role": role, "source_key": key, "outcome": method,
                    "summary": f"{method}" + (f" · {rule}" if rule else "") + (f" · %{float(prob) * 100:.1f}" if prob else "")
                               + (f" · karar: {by}" if method in ("manual", "split") else ""),

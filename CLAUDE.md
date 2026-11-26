@@ -143,7 +143,7 @@ packages/evren-core/      Saf alan mantığı + testler
 connectors/<kaynak>/      kaynak başına eşleme dosyaları; samples/ sentetik örnek veri (simülatör)
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
-db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma (tools/migrate.py uygular)
+db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki (tools/migrate.py uygular)
 services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), indexer (arama),
                           connector-runner (şimdi çalıştır + zamanlama; kaynak sırları yalnızca burada, ADR-0021), sn-sync, mcp
 deploy/                   tek imaj (Dockerfile, evren.py giriş noktası), compose geliştirme yığını, Kafka konuları, connectors.dev.yaml

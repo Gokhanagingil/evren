@@ -131,7 +131,7 @@ class Worker:
     def run_once(self, conn: psycopg.Connection[Any]) -> dict[str, int]:
         """Bekleyen tüm istekleri uygular (her tür ``batch`` kadar, iş kalmayana dek)."""
         store = ReconcilerStore(conn, self.md)
-        totals = {"create": 0, "manual": 0, "decision": 0, "split": 0, "failed": 0, "runs_closed": 0,
+        totals = {"create": 0, "manual": 0, "relation": 0, "decision": 0, "split": 0, "failed": 0, "runs_closed": 0,
                   "published": 0, "config_changes": 0}
         while not self.stop.is_set():
             results = store.apply_requests(self.config.batch)
@@ -160,13 +160,14 @@ class Worker:
         if self.config.health_file:
             # Konteyner sağlık denetimi: dosyanın değişme zamanı son turu gösterir (tools/../deploy/evren.py).
             Path(self.config.health_file).touch()
-        handled = totals["create"] + totals["manual"] + totals["decision"] + totals["split"]
+        handled = totals["create"] + totals["manual"] + totals["relation"] + totals["decision"] + totals["split"]
         self.processed += handled
         self.failed += totals["failed"]
         self._heartbeat(conn, failed_now=totals["failed"] > 0)
         if handled:
-            log.info("istekler uygulandı: oluşturma=%d elle=%d karar=%d ayırma=%d başarısız=%d",
-                     totals["create"], totals["manual"], totals["decision"], totals["split"], totals["failed"])
+            log.info("istekler uygulandı: oluşturma=%d elle=%d ilişki=%d karar=%d ayırma=%d başarısız=%d",
+                     totals["create"], totals["manual"], totals["relation"], totals["decision"], totals["split"],
+                     totals["failed"])
         return totals
 
     def _heartbeat(self, conn: psycopg.Connection[Any], *, failed_now: bool = False, stopped: bool = False) -> None:

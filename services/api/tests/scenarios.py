@@ -81,6 +81,14 @@ def apply_pending_creates() -> list[str]:
         return [r.outcome for r in ReconcilerStore(conn, md).apply_manual_creates()]
 
 
+def apply_pending_relations() -> list[str]:
+    """Uzlaştırıcıyı bir tur çalıştırır (elle ilişki istekleri); sonuç türlerini döner (U6.2)."""
+    md = load_metadata(REPO / "metadata")
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        return [r.outcome for r in ReconcilerStore(conn, md).apply_manual_relations()]
+
+
 def make_ci() -> tuple[str, str]:
     """Tek keşif kaydından oluşan, testin kendine ait CI'ı. Döner: (sys_id, ad)."""
     md = load_metadata(REPO / "metadata")
