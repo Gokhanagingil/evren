@@ -81,6 +81,7 @@
    "cmdb_ci_vcenter --Contains::Contained by--> cmdb_ci_vcenter_datacenter",
    "cmdb_ci_vcenter_datacenter --Contains::Contained by--> cmdb_ci_vcenter_cluster",
    "cmdb_ci_rack --Contains::Contained by--> cmdb_ci_hardware",
+   "cmdb_ci_netgear --Connects to::Connected by--> cmdb_ci_hardware",
    "cmdb_ci_vlan --Contains::Contained by--> cmdb_ci_ip_network",
    "cmdb_ci_ip_network --Contains::Contained by--> cmdb_ci_ip_address",
    "cmdb_ci_computer --Uses::Used by--> cmdb_ci_storage_volume",
@@ -5615,6 +5616,13 @@
     "verify": false
    },
    {
+    "child": "cmdb_ci_hardware",
+    "description": "Fiziksel bağlantı simetriktir: L2 komşuluğu iki uçtan aynı yönde yazılır (ağ adaptörü kimliği U7)",
+    "parent": "cmdb_ci_netgear",
+    "type": "Connects to::Connected by",
+    "verify": true
+   },
+   {
     "child": "cmdb_ci_netgear",
     "description": null,
     "parent": "cmdb_ci_netgear",
@@ -5838,9 +5846,9 @@
   "fields": 118,
   "identification_rules": 21,
   "reference_tables": 7,
-  "relationship_rules": 37,
+  "relationship_rules": 38,
   "relationship_types": 16,
-  "to_verify": 82
+  "to_verify": 83
  },
  "verification": {
   "checked_on": "2026-11-26",
@@ -7087,6 +7095,12 @@
      "comm_vm_server_rel"
     ],
     "verdict": "confirmed"
+   },
+   {
+    "key": "cmdb_ci_netgear --Connects to::Connected by--> cmdb_ci_hardware",
+    "kind": "relationship_rules",
+    "note": "Eklendi (F1-03): L2 komşuluğu iki uçtan aynı yönde yazılsın diye ters yön de izinli; herkese açık belgede ağ cihazından uca yön görülmedi, kurum örneğinin cmdb_rel_type_suggest tablosuyla karşılaştırılacak (U10)",
+    "verdict": "not_found"
    },
    {
     "key": "cmdb_ci_computer --Virtualized by::Virtualizes--> cmdb_ci_vm_instance",

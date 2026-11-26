@@ -12,7 +12,14 @@ from evren_core.connectors.gateway import DryRunGateway
 from evren_core.connectors.http import HttpClient, HttpError, HttpResponse, RecordingTransport, ReplayTransport
 from evren_core.connectors.runtime import ConnectorRunner, load_mappings
 from evren_core.connectors.safe_xml import MAX_DEPTH, UnsafeXml, parse
-from evren_core.connectors.sources.nnmi import NNMiClient, NNMiSimulator, get_nodes_envelope
+from evren_core.connectors.sources.nnmi import (
+    IFACE_PATH,
+    PATH,
+    NNMiClient,
+    NNMiSimulator,
+    get_interfaces_envelope,
+    get_nodes_envelope,
+)
 
 REPO = Path(__file__).resolve().parents[3]
 SAMPLES = REPO / "connectors" / "nnmi" / "samples"
@@ -60,7 +67,36 @@ def test_pages_by_id_until_empty_page():
     sim = NNMiSimulator.from_dir(SAMPLES)
     rows = list(client(sim).fetch())
     assert [r["id"] for r in rows] == ["1001", "1004", "1007", "1010"]
-    assert sim.calls == [(0, 2), (1004, 2), (1010, 2)]
+    assert sim.calls == [(0, 2), (1004, 2), (1010, 2),  # düğümler, sonra arayüzler (aynı anahtar sırası)
+                         (0, 2), (3002, 2), (3004, 2), (3101, 2), (3201, 2), (3301, 2)]
+    assert sim.paths == [PATH] * 3 + [IFACE_PATH] * 6
+
+
+UUID = {"1001": "3c6d2a1e-9b7f-4a50-8c21-6e0f1d2b3a40", "1004": "4d7e3b2f-0c80-4b61-9d32-7f102e3c4b51",
+        "1007": "5e8f4c30-1d91-4c72-ae43-80213f4d5c62", "1010": "6f905d41-2ea2-4d83-bf54-9132405e6d73"}
+
+
+def test_interfaces_give_macs_count_and_l2_neighbours():
+    """F1-03: arayüzler düğüme MAC, arayüz sayısı ve L2 komşusu olarak katılır; küçük kimlikli uç üst."""
+    rows = {r["id"]: r for r in client(page_size=3).fetch()}
+    sw, rt, srv = rows["1001"], rows["1004"], rows["1010"]
+    assert sw["_mac_addresses"] == ["70:6D:15:AA:00:01", "70:6D:15:AA:00:02", "70:6D:15:AA:00:0A", "70:6D:15:AA:00:FF"]
+    assert sw["_interface_count"] == 4  # MAC'i olmayan sanal arayüz (Vlan10) sayılmaz
+    assert sw["_l2_down"] == sorted([UUID["1004"], UUID["1007"], UUID["1010"]]) and sw["_l2_up"] == []
+    assert rt["_l2_up"] == [UUID["1001"]] and rt["_l2_down"] == [] and srv["_l2_up"] == [UUID["1001"]]
+
+
+def test_interface_of_unknown_node_is_ignored_and_envelope_is_integer_only():
+    doc = json.loads((SAMPLES / "nodes.json").read_text(encoding="utf-8"))
+    extra = {"id": "3999", "name": "x", "hostedOnId": "9999", "physicalAddress": "AA:BB:CC:DD:EE:FF",
+             "connectionId": "2001"}
+    sim = NNMiSimulator(doc["nodes"], interfaces=[*doc["interfaces"], extra])
+    rows = {r["id"]: r for r in client(sim).fetch()}
+    assert "AA:BB:CC:DD:EE:FF" not in json.dumps(rows) and rows["1004"]["_l2_up"] == [UUID["1001"]]
+    env = get_interfaces_envelope(3002, 2).decode()
+    assert "getInterfaces" in env and "<value>3002</value>" in env
+    with pytest.raises(ValueError):
+        get_interfaces_envelope("1; DROP", 2)  # type: ignore[arg-type]
 
 
 def test_unordered_pages_stop_the_run_instead_of_skipping():
@@ -99,6 +135,12 @@ def test_mapping_keeps_network_devices_only(tmp_path):
     sw = recs["IST-DC2-CORE-SW01"]
     assert sw["attributes"]["serial_number"] == "FDO2213X0AB" and sw["external_ids"]["nnmi_uuid"].startswith("3c6d")
     assert "systemObjectId" not in json.dumps(sw)  # sysObjectID kimlik değildir, kayda girmez
+    assert sw["attributes"]["physical_interface_count"] == 4 and "70:6D:15:AA:00:01" in sw["lookup"]["mac_addresses"]
+    assert {(r["direction"], r["target_source_key"]) for r in sw["relations"]} == {
+        ("parent", UUID["1004"]), ("parent", UUID["1007"]), ("parent", UUID["1010"])}
+    rt = recs["IST-DC2-EDGE-RT01"]
+    assert [(r["type"], r["direction"], r["target_source_key"]) for r in rt["relations"]] == [
+        ("Connects to::Connected by", "child", UUID["1001"])]  # iki uç aynı ilişkiyi tarif eder
 
 
 def test_record_and_replay_xml(tmp_path):
@@ -106,7 +148,7 @@ def test_record_and_replay_xml(tmp_path):
     http = HttpClient("https://nnmi.test", transport=rec, retries=0, auth_header=HttpClient.basic("u", PW))
     recorded = list(NNMiClient(http, page_size=2).fetch())
     rec.save()
-    assert sorted(f.suffix for f in tmp_path.iterdir() if f.name != "replay.json") == [".xml"] * 3
+    assert sorted(f.suffix for f in tmp_path.iterdir() if f.name != "replay.json") == [".xml"] * 9
     assert PW not in "".join(f.read_text(encoding="utf-8") for f in tmp_path.iterdir())
     replay = HttpClient("https://nnmi.test", transport=ReplayTransport.from_dir(tmp_path), retries=0)
     assert list(NNMiClient(replay, page_size=2).fetch()) == recorded

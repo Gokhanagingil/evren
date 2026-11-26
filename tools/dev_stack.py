@@ -379,6 +379,10 @@ def smoke_connector_run(token: str) -> None:
         _s, sw = http("GET", f"{API}/api/v1/ci/{SN_SWITCH_SYS_ID}")
         check({lk["data_source"] for lk in sw.get("links") or []} >= {"ServiceNow", "Zabbix", "NNMi"},
               f"ağ cihazı: ServiceNow, Zabbix ve NNMi tek CI'da (seri numarası; {SN_SWITCH_SYS_ID})")
+        l2 = {(r["type"], r["direction"], r["target_name"].upper()) for r in sw.get("relations") or []}
+        check({("Connects to::Connected by", "parent", "IST-DC2-EDGE-RT01"),
+               ("Connects to::Connected by", "parent", "IST-DC2-FW01")} <= l2,
+              "NNMi L2 bağlantıları: switch → router ve güvenlik duvarı 'Connects to' ilişkisi (F1-03)")
     finally:
         for name in (sn_name, vc_name, bmc_name, df_name, nn_name):
             _revoke(name)

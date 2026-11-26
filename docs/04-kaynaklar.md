@@ -123,6 +123,8 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - Çağrı: WS-I SOAP `NodeBeanService.getNodes`; kimlik Basic (`EVREN_SOURCE_USER` + `EVREN_SOURCE_PASSWORD_FILE`, "Web Services Client" rolü).
   - Sayfalama: `id GT SON` + `maxObjects`. Kimlikler artan sırada gelmezse çalışma durur.
   - XML `safe_xml` ile ayrıştırılır (DTD/varlık reddi). Süzgeç biçimi kurum sürümünde doğrulanacak (F1-03).
+  - Arayüzler (F1-03): `InterfaceBeanService.getInterfaces` aynı süzgeçle. Düğüme MAC adresleri (kimlik eşleşmesi) ve fiziksel arayüz sayısı eklenir. Aynı `connectionId`'yi paylaşan arayüzlerin düğümleri arasında "Connects to::Connected by" ilişkisi yazılır; kimliği küçük uç üsttür, iki uçtan aynı ilişki gelir.
+  - Henüz yok: ağ adaptörü CI'ı (bağımlı CI kimliği, U7). NNMi kapsamı dışındaki uca (sunucu) giden bağlantı yazılmaz. `connectionId` ve arayüz alan adları kurum sürümünde doğrulanacak.
 
 ## BMC Helix Discovery (F1) — Keşif rolü
 

@@ -152,6 +152,14 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
 - **Kayıt/oynatma:** XML yanıtları ham saklanır (`.xml`). Kimlik doğrulama başlıktadır; gövde sır içermez.
 - **SOAP Fault:** metni kurum bilgisi içerebilir, iletiye yazılmaz.
 
+- **Arayüzler ve L2 (F1-03):** `InterfaceBeanService.getInterfaces` aynı süzgeç ve sıralama güvencesiyle çekilir. Çalışma tam listedir: önce düğümler, sonra arayüzler. Her düğüm şu ek alanlarla verilir:
+  - `_mac_addresses`: kimlik eşleşmesi için;
+  - `_interface_count`: MAC'i olan arayüz sayısı, `physical_interface_count` alanına gider;
+  - `_l2_down` / `_l2_up`: aynı `connectionId`'yi paylaşan komşuların uuid'leri.
+
+  Kimliği küçük uç üsttür; böylece iki uçtan gelen kayıt aynı "Connects to::Connected by" ilişkisini üretir ve `cmdb_rel_ci` benzersizliği tekrarı önler. Fiziksel bağlantı simetrik olduğu için ilişki kurallarına ters yön de eklendi (ağ cihazı → donanım; `verify: true`).
+- **Sınır:** Ağ adaptörü ayrı CI olarak alınmaz (bağımlı CI kimliği, U7). Kapsam dışındaki uca (ör. NNMi'nin gördüğü sunucu) giden bağlantı, o uç NNMi kaydı olmadığı için yazılmaz. `connectionId` alanı ve arayüz ad alanı kurum sürümünde doğrulanacaktır.
+
 ### 14. Arayüzde bağlayıcı görünürlüğü (U5.3, göç 0018)
 
 - **Çalışma ayrıntısı** (Veri Kaynakları → kaynak): her çalışmanın modu (tam liste/değişenler), işlenen ve değişen sayısı gösterilir. Olay omurgasıyla gelen çalışmada ayrıca geçidin kabul ettiği ve bağlayıcının bildirdiği sayı, "bağlayıcı tamamlanmadı" işareti ve bağlayıcının gerekçesi (`notes`; sır içermez, §3) görünür.

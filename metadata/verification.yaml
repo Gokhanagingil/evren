@@ -1260,6 +1260,11 @@ items:
   sources:
   - comm_vm_server_rel
 - kind: relationship_rules
+  key: cmdb_ci_netgear --Connects to::Connected by--> cmdb_ci_hardware
+  verdict: not_found
+  note: 'Eklendi (F1-03): L2 komşuluğu iki uçtan aynı yönde yazılsın diye ters yön de izinli; herkese açık belgede ağ
+    cihazından uca yön görülmedi, kurum örneğinin cmdb_rel_type_suggest tablosuyla karşılaştırılacak (U10)'
+- kind: relationship_rules
   key: cmdb_ci_computer --Virtualized by::Virtualizes--> cmdb_ci_vm_instance
   verdict: removed
   note: Misafir sunucu VM örneğine değil ESX'e 'Virtualized by' ile bağlanır

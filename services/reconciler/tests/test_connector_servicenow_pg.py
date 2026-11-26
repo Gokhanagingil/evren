@@ -304,3 +304,29 @@ def test_shadow_endpoint_source_writes_no_posture(as_reconciler, metadata):
     run(store, "servicenow")
     run(store, "defender")
     assert fetch(as_reconciler, "SELECT count(*) FROM cmdb.ci_security_posture") == [(0,)]
+
+
+SWITCH = "9f5061728394a5b6c7d8e9f0a1b2c3d4"  # örnek ServiceNow kaydı: IST-DC2-CORE-SW01
+
+
+def test_nnmi_l2_connections_become_relations_between_network_devices(as_reconciler, metadata):
+    """F1-03: aynı L2 bağlantısını paylaşan arayüzler cihazlar arası 'Connects to' ilişkisi olur; iki uçtan gelen kayıt
+    tek ilişki üretir; kapsam dışındaki uç (sunucu) yazılmaz. Arayüz MAC'leri switch'in kimlik anahtarlarına girer."""
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    for name in ("servicenow", "zabbix", "nnmi"):
+        run(store, name)
+    rels = fetch(as_reconciler, """SELECT p.name, t.name, c.name, r.discovery_source FROM cmdb.cmdb_rel_ci r
+                                     JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type
+                                     JOIN cmdb.cmdb_ci p ON p.sys_id = r.parent JOIN cmdb.cmdb_ci c ON c.sys_id = r.child
+                                    WHERE r.discovery_source = 'NNMi' ORDER BY c.name""")
+    assert [(a, t, b) for a, t, b, _ in rels] == [
+        ("IST-DC2-CORE-SW01", "Connects to::Connected by", "IST-DC2-EDGE-RT01"),
+        ("IST-DC2-CORE-SW01", "Connects to::Connected by", "IST-DC2-FW01")]
+    assert fetch(as_reconciler, "SELECT parent FROM cmdb.cmdb_rel_ci WHERE discovery_source = 'NNMi' LIMIT 1") == [
+        (SWITCH,)]  # ServiceNow'dan gelen switch CI'ı (sys_id korunmuş)
+    keys = {v for (v,) in fetch(as_reconciler, """SELECT value FROM ingest.identity_key WHERE ci_sys_id = %s
+                                                   AND key_type = 'mac'""", SWITCH)}
+    assert {"70:6d:15:aa:00:01", "70:6d:15:aa:00:ff"} <= keys
+    again = run(store, "nnmi")[1]
+    assert {r.outcome for r in again} == {"unchanged"}
+    assert len(fetch(as_reconciler, "SELECT 1 FROM cmdb.cmdb_rel_ci WHERE discovery_source = 'NNMi'")) == 2

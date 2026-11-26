@@ -136,7 +136,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: 26.11.2026: istemci hazır (U5.2: Entra istemci kimliği, nextLink güvenliği, belirteç yenileme, simülatör; uzlaştırıcı ve yığın duman testiyle sınandı). Risk ve maruziyet CI özniteliği olmaz; kısıtlı duruş yolu da hazır (ADR-0023): zarfta ayrı posture bölümü, yalnızca uç nokta güvenliği rolü cmdb.ci_security_posture'a yazar, API yalnızca restricted yetkiyle gösterir ve her okumayı denetim izine yazar. Zafiyet sayıları (ayrı API) sırada.
   - Sizden gereken: Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni
 - [ ] **F1-03** NNMi: düğüm, arayüz ve L2 bağlantıları — _Devam ediyor_
-  - Not: 26.11.2026: düğüm istemcisi hazır (U5.2: WS-I SOAP getNodes, id sırasıyla sayfalama ve sıralama güvencesi, güvenli XML ayrıştırma, simülatör; uzlaştırıcı ve yığın duman testiyle sınandı). Arayüzler ve L2 bağlantıları sırada; süzgeç biçimi kurum sürümünde doğrulanacak.
+  - Not: 26.11.2026: düğüm istemcisi hazır (U5.2: WS-I SOAP getNodes, id sırasıyla sayfalama ve sıralama güvencesi, güvenli XML ayrıştırma, simülatör; uzlaştırıcı ve yığın duman testiyle sınandı). Arayüzler ve L2 de hazır: getInterfaces ile MAC adresleri kimlik eşleşmesine ve fiziksel arayüz sayısına, aynı connectionId'yi paylaşan arayüzler cihazlar arası 'Connects to' ilişkisine (kimliği küçük uç üst). Ağ adaptörü CI'ı bağımlı CI kimliğiyle (U7); süzgeç ve alan adları kurum sürümünde doğrulanacak.
   - Sizden gereken: NNMi web servis kullanıcısı ve NNMi sürümü
 - [ ] **F1-04** ServiceNow Change bağlayıcısı ve yetkisiz değişiklik tespiti — _Planlandı_
   - Sizden gereken: ServiceNow change_request ve task_ci okuma izni

@@ -45,6 +45,8 @@ rules:
   # --- Veri merkezi, ağ ve depolama --------------------------------------
   - {parent: cmdb_ci_rack, type: "Contains::Contained by", child: cmdb_ci_hardware, verify: true}
   - {parent: cmdb_ci_hardware, type: "Connects to::Connected by", child: cmdb_ci_netgear, description: "Fiziksel bağlantı"}
+  - {parent: cmdb_ci_netgear, type: "Connects to::Connected by", child: cmdb_ci_hardware, verify: true,
+     description: "Fiziksel bağlantı simetriktir: L2 komşuluğu iki uçtan aynı yönde yazılır (ağ adaptörü kimliği U7)"}
   - {parent: cmdb_ci_netgear, type: "IP Connection::IP Connection", child: cmdb_ci_netgear}
   - {parent: cmdb_ci_vlan, type: "Contains::Contained by", child: cmdb_ci_ip_network, verify: true}
   - {parent: cmdb_ci_ip_network, type: "Contains::Contained by", child: cmdb_ci_ip_address, verify: true}

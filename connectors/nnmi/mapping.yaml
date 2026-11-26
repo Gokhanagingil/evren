@@ -1,7 +1,9 @@
 # OpenText (Micro Focus) NNMi — Node
-# NNMi API'si sürüme göre değişir (SOAP NodeBeanService / REST). Alan adları kurumdaki
-# sürümle doğrulanmalıdır (verify). Arayüzler ve L2 bağlantıları ayrı eşleme dosyalarıyla
-# (interface.mapping.yaml, l2_connection.mapping.yaml) eklenecektir — DURUM.md backlog.
+# NNMi API'si sürüme göre değişir (SOAP NodeBeanService / InterfaceBeanService / REST). Alan adları kurumdaki
+# sürümle doğrulanmalıdır (verify). Arayüzler istemcide düğüme katılır (F1-03): _mac_addresses kimlik eşleşmesine,
+# _interface_count fiziksel arayüz sayısına, _l2_down/_l2_up aynı L2 bağlantısını paylaşan komşulara gider (kimliği
+# küçük uç üst; iki uçtan gelen kayıt aynı ilişkiyi üretir). Ağ adaptörü ayrı CI değildir (bağımlı CI kimliği, U7);
+# kapsam dışındaki komşuya (ör. sunucu) giden bağlantı, o uç NNMi kaydı olmadığından yazılmaz.
 description: Ağ cihazları (switch, router, firewall, yük dengeleyici, kablosuz)
 verify: true
 data_source: NNMi
@@ -27,6 +29,12 @@ attributes:
   ip_address: {from: managementAddress}
   serial_number: {from: serialNumber, transform: strip}
   firmware_version: {from: systemDescription}
+  physical_interface_count: {from: _interface_count}
+lookup:
+  mac_addresses: {from: _mac_addresses}
+relations:
+  - {type: "Connects to::Connected by", direction: parent, target: {from: _l2_down}, target_class: cmdb_ci_netgear}
+  - {type: "Connects to::Connected by", direction: child, target: {from: _l2_up}, target_class: cmdb_ci_netgear}
 # sysObjectID (systemObjectId) harici kimlik DEĞİLDİR: cihazı değil modeli tanımlar; aynı modeldeki tüm
 # cihazlarda aynıdır ve kimlik kanıtı sayılırsa farklı cihazları birleştirir.
 external_ids:
