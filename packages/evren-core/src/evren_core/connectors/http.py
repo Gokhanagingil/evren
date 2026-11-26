@@ -73,28 +73,37 @@ def read_secret(path: str | Path | None, what: str) -> str:
     return value
 
 
-CREDENTIAL_FIELDS = frozenset({"password", "userName", "username", "user", "secret", "client_secret"})
+CREDENTIAL_FIELDS = frozenset({"password", "userName", "username", "user", "secret", "client_secret",
+                               "client_assertion", "client_id"})
+# Yanıt gövdesinde kayda yazılmayacak sırlar (OAuth belirteç yanıtı): değer yer tutucuyla saklanır.
+RESPONSE_SECRET_FIELDS = frozenset({"access_token", "refresh_token", "id_token"})
 SENSITIVE_RESPONSE_HEADERS = frozenset({"vmware-api-session-id", "set-cookie", "x-auth-token"})
 RECORDED_HEADERS = SENSITIVE_RESPONSE_HEADERS | {"content-type"}
+PLACEHOLDER = "kayit-yer-tutucu"
+
+
+def _mask(v: Any, fields: frozenset[str], placeholder: str = "***") -> Any:
+    if isinstance(v, dict):
+        return {k: (placeholder if k in fields else _mask(x, fields, placeholder)) for k, x in v.items()}
+    if isinstance(v, list):
+        return [_mask(x, fields, placeholder) for x in v]
+    return v
 
 
 def _masked_body(body: bytes | None) -> bytes:
-    """Gövdedeki kimlik alanlarının değerleri parmak izine girmez (kayıtta parola özeti olmasın)."""
+    """Gövdedeki kimlik alanlarının değerleri parmak izine girmez (kayıtta parola veya istemci sırrı özeti olmasın).
+    JSON ve form kodlu (``application/x-www-form-urlencoded``) gövdeler maskelenir; başka biçim tümüyle atılır."""
     if not body:
         return b""
     try:
-        doc = json.loads(body)
+        return json.dumps(_mask(json.loads(body), CREDENTIAL_FIELDS), ensure_ascii=False).encode("utf-8")
     except (UnicodeDecodeError, json.JSONDecodeError):
-        return body
-
-    def mask(v: Any) -> Any:
-        if isinstance(v, dict):
-            return {k: ("***" if k in CREDENTIAL_FIELDS else mask(x)) for k, x in v.items()}
-        if isinstance(v, list):
-            return [mask(x) for x in v]
-        return v
-
-    return json.dumps(mask(doc), ensure_ascii=False, sort_keys=False).encode("utf-8")
+        pass
+    try:
+        pairs = urllib.parse.parse_qsl(body.decode("ascii"), keep_blank_values=True, strict_parsing=True)
+    except (UnicodeDecodeError, ValueError):
+        return b"<govde>"  # tanınmayan biçim: içerik parmak izine girmez
+    return urllib.parse.urlencode([(k, "***" if k in CREDENTIAL_FIELDS else v) for k, v in pairs]).encode("ascii")
 
 
 def request_fingerprint(method: str, url: str, body: bytes | None) -> str:
@@ -189,13 +198,13 @@ class RecordingTransport:
         fp = request_fingerprint(method, url, body)
         name = f"{len(self.index['responses']) + 1:03d}.json"
         try:
-            payload = resp.json()
+            payload = _mask(resp.json(), RESPONSE_SECRET_FIELDS, PLACEHOLDER)  # erişim belirteci diske yazılmaz
         except HttpError:
             payload = None  # JSON olmayan hata gövdesi kaydedilmez
         self.dir.mkdir(parents=True, exist_ok=True)
         (self.dir / name).write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
         entry: dict[str, Any] = {"status": resp.status, "file": name}
-        kept = {k: ("kayit-yer-tutucu" if k in SENSITIVE_RESPONSE_HEADERS else v)  # oturum kimliği diske yazılmaz
+        kept = {k: (PLACEHOLDER if k in SENSITIVE_RESPONSE_HEADERS else v)  # oturum kimliği diske yazılmaz
                 for k, v in resp.headers.items() if k in RECORDED_HEADERS and k != "content-type"}
         if kept:
             entry["headers"] = kept
@@ -236,14 +245,18 @@ class HttpClient:
         return "Basic " + base64.b64encode(f"{user}:{password}".encode()).decode("ascii")
 
     def request(self, method: str, path: str, payload: Any = None, *, params: Mapping[str, Any] | None = None,
-                ok: tuple[int, ...] = (200, 201, 202)) -> HttpResponse:
+                ok: tuple[int, ...] = (200, 201, 202), form: Mapping[str, str] | None = None) -> HttpResponse:
         url = self.base_url + path
         if params:
             url += "?" + urllib.parse.urlencode({k: v for k, v in params.items() if v is not None})
-        body = None if payload is None else json.dumps(payload, ensure_ascii=False, default=str).encode("utf-8")
         headers = {"Accept": "application/json", **self.extra_headers}
-        if body is not None:
-            headers["Content-Type"] = "application/json"
+        if form is not None:
+            body: bytes | None = urllib.parse.urlencode(form).encode("ascii")
+            headers["Content-Type"] = "application/x-www-form-urlencoded"
+        else:
+            body = None if payload is None else json.dumps(payload, ensure_ascii=False, default=str).encode("utf-8")
+            if body is not None:
+                headers["Content-Type"] = "application/json"
         if self._auth:
             headers["Authorization"] = self._auth
         attempt = 0
@@ -274,6 +287,10 @@ class HttpClient:
 
     def get_json(self, path: str, **params: Any) -> Any:
         return self.request("GET", path, params=params).json()
+
+    def post_form(self, path: str, fields: Mapping[str, str]) -> Any:
+        """Form kodlu POST (OAuth belirteç ucu). Gövde sır içerebilir; hata iletisine yazılmaz."""
+        return self.request("POST", path, form=fields).json()
 
     def post_json(self, path: str, payload: Any, *, ok: tuple[int, ...] = (200, 201, 202)) -> Any:
         return self.request("POST", path, payload, ok=ok).json()

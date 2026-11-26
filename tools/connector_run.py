@@ -10,6 +10,9 @@ Yapılandırma ortam değişkenleriyle; **sırlar yalnızca dosyadan** okunur, k
 
 * Kaynak: ``EVREN_SOURCE_URL`` (https), ``EVREN_SOURCE_TOKEN_FILE`` (Bearer: Zabbix) veya ``EVREN_SOURCE_USER`` +
   ``EVREN_SOURCE_PASSWORD_FILE`` (Basic ya da oturum açma: vCenter), isteğe bağlı ``EVREN_SOURCE_CA_FILE``.
+  Entra istemci kimliği (Defender): ``EVREN_SOURCE_TENANT_ID``, ``EVREN_SOURCE_CLIENT_ID``,
+  ``EVREN_SOURCE_CLIENT_SECRET_FILE``; isteğe bağlı ``EVREN_SOURCE_LOGIN_URL``, ``EVREN_SOURCE_SCOPE``.
+  Defender'da ``EVREN_SOURCE_URL`` verilmezse ``https://api.security.microsoft.com`` kullanılır.
 * Geçit: ``EVREN_GATEWAY_URL``, ``EVREN_CONNECTOR_TOKEN_FILE`` (``evren connector issue`` ile verilen belirteç),
   isteğe bağlı ``EVREN_GATEWAY_CA_FILE``. Düz http yalnızca ``EVREN_GATEWAY_ALLOW_HTTP=1`` ile (geliştirme yığını).
 
@@ -47,6 +50,7 @@ from evren_core.connectors.runtime import ConnectorRunner, load_mappings
 from evren_core.connectors.sources import SOURCES, SourceSpec
 
 SIMULATED_URL = "https://kaynak-simulatoru.invalid"
+LOGIN_URL = "https://login.microsoftonline.com"
 
 
 class ConfigError(Exception):
@@ -58,6 +62,19 @@ def _env(env: dict[str, str], name: str) -> str:
     if not value:
         raise ConfigError(f"{name} tanımlı değil")
     return value
+
+
+def _oauth(spec: SourceSpec, env: dict[str, str], transport: Transport, retries: int, *, simulated: bool
+           ) -> dict[str, Any]:
+    """Entra istemci kimliği akışı (Defender): kiracı, istemci kimliği, sır dosyası; belirteç ucu aynı taşımayla."""
+    if simulated:
+        return {"tenant": "00000000-0000-0000-0000-000000000000", "client_id": "simulasyon",
+                "client_secret": "simulasyon",
+                "login": HttpClient(LOGIN_URL, transport=transport, retries=retries)}
+    return {"tenant": _env(env, "EVREN_SOURCE_TENANT_ID"), "client_id": _env(env, "EVREN_SOURCE_CLIENT_ID"),
+            "client_secret": read_secret(env.get("EVREN_SOURCE_CLIENT_SECRET_FILE"), "İstemci sırrı"),
+            "scope": env.get("EVREN_SOURCE_SCOPE") or None,
+            "login": HttpClient(env.get("EVREN_SOURCE_LOGIN_URL") or LOGIN_URL, transport=transport, retries=retries)}
 
 
 def source_http(spec: SourceSpec, args: argparse.Namespace, env: dict[str, str]
@@ -72,26 +89,32 @@ def source_http(spec: SourceSpec, args: argparse.Namespace, env: dict[str, str]
         if args.simulate:
             if not spec.simulator:
                 raise ConfigError(f"{spec.key} için simülatör yok")
-            return HttpClient(SIMULATED_URL, transport=spec.simulator(Path(args.simulate)), auth_header=auth,
-                              retries=args.retries), options, None
-        replay = ReplayTransport.from_dir(args.replay)
-        options = {**options, **replay.options}  # kayıttaki ayarlarla aynı istekler yapılmalı
-        return HttpClient(SIMULATED_URL, transport=replay, auth_header=auth, retries=args.retries), options, None
-    url = _env(env, "EVREN_SOURCE_URL")
+            transport: Transport = spec.simulator(Path(args.simulate))
+        else:
+            replay = ReplayTransport.from_dir(args.replay)
+            options = {**options, **replay.options}  # kayıttaki ayarlarla aynı istekler yapılmalı
+            transport = replay
+        if spec.auth == "oauth":
+            options["oauth"] = _oauth(spec, env, transport, args.retries, simulated=True)
+        return HttpClient(spec.default_url or SIMULATED_URL, transport=transport, auth_header=auth,
+                          retries=args.retries), options, None
+    url = env.get("EVREN_SOURCE_URL", "").strip() or spec.default_url or _env(env, "EVREN_SOURCE_URL")
     auth = None
     if spec.auth == "bearer":
         auth = HttpClient.bearer(read_secret(env.get("EVREN_SOURCE_TOKEN_FILE"), "Kaynak belirteci"))
     elif spec.auth == "basic":
         auth = HttpClient.basic(_env(env, "EVREN_SOURCE_USER"),
                                 read_secret(env.get("EVREN_SOURCE_PASSWORD_FILE"), "Kaynak parolası"))
-    else:  # oturum açan kaynak (vCenter): kimlik istemciye verilir, yalnızca oturum açma isteğinde kullanılır
+    elif spec.auth == "login":  # oturum açan kaynak (vCenter): kimlik yalnızca oturum açma isteğinde kullanılır
         options["credentials"] = (_env(env, "EVREN_SOURCE_USER"),
                                   read_secret(env.get("EVREN_SOURCE_PASSWORD_FILE"), "Kaynak parolası"))
-    transport: Transport = UrllibTransport(ca_file=env.get("EVREN_SOURCE_CA_FILE") or None)
+    transport = UrllibTransport(ca_file=env.get("EVREN_SOURCE_CA_FILE") or None)
     if args.record:
         recorder = RecordingTransport(transport, args.record,
-                                      {k: v for k, v in options.items() if k != "credentials"})
+                                      {k: v for k, v in options.items() if k not in ("credentials", "oauth")})
         transport = recorder
+    if spec.auth == "oauth":
+        options["oauth"] = _oauth(spec, env, transport, args.retries, simulated=False)
     return HttpClient(url, transport=transport, auth_header=auth, retries=args.retries), options, recorder
 
 

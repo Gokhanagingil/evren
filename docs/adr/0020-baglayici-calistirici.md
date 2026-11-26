@@ -133,6 +133,13 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
   - Sonuç kümesi `results_id` ile sabittir. Toplanan sayı `count`'a eşit değilse çalışma tamamlanmamış sayılır.
 - **Kapsam:** eşleme masaüstlerini dışarıda bırakır (`include_when: host_type`). Hypervisor düğümü ESXi sınıfına gider. Sorgudaki ilişki yolu (MAC adresleri) ve alan adları `verify: true` işaretlidir; kurum örneğinde doğrulanır (F1-01).
 
+### 12. Defender: Entra istemci kimliği, nextLink güvenliği, belirteç sırrı kayda girmez (U5.2)
+
+- **Kimlik doğrulama:** Entra istemci kimliği akışı (client credentials). `POST https://login.microsoftonline.com/{kiracı}/oauth2/v2.0/token` form gövdesiyle istenir; istemci sırrı dosyadan okunur, kapsam `https://api.securitycenter.microsoft.com/.default`. Uygulama iznine yalnızca okuma verilir (`Machine.Read.All`; kurum kaydında doğrulanacak). Belirteç bellekte tutulur. API 401 dönerse bir kez yenilenir, çünkü uzun çalışmada süresi dolabilir.
+- **Uç ve sayfalama:** `GET https://api.security.microsoft.com/api/machines?$top=…` çağrılır; sonraki sayfa `@odata.nextLink`'tedir (Microsoft Learn: List machines). Bağlantı yalnızca API ile aynı şema ve ana bilgisayardaysa izlenir. Yolu ve sorgusu alınır, istek istemcinin temel adresine yapılır; başka adrese giden bağlantı çalışmayı tamamlanmamış yapar.
+- **Kısıtlı veri:** risk ve maruziyet alanları CI özniteliği olmaz (eşleme bunları almaz; testli). Yalnızca `cmdb.ci_security_posture`'a gider; o yol henüz yok (F1-02).
+- **Kayıt güvenliği:** form kodlu gövdelerdeki kimlik alanları (`client_secret`, `client_id`) parmak izinde maskelenir. Yanıttaki `access_token` / `refresh_token` / `id_token` kayda yer tutucuyla yazılır (testli).
+
 ## Sonuçlar
 
 - Yeni kaynak eklemek için üç iş gerekir: `sources/<kaynak>.py` (istemci ve mümkünse simülatör), `SOURCES` kaydı ve eşleme dosyası. Çalıştırıcı, geçit istemcisi ve güvenlik kuralları ortaktır.

@@ -12,6 +12,7 @@ from typing import Any, Literal
 
 from ..http import HttpClient, Transport
 from .bmc_discovery import BMCDiscoveryClient, BMCDiscoverySimulator
+from .defender import DEFAULT_SCOPE, DefenderClient, DefenderSimulator
 from .servicenow import ServiceNowClient, ServiceNowSimulator
 from .vcenter import VCenterClient, VCenterSimulator
 from .zabbix import ZabbixClient, ZabbixSimulator
@@ -23,11 +24,13 @@ __all__ = ["SOURCES", "SourceSpec"]
 class SourceSpec:
     key: str
     data_source: str
-    auth: Literal["bearer", "basic", "login"]  # login: kullanıcı + parola dosyası istemciye verilir (oturum açar)
+    # login: kullanıcı + parola dosyası istemciye verilir (oturum açar); oauth: Entra istemci kimliği akışı
+    auth: Literal["bearer", "basic", "login", "oauth"]
     mapping_dir: str
     build: Callable[[HttpClient, Mapping[str, Any]], Any]
     simulator: Callable[[Path], Transport] | None = None
     options: tuple[str, ...] = ()
+    default_url: str | None = None  # bilinen API adresi (bulut hizmetleri); simülasyon ve kayıt bu adresle çalışır
 
 
 SOURCES: dict[str, SourceSpec] = {
@@ -50,4 +53,11 @@ SOURCES: dict[str, SourceSpec] = {
         build=lambda http, opts: BMCDiscoveryClient(http, release=str(opts.get("release", "1.12")),
                                                     page_size=int(opts.get("page_size", 500))),
         simulator=BMCDiscoverySimulator.from_dir, options=("page_size", "release")),
+    "defender": SourceSpec(
+        key="defender", data_source="Defender", auth="oauth", mapping_dir="defender",
+        build=lambda http, opts: DefenderClient(
+            http, opts["oauth"]["login"], tenant=opts["oauth"]["tenant"], client_id=opts["oauth"]["client_id"],
+            client_secret=opts["oauth"]["client_secret"], scope=opts["oauth"].get("scope") or DEFAULT_SCOPE,
+            page_size=int(opts.get("page_size", 1000))),
+        simulator=DefenderSimulator.from_dir, options=("page_size",), default_url=DefenderSimulator.API),
 }

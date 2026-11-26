@@ -99,6 +99,11 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
 - **Tanımlayıcılar:** `id` (makine kimliği), `aadDeviceId`, `computerDnsName`.
 - **Kısıtlı veri:** maruziyet, risk ve zafiyet sayıları `cmdb.ci_security_posture` tablosuna gider. Genel okuyucu göremez.
 - **Tuzak:** bulut API'si; çıkış trafiği ve vekil sunucu izni gerekir. Uygulama kaydında yalnızca okuma izni verilir.
+- **İstemci (U5.2):** `evren_core/connectors/sources/defender.py`.
+  - Kimlik doğrulama: Entra istemci kimliği akışı. Ortam: `EVREN_SOURCE_TENANT_ID`, `EVREN_SOURCE_CLIENT_ID`, `EVREN_SOURCE_CLIENT_SECRET_FILE`; isteğe bağlı `EVREN_SOURCE_LOGIN_URL` (ulusal bulut) ve `EVREN_SOURCE_SCOPE`.
+  - Çağrı: `GET /api/machines?$top=…`. Sonraki sayfa yalnızca aynı ana bilgisayardaysa `@odata.nextLink` ile izlenir.
+  - Belirtecin süresi dolarsa bir kez yenilenir. API adresi varsayılan olarak `https://api.security.microsoft.com`.
+  - Risk ve maruziyet CI'a yazılmaz.
 
 ## NNMi (F1)
 

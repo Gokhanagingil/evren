@@ -17,6 +17,7 @@ from evren_core.connectors.gateway import DryRunGateway
 from evren_core.connectors.http import HttpClient
 from evren_core.connectors.runtime import ConnectorRunner, load_mappings
 from evren_core.connectors.sources.bmc_discovery import BMCDiscoveryClient, BMCDiscoverySimulator
+from evren_core.connectors.sources.defender import DefenderClient, DefenderSimulator
 from evren_core.connectors.sources.servicenow import ServiceNowClient, ServiceNowSimulator
 from evren_core.connectors.sources.vcenter import VCenterClient, VCenterSimulator
 from evren_core.connectors.sources.zabbix import ZabbixClient, ZabbixSimulator
@@ -52,6 +53,12 @@ def records(name: str):
         src = BMCDiscoveryClient(HttpClient("https://bmc.test", transport=BMCDiscoverySimulator.from_dir(
             REPO / "connectors/bmc_discovery/samples"), auth_header="Bearer b", retries=0))
         ds, folder = "BMC", "bmc_discovery"
+    elif name == "defender":
+        sim = DefenderSimulator.from_dir(REPO / "connectors/defender/samples")
+        src = DefenderClient(HttpClient(DefenderSimulator.API, transport=sim, retries=0),
+                             HttpClient("https://login.microsoftonline.com", transport=sim, retries=0),
+                             tenant="11111111-2222-3333-4444-555555555555", client_id="a", client_secret=PW)
+        ds, folder = "Defender", "defender"
     elif name == "zabbix":
         src = ZabbixClient(HttpClient("https://z.test", transport=ZabbixSimulator.from_dir(
             REPO / "connectors/zabbix/samples"), auth_header="Bearer z", retries=0))
@@ -90,12 +97,13 @@ def test_servicenow_records_keep_their_sys_id_through_the_pipeline(as_reconciler
 
 def test_discovery_sources_attach_to_the_servicenow_ci(as_reconciler, metadata):
     store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
-    for name in ("servicenow", "zabbix", "vcenter", "bmc"):
+    for name in ("servicenow", "zabbix", "vcenter", "bmc", "defender"):
         run(store, name)
     links = sorted(f"{ds}:{key}" for ds, key in fetch(as_reconciler, """
         SELECT data_source, source_key FROM ingest.identity_link WHERE ci_sys_id = %s AND active""", APP))
-    assert links == ["BMC:b7c2e94a1d3f5a6b7c8d9e0f1a2b3c4d/Host", f"ServiceNow:{APP}", "Zabbix:20502",
-                     "vCenter:guest:5003A1B2-C3D4-E5F6-0718-293A4B5C6D7E"]  # dört kaynak, tek CI
+    assert links == ["BMC:b7c2e94a1d3f5a6b7c8d9e0f1a2b3c4d/Host", "Defender:3f9a2c41d07e5b6a8c9d0e1f2a3b4c5d6e7f8091",
+                     f"ServiceNow:{APP}", "Zabbix:20502",
+                     "vCenter:guest:5003A1B2-C3D4-E5F6-0718-293A4B5C6D7E"]  # beş kaynak, tek CI
     esx = fetch(as_reconciler, """SELECT l.data_source FROM ingest.identity_link l
                                   WHERE l.ci_sys_id = '7d3e4f5061728394a5b6c7d8e9f0a1b2' AND l.active""")
     assert sorted(x[0] for x in esx) == ["BMC", "ServiceNow", "vCenter"]  # ESXi seri numarasıyla SN CI'ına bağlandı

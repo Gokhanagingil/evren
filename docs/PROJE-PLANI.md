@@ -51,7 +51,7 @@
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Devam ediyor |
 | F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Devam ediyor |
 | F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Devam ediyor |
-| F1-02 | Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni | Planlandı |
+| F1-02 | Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni | Devam ediyor |
 | F1-03 | NNMi web servis kullanıcısı ve NNMi sürümü | Planlandı |
 | F1-04 | ServiceNow change_request ve task_ci okuma izni | Planlandı |
 | F1-10 | Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı | Planlandı |
@@ -132,7 +132,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-01** BMC Helix Discovery bağlayıcısı ve alan adlarının kurum örneğinde doğrulanması — _Devam ediyor_
   - Not: 26.11.2026: eşleme ve REST istemcisi hazır (U5.2: data/search, results_id ile sayfalama, sayı denetimi, simülatör; uzlaştırıcı ve yığın duman testiyle sınandı). On-prem ve SaaS aynı REST API'yi kullanır. Alan adlarının ve sorgudaki ilişki yolunun kurum örneğinde doğrulanması U10'da.
   - Sizden gereken: BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı
-- [ ] **F1-02** Defender bağlayıcısı; kısıtlı güvenlik duruşu tablosu — _Planlandı_
+- [ ] **F1-02** Defender bağlayıcısı; kısıtlı güvenlik duruşu tablosu — _Devam ediyor_
+  - Not: 26.11.2026: istemci hazır (U5.2: Entra istemci kimliği, nextLink güvenliği, belirteç yenileme, simülatör; uzlaştırıcı ve yığın duman testiyle sınandı). Risk ve maruziyet CI özniteliği olmaz; kısıtlı duruş tablosuna yazım yolu sırada.
   - Sizden gereken: Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni
 - [ ] **F1-03** NNMi: düğüm, arayüz ve L2 bağlantıları — _Planlandı_
   - Sizden gereken: NNMi web servis kullanıcısı ve NNMi sürümü

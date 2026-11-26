@@ -172,7 +172,7 @@ details:
   src_defender:
     phase: F1
     text: Microsoft Defender for Endpoint. Uç nokta koruma durumu ve maruziyet bilgisi. Kapsam sunucularla sınırlıdır. Güvenlik verisi ayrı ve kısıtlı tabloda tutulur.
-    tech: [Defender Machines API, "connectors/defender/mapping.yaml"]
+    tech: ["Defender Machines API (/api/machines, @odata.nextLink)", "Entra istemci kimliği (client credentials)", "connectors/defender/mapping.yaml", "connectors/sources/defender.py"]
     security: [Kısıtlı veri sınıfı, Yalnızca güvenlik rolleri okur]
   src_servicenow:
     phase: F0
