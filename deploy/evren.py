@@ -9,8 +9,9 @@
     evren migrate      göçler + metadata tohumu + servis giriş rolleri (tek seferlik iş)
     evren connector    bağlayıcı kimlikleri: issue | list | revoke (yönetici bağlantısı)
     evren connector-run  bağlayıcı çalıştır: kaynak → eşleme → alım geçidi (--connector zabbix; --help)
+    evren connector-runner  bağlayıcı çalıştırıcı servisi: istekler + zamanlama (EVREN_CONNECTORS_FILE; --once, --check)
     evren demo         sentetik demo verisini yükle (yalnızca EVREN_ALLOW_DEMO=1; boş geliştirme veritabanı)
-    evren healthcheck  api|gateway|worker|ingest|indexer — konteyner sağlık denetimi
+    evren healthcheck  api|gateway|worker|ingest|indexer|connector-runner — konteyner sağlık denetimi
 
 Sırlar dosyadan okunur (``*_FILE`` ortam değişkenleri); hiçbir sır komut satırına veya günlüğe yazılmaz.
 """
@@ -24,7 +25,7 @@ from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1]
 for p in ("packages/evren-core/src", "services/api", "services/reconciler", "services/ingest-gateway", "services/indexer",
-          "tools"):
+          "services/connector-runner", "tools"):
     sys.path.insert(0, str(APP / p))
 
 
@@ -90,6 +91,12 @@ def connector_run(args: list[str]) -> int:
     return cr.main(args)
 
 
+def connector_runner(args: list[str]) -> int:
+    from evren_connector_runner import main as runner_main
+
+    return runner_main(args)
+
+
 def migrate(args: list[str]) -> int:
     import migrate as m
 
@@ -129,13 +136,13 @@ def healthcheck(target: str) -> int:
                 return 0 if r.status == 200 else 1
         except (OSError, ValueError):
             return 1
-    if target in ("worker", "ingest", "indexer"):
+    if target in ("worker", "ingest", "indexer", "connector-runner"):
         path = os.environ.get("EVREN_WORKER_HEALTH_FILE")
         poll = int(os.environ.get("EVREN_WORKER_POLL_SECONDS", "30"))
         if not path or not Path(path).exists():
             return 1
         return 0 if time.time() - Path(path).stat().st_mtime < 3 * poll + 10 else 1
-    print("Kullanım: evren healthcheck api|gateway|worker|ingest|indexer", file=sys.stderr)
+    print("Kullanım: evren healthcheck api|gateway|worker|ingest|indexer|connector-runner", file=sys.stderr)
     return 2
 
 
@@ -158,6 +165,8 @@ def main(argv: list[str]) -> int:
         return connector(rest)
     if cmd == "connector-run":
         return connector_run(rest)
+    if cmd == "connector-runner":
+        return connector_runner(rest)
     if cmd == "migrate":
         return migrate(rest)
     if cmd == "demo":

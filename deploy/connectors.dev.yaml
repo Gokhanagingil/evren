@@ -1,0 +1,23 @@
+# Bağlayıcı çalıştırıcı örnekleri — YEREL GELİŞTİRME yığını (U5.3b, ADR-0021). Üretim yapılandırması değildir.
+#
+# Kaynaklar simülatördür (connectors/<kaynak>/samples, SENTETİK veri); bu yüzden kaynak adresi ve kaynak sırrı yok.
+# simulate yalnızca EVREN_CONNECTOR_ALLOW_SIMULATE=1 ile kabul edilir. Geçit belirteci, duman testinin API'den verdiği
+# kimliğin belirtecidir (deploy/secrets/connector/, git'e girmez; tools/dev_stack.py smoke yazar).
+#
+# Üretim örneği (sır DEĞERİ yazılmaz; yalnızca kasadan bağlanan dosyanın YOLU):
+#   - name: zabbix-dc1
+#     connector: zabbix
+#     url: https://zabbix.kurum.local/api_jsonrpc.php
+#     token_file: /run/secrets/zabbix_dc1_api_token
+#     ca_file: /etc/evren/kurum-ca.pem
+#     gateway_token_file: /run/secrets/evren_gateway_zabbix_dc1
+#     schedule: "15 */2 * * *"        # yoksa data_sources.yaml; null → yalnızca elle
+#     max_runtime_minutes: 120
+connectors:
+  - name: zabbix-sim
+    connector: zabbix
+    simulate: connectors/zabbix/samples
+    gateway_token_file: /run/connector/zabbix-sim.token
+    schedule: "* * * * *"   # duman testi zamanlanmış çalışmayı bir dakika içinde görsün diye; içerik değişmezse uzlaştırma atlanır
+    page_size: 2
+    max_runtime_minutes: 10

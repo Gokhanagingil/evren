@@ -19,7 +19,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DIR = ROOT / "deploy" / "secrets"
 SERVICES = {"api": "evren_api_svc", "worker": "evren_worker_svc", "gateway": "evren_gateway_svc",
-            "ingest": "evren_ingest_svc", "indexer": "evren_indexer_svc"}
+            "ingest": "evren_ingest_svc", "indexer": "evren_indexer_svc", "connector": "evren_connector_svc"}
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -43,6 +43,11 @@ def main(argv: list[str] | None = None) -> int:
         pw = put(login, secrets.token_urlsafe(32))
         put(f"{svc}_dsn", f"postgresql://{login}:{pw}@postgres:5432/evren")
     put("session_key", base64.urlsafe_b64encode(secrets.token_bytes(32)).decode())
+    # Bağlayıcı çalıştırıcısının geçit belirteçleri (ADR-0021): duman testi API'den kimlik verip buraya yazar.
+    # Konteyner kullanıcısı (uid 10001) okuyabilsin diye dizin 0755 (yalnızca yerel geliştirme).
+    conn_dir = DIR / "connector"
+    conn_dir.mkdir(exist_ok=True)
+    os.chmod(conn_dir, 0o755)  # noqa: S103  # nosec B103
     print(f"Sırlar hazır: {DIR.relative_to(ROOT)}/ ({len(list(DIR.iterdir()))} dosya)")
     return 0
 

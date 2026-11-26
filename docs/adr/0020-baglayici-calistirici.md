@@ -80,7 +80,7 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
 - `--dry-run` geçide göndermez; `--out` ile kayıtlar NDJSON dosyasına yazılır. Bu, eşleme sonucunu gözden geçirmek içindir; dosya kaynak verisi içerir ve kurum dışına çıkarılmaz.
 - Çıktı tek satır JSON rapordur: çekilen, eşlenen, atlanan, gönderilen, hata, sınıf dağılımı.
 - Çıkış kodu: 0 tamamlandı, 1 tamamlanmadı, 2 yapılandırma hatası.
-- Zamanlama (`data_sources.yaml` `schedule`) ve arayüzden "şimdi çalıştır" U5.3'tedir.
+- Zamanlama (`data_sources.yaml` `schedule`) ve arayüzden "şimdi çalıştır": ADR-0021 (çalıştırıcı servisi, `--run-id` ile aynı çalışma kimliği).
 
 ### 8. vCenter: VI/JSON API (U5.2)
 
@@ -157,7 +157,7 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
 - **Çalışma ayrıntısı** (Veri Kaynakları → kaynak): her çalışmanın modu (tam liste/değişenler), işlenen ve değişen sayısı gösterilir. Olay omurgasıyla gelen çalışmada ayrıca geçidin kabul ettiği ve bağlayıcının bildirdiği sayı, "bağlayıcı tamamlanmadı" işareti ve bağlayıcının gerekçesi (`notes`; sır içermez, §3) görünür.
 - **Bağlayıcı kimlikleri:** yeni `data_source/connector_read` izni (Veri sorumlusu, Denetçi) ile görünür. Gösterilenler ad, durum (etkin/süresi doldu/iptal), son kullanım, geçerlilik sonu, veren, hız sınırı ve belirtecin son dört karakteri. Çalışmayı açan kimliğin adı da yalnızca bu izinle döner.
 - **Sırsız görünüm:** API rolü `ingest.connector_credential` tablosunu yine okuyamaz. Yalnızca `ingest.connector_credential_status` görünümünü okur (`security_barrier`); görünümde belirteç özeti yoktur (testli).
-- **Sonraki adım (U5.3b):** kimlik verme/iptal ve "şimdi çalıştır" `connector_admin` izniyle yapılacak (izin 0018'de tanımlandı, uç henüz yok). Zamanlama da bu adımdadır. Belirteç yalnızca verildiği anda bir kez gösterilecek; çalıştırma isteği kaynak sırlarına erişen ayrı bir çalıştırıcı servisinde yürütülecek (API kaynak sırlarını görmez).
+- **U5.3b (ADR-0021):** kimlik verme/iptal, "şimdi çalıştır" ve zamanlama `connector_admin` izniyle yapılır. Belirteç yalnızca verildiği anda bir kez gösterilir. Çalıştırma isteği kaynak sırlarına erişen ayrı çalıştırıcı servisinde yürütülür; API kaynak sırlarını görmez.
 
 ## Sonuçlar
 

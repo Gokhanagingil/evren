@@ -1,11 +1,11 @@
 // Veri kaynakları: rol → ürün kaydı, yaşam döngüsü, devre kesici ve çalışma geçmişi; ürün değişimi yordamı.
+// Bağlayıcı örnekleri, şimdi çalıştır, istekler ve kimlik yönetimi connectors.js'te (connector_read/connector_admin).
 import { h, s, dataTable, formatDateTime, formatNumber, kv, metric, pill, section } from '../lib/dom.js';
 import { closeDetail, openDetail, setHeader } from '../lib/shell.js';
 import { BREAKER, LIFECYCLE, sourcesView, srcChip } from '../lib/data.js';
 import { drillPanel } from './drill.js';
+import { MODE, connectorSections } from './connectors.js';
 
-const MODE = { snapshot: 'Tam liste', delta: 'Değişenler' };
-const CRED_STATE = { active: ['Etkin', 'good'], expired: ['Süresi doldu', 'warn'], revoked: ['İptal edildi', 'bad'] };
 
 // Bağlayıcının bildirdiği tamamlanma (olay omurgası): eksik çekme veya hata, devre kesiciden ayrı gösterilir.
 function runStatus(r) {
@@ -43,6 +43,14 @@ export async function renderSources(view, param) {
     sub: 'Her veri kaynağı bir rolü doldurur. Uzlaştırma kuralları ürün adını değil rolü bilir: keşif ürünü değişirse yalnızca bağlayıcı, eşleme ve bu kayıt değişir (ADR-0009).',
     crumbs: [['Veri Kaynakları']],
   });
+
+  // Bağlayıcı eylemi sonrası: veriyi yeniden al, açık paneli aynı kaynakla yeniden çiz (tablo aynı diziyi gösterir).
+  async function reload(name) {
+    const fresh = await sourcesView();
+    d.sources.splice(0, d.sources.length, ...fresh.sources);
+    d.can = fresh.can;
+    if (selected === name) open(name);
+  }
 
   function open(name, opener) {
     const x = d.sources.find((v) => v.name === name);
@@ -85,15 +93,7 @@ export async function renderSources(view, param) {
               h('td', {}, pill(...BREAKER[r.state]), runStatus(r)),
               h('td', { class: 'small' }, [...r.reasons, ...(r.notes ? [r.notes] : [])].join(' · ')
                 || (r.baseline ? `Taban çizgisi ${formatNumber(r.baseline)}` : '—')))))))) : null,
-        x.credentials ? section('Bağlayıcı kimlikleri', x.credentials.length ? [h('div', { class: 'tablewrap' }, h('table', { 'aria-label': 'Bağlayıcı kimlikleri' },
-          h('thead', {}, h('tr', {}, h('th', {}, 'Ad'), h('th', {}, 'Durum'), h('th', {}, 'Son kullanım'), h('th', {}, 'Geçerlilik sonu'),
-            h('th', {}, 'Veren'))),
-          h('tbody', {}, x.credentials.map((c) => h('tr', {}, h('td', {}, h('span', { class: 'mono' }, c.name),
-            h('span', { class: 'cell-sub' }, `Belirteç …${c.token_hint} · dakikada ${formatNumber(c.per_minute)} kayıt`)),
-            h('td', {}, pill(...CRED_STATE[c.state])), h('td', {}, c.last_used_at ? formatDateTime(c.last_used_at) : 'Kullanılmadı'),
-            h('td', {}, formatDateTime(c.expires_at)), h('td', {}, c.revoked_by ? `${c.created_by} · iptal: ${c.revoked_by}` : c.created_by)))))),
-          h('p', { class: 'small muted' }, 'Belirteç yalnızca verildiği anda bir kez gösterilir; burada son dört karakteri görünür. Kimlik verme ve iptal şimdilik komut satırından (evren connector issue | revoke).')]
-          : h('p', { class: 'small muted' }, 'Bu kaynağa verilmiş bağlayıcı kimliği yok. Komut satırından verilir: evren connector issue --data-source ' + x.name + '.')) : null,
+        ...connectorSections(x, d.can || {}, () => reload(name)),
         x.stats.records ? section('Kimlik sonuçları', kv([
           ['Kaynak kaydı', formatNumber(x.stats.records)], ['Mevcut CI\'a bağlandı', formatNumber(x.stats.linked)],
           ['Yeni CI açtı', formatNumber(x.stats.new)], ['İncelemede', formatNumber(x.stats.review)], ['Kimliği yetersiz', formatNumber(x.stats.insufficient)],

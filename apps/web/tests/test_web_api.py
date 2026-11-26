@@ -343,3 +343,74 @@ def test_source_detail_shows_connector_credentials_without_secret(page, base_url
     finally:
         with psycopg.connect(autocommit=True) as conn:
             conn.execute("DELETE FROM ingest.connector_credential WHERE name = %s", (name,))
+
+
+def test_connector_admin_runs_cancels_and_issues_token_once_with_keyboard(page, base_url):
+    """U5.3b (ADR-0021): Veri sorumlusu "Şimdi çalıştır" ile istek açar ve iptal eder; kimlik verir, belirteci bir kez
+    görür (pencere kapanınca sayfada kalmaz, veritabanında yalnızca özeti), sonra kimliği iptal eder. Klavyeyle."""
+    import uuid as _uuid
+
+    import psycopg
+
+    from evren_core.credentials import token_sha256
+
+    runner, inst = "webtest-runner:1", f"webtest-zbx-{_uuid.uuid4().hex[:6]}"
+    cred = f"webtest-{_uuid.uuid4().hex[:8]}"
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("""INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, poll_seconds, kind)
+                        VALUES (%s, now(), now(), 600, 'connector')
+                        ON CONFLICT (worker_id) DO UPDATE SET seen_at = now(), stopped_at = NULL""", (runner,))
+        conn.execute("""INSERT INTO ingest.connector_instance (name, connector, data_source, schedule, schedule_tz,
+                            next_run_at, max_runtime_minutes, runner_id, seen_at)
+                        VALUES (%s, 'zabbix', 'Zabbix', '15 */2 * * *', 'Europe/Istanbul', now() + interval '1 hour',
+                                120, %s, now())""", (inst, runner))
+    try:
+        page.goto(base_url + "/#/kaynaklar/Zabbix")
+        page.wait_for_selector("#detail.open")
+        instances = page.locator("table[aria-label='Bağlayıcı örnekleri']")
+        expect(instances).to_contain_text(inst)
+        expect(instances).to_contain_text("Hazır")
+        page.locator(f"button[data-run='{inst}']").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#runMode")).to_be_focused()
+        page.locator("#runNote").fill("arayüz testi")
+        page.locator("#runNote").press("Enter")  # form gönderimi
+        requests = page.locator("table[aria-label='Çalıştırma istekleri']")
+        expect(requests).to_contain_text("Bekliyor")
+        expect(instances).to_contain_text("Çalışma sürüyor")
+        shot(page, "web_api_connector_run_request")
+        page.locator("button[data-cancel]").first.focus()
+        page.keyboard.press("Enter")
+        expect(requests).to_contain_text("İptal edildi")
+
+        page.locator("#credIssue").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#credName")).to_be_focused()
+        page.keyboard.type(cred)
+        page.keyboard.press("Enter")
+        field = page.locator("#tokenValue")
+        expect(field).to_be_visible()
+        token = field.input_value()
+        assert len(token) > 20
+        expect(page.locator("#tokenCopy")).to_be_focused()
+        shot(page, "web_api_connector_token_once")
+        with psycopg.connect(autocommit=True) as conn:
+            assert conn.execute("SELECT token_sha256 FROM ingest.connector_credential WHERE name = %s",
+                                (cred,)).fetchone()[0] == token_sha256(token)
+        page.keyboard.press("Escape")
+        expect(field).to_have_count(0)
+        creds = page.locator("table[aria-label='Bağlayıcı kimlikleri']")
+        expect(creds).to_contain_text(cred)
+        assert token not in page.content()
+        page.locator(f"button[data-revoke='{cred}']").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#revokeGo")).to_be_focused()
+        page.keyboard.press("Enter")
+        row = creds.locator("tr", has_text=cred)
+        expect(row).to_contain_text("İptal edildi")
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM ingest.connector_run_request WHERE instance = %s", (inst,))
+            conn.execute("DELETE FROM ingest.connector_instance WHERE name = %s", (inst,))
+            conn.execute("DELETE FROM ingest.worker_heartbeat WHERE worker_id = %s", (runner,))
+            conn.execute("DELETE FROM ingest.connector_credential WHERE name = %s", (cred,))

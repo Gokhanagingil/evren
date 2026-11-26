@@ -23,7 +23,7 @@ chapters:
       - {id: src_zabbix, kind: source, col: 3, row: 0, label: Zabbix, sub: ["İzleme kapsamı,", "canlılık"]}
       - {id: src_defender, kind: source, col: 4, row: 0, label: Defender, sub: ["Koruma durumu,", "maruziyet"]}
       - {id: src_servicenow, kind: servicenow, col: 5, row: 0, label: ServiceNow, sub: ["CMDB ilk yükleme,", "Change kayıtları"]}
-      - {id: connectors, kind: engine, col: 1, row: 1, span: 4, label: Bağlayıcılar + eşleme dosyaları, sub: ["Çekme, sayfalama, kimlik doğrulama · kaynak JSON → ServiceNow alan adları"]}
+      - {id: connectors, kind: engine, col: 1, row: 1, span: 4, label: Bağlayıcı çalıştırıcı + eşleme dosyaları, sub: ["Şimdi çalıştır ve zamanlama · çekme, sayfalama · kaynak JSON → ServiceNow alan adları"]}
       - {id: ingest_gateway, kind: security, col: 1, row: 2, span: 2, label: Alım geçidi, sub: ["mTLS · şema doğrulama ·", "kaynak başına yetki"]}
       - {id: kafka, kind: store, col: 3, row: 2, span: 2, label: Olay omurgası (Kafka), sub: ["ingest.record · ingest.run", "yeniden oynatılabilir"]}
       - {id: raw_archive, kind: store, col: 5, row: 2, label: Ham yük arşivi, sub: ["Saklama politikası,", "raw_ref ile izlenir"]}
@@ -182,8 +182,8 @@ details:
   connectors:
     phase: F0
     text: Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma "tamamlandı" sayılmaz; bu, GRC Platformu'ndaki collection_status ilkesinin aynısıdır. Her veri kaynağı bir kaynak rolünü (Keşif, Sanallaştırma, Ağ, İzleme, Uç nokta güvenliği, ITSM) doldurur; yeni ürün önce gölge modda çalışır, sonra devralır.
-    tech: ["evren_core.connectors", "ConnectorRunner + HttpClient (ADR-0020)", "FieldMapping (YAML)", "evren_core.sources.SourceRegistry", "metadata/data_sources.yaml", "tools/connector_run.py · evren connector-run"]
-    security: [Bağlayıcı CMDB'ye yazamaz; veritabanı erişimi yok, Sırlar yalnızca dosyadan; TLS zorunlu, Eksiksiz çekme olmadan çalışma tamamlandı sayılmaz, Ham yük arşive yazılır (F1-14)]
+    tech: ["evren_core.connectors", "ConnectorRunner + HttpClient (ADR-0020)", "FieldMapping (YAML)", "evren_core.sources.SourceRegistry", "metadata/data_sources.yaml", "tools/connector_run.py · evren connector-run", "services/connector-runner · evren connector-runner (ADR-0021)", "ingest.connector_run_request · 5 alanlı cron (evren_core.schedule)"]
+    security: [Bağlayıcı CMDB'ye yazamaz; veriyi yalnızca alım geçidine gönderir, "Çalıştırıcı servisi ayrı rol (evren_app_connector): CMDB yetkisi yok, yalnızca istek durumu", Kaynak sırları yalnızca çalıştırıcıda ve dosyadan; API görmez, "Her çalışma ayrı süreç: süre sınırı ve iptal; alt süreçte veritabanı adresi yok", Eksiksiz çekme olmadan çalışma tamamlandı sayılmaz, Ham yük arşive yazılır (F1-14)]
   ingest_gateway:
     phase: F0
     text: Bağlayıcılardan gelen CloudEvents zarfları burada doğrulanır. Şema dışı alan reddedilir. Her bağlayıcı belirteci tek bir veri kaynağına bağlıdır, başka kaynak adına yazamaz. Toplu gönderim ya hep ya hiç işlenir; Kafka onaylamadan kabul edilmez. Çalışmayı geçit açar, kapanışını uzlaştırıcı yapar (ADR-0017).

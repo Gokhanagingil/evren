@@ -93,6 +93,8 @@ jobs:
         run: python -m pytest -q services/ingest-gateway/tests
       - name: Arama dizinleyicisi (evren_app_indexer rolüyle; OpenSearch taklit, gerçek motor "Yığın" işinde)
         run: python -m pytest -q services/indexer/tests
+      - name: Bağlayıcı çalıştırıcı servisi (evren_app_connector rolüyle; gerçek alt süreç, sahte geçit)
+        run: python -m pytest -q services/connector-runner/tests
       - name: Arayüz API modunda (gerçek uvicorn + PostgreSQL, Chromium)
         run: |
           python -m playwright install --with-deps chromium

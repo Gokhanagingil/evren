@@ -83,14 +83,15 @@ export function isOverlayOpen() {
   return overlay !== null;
 }
 
-/** İletişim kutusu. ``footer``: eylem düğmeleri; ``focus``: açılınca odaklanacak öğe (yoksa Kapat). */
-export function dialog({ title, body, footer = [], focus = null }) {
+/** İletişim kutusu. ``footer``: eylem düğmeleri; ``focus``: açılınca odaklanacak öğe (yoksa Kapat);
+ * ``onClose``: nasıl kapanırsa kapansın (Esc, ✕, dış tıklama, düğme) bir kez çağrılır. */
+export function dialog({ title, body, footer = [], focus = null, onClose = null }) {
   const close = h('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Kapat', onclick: closeOverlay }, '✕');
   const box = h('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'dialogTitle' },
     h('header', {}, h('h2', { id: 'dialogTitle' }, title), close),
     h('div', { class: 'body' }, body),
     footer.length ? h('footer', {}, footer) : null);
-  openOverlay(box);
+  openOverlay(box, onClose);
   (focus || close).focus();
 }
 

@@ -30,6 +30,7 @@ import json
 import logging
 import os
 import sys
+import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -135,6 +136,7 @@ def main(argv: list[str] | None = None, env: dict[str, str] | None = None) -> in
     ap.add_argument("--name", help="bağlayıcı adı (zarftaki kaynak; varsayılan: --connector)")
     ap.add_argument("--mode", choices=["snapshot", "delta"], default="snapshot")
     ap.add_argument("--since", type=datetime.fromisoformat, help="delta için başlangıç (ISO 8601)")
+    ap.add_argument("--run-id", type=uuid.UUID, help="çalışma kimliği (çalıştırıcı servisi verir; varsayılan: yeni)")
     src = ap.add_mutually_exclusive_group()
     src.add_argument("--simulate", metavar="KLASÖR", help="kaynak yerine simülatör (örnek veri klasörü)")
     src.add_argument("--replay", metavar="KLASÖR", help="kaydedilmiş yanıtları oynat")
@@ -163,7 +165,7 @@ def main(argv: list[str] | None = None, env: dict[str, str] | None = None) -> in
         print(f"Yapılandırma hatası: {exc}", file=sys.stderr)
         return 2
     try:
-        report = ConnectorRunner(client, mappings, port).run(args.mode, args.since)
+        report = ConnectorRunner(client, mappings, port).run(args.mode, args.since, args.run_id)
     except HttpError as exc:  # çalışma geçitte açılamadı
         print(f"Çalışma açılamadı: {exc}", file=sys.stderr)
         return 1

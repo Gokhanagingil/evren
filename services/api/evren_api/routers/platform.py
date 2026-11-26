@@ -97,6 +97,10 @@ def _source_rows(ctx: Ctx) -> list[dict[str, Any]]:
                     "created_at": created.isoformat(), "expires_at": expires.isoformat(),
                     "last_used_at": used.isoformat() if used else None,
                     "revoked_at": revoked.isoformat() if revoked else None, "revoked_by": revoked_by, "state": cstate})
+        instances: dict[str, list[dict[str, Any]]] = {}
+        requests: dict[str, list[dict[str, Any]]] = {}
+        if can_connectors:
+            instances, requests = _connector_rows(cur)
     for src in md.data_sources:
         name = src["name"]
         role = reg.roles[src["role"]]
@@ -114,8 +118,56 @@ def _source_rows(ctx: Ctx) -> list[dict[str, Any]]:
                       "missing": counts.get("missing", 0), "new": 0},
             "runs": runs.get(name, []), "breaker": (runs.get(name) or [{}])[0].get("state"),
             "credentials": credentials.get(name, []) if can_connectors else None,
+            "connectors": instances.get(name, []) if can_connectors else None,
+            "requests": requests.get(name, []) if can_connectors else None,
         })
     return out
+
+
+REQUEST_STATUS = {"pending": "Bekliyor", "running": "Çalışıyor", "succeeded": "Tamamlandı", "failed": "Başarısız",
+                  "cancelled": "İptal edildi", "rejected": "Reddedildi"}
+
+
+def _iso(v: Any) -> str | None:
+    return v.isoformat() if v is not None else None
+
+
+def _connector_rows(cur: Any) -> tuple[dict[str, list[dict[str, Any]]], dict[str, list[dict[str, Any]]]]:
+    """Çalıştırıcının bildirdiği örnekler ve son 20 çalıştırma isteği (ADR-0021; yalnızca connector_read).
+
+    ``available``: örnek son 3 tarama aralığı içinde, durmamış bir çalıştırıcı tarafından bildirildi.
+    """
+    cur.execute("""SELECT i.name, i.data_source, i.connector, i.schedule, i.schedule_mode, i.schedule_tz,
+                          i.next_run_at, i.enabled, i.max_runtime_minutes, i.seen_at, i.runner_id,
+                          coalesce(i.seen_at > now() - 3 * h.poll_seconds * interval '1 second'
+                                   AND h.seen_at > now() - 3 * h.poll_seconds * interval '1 second'
+                                   AND h.stopped_at IS NULL, false)
+                     FROM ingest.connector_instance i
+                     LEFT JOIN ingest.worker_heartbeat h ON h.worker_id = i.runner_id
+                    ORDER BY i.data_source, i.name""")
+    instances: dict[str, list[dict[str, Any]]] = {}
+    for (name, ds, connector, schedule, smode, tz, next_run, enabled, runtime, seen, runner,
+         available) in cur.fetchall():
+        instances.setdefault(ds, []).append({
+            "name": name, "connector": connector, "schedule": schedule, "schedule_mode": smode, "schedule_tz": tz,
+            "next_run_at": _iso(next_run), "enabled": enabled, "max_runtime_minutes": runtime,
+            "seen_at": _iso(seen), "runner": runner, "available": bool(available)})
+    cur.execute("""SELECT id, data_source, instance, mode, since, origin, scheduled_for, requested_by, requested_at,
+                          note, status, started_at, finished_at, run_id, exit_code, summary, result_note,
+                          cancel_requested_at IS NOT NULL
+                     FROM (SELECT *, row_number() OVER (PARTITION BY data_source ORDER BY requested_at DESC) AS rn
+                             FROM ingest.connector_run_request) r
+                    WHERE rn <= 20 ORDER BY data_source, requested_at DESC""")
+    requests: dict[str, list[dict[str, Any]]] = {}
+    for (rid, ds, inst, mode, since, origin, slot, by, at, note, status, started, finished, run_id, rc, summary,
+         result, cancel) in cur.fetchall():
+        requests.setdefault(ds, []).append({
+            "id": str(rid), "instance": inst, "mode": mode, "since": _iso(since), "origin": origin,
+            "scheduled_for": _iso(slot), "requested_by": by, "requested_at": at.isoformat(), "note": note,
+            "status": status, "status_label": REQUEST_STATUS[status], "started_at": _iso(started),
+            "finished_at": _iso(finished), "run_id": str(run_id) if run_id else None, "exit_code": rc,
+            "summary": summary, "result_note": result, "cancel_requested": cancel})
+    return instances, requests
 
 
 @router.get("/sources")
@@ -126,7 +178,8 @@ def sources(ctx: Ctx = Depends(context)) -> dict[str, Any]:
                        "description_tr": r.get("description_tr", ""),
                        "ci_attribute_source": bool(r.get("ci_attribute_source", True))} for r in md.source_roles],
             "sources": _source_rows(ctx),
-            "can": {"connector_read": ctx.grant("data_source", "connector_read").allowed}}
+            "can": {"connector_read": ctx.grant("data_source", "connector_read").allowed,
+                    "connector_admin": ctx.grant("data_source", "connector_admin").allowed}}
 
 
 @router.get("/rules")

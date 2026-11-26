@@ -268,6 +268,7 @@ def smoke_event_backbone() -> tuple[str, str]:
     check(ingest["state"] == "ok" and ingest["processed"] >= 1,
           f"alım tüketicisi canlı ({ingest['instances']} örnek, {ingest['processed']} kayıt)")
     smoke_connector_run(token)
+    smoke_connector_runner()
     compose("run", "--rm", "--no-deps", "-T", "migrate", "connector", "revoke", "--name", f"duman-{tag}", "--by",
             "duman-testi", capture=True)
     check(http("GET", f"{GATEWAY}/ingest/v1/runs/{rid}", auth=token)[0] == 401, "iptal edilen kimlik reddediliyor")
@@ -372,6 +373,65 @@ def smoke_connector_run(token: str) -> None:
     finally:
         for name in (sn_name, vc_name, bmc_name, df_name, nn_name):
             _revoke(name)
+
+
+def _zabbix_source() -> dict[str, Any]:
+    status, body = http("GET", f"{API}/api/v1/sources")
+    if status != 200:
+        return {}
+    return next((x for x in body["sources"] if x["name"] == "Zabbix"), {})
+
+
+def smoke_connector_runner() -> None:
+    """Bağlayıcı çalıştırıcı servisi (U5.3b, ADR-0021): API'den kimlik (belirteç bir kez) → çalıştırıcı servisi →
+    zamanlanmış çalışma ve "şimdi çalıştır" → alım geçidi → uzlaştırıcı kapanışı. Kaynak simülatördür (sentetik)."""
+    step("Bağlayıcı çalıştırıcı servisi: API'den kimlik verme, örnek bildirimi, zamanlama ve şimdi çalıştır")
+    name = f"duman-runner-{uuid.uuid4().hex[:8]}"
+    status, cred = http("POST", f"{API}/api/v1/sources/Zabbix/credentials",
+                        {"name": name, "expires_days": 1, "per_minute": 10000, "idempotency_key": f"duman-{uuid.uuid4().hex}"})
+    check(status == 201 and bool(cred and cred.get("token")), "kimlik API'den verildi; belirteç yanıtta bir kez")
+    token = cred["token"]
+    token_file = ROOT / "deploy" / "secrets" / "connector" / "zabbix-sim.token"
+    token_file.parent.mkdir(mode=0o755, exist_ok=True)
+    token_file.write_text(token + "\n", encoding="utf-8")
+    os.chmod(token_file, 0o644)  # konteyner kullanıcısı okur (yalnızca yerel geliştirme)
+    try:
+        compose("--profile", "runner", "up", "-d", "--no-deps", "--wait", "--wait-timeout", "120", "connector-runner")
+        wait_for("çalıştırıcının örneği bildirmesi", lambda: any(
+            i["name"] == "zabbix-sim" and i["available"] for i in _zabbix_source().get("connectors") or []), timeout=60)
+        print("  ✓ çalıştırıcı örneği sırsız bildirdi (zabbix-sim; adres ve dosya yolu yok)")
+
+        def finished(pred: Any) -> Any:
+            return next((r for r in _zabbix_source().get("requests") or []
+                         if pred(r) and r["status"] not in ("pending", "running")), None)
+
+        sched = wait_for("zamanlanmış çalışma", lambda: finished(lambda r: r["origin"] == "schedule"), timeout=150,
+                         interval=3)
+        check(sched["status"] == "succeeded" and sched["summary"].get("sent") == 5,
+              f"zamanlanmış çalışma tamamlandı: gönderilen {sched['summary'].get('sent')} ({sched['result_note'] or 'not yok'})")
+
+        def accepted() -> Any:  # zamanlanmış istek yürürken 409 döner; sonraki denemede kabul edilir
+            st, body = http("POST", f"{API}/api/v1/sources/Zabbix/run-requests",
+                            {"instance": "zabbix-sim", "mode": "snapshot", "note": "duman testi",
+                             "idempotency_key": f"duman-{uuid.uuid4().hex}"})
+            return st == 202 and body
+
+        req = wait_for("şimdi çalıştır isteği", accepted, timeout=90, interval=3)
+        done = wait_for("elle istenen çalışma", lambda: finished(lambda r: r["id"] == req["id"]), timeout=120,
+                        interval=2)
+        check(done["status"] == "succeeded" and done["origin"] == "manual" and done["summary"].get("sent") == 5,
+              f"şimdi çalıştır tamamlandı: gönderilen {done['summary'].get('sent')}, süre {done['summary'].get('duration_s')} sn")
+
+        def closed() -> Any:
+            _s, b = http("GET", f"{GATEWAY}/ingest/v1/runs/{done['run_id']}", auth=token)
+            return b and b.get("state") == "finished" and b
+
+        final = wait_for("çalışmanın uzlaştırıcıda kapanışı", closed, timeout=120)
+        check(final["completed"] is True, "istek ile geçitteki çalışma aynı run_id; uzlaştırıcı tamamladı")
+    finally:
+        compose("--profile", "runner", "stop", "connector-runner", check=False, capture=True)
+        http("POST", f"{API}/api/v1/credentials/{name}/revoke", {})
+        token_file.unlink(missing_ok=True)
 
 
 def smoke_search(name: str, sys_id: str) -> None:

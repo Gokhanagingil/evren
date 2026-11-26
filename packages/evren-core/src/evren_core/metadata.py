@@ -23,6 +23,7 @@ import yaml
 from .classes import ClassHierarchy
 from .identity.rules import ATTRIBUTE_KEY_TYPES
 from .relations import ENFORCEMENT_MODES, RelationRules
+from .schedule import CronError, CronSchedule
 from .sources import SourceRegistry, SourceRegistryError
 
 __all__ = [
@@ -321,6 +322,13 @@ def validate(md: Metadata) -> ValidationReport:
             r.errors.append(f"{s['name']}: tanımsız kaynak rolü {s.get('role')}")
         if "kind" in s:
             r.errors.append(f"{s['name']}: kind veri kaynağında değil rolde tanımlanır")
+        if s.get("schedule") is not None:  # ADR-0021 §4: çalıştırıcı zamanlaması
+            try:
+                CronSchedule.parse(s["schedule"])
+            except CronError as exc:
+                r.errors.append(f"{s['name']}: zamanlama geçersiz: {exc}")
+            if not s.get("connector"):
+                r.errors.append(f"{s['name']}: bağlayıcısı olmayan kaynağa zamanlama verilemez")
     try:
         r.errors.extend(md.sources.validate())
     except SourceRegistryError as exc:

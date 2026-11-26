@@ -272,6 +272,9 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .dialog > footer { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; padding: 12px 20px; border-top: 1px solid var(--stroke); background: #fafbfc; border-radius: 0 0 12px 12px; }
 .dialog .body label.field { display: block; font-weight: 600; margin: 12px 0 4px; }
 .dialog .body input[type=text] { width: 100%; }
+.dialog .body input[type=number], .dialog .body input[type=datetime-local], .dialog .body select { width: 100%; }
+/* bağlayıcı yönetimi (ADR-0021): bölüm altı eylemler */
+.row-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-top: 8px; }
 .btn.danger { background: var(--bad); border-color: var(--bad); }
 .btn.danger:hover { filter: brightness(.92); }
 .panel-actions { display: flex; justify-content: flex-end; gap: 8px; margin: -4px 0 12px; }

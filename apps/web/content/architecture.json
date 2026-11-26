@@ -182,9 +182,9 @@
       ]
     },
     "connectors": {
-      "label": "Bağlayıcılar + eşleme dosyaları",
+      "label": "Bağlayıcı çalıştırıcı + eşleme dosyaları",
       "sub": [
-        "Çekme, sayfalama, kimlik doğrulama · kaynak JSON → ServiceNow alan adları"
+        "Şimdi çalıştır ve zamanlama · çekme, sayfalama · kaynak JSON → ServiceNow alan adları"
       ],
       "kind": "engine",
       "kind_label": "Evren bileşeni",
@@ -197,11 +197,15 @@
         "FieldMapping (YAML)",
         "evren_core.sources.SourceRegistry",
         "metadata/data_sources.yaml",
-        "tools/connector_run.py · evren connector-run"
+        "tools/connector_run.py · evren connector-run",
+        "services/connector-runner · evren connector-runner (ADR-0021)",
+        "ingest.connector_run_request · 5 alanlı cron (evren_core.schedule)"
       ],
       "security": [
-        "Bağlayıcı CMDB'ye yazamaz; veritabanı erişimi yok",
-        "Sırlar yalnızca dosyadan; TLS zorunlu",
+        "Bağlayıcı CMDB'ye yazamaz; veriyi yalnızca alım geçidine gönderir",
+        "Çalıştırıcı servisi ayrı rol (evren_app_connector): CMDB yetkisi yok, yalnızca istek durumu",
+        "Kaynak sırları yalnızca çalıştırıcıda ve dosyadan; API görmez",
+        "Her çalışma ayrı süreç: süre sınırı ve iptal; alt süreçte veritabanı adresi yok",
         "Eksiksiz çekme olmadan çalışma tamamlandı sayılmaz",
         "Ham yük arşive yazılır (F1-14)"
       ]

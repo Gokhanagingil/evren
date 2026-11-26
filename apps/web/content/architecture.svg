@@ -94,12 +94,12 @@
 <text x="1064.0" y="322.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">CMDB ilk yükleme,</text>
 <text x="1064.0" y="338.0" fill="#3c6a4f" font-size="12" font-weight="400" text-anchor="start">Change kayıtları</text>
 </g>
-<g class="node" id="n-connectors" data-node="connectors" data-chapter="sources" tabindex="0" role="button" aria-label="Bağlayıcılar + eşleme dosyaları: Çekme, sayfalama, kimlik doğrulama · kaynak JSON → ServiceNow alan adları">
+<g class="node" id="n-connectors" data-node="connectors" data-chapter="sources" tabindex="0" role="button" aria-label="Bağlayıcı çalıştırıcı + eşleme dosyaları: Şimdi çalıştır ve zamanlama · çekme, sayfalama · kaynak JSON → ServiceNow alan adları">
 <rect x="250.0" y="416.0" width="780.0" height="63.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
 <rect x="990.0" y="425.0" width="30" height="18" rx="9" fill="#2a617d" stroke="#ffffff" stroke-width="1"/>
 <text x="1005.0" y="438.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F0</text>
-<text x="264.0" y="442.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Bağlayıcılar + eşleme dosyaları</text>
-<text x="264.0" y="460.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Çekme, sayfalama, kimlik doğrulama · kaynak JSON → ServiceNow alan adları</text>
+<text x="264.0" y="442.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">Bağlayıcı çalıştırıcı + eşleme dosyaları</text>
+<text x="264.0" y="460.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Şimdi çalıştır ve zamanlama · çekme, sayfalama · kaynak JSON → ServiceNow alan adları</text>
 </g>
 <g class="node" id="n-ingest_gateway" data-node="ingest_gateway" data-chapter="sources" tabindex="0" role="button" aria-label="Alım geçidi: mTLS · şema doğrulama · kaynak başına yetki">
 <rect x="250.0" y="519.0" width="380.0" height="79.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>

@@ -9,6 +9,7 @@ from __future__ import annotations
 import datetime as dt
 import os
 import subprocess
+import uuid
 from decimal import Decimal
 
 import pytest
@@ -196,6 +197,32 @@ def test_segregation_of_duties_enforced():
         ("evren_app_ingest", "SELECT count(*) FROM ingest.connector_credential_status"),
         ("evren_app_reconciler", "SELECT count(*) FROM ingest.connector_credential_status"),
         ("evren_app_indexer", "SELECT count(*) FROM ingest.connector_credential_status"),
+        # 0019 (U5.3b): API isteği yalnızca elle ve istek sütunlarıyla yazar; durum, köken ve kimlik tablosu yok.
+        # Çalıştırıcı CMDB'yi göremez, isteğin içeriğini değiştiremez, kimlik ve kaynak kaydına erişemez.
+        ("evren_app_api", "UPDATE ingest.connector_run_request SET status = 'succeeded'"),
+        ("evren_app_api", "INSERT INTO ingest.connector_run_request (instance, data_source, origin, scheduled_for, "
+                          "requested_by) VALUES ('x', 'Zabbix', 'schedule', now(), 'x')"),
+        ("evren_app_api", "INSERT INTO ingest.connector_instance (name, connector, data_source, schedule_tz, "
+                          "max_runtime_minutes, runner_id, seen_at) VALUES ('x1', 'zabbix', 'Zabbix', 'UTC', 1, 'r', "
+                          "now())"),
+        ("evren_app_api", "INSERT INTO ingest.connector_credential (name, data_source, token_sha256, token_hint, "
+                          "created_by, expires_at) VALUES ('x1', 'Zabbix', repeat('a', 64), 'abcd', 'x', "
+                          "now() + interval '1 day')"),
+        ("evren_app_connector", "SELECT count(*) FROM cmdb.cmdb_ci"),
+        ("evren_app_connector", "SELECT count(*) FROM ingest.source_record"),
+        ("evren_app_connector", "SELECT count(*) FROM ingest.connector_credential"),
+        ("evren_app_connector", "SELECT count(*) FROM ingest.connector_credential_status"),
+        ("evren_app_connector", "UPDATE ingest.connector_run_request SET requested_by = 'x'"),
+        ("evren_app_connector", "UPDATE ingest.connector_run_request SET cancel_requested_at = now()"),
+        ("evren_app_connector", "INSERT INTO events.outbox (aggregate_type, aggregate_id, event_type, payload) "
+                                "VALUES ('x', 'x', 'x', '{}')"),
+        ("evren_app_connector", "SELECT ingest.issue_connector_credential('x1', 'Zabbix', repeat('a', 64), 'abcd', "
+                                "1, 1, 'x')"),
+        ("evren_app_connector", "SELECT ingest.cancel_connector_run_request(gen_random_uuid(), 'x')"),
+        ("evren_app_reconciler", "SELECT ingest.issue_connector_credential('x1', 'Zabbix', repeat('a', 64), 'abcd', "
+                                 "1, 1, 'x')"),
+        ("evren_app_ingest", "SELECT ingest.revoke_connector_credential('x1', 'x')"),
+        ("evren_app_indexer", "SELECT count(*) FROM ingest.connector_run_request"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -227,6 +254,11 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_mcp", "SELECT value, dependent_value FROM meta.sys_choice LIMIT 1"),
         ("evren_app_api", "SELECT name, data_source, token_hint, state FROM ingest.connector_credential_status"),
         ("evren_auditor_ro", "SELECT name, state FROM ingest.connector_credential_status"),
+        ("evren_app_api", "SELECT count(*) FROM ingest.connector_run_request"),
+        ("evren_app_api", "SELECT name, schedule, next_run_at FROM ingest.connector_instance"),
+        ("evren_app_connector", "SELECT name, lifecycle FROM ingest.data_source"),
+        ("evren_app_connector", "UPDATE ingest.connector_run_request SET result_note = result_note WHERE false"),
+        ("evren_auditor_ro", "SELECT count(*) FROM ingest.connector_run_request"),
     ],
 )
 def test_allowed_paths_work(role, statement):
@@ -281,3 +313,119 @@ def test_credential_view_has_no_secret_column():
                 "WHERE table_schema = 'ingest' AND table_name = 'connector_credential_status'")
     assert "token_sha256" not in cols and "token_hint" in cols and cols.endswith("state")
     assert psql("SELECT count(*) FROM iam.permission WHERE resource = 'data_source' AND operation = 'connector_read'") == "2"
+
+
+INSTANCE = ("INSERT INTO ingest.connector_instance (name, connector, data_source, schedule, schedule_tz, "
+            "max_runtime_minutes, runner_id, seen_at) VALUES ('test-zbx', 'zabbix', 'Zabbix', '15 */2 * * *', "
+            "'Europe/Istanbul', 60, 'r1', now()) ON CONFLICT (name) DO UPDATE SET seen_at = now()")
+
+
+@pytest.fixture
+def connector_instance():
+    psql(INSTANCE)
+    yield "test-zbx"
+    psql("DELETE FROM ingest.connector_run_request WHERE instance = 'test-zbx'; "
+         "DELETE FROM ingest.connector_instance WHERE name = 'test-zbx'")
+
+
+def api_request(extra: str = "") -> str:
+    return psql("SET ROLE evren_app_api; INSERT INTO ingest.connector_run_request (instance, data_source, mode, "
+                f"requested_by, note) VALUES ('test-zbx', 'Zabbix', 'snapshot', 'ayse', 'deneme'){extra} RETURNING id"
+                ).splitlines()[-1]
+
+
+def test_api_run_request_is_manual_and_single_active(connector_instance):
+    """0019: API'nin isteği 'manual' kökenli ve 'bekliyor' doğar; örnek başına tek etkin istek."""
+    rid = api_request()
+    assert psql(f"SELECT origin || ':' || status FROM ingest.connector_run_request WHERE id = '{rid}'") == \
+        "manual:pending"
+    with pytest.raises(SqlError, match="connector_run_request_active"):
+        api_request()
+    with pytest.raises(SqlError, match="bu veri kaynağına ait değil"):  # örnek başka kaynağın
+        psql("SET ROLE evren_app_api; INSERT INTO ingest.connector_run_request (instance, data_source, "
+             "requested_by) VALUES ('test-zbx', 'BMC', 'x')")
+    with pytest.raises(SqlError, match="check constraint"):  # since yalnızca delta ile
+        psql("SET ROLE evren_app_api; INSERT INTO ingest.connector_run_request (instance, data_source, mode, since, "
+             "requested_by) VALUES ('test-zbx', 'Zabbix', 'snapshot', now(), 'x')")
+
+
+def test_run_request_transitions_are_enforced(connector_instance):
+    rid = api_request()
+    run = "SET ROLE evren_app_connector; UPDATE ingest.connector_run_request SET "
+    with pytest.raises(SqlError, match="geçersiz durum geçişi"):
+        psql(run + f"status = 'succeeded', finished_at = now() WHERE id = '{rid}'")
+    with pytest.raises(SqlError, match="check constraint"):  # yürümeye geçerken çalıştırıcı ve run_id zorunlu
+        psql(run + f"status = 'running' WHERE id = '{rid}'")
+    psql(run + f"status = 'running', claimed_by = 'r1', started_at = now(), run_id = gen_random_uuid() "
+               f"WHERE id = '{rid}'")
+    with pytest.raises(SqlError, match="değiştirilemez"):
+        psql(run + f"claimed_by = 'r2' WHERE id = '{rid}'")
+    psql(run + f"status = 'succeeded', finished_at = now(), exit_code = 0, summary = '{{\"sent\": 5}}' "
+               f"WHERE id = '{rid}'")
+    with pytest.raises(SqlError, match="sonuçlanmış"):
+        psql(run + f"status = 'failed' WHERE id = '{rid}'")
+    with pytest.raises(SqlError, match="sonuçlanmış"):  # sahibi bile değiştiremez
+        psql(f"UPDATE ingest.connector_run_request SET note = 'x' WHERE id = '{rid}'")
+
+
+def test_cancel_function_and_schedule_slot(connector_instance):
+    rid = api_request()
+    assert psql(f"SET ROLE evren_app_api; SELECT ingest.cancel_connector_run_request('{rid}', 'ayse')"
+                ).splitlines()[-1] == "cancelled"
+    assert psql(f"SELECT status, cancel_requested_by FROM ingest.connector_run_request WHERE id = '{rid}'") == \
+        "cancelled|ayse"
+    assert psql("SELECT count(*) FROM audit.security_event WHERE action = 'connector_run_cancel' "
+                f"AND resource = 'connector_run_request:{rid}'") == "1"
+    assert psql(f"SET ROLE evren_app_api; SELECT ingest.cancel_connector_run_request('{rid}', 'ayse')"
+                ).splitlines()[-1] == "final"  # sonuçlanmış: değişiklik ve denetim kaydı yok
+    # yürüyen istek: yalnızca iptal isteği yazılır, durum çalıştırıcıda
+    rid = api_request()
+    psql("SET ROLE evren_app_connector; UPDATE ingest.connector_run_request SET status = 'running', "
+         f"claimed_by = 'r1', started_at = now(), run_id = gen_random_uuid() WHERE id = '{rid}'")
+    assert psql(f"SET ROLE evren_app_api; SELECT ingest.cancel_connector_run_request('{rid}', 'ayse')"
+                ).splitlines()[-1] == "running"
+    assert psql(f"SELECT cancel_requested_by IS NOT NULL FROM ingest.connector_run_request WHERE id = '{rid}'") == "t"
+    psql("SET ROLE evren_app_connector; UPDATE ingest.connector_run_request SET status = 'cancelled', "
+         f"finished_at = now() WHERE id = '{rid}'")
+    # zamanlanmış dakika bir kez açılır (birden çok çalıştırıcı)
+    slot = ("SET ROLE evren_app_connector; INSERT INTO ingest.connector_run_request (instance, data_source, origin, "
+            "scheduled_for, requested_by) VALUES ('test-zbx', 'Zabbix', 'schedule', '2026-11-26 10:15+03', "
+            "'zamanlayici') ON CONFLICT DO NOTHING RETURNING id")
+    assert psql(slot)
+    psql("UPDATE ingest.connector_run_request SET status = 'rejected', finished_at = now() "
+         "WHERE instance = 'test-zbx' AND status = 'pending'")
+    assert psql(slot) == ""
+    with pytest.raises(SqlError, match="check constraint"):  # zamanlanmış istek dakikasız olamaz
+        psql("SET ROLE evren_app_connector; INSERT INTO ingest.connector_run_request (instance, data_source, origin, "
+             "requested_by) VALUES ('test-zbx', 'Zabbix', 'schedule', 'z')")
+
+
+def test_credential_functions_validate_and_audit():
+    """0019: kimlik yalnızca özetle verilir; emekli/tanımsız kaynağa ve bozuk özete kimlik yok; denetim kaydı."""
+    cred = f"test-api-{uuid.uuid4().hex[:8]}"  # denetim kaydı silinmez: her çalışmada yeni ad
+    issue = ("SET ROLE evren_app_api; SELECT ingest.issue_connector_credential('{n}', '{ds}', {h}, 'abcd', 100, "
+             "{d}, 'ayse')")
+    try:
+        assert psql(issue.format(n=cred, ds="Zabbix", h="repeat('b', 64)", d=30))
+        assert psql("SELECT token_sha256 = repeat('b', 64) AND created_by = 'ayse' AND "
+                    "expires_at BETWEEN now() + interval '29 days' AND now() + interval '31 days' "
+                    f"FROM ingest.connector_credential WHERE name = '{cred}'") == "t"
+        for name, ds, digest, days, err in [
+                ("test-api-c2", "Zabbix", "'kisa'", 30, "özeti geçersiz"),
+                ("test-api-c2", "Yok", "repeat('c', 64)", 30, "tanımsız"),
+                ("test-api-c2", "Zabbix", "repeat('c', 64)", 731, "730"),
+                (cred, "Zabbix", "repeat('c', 64)", 30, "unique")]:
+            with pytest.raises(SqlError, match=err):
+                psql(issue.format(n=name, ds=ds, h=digest, d=days))
+        psql("UPDATE ingest.data_source SET lifecycle = 'retired' WHERE name = 'ServiceNowChange'")
+        with pytest.raises(SqlError, match="emekli"):
+            psql(issue.format(n="test-api-c3", ds="ServiceNowChange", h="repeat('d', 64)", d=30))
+        rev = f"SET ROLE evren_app_api; SELECT ingest.revoke_connector_credential('{cred}', 'mehmet')"
+        assert psql(rev).splitlines()[-1] == "Zabbix"
+        assert psql(rev) == ""  # zaten iptal
+        assert psql("SELECT string_agg(action || ':' || principal, ',' ORDER BY id) FROM audit.security_event "
+                    f"WHERE resource = 'connector_credential:{cred}'") == \
+            "connector_credential_issue:ayse,connector_credential_revoke:mehmet"
+    finally:
+        psql("UPDATE ingest.data_source SET lifecycle = 'active' WHERE name = 'ServiceNowChange'; "
+             "DELETE FROM ingest.connector_credential WHERE name LIKE 'test-api-%'")

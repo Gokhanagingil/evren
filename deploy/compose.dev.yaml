@@ -64,7 +64,8 @@ services:
     command: ["migrate", "--service-roles", "/run/secrets"]
     environment:
       EVREN_DATABASE_URL_FILE: /run/secrets/owner_dsn
-    secrets: [owner_dsn, evren_api_svc, evren_worker_svc, evren_gateway_svc, evren_ingest_svc, evren_indexer_svc]
+    secrets: [owner_dsn, evren_api_svc, evren_worker_svc, evren_gateway_svc, evren_ingest_svc, evren_indexer_svc,
+              evren_connector_svc]
     depends_on:
       postgres: {condition: service_healthy}
 
@@ -80,6 +81,34 @@ services:
     environment:
       EVREN_GATEWAY_URL: http://gateway:8089
       EVREN_GATEWAY_ALLOW_HTTP: "1"   # yalnızca geliştirme yığını; üretimde geçit TLS ile (EVREN_GATEWAY_CA_FILE)
+
+  # Bağlayıcı çalıştırıcı servisi (U5.3b, ADR-0021): "şimdi çalıştır" istekleri ve zamanlama. CMDB yetkisi yoktur
+  # (evren_app_connector); kaynak verisini alım geçidine gönderir. Kaynak sırları üretimde yalnızca bu serviste durur.
+  # Geliştirmede kaynaklar simülatör; geçit belirteci duman testinin API'den verdiği kimlikten (profil: runner).
+  connector-runner:
+    <<: *evren
+    profiles: [runner]
+    command: ["connector-runner"]
+    environment:
+      EVREN_DATABASE_URL_FILE: /run/secrets/connector_dsn
+      EVREN_CONNECTORS_FILE: /app/deploy/connectors.dev.yaml
+      EVREN_GATEWAY_URL: http://gateway:8089
+      EVREN_GATEWAY_ALLOW_HTTP: "1"        # yalnızca geliştirme yığını; üretimde TLS (EVREN_GATEWAY_CA_FILE)
+      EVREN_CONNECTOR_ALLOW_SIMULATE: "1"  # yalnızca geliştirme: kaynak yerine örnek veri
+      EVREN_RUNNER_NAME: dev-runner
+      EVREN_WORKER_POLL_SECONDS: "5"
+      EVREN_WORKER_HEALTH_FILE: /tmp/connector-runner.alive
+    secrets: [connector_dsn]
+    volumes: ["./secrets/connector:/run/connector:ro"]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "connector-runner"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+      gateway: {condition: service_healthy}
 
   # İsteğe bağlı: sentetik demo verisi (boş veritabanına bir kez)
   demo:
@@ -264,11 +293,13 @@ secrets:
   gateway_dsn: {file: ./secrets/gateway_dsn}
   ingest_dsn: {file: ./secrets/ingest_dsn}
   indexer_dsn: {file: ./secrets/indexer_dsn}
+  connector_dsn: {file: ./secrets/connector_dsn}
   evren_api_svc: {file: ./secrets/evren_api_svc}
   evren_worker_svc: {file: ./secrets/evren_worker_svc}
   evren_gateway_svc: {file: ./secrets/evren_gateway_svc}
   evren_ingest_svc: {file: ./secrets/evren_ingest_svc}
   evren_indexer_svc: {file: ./secrets/evren_indexer_svc}
+  evren_connector_svc: {file: ./secrets/evren_connector_svc}
   session_key: {file: ./secrets/session_key}
 
 volumes:

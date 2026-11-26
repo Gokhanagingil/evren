@@ -8,7 +8,7 @@ Bir izin şu boyutlardan oluşur:
 
 - **Rol:** Entra grubuyla eşlenir.
 - **Kaynak:** sınıf adı (alt sınıflara kalıtılır), `cmdb_rel_ci`, `match_queue`, `schema`, `rules`, `iam` veya `*`.
-- **İşlem:** `read`, `create`, `write`, `delete`, `merge`, `split`, `review_match`, `ingest`, `schema_draft`, `schema_approve`, `rules_admin`, `iam_admin`, `audit_read`, `connector_read`, `connector_admin` (0018: bağlayıcı kimlikleri ve çalışmayı açan kimlik; sır hiçbir zaman gösterilmez).
+- **İşlem:** `read`, `create`, `write`, `delete`, `merge`, `split`, `review_match`, `ingest`, `schema_draft`, `schema_approve`, `rules_admin`, `iam_admin`, `audit_read`, `connector_read`, `connector_admin` (0018: bağlayıcı kimlikleri ve çalışmayı açan kimlik; sır hiçbir zaman gösterilmez. 0019, ADR-0021: `connector_read` bağlayıcı örneklerini ve çalıştırma isteklerini de gösterir; `connector_admin` ile "şimdi çalıştır", istek iptali, kimlik verme — belirteç bir kez — ve kimlik iptali).
 - **Alanlar:** liste; NULL tüm alanlar demektir.
 - **En yüksek hassasiyet:** `public` < `internal` < `confidential` < `restricted`. Alanın `sys_dictionary.sensitivity` değeriyle karşılaştırılır.
 - **Koşul (ABAC):** satır düzeyi. Örnek: `{"field": "support_group", "op": "in", "value": "$user.groups"}`.

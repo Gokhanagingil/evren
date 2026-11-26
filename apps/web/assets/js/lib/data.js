@@ -185,6 +185,30 @@ export async function refSearch(table, q = '', limit = 200) {
   return api(`/api/v1/ref/${encodeURIComponent(table)}?${p}`);
 }
 
+/** Bağlayıcıyı şimdi çalıştır (ADR-0021, yalnızca API modu): istek yazılır, çalıştırıcı servisi yürütür (202). */
+export async function requestRun(source, { instance, mode, since, note }) {
+  return api(`/api/v1/sources/${encodeURIComponent(source)}/run-requests`, {
+    method: 'POST', body: JSON.stringify({ instance, mode, since: since || null, note: note || null,
+      idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+
+export async function cancelRun(id) {
+  return api(`/api/v1/run-requests/${encodeURIComponent(id)}/cancel`, { method: 'POST' });
+}
+
+/** Bağlayıcı kimliği ver: yanıttaki belirteç YALNIZCA bu yanıtta vardır; saklanmaz, yeniden istenemez. */
+export async function issueCredential(source, { name, expiresDays, perMinute }) {
+  return api(`/api/v1/sources/${encodeURIComponent(source)}/credentials`, {
+    method: 'POST', body: JSON.stringify({ name, expires_days: expiresDays, per_minute: perMinute,
+      idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+
+export async function revokeCredential(name) {
+  return api(`/api/v1/credentials/${encodeURIComponent(name)}/revoke`, { method: 'POST' });
+}
+
 /** Birleştirmeyi ayırma isteği (yalnızca API modu): uzlaştırıcı uygular; yanıt 202 + istek kimliği. */
 export async function splitCi(ciId, linkId, note) {
   return api(`/api/v1/ci/${encodeURIComponent(ciId)}/split`, {

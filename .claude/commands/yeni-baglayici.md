@@ -24,6 +24,7 @@ argument-hint: <kaynak-adı>
    - `sources/__init__.py` → `SOURCES` kaydı (kimlik türü, eşleme klasörü, simülatör, seçenekler).
    - Testler: sayfalama, hata (sızıntısız), yarıda kalan çekme, kayıt/oynatma (kayıtta sır yok), eşleme; uzlaştırıcıyla PostgreSQL testi (ilişkiler, diğer kaynaklarla tek CI).
    - Dene: `python tools/connector_run.py --connector <kaynak> --simulate connectors/<kaynak>/samples --dry-run`.
+   - Çalıştırıcı servisinde örnek (ADR-0021): `EVREN_CONNECTORS_FILE`'a `name`, `connector`, `url` ve sırların yalnızca `*_file` yolları; zamanlama `data_sources.yaml` `schedule` (5 alanlı cron) veya örnekte. Geçit belirteci arayüzden (Veri Kaynakları → Kimlik ver) veya `evren connector issue` ile.
 7. **Devre kesici.** `ingest.data_source.breaker_thresholds` için başlangıç değerlerini belirle.
 8. **Harita ve yol haritası.** `architecture.yaml` ile `roadmap.json`'u güncelle; `python tools/build_architecture.py`.
 9. **Belge.** `docs/04-kaynaklar.md`'ye kaynak bölümünü ekle: veri, API, tanımlayıcılar, tuzaklar.
