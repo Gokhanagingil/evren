@@ -125,11 +125,13 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
 - Yeterli geçmiş yoksa **WARN** verilir ve eskime bekletilir.
 - Eskime yalnızca `OK` çalışmalarda ve **tüm** yetkili kaynaklar CI'ı görmüyorsa durum önerisi üretir. CI silinmez.
 
-## 6. Yetkisiz değişiklik
+## 6. Yetkisiz değişiklik (ADR-0025)
 
 Şu durumda anomali kaydı açılır:
 
-- Golden record'da izlenen bir öznitelik değişti (RAM, CPU, OS, seri), **ve**
-- CI için o zaman aralığında onaylı bir Change kaydı (`ref.sn_change_request` + `ref.sn_task_ci`) yok.
+- Golden record'da izlenen bir öznitelik değişti (RAM, CPU, OS, seri, firmware; `metadata/change_control.yaml`), **ve** değişikliği gözlemci rolündeki bir kaynak **kendi kaydında** gördü. Kazanan kaynağın değişmesi, ilk doldurma, elle düzenleme ve ayırma sapma sayılmaz.
+- CI için değişiklik aralığında (kaynağın eski değeri son gördüğü an → yeni değeri ilk gördüğü an) yetkili ve penceresi örtüşen bir değişiklik kaydı (`ref.sn_change_request` + `ref.sn_task_ci`) yok.
 
-Bu kayıt GRC Platformu'nda "yetkisiz değişiklik" kontrolüne kanıt olur.
+Karar gecikmeli verilir (bekleme süresi; acil değişiklik kaydı geç gelebilir). Açık anomali bir süre yeniden denenir; sonradan gelen onaylı kayıt kapsarsa anomali kapanır, kanıt kalır. Devre kesici çalışmayı açtıysa karar verilmez (eşleme hatası toplu sahte kanıt üretmez).
+
+Bu kayıt GRC Platformu'nda "yetkisiz değişiklik" kontrolüne (CMDB-05) kanıt olur. Yanlış alarmı Veri sorumlusu gerekçesiyle işaretler; karar denetim izindedir.

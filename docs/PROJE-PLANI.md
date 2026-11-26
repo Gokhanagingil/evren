@@ -14,13 +14,13 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 4/10 adım tamamlandı
+**İzlek ilerlemesi:** 5/10 adım tamamlandı
 
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Tamamlandı_ (ilgili: F1-08)
 - [x] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Tamamlandı_ (ilgili: F0-17, F0-07, F1-11)
-- [ ] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Devam ediyor_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
+- [x] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Tamamlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
 - [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_ (ilgili: F1-17)
 - [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-20)
@@ -53,7 +53,7 @@
 | F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Devam ediyor |
 | F1-02 | Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni | Devam ediyor |
 | F1-03 | NNMi web servis kullanıcısı ve NNMi sürümü | Devam ediyor |
-| F1-04 | ServiceNow change_request ve task_ci okuma izni | Planlandı |
+| F1-04 | ServiceNow change_request ve task_ci okuma izni | Devam ediyor |
 | F1-10 | Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı | Planlandı |
 | F2-01 | ServiceNow tarafında Evren veri kaynağı için platform ekibi onayı | Planlandı |
 | F2-04 | ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi | Planlandı |
@@ -138,7 +138,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-03** NNMi: düğüm, arayüz ve L2 bağlantıları — _Devam ediyor_
   - Not: 26.11.2026: düğüm istemcisi hazır (U5.2: WS-I SOAP getNodes, id sırasıyla sayfalama ve sıralama güvencesi, güvenli XML ayrıştırma, simülatör; uzlaştırıcı ve yığın duman testiyle sınandı). Arayüzler ve L2 de hazır: getInterfaces ile MAC adresleri kimlik eşleşmesine ve fiziksel arayüz sayısına, aynı connectionId'yi paylaşan arayüzler cihazlar arası 'Connects to' ilişkisine (kimliği küçük uç üst). Ağ adaptörü CI'ı bağımlı CI kimliğiyle (U7); süzgeç ve alan adları kurum sürümünde doğrulanacak.
   - Sizden gereken: NNMi web servis kullanıcısı ve NNMi sürümü
-- [ ] **F1-04** ServiceNow Change bağlayıcısı ve yetkisiz değişiklik tespiti — _Planlandı_
+- [ ] **F1-04** ServiceNow Change bağlayıcısı ve yetkisiz değişiklik tespiti — _Devam ediyor_
+  - Not: 26.11.2026 (ADR-0025, U5.5, göç 0021): servicenow_change bağlayıcısı (change_request + task_ci, açık ve son 30 gün, delta; durum/onay/tür Evren sözlüğüne çevrilir), yalnızca değişiklik rolüyle ref.sn_change_request ve ref.sn_task_ci; gözlemci rolünün kendi kaydındaki izlenen öznitelik değişikliği insight.config_change'e; bekleme süresinden sonra onaylı pencereye göre karar, unauthorized_change anomalisi, sonradan gelen kayıtla kanıtlı kapanış, devre kesici açıkken bastırma; CI ayrıntısında değişiklik denetimi, Veri sorumlusu kararı (anomaly_review), CMDB-05. Simülatör, uzlaştırıcı, API, tarayıcı ve yığın duman testiyle sınandı. Gerçek ServiceNow kabulü U10.
   - Sizden gereken: ServiceNow change_request ve task_ci okuma izni
 - [ ] **F1-05** Uzlaştırma kuralları ve "bu değer nereden geldi?" görünümü — _Planlandı_
 - [ ] **F1-06** Devre kesici ve eskime işletimi; tatbikat — _Planlandı_

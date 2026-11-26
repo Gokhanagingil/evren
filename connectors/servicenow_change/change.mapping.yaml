@@ -1,0 +1,44 @@
+# ServiceNow değişiklik kayıtları → Evren alım kaydı (F1-04, ADR-0025)
+#
+# Çekme: servicenow_change bağlayıcısı Table API ile change_request ve task_ci tablolarını salt okunur çeker; her
+# tablodan yalnızca evren_core.reference.CHANGE_TABLES'taki sütunlar istenir (sysparm_fields). task_ci'dan yalnızca
+# değişiklik kayıtlarına ait satırlar (task.sys_class_name=change_request).
+#
+# Kurallar:
+#   * class = tablo adı: uzlaştırıcı kaydı CI yapmaz, kimlik çözümlemesine sokmaz; ref.sn_change_request ve
+#     ref.sn_task_ci'ya aynı sys_id ile yazar. Yalnızca değişiklik kaynağı rolü (ChangeManagement) yazar.
+#   * Durum, onay ve tür Evren'in değişiklik sözlüğüne çevrilir (kurallar ürün kodunu bilmez, kural 8).
+#     ServiceNow durum kodları (Change Management durum modeli): -5 New, -4 Assess, -3 Authorize, -2 Scheduled,
+#     -1 Implement, 0 Review, 3 Closed, 4 Canceled. Kurumun eklediği kod "other" olur ve yetki saymaz.
+#   * Tarihler ServiceNow iç biçiminde (UTC, YYYY-MM-DD HH:MM:SS) gelir; referanslar sys_id olarak kalır.
+description: ServiceNow değişiklik kayıtları (change_request, task_ci; salt okunur)
+verify: true
+data_source: ServiceNowChange
+source_key: sys_id
+class: change_request
+require:
+  - {from: _table, matches: "^(change_request|task_ci)$"}
+class_rules:
+  - when: {from: _table, matches: "^task_ci$"}
+    class: task_ci
+attributes:
+  number: {from: number, transform: strip}
+  short_description: {from: short_description, transform: strip}
+  type:
+    from: type
+    map: {standard: standard, normal: normal, emergency: emergency, "*": other}
+  state:
+    from: state
+    map: {"-5": new, "-4": assess, "-3": authorize, "-2": scheduled, "-1": implement, "0": review, "3": closed,
+          "4": canceled, "*": other}
+  approval:
+    from: approval
+    map: {"not requested": not_requested, requested: requested, approved: approved, rejected: rejected,
+          cancelled: cancelled, not_required: not_required, skipped: skipped, "*": other}
+  start_date: {from: start_date}
+  end_date: {from: end_date}
+  work_start: {from: work_start}
+  work_end: {from: work_end}
+  cmdb_ci: {from: cmdb_ci}
+  task: {from: task}
+  ci_item: {from: ci_item}

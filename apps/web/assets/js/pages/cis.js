@@ -2,7 +2,7 @@
 // ("bu değer nereden geldi?"), API modunda değişim geçmişi.
 import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
-import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, splitCi, srcChip } from '../lib/data.js';
+import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
 import { openEditDialog } from './ci-edit.js';
 
 // KISITLI güvenlik duruşu (ADR-0023): API yalnızca Güvenlik okuyucu/Denetçi rolüne döndürür; her gösterim denetim izinde.
@@ -29,7 +29,61 @@ const SCOPES = {
   korumasiz: 'Uç nokta koruması olmayan',
   'itsm-yok': 'Mevcut CMDB\'de olmayan',
   yetkisiz: 'Yetkisiz kaynak denemesi olan',
+  'yetkisiz-degisiklik': 'Onaysız yapılandırma değişikliği olan',
 };
+
+// Değişiklik denetimi (ADR-0025): gözlenen değişiklikler onaylı değişiklik penceresine göre değerlendirilir.
+const VERDICT_TONE = { pending: 'neutral', authorized: 'good', unauthorized: 'bad', suppressed: 'warn' };
+const ANOMALY_TONE = { open: 'bad', acknowledged: 'warn', resolved: 'good', false_positive: 'neutral' };
+
+function changeWindow(c) {
+  if (c.work_start) return `Gerçekleşen: ${formatDateTime(c.work_start)} – ${c.work_end ? formatDateTime(c.work_end) : 'sürüyor'}`;
+  if (c.start_date && c.end_date) return `Planlı: ${formatDateTime(c.start_date)} – ${formatDateTime(c.end_date)}`;
+  return 'Pencere yok';
+}
+
+/** Anomali kararı düğmeleri (yalnızca API modu ve anomaly_review izni). */
+function anomalyActions(a, review) {
+  if (!review) return null;
+  const btn = (label, status, tone = 'secondary') => h('button', { class: `btn ${tone} small`, type: 'button',
+    'data-review': status, onclick: (ev) => review(a, status, ev.currentTarget) }, label);
+  if (a.status === 'open') return h('div', { class: 'link-actions' }, btn('İncelendi', 'acknowledged'), btn('Yanlış alarm…', 'false_positive', 'ghost'));
+  if (a.status === 'acknowledged') return h('div', { class: 'link-actions' }, btn('Yanlış alarm…', 'false_positive', 'ghost'), btn('Yeniden aç', 'open', 'ghost'));
+  if (a.status === 'false_positive') return h('div', { class: 'link-actions' }, btn('Yeniden aç', 'open', 'ghost'));
+  return null;
+}
+
+function changeSection(cc, review = null) {
+  if (!cc || (!cc.observations.length && !cc.changes.length && !cc.anomalies?.length)) return null;
+  const anomalies = cc.anomalies || [];
+  const span = (o) => (o.observed_from ? `${formatDateTime(o.observed_from)} – ${formatDateTime(o.observed_at)}` : formatDateTime(o.observed_at));
+  return section('Değişiklik denetimi',
+    cc.open_unauthorized ? h('div', { class: 'notice warn', role: 'note' }, h('strong', {}, 'Onaysız değişiklik. '),
+      `${cc.open_unauthorized} açık kayıt: keşfin gözlediği değişiklik onaylı bir değişiklik penceresine düşmüyor. Kanıt GRC kontrolü CMDB-05'e gider.`) : null,
+    anomalies.length ? h('ul', { class: 'mini', id: 'ciAnomalies', tabindex: '-1', 'aria-label': 'Yetkisiz değişiklik kayıtları' }, anomalies.map((a) => h('li', {},
+      h('div', { class: 'pills' }, pill(a.status_label, ANOMALY_TONE[a.status] || 'neutral'), a.related_change ? pill(a.related_change, 'info') : null),
+      h('div', { class: 'cell-sub' }, `Tespit: ${formatDateTime(a.detected_at)}`
+        + (a.reviewed_by ? ` · karar: ${a.reviewed_by}, ${formatDateTime(a.reviewed_at)}` : '')),
+      a.review_note ? h('div', { class: 'small muted' }, `Gerekçe: ${a.review_note}`) : null,
+      anomalyActions(a, review)))) : null,
+    cc.observations.length
+      ? h('ul', { class: 'mini', id: 'ciObservations', 'aria-label': 'Gözlenen yapılandırma değişiklikleri' }, cc.observations.map((o) => h('li', {},
+        h('div', { class: 'pills' }, pill(o.verdict_label, VERDICT_TONE[o.verdict] || 'neutral'),
+          o.change_number ? pill(o.change_number, 'info') : null, o.late ? pill('Kayıt sonradan açıldı', 'warn') : null,
+          o.anomaly_status && o.anomaly_status !== 'open' ? pill(`Karar: ${o.anomaly_status_label}`, ANOMALY_TONE[o.anomaly_status] || 'neutral') : null),
+        h('div', {}, h('strong', {}, o.label), `: ${o.old_display} → ${o.new_display}`),
+        h('div', { class: 'cell-sub' }, `${o.source} · değişiklik aralığı ${span(o)}`),
+        o.explanation ? h('div', { class: 'small muted' }, o.explanation) : null)))
+      : h('p', { class: 'muted small' }, 'İzlenen özniteliklerde gözlenen değişiklik yok.'),
+    cc.changes.length ? h('div', { id: 'ciChanges' }, h('p', { class: 'small' }, h('strong', {}, 'Bağlı değişiklik kayıtları')),
+      h('ul', { class: 'mini' }, cc.changes.map((c) => h('li', {},
+        h('div', { class: 'pills' }, pill(c.number, 'neutral'), pill(c.state_label, c.state === 'canceled' ? 'bad' : 'info'),
+          c.type === 'standard' ? pill('önceden onaylı (standart)', 'good')
+            : pill(`onay: ${c.approval_label}`, c.approval === 'approved' ? 'good' : 'warn'),
+          c.type === 'standard' ? null : pill(c.type_label, c.type === 'emergency' ? 'warn' : 'neutral')),
+        c.short_description ? h('div', {}, c.short_description) : null,
+        h('div', { class: 'cell-sub' }, changeWindow(c)))))) : null);
+}
 const PAGE = 100;
 const SPLIT_TONE = { pending: 'warn', applied: 'good', rejected: 'bad' };
 const EDIT_RESULT = { applied: 'uygulandı', cleared: 'elle değer kaldırıldı', overridden: 'yedek', unauthorized: 'elle yazılamaz', invalid: 'geçersiz' };
@@ -143,6 +197,55 @@ export async function renderCis(view, param) {
     });
   }
 
+  /** Yetkisiz değişiklik kararı (ADR-0025): yanlış alarm gerekçe ister; karar sizin adınızla denetim izine yazılır. */
+  function reviewFor(c, opener) {
+    if (mode !== 'api' || !c.change_control?.can_review) return null;
+    const send = async (a, status, note) => {
+      try {
+        const res = await reviewAnomaly(a.sys_id, status, note);
+        toast(`Karar kaydedildi: ${res.status_label}`);
+        await open(c.sys_id, opener);
+        const list = document.getElementById('ciAnomalies'); // panel yeniden çizildi: sonucu göster, odağı listeye al
+        list?.scrollIntoView({ block: 'center' });
+        list?.focus({ preventScroll: true });
+      } catch (err) {
+        toast(`Karar kaydedilemedi: ${err.message}`);
+      }
+    };
+    return async (a, status, button) => {
+      if (status !== 'false_positive') {
+        // istek sürerken listedeki bütün karar düğmeleri kilitli (ardışık tıklama çakışmasın)
+        button.closest('ul')?.querySelectorAll('button[data-review]').forEach((b) => { b.disabled = true; });
+        await send(a, status, null);
+        return;
+      }
+      const note = h('input', { type: 'text', id: 'reviewNote', maxlength: '2000', required: 'required',
+        placeholder: 'Ör. değişiklik kaydı başka sistemde; CHG numarası…', 'aria-describedby': 'reviewHelp' });
+      const confirm = h('button', { class: 'btn', type: 'button', id: 'reviewConfirm', onclick: async () => {
+        if (!note.value.trim()) {
+          note.setAttribute('aria-invalid', 'true');
+          toast('Gerekçe zorunludur.');
+          note.focus();
+          return;
+        }
+        confirm.disabled = true;
+        closeOverlay();
+        await send(a, status, note.value.trim());
+      } }, 'Yanlış alarm olarak işaretle');
+      note.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); confirm.click(); } });
+      dialog({
+        title: 'Yanlış alarm',
+        body: [
+          h('p', {}, `"${c.name}" için açılan yetkisiz değişiklik kaydı yanlış alarm olarak işaretlenir ve GRC kontrolü CMDB-05'in kanıtından çıkar.`),
+          h('label', { class: 'field', for: 'reviewNote' }, 'Gerekçe'), note,
+          h('p', { class: 'muted small', id: 'reviewHelp' }, 'Kayıt silinmez; karar adınızla denetim izine yazılır ve istenirse yeniden açılabilir.'),
+        ],
+        footer: [h('button', { class: 'btn secondary', type: 'button', onclick: closeOverlay }, 'Vazgeç'), confirm],
+        focus: note,
+      });
+    };
+  }
+
   function linkItem(c, l) {
     let action = null;
     if (mode === 'api' && c.can_split && l.split) {
@@ -208,6 +311,7 @@ export async function renderCis(view, param) {
         section('Öznitelikler ve kaynakları', h('p', { class: 'muted small' }, 'Bir satırı açın: değeri veren kaynak, uygulanan kural ve ezilen değerler. Turuncu nokta: kaynaklar farklı değer bildiriyor.'),
           h('div', { class: 'attrs' }, c.attributes.map(attrRow))),
         c.security_posture ? postureSection(c.security_posture) : null,
+        changeSection(c.change_control, reviewFor(c, opener)),
         c.relations.length ? section('İlişkiler', h('ul', { class: 'mini' }, c.relations.map((r) => h('li', {},
           h('span', { class: 'muted' }, `${r.direction === 'parent' ? r.type.split('::')[0] : r.type.split('::')[1]} · `),
           h('a', { href: `#/ci/${r.target}` }, r.target_name))))) : null,

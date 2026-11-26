@@ -231,7 +231,21 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "DELETE FROM ref.sys_user_group WHERE false"),
         ("evren_app_reconciler", "INSERT INTO ref.sys_user_grmember (\"group\", \"user\") VALUES "
                                  "(repeat('a', 32), repeat('b', 32))"),
-        ("evren_app_reconciler", "UPDATE ref.sn_change_request SET state = 'x' WHERE false"),
+        # 0021 (ADR-0025): değişiklik kayıtları yalnızca izinli sütunlarla, silme yok; gözlem tablosunu okuyucu ve MCP
+        # okumaz (öznitelik geçmişi), API ve denetçi yazamaz, uzlaştırıcı silemez
+        ("evren_app_reconciler", "UPDATE ref.sn_change_request SET sys_id = sys_id WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM ref.sn_change_request WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM ref.sn_task_ci WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM insight.config_change WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM insight.config_change"),
+        ("evren_app_mcp", "SELECT count(*) FROM insight.config_change"),
+        ("evren_app_api", "UPDATE insight.config_change SET verdict = 'authorized' WHERE false"),
+        ("evren_app_api", "UPDATE ref.sn_change_request SET state = 'closed' WHERE false"),
+        ("evren_auditor_ro", "UPDATE insight.config_change SET verdict = 'authorized' WHERE false"),
+        ("evren_app_connector", "SELECT count(*) FROM ref.sn_change_request"),
+        ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
+        ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
+        ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
         ("evren_app_reconciler", "INSERT INTO ref.sys_user (sys_id, user_name, source) VALUES (repeat('e', 32), 'x', "
                                  "'entra')"),
         ("evren_app_api", "UPDATE ref.sys_user_group SET name = 'x' WHERE false"),
@@ -450,8 +464,9 @@ def test_credential_functions_validate_and_audit():
 
 
 def test_reconciler_reference_grants_match_reference_tables():
-    """0020: uzlaştırıcının ref sütun yetkileri evren_core.reference.REFERENCE_TABLES ile birebir (ADR-0022)."""
-    from evren_core.reference import REFERENCE_TABLES
+    """0020/0021: uzlaştırıcının ref sütun yetkileri evren_core.reference.ROLE_TABLES (referans ve değişiklik
+    tabloları) ile birebir (ADR-0022, ADR-0025)."""
+    from evren_core.reference import ROLE_TABLES
 
     rows = psql("""SELECT table_name || ':' || privilege_type || ':' || string_agg(column_name, ',' ORDER BY column_name)
                      FROM information_schema.column_privileges
@@ -459,7 +474,8 @@ def test_reconciler_reference_grants_match_reference_tables():
                       AND privilege_type IN ('INSERT', 'UPDATE')
                     GROUP BY table_name, privilege_type ORDER BY 1""").splitlines()
     expected = []
-    for t in sorted(REFERENCE_TABLES.values(), key=lambda t: t.name):
+    for t in ROLE_TABLES.values():
         cols = set(t.columns) | {"sys_updated_on"}
-        expected += [f"{t.name}:INSERT:{','.join(sorted(cols | {'sys_id'}))}", f"{t.name}:UPDATE:{','.join(sorted(cols))}"]
+        expected += [f"{t.db_table}:INSERT:{','.join(sorted(cols | {'sys_id'}))}",
+                     f"{t.db_table}:UPDATE:{','.join(sorted(cols))}"]
     assert rows == sorted(expected)

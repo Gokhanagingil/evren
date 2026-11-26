@@ -44,6 +44,7 @@ ENV_KEYS = {
     "tenant_id": "EVREN_SOURCE_TENANT_ID", "client_id": "EVREN_SOURCE_CLIENT_ID",
     "client_secret_file": "EVREN_SOURCE_CLIENT_SECRET_FILE", "login_url": "EVREN_SOURCE_LOGIN_URL",
     "scope": "EVREN_SOURCE_SCOPE", "gateway_token_file": "EVREN_CONNECTOR_TOKEN_FILE",
+    "lookback_days": "EVREN_SOURCE_LOOKBACK_DAYS",  # değişiklik kayıtlarında geriye bakış (ADR-0025)
 }
 OTHER_KEYS = {"name", "connector", "schedule", "schedule_mode", "page_size", "api_release", "max_runtime_minutes",
               "enabled", "simulate"}

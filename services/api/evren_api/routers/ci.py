@@ -17,12 +17,14 @@ from psycopg import sql
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field
 
+from evren_core.change_control import APPROVAL_TR, STATE_TR, TYPE_TR, VERDICT_TR
 from evren_core.metadata import CORE_COLUMNS
 
 from ..deps import Ctx, context, require_csrf
 from ..errors import ApiError
 from ..idempotency import remember, replay, request_hash
 from ..present import COVERAGE_ROLES
+from .insight import ANOMALY_STATUS
 from .platform import _SERVER, _and, _coverage_sql, _not
 
 router = APIRouter(prefix="/api/v1", tags=["ci"])
@@ -33,6 +35,9 @@ SCOPES: dict[str, sql.Composable] = {
     "itsm-yok": _and(_SERVER, _not(_coverage_sql("itsm"))),
     "yetkisiz": sql.SQL("EXISTS (SELECT 1 FROM cmdb.ci_reconciliation_state s WHERE s.ci_sys_id = ci.sys_id "
                         "AND s.conflicts - '_dropped' <> '{}'::jsonb)"),
+    # ADR-0025: açık (veya incelenen) yetkisiz değişiklik anomalisi olan CI'lar
+    "yetkisiz-degisiklik": sql.SQL("EXISTS (SELECT 1 FROM insight.anomaly a WHERE a.ci_sys_id = ci.sys_id "
+                                   "AND a.kind = 'unauthorized_change' AND a.status IN ('open', 'acknowledged'))"),
 }
 _COVERAGE_CASE = sql.SQL(" ").join(
     sql.SQL("WHEN d.role IN ({}) THEN {}").format(sql.SQL(", ").join(sql.Literal(r) for r in roles), sql.Literal(flag))
@@ -264,6 +269,7 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
 
     coverage = {flag: any(role in rs for role in roles.values()) for flag, rs in COVERAGE_ROLES.items()}
     posture = _security_posture(ctx, sys_id, grant)
+    change_control = _change_control(ctx, sys_id, fields, grant, pres, refs)
     return {
         "sys_id": sys_id, "class": cls, "class_label": pres.class_label(cls), "name": doc.get("name") or "(adsız)",
         "fqdn": doc.get("fqdn"), "ip_address": doc.get("ip_address"), "os": doc["class_attributes"].get("os"),
@@ -283,10 +289,64 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                    "requested_by": by, "requested_at": at.isoformat(), "result": res, "note": note}
                   for i, st, attrs, by, at, res, note in edits],
         "server": cls in md.hierarchy and "cmdb_ci_server" in md.hierarchy.ancestors(cls),
-        "coverage": coverage, "unauthorized_count": len(rejected),
+        "coverage": coverage, "unauthorized_count": len(rejected), "change_control": change_control,
+        "unauthorized_changes": change_control["open_unauthorized"],
         "golden_version": doc.get("golden_version"), "sys_updated_on": doc.get("sys_updated_on"),
         **({"security_posture": posture} if posture is not None else {}),
     }
+
+
+def _iso(value: Any) -> str | None:
+    return value.isoformat() if value is not None else None
+
+
+def _change_control(ctx: Ctx, sys_id: str, fields: dict[str, Any], grant: Any, pres: Any,
+                    refs: dict[str, Any]) -> dict[str, Any]:
+    """Değişiklik denetimi (ADR-0025): gözlenen değişiklikler (alan hassasiyetine göre süzülür) ve CI'a bağlı değişiklik
+    kayıtları. CI Evren'de doğup replikaya gittiyse ServiceNow'daki sys_id'si de aranır."""
+    with ctx.conn.cursor() as cur:
+        cur.execute(
+            """SELECT c.attribute, c.old_value, c.new_value, c.data_source, c.observed_from, c.observed_at, c.verdict,
+                      c.change_number, c.detail->>'explanation', COALESCE((c.detail->>'late')::bool, false),
+                      c.evaluated_at, a.status
+                 FROM insight.config_change c LEFT JOIN insight.anomaly a ON a.sys_id = c.anomaly_sys_id
+                WHERE c.ci_sys_id = %s ORDER BY c.observed_at DESC, c.attribute LIMIT 50""", (sys_id,))
+        observations = [
+            {"attribute": a, "label": fields.get(a, {}).get("label_tr", a), "old": o, "new": n,
+             "old_display": pres.display(a, o, refs), "new_display": pres.display(a, n, refs), "source": ds,
+             "observed_from": _iso(f), "observed_at": _iso(t), "verdict": v, "verdict_label": VERDICT_TR[v],
+             "change_number": num, "explanation": why, "late": late, "evaluated_at": _iso(ev),
+             "anomaly_status": ast, "anomaly_status_label": ANOMALY_STATUS.get(ast) if ast else None}
+            for a, o, n, ds, f, t, v, num, why, late, ev, ast in cur.fetchall()
+            if grant.can_see(fields.get(a, {}).get("sensitivity", "internal"))]
+        cur.execute("SELECT sn_sys_id FROM sync.sn_ci_map WHERE evren_sys_id = %s AND sn_sys_id IS NOT NULL", (sys_id,))
+        ids = [sys_id, *(r[0] for r in cur.fetchall())]
+        cur.execute(
+            """SELECT cr.number, cr.short_description, cr.type, cr.state, cr.approval, cr.start_date, cr.end_date,
+                      cr.work_start, cr.work_end
+                 FROM ref.sn_change_request cr
+                WHERE cr.cmdb_ci = ANY(%(ids)s::bpchar[])
+                   OR EXISTS (SELECT 1 FROM ref.sn_task_ci t WHERE t.task = cr.sys_id
+                                                             AND t.ci_item = ANY(%(ids)s::bpchar[]))
+                ORDER BY COALESCE(cr.work_start, cr.start_date) DESC NULLS LAST, cr.number DESC LIMIT 20""",
+            {"ids": ids})
+        changes = [{"number": num, "short_description": desc, "type": t, "type_label": TYPE_TR.get(t or "", "—"),
+                    "state": st, "state_label": STATE_TR.get(st or "", "—"), "approval": ap,
+                    "approval_label": APPROVAL_TR.get(ap or "", "—"), "start_date": _iso(sd), "end_date": _iso(ed),
+                    "work_start": _iso(ws), "work_end": _iso(we)}
+                   for num, desc, t, st, ap, sd, ed, ws, we in cur.fetchall()]
+        cur.execute(
+            """SELECT sys_id, status, severity, detected_at, explanation, related_change, reviewed_by, reviewed_at,
+                      review_note
+                 FROM insight.anomaly WHERE ci_sys_id = %s AND kind = 'unauthorized_change'
+                ORDER BY detected_at DESC LIMIT 20""", (sys_id,))
+        anomalies = [{"sys_id": i, "status": st, "status_label": ANOMALY_STATUS.get(st, st), "severity": sev,
+                      "detected_at": _iso(at), "explanation": why, "related_change": rel, "reviewed_by": by,
+                      "reviewed_at": _iso(rat), "review_note": note}
+                     for i, st, sev, at, why, rel, by, rat, note in cur.fetchall()]
+    open_unauthorized = sum(1 for a in anomalies if a["status"] in ("open", "acknowledged"))
+    return {"observations": observations, "changes": changes, "anomalies": anomalies,
+            "open_unauthorized": open_unauthorized, "can_review": ctx.grant("anomaly", "anomaly_review").allowed}
 
 
 def _security_posture(ctx: Ctx, sys_id: str, grant: Any) -> dict[str, Any] | None:

@@ -16,8 +16,8 @@ Duman testi yalnızca 127.0.0.1'e bağlanır ve şunları doğrular: API hazır,
 canlı; API'den gönderilen bir elle düzenleme konteynerdeki uzlaştırıcı tarafından uygulanıyor (golden record
 değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı; olay omurgası uçtan uca çalışıyor (geçici bağlayıcı
 kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali); bağlayıcı çalıştırıcı
-(ServiceNow ilk yüklemesi sys_id korunarak, Zabbix, vCenter, BMC, Defender ve NNMi simülatörleri → eşleme → geçit →
-uzlaştırıcı → ilişkiler, beş kaynaklı sunucu ve üç kaynaklı ağ cihazı); arama (dizinleyici →
+(ServiceNow ilk yüklemesi sys_id korunarak, ServiceNow Change, Zabbix, vCenter, BMC, Defender ve NNMi simülatörleri →
+eşleme → geçit → uzlaştırıcı → değişiklik kayıtları, ilişkiler, beş kaynaklı sunucu ve üç kaynaklı ağ cihazı); arama (dizinleyici →
 OpenSearch → yetki süzgeçli API; Türkçe harf, yazım hatası, ayırıcısız yazım). Hiçbir sır yazdırılmaz.
 """
 from __future__ import annotations
@@ -277,14 +277,18 @@ def smoke_event_backbone() -> tuple[str, str]:
 
 SAMPLES = {"zabbix": "connectors/zabbix/samples", "vcenter": "connectors/vcenter/samples",
            "servicenow": "connectors/servicenow_cmdb/samples", "bmc_discovery": "connectors/bmc_discovery/samples",
-           "defender": "connectors/defender/samples", "nnmi": "connectors/nnmi/samples"}
+           "defender": "connectors/defender/samples", "nnmi": "connectors/nnmi/samples",
+           "servicenow_change": "connectors/servicenow_change/samples"}
 SN_APP_SYS_ID = "5b1c2d3e4f5061728394a5b6c7d8e9f0"  # örnek ServiceNow kaydı (ist-app-02)
+SN_ESX_SYS_ID = "7d3e4f5061728394a5b6c7d8e9f0a1b2"  # örnek ServiceNow kaydı (esx01)
 SN_SWITCH_SYS_ID = "9f5061728394a5b6c7d8e9f0a1b2c3d4"  # örnek ServiceNow kaydı (IST-DC2-CORE-SW01)
 
 
-def _connector_run(connector: str, token: str, expected: int) -> dict[str, Any]:
-    """Konteynerde ``evren connector-run --simulate``; belirteç standart girdiden, komut satırına ve ekrana yazılmaz."""
-    res = compose("run", "--rm", "--no-deps", "-T", "-e", "EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin", "connector",
+def _connector_run(connector: str, token: str, expected: int, *env: str) -> dict[str, Any]:
+    """Konteynerde ``evren connector-run --simulate``; belirteç standart girdiden, komut satırına ve ekrana yazılmaz.
+    ``env``: ek ortam değişkenleri (``AD=değer``; sır değil)."""
+    extra = [x for e in env for x in ("-e", e)]
+    res = compose("run", "--rm", "--no-deps", "-T", "-e", "EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin", *extra, "connector",
                   "connector-run", "--connector", connector, "--name", f"duman-{connector}", "--simulate",
                   SAMPLES[connector], "--page-size", "2", "--batch-size", "4",
                   check=False, capture=True, stdin=token + "\n")
@@ -334,6 +338,7 @@ def smoke_connector_run(token: str) -> None:
     bmc_name, bmc_token = _issue("BMC")
     df_name, df_token = _issue("Defender")
     nn_name, nn_token = _issue("NNMi")
+    chg_name, chg_token = _issue("ServiceNowChange")
     try:
         step("Bağlayıcı çalıştırıcı: ServiceNow simülatörü (Table API) → ilk yükleme, sys_id korunur")
         _connector_run("servicenow", sn_token, 5 + 12)  # 5 CI + 12 referans kaydı (ADR-0022)
@@ -343,6 +348,18 @@ def smoke_connector_run(token: str) -> None:
         check(shown.get("support_group") == "Linux Sistem Ekibi (SENTETİK)"
               and shown.get("cost_center") == "BT Altyapı Masraf Merkezi (SENTETİK)",
               f"referans verileri yüklendi: destek grubu ve maliyet merkezi adıyla görünüyor ({shown.get('support_group')})")
+
+        step("Bağlayıcı çalıştırıcı: ServiceNow Change simülatörü (change_request + task_ci) → değişiklik kayıtları")
+        # örnek tarihler sabit: geriye bakış penceresi geniş tutulur (sentetik; kurumda varsayılan 30 gün)
+        _connector_run("servicenow_change", chg_token, 4 + 2, "EVREN_SOURCE_LOOKBACK_DAYS=3650")
+        _s, esx_ci = http("GET", f"{API}/api/v1/ci/{SN_ESX_SYS_ID}")
+        chg = {c["number"]: c for c in (esx_ci.get("change_control") or {}).get("changes") or []}
+        check(set(chg) == {"CHG0030002", "CHG0030004"} and chg["CHG0030002"]["state_label"] == "yetkilendirme"
+              and chg["CHG0030004"]["state_label"] == "iptal",
+              "değişiklik kayıtları CI'da: ServiceNow durum kodu Evren sözlüğüne çevrildi (ADR-0025)")
+        _s, app_ci = http("GET", f"{API}/api/v1/ci/{SN_APP_SYS_ID}")
+        check([c["number"] for c in (app_ci.get("change_control") or {}).get("changes") or []] == ["CHG0030001"],
+              "etkilenen CI (task_ci) bağı: CHG0030001 ist-app-02'de; olay kaydının satırı alınmadı")
 
         step("Bağlayıcı çalıştırıcı: Zabbix simülatörü (JSON-RPC) → geçit → uzlaştırıcı")
         _connector_run("zabbix", token, 5)
@@ -384,7 +401,7 @@ def smoke_connector_run(token: str) -> None:
                ("Connects to::Connected by", "parent", "IST-DC2-FW01")} <= l2,
               "NNMi L2 bağlantıları: switch → router ve güvenlik duvarı 'Connects to' ilişkisi (F1-03)")
     finally:
-        for name in (sn_name, vc_name, bmc_name, df_name, nn_name):
+        for name in (sn_name, vc_name, bmc_name, df_name, nn_name, chg_name):
             _revoke(name)
 
 

@@ -79,6 +79,15 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - Yanıt `202`: `{"id", "status": "pending", …}`; olay `evren.ci.split.requested.v1`. Uygulandığında `evren.ci.split.v1`.
 - `409 tek_kaynak` (elle giriş kaydı sayılmaz), `409 bekleyen_ayirma`, `422 elle_giris_bagi`, `422 ilk_yukleme_bagi`, `422 kaynak_ci_acamaz`, `422 bag_yok`, `422 hedef_yok`, `422 sinif_uyumsuz`, `403 yetki_yok`.
 
+### Değişiklik denetimi (ADR-0025)
+
+- `GET /api/v1/ci/{sys_id}` yanıtındaki `change_control`:
+  - `observations`: gözlenen değişiklikler (öznitelik, eski → yeni, kaynak, değişiklik aralığı, sonuç `pending | authorized | unauthorized | suppressed`, kapsayan değişiklik numarası, Türkçe açıklama, `late`). Alan hassasiyetine göre süzülür.
+  - `changes`: CI'a `cmdb_ci` veya `task_ci` ile bağlı değişiklik kayıtları (Evren'de doğan CI için replika sys_id'si de aranır); durum, onay ve tür Türkçe etiketli.
+  - `anomalies`, `open_unauthorized`, `can_review`.
+- `GET /api/v1/ci?scope=yetkisiz-degisiklik`: açık veya incelenen yetkisiz değişikliği olan CI'lar. `GET /api/v1/summary` → `unauthorized_changes`.
+- `POST /api/v1/anomalies/{sys_id}/review` (CSRF başlığı, `anomaly/anomaly_review`): gövde `{"status": "acknowledged" | "false_positive" | "open", "note": "…"}`; yanlış alarmda gerekçe zorunlu. `resolved` istenemez (sistemin işi); uygun olmayan geçiş 409. Aynı karar tekrar gönderilirse `changed: false` döner (doğal olarak tekrar güvenli). Karar `audit.security_event` `anomaly_review`.
+
 ## ServiceNow uyumlu Table API
 
 Desteklenen parametreler:
@@ -162,7 +171,7 @@ Kafka `evren.cmdb.ci.changed.v1` (anahtar: `sys_id`, CloudEvents; outbox'tan yay
 | CMDB'de kaydı olmayan sunucu | Defender/Zabbix'te olup golden record'a bağlanmamış kaynak kayıtları | fail + kanıt listesi |
 | İzlenmeyen üretim sunucusu | `used_for=Production` ve Zabbix bağı yok | fail/pass |
 | Korumasız uç nokta | Sunucu sınıfı ve Defender bağı yok | fail/pass |
-| Yetkisiz değişiklik | `insight.anomaly kind=unauthorized_change` (dönem) | fail + Change referansı |
+| Yetkisiz değişiklik (CMDB-05, ADR-0025) | açık veya incelenen `insight.anomaly kind=unauthorized_change`; değişiklik kaynağı rolü sağlıklı değilse `inconclusive` | fail + kanıt listesi (CI) |
 | Sahipsiz kritik CI | `busines_criticality` yüksek ve `owned_by` boş | fail/pass |
 
 Kaynak çalışması devre kesicide `WARN` veya `OPEN` ise `collection_status=partial` gönderilir ve GRC Platformu sonucu `inconclusive` olur.

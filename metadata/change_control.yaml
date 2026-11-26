@@ -1,0 +1,39 @@
+# Yetkisiz değişiklik tespiti (F1-04, ADR-0025).
+#
+# Gözlenen değişiklik: gözlemci rolündeki bir kaynağın KENDİ kaydında izlenen bir öznitelik boş olmayan bir değerden
+# başka bir değere değişti ve bu golden record'u değiştirdi. Değişiklik aralığı: kaynağın eski değeri son gördüğü an →
+# yeni değeri ilk gördüğü an. Aralık, CI'ın onaylı bir değişiklik kaydının penceresiyle örtüşmüyorsa anomali açılır.
+#
+# Kurallar ürün adı içermez: kaynak rolleri ve Evren'in değişiklik sözlüğü (evren_core.reference.CHANGE_STATES…).
+# Ürünün durum/onay kodları eşleme dosyasında bu sözlüğe çevrilir (connectors/servicenow_change/change.mapping.yaml).
+# Doğrulama: tools/load_metadata.py --check (rol, sınıf, alan ve sözlük değerleri).
+version: 1
+
+# Değişikliği gözleyen roller. İzleme (Monitoring) envanteri çoğu zaman elle girildiği için dışarıda.
+observer_roles: [Discovery, Virtualization, Network, EndpointSecurity]
+
+# İzlenen öznitelikler; alt sınıflara kalıtılır (cmdb_ci_computer → sunucular, ESXi…).
+watched:
+  cmdb_ci_computer: [os, os_version, os_service_pack, cpu_count, cpu_core_count, ram, serial_number]
+  cmdb_ci_netgear: [firmware_version, serial_number]
+  cmdb_ci_vm_instance: [cpus, memory]
+
+authorization:
+  # Yetkili sayılan durumlar: onaylanmış ve planlanmış, uygulamada, gözden geçirmede veya kapanmış
+  states: [scheduled, implement, review, closed]
+  approvals: [approved]
+  # Önceden onaylı türler: onay alanı aranmaz (standart değişiklik modeli)
+  preapproved_types: [standard]
+  # Pencerenin her iki ucuna eklenen tolerans
+  tolerance_minutes: 60
+
+evaluation:
+  # Değişiklik kaydının gecikmeli gelmesi için bekleme (acil değişiklik, bağlayıcı aralığı)
+  grace_minutes: 60
+  # Açık anomali bu süre boyunca yeniden değerlendirilir; sonradan kaydedilen onaylı değişiklik kapatır
+  recheck_days: 7
+
+severity:
+  default: medium
+  rules:
+    - {field: used_for, equals: Production, severity: high}

@@ -10,11 +10,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal
 
+from ...reference import CHANGE_TABLES
 from ..http import HttpClient, Transport
 from .bmc_discovery import BMCDiscoveryClient, BMCDiscoverySimulator
 from .defender import DEFAULT_SCOPE, DefenderClient, DefenderSimulator
 from .nnmi import NNMiClient, NNMiSimulator
-from .servicenow import ServiceNowClient, ServiceNowSimulator
+from .servicenow import CHANGE_QUERIES, ServiceNowClient, ServiceNowSimulator
 from .vcenter import VCenterClient, VCenterSimulator
 from .zabbix import ZabbixClient, ZabbixSimulator
 
@@ -49,6 +50,13 @@ SOURCES: dict[str, SourceSpec] = {
         key="servicenow", data_source="ServiceNow", auth="basic", mapping_dir="servicenow_cmdb",
         build=lambda http, opts: ServiceNowClient(http, page_size=int(opts.get("page_size", 1000))),
         simulator=ServiceNowSimulator.from_dir, options=("page_size",)),
+    # Değişiklik kayıtları (ADR-0025): aynı Table API, ayrı veri kaynağı ve rol (ChangeManagement), ayrı eşleme.
+    "servicenow_change": SourceSpec(
+        key="servicenow_change", data_source="ServiceNowChange", auth="basic", mapping_dir="servicenow_change",
+        build=lambda http, opts: ServiceNowClient(
+            http, tables=tuple(CHANGE_TABLES), queries=CHANGE_QUERIES, data_source="ServiceNowChange",
+            lookback_days=int(opts.get("lookback_days", 30)), page_size=int(opts.get("page_size", 1000))),
+        simulator=ServiceNowSimulator.from_dir, options=("page_size", "lookback_days")),
     "bmc_discovery": SourceSpec(
         key="bmc_discovery", data_source="BMC", auth="bearer", mapping_dir="bmc_discovery",
         build=lambda http, opts: BMCDiscoveryClient(http, release=str(opts.get("release", "1.12")),

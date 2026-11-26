@@ -13,6 +13,7 @@
   "unprotected": 8,
   "not_in_itsm": 2,
   "unauthorized_attempts": 1,
+  "unauthorized_changes": 1,
   "records": 213
  },
  "roles": [
@@ -1062,7 +1063,9 @@
     "interface": "Table API: change_request + task_ci"
    },
    "connector": "servicenow_change",
-   "mappings": [],
+   "mappings": [
+    "connectors/servicenow_change/change.mapping.yaml"
+   ],
    "schedule": "*/10 * * * *",
    "authoritative_for_tr": "Yetkili değişiklik penceresi (yetkisiz değişiklik tespiti için)",
    "open_question": null,
@@ -2371,7 +2374,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "b8804eb1bb0da66dada7b15ac8222fda",
@@ -2578,7 +2589,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "1bb2c64aa76125b7dd3d79f442891f7b",
@@ -2951,7 +2970,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "f9e7e92cb4b46528fa3f589873590516",
@@ -3324,7 +3351,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "3093cecaf82b51da5ed79369457afab3",
@@ -3669,7 +3704,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "f73074bdaa8e5fcf32e54a1868894e02",
@@ -4042,7 +4085,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "26017ca49d18939ffc0d7a05f1e6df71",
@@ -4415,7 +4466,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "f8a694594583b4555ae2c859cbe68064",
@@ -4812,7 +4871,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e54df9eacc9ad7b7bc5cd3c4bfb2f4c1",
@@ -5178,7 +5245,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "4cf28de3bd6938c379f7638412d32f1a",
@@ -5565,7 +5640,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "2186feea402bab89007662533423a4b8",
@@ -5931,7 +6014,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "7b6e964fb3f620d67d94be76fd84523a",
@@ -6114,7 +6205,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "5c70306f195ac4d1aff951fbefab5475",
@@ -6462,7 +6561,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "9312131c529e2f077aeec1fe57e28a32",
@@ -6849,7 +6956,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "bd64e460809839f64310c7726adc4156",
@@ -7224,7 +7339,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "f5c283c912d79b1aa9219662dd6b6a09",
@@ -7584,7 +7707,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "6738378f8b8c7fc8015fe41a0ac1bd4d",
@@ -7971,7 +8102,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "1fdd6eaf7df86ddefcc20794a5c67837",
@@ -8337,7 +8476,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000018",
@@ -8619,7 +8766,15 @@
     "security": true,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "82cd67ad51e1f91c6b3568b2319dc830",
@@ -8979,7 +9134,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "5b8999b496b6614c4f10dfa35717b5d9",
@@ -9345,7 +9508,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "cf05df6108ba934345470b577a5173c6",
@@ -9705,7 +9876,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "2871d1f4438c70f5237afe1041da2d4d",
@@ -10092,7 +10271,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "247f35e7c54173515d09298a4c120414",
@@ -10299,7 +10486,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "25e080ebaa1f8bc86c4f078067c98d93",
@@ -10497,7 +10692,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "14ee5bf3eda590094f932598695df05e",
@@ -10695,7 +10898,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "60e415e97b6f32f4b5a95cd8c4b50b63",
@@ -10902,7 +11113,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "1beeb2bd4a50e53b442681c5e4973d7d",
@@ -11109,7 +11328,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "be9ca9fd96c5aa0e39e2009cae74a6a0",
@@ -11316,7 +11543,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000015",
@@ -11506,7 +11741,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000001e",
@@ -11696,7 +11939,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000001a",
@@ -11886,7 +12137,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000000a",
@@ -12076,7 +12335,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000007",
@@ -12266,7 +12533,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000004",
@@ -12456,7 +12731,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000011",
@@ -12646,7 +12929,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000005",
@@ -12836,7 +13127,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000000e",
@@ -13026,7 +13325,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000001f",
@@ -13216,7 +13523,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000000d",
@@ -13406,7 +13721,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000014",
@@ -13596,7 +13919,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000001",
@@ -13786,7 +14117,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000010",
@@ -13976,7 +14315,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000003",
@@ -14166,7 +14513,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000012",
@@ -14356,7 +14711,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000001c",
@@ -14546,7 +14909,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000008",
@@ -14736,7 +15107,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000019",
@@ -14926,7 +15305,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000006",
@@ -15116,7 +15503,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000016",
@@ -15306,7 +15701,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000020",
@@ -15496,7 +15899,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000000f",
@@ -15686,7 +16097,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000017",
@@ -15876,7 +16295,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000000b",
@@ -16066,7 +16493,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000013",
@@ -16256,7 +16691,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000001d",
@@ -16446,7 +16889,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000002",
@@ -16636,7 +17087,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e00000000000000000000000000009",
@@ -16819,7 +17278,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000001b",
@@ -17009,7 +17476,15 @@
     "security": false,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "b091478f6818c85906a48cd88b306f08",
@@ -17417,7 +17892,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "d745dcf226c22d6e3a58ff3d395d8bab",
@@ -17825,7 +18308,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "c6a89c8a39701c272d7d8d4f280ff889",
@@ -18201,7 +18692,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "4eb7baea205049270530f6897e1da053",
@@ -18609,7 +19108,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "0c7a38326f372c4e7594c6ae0e3f1779",
@@ -18998,7 +19505,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e98e3ffb8aff4ae7e599446f66f8c44d",
@@ -19406,7 +19921,50 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [
+     {
+      "attribute": "ram",
+      "label": "RAM (MB)",
+      "old": 32768,
+      "new": 65536,
+      "old_display": "32 GB",
+      "new_display": "64 GB",
+      "source": "BMC",
+      "observed_from": "2026-11-24T12:00:00Z",
+      "observed_at": "2026-11-25T04:00:00Z",
+      "verdict": "authorized",
+      "verdict_label": "Onaylı değişiklik",
+      "change_number": "CHG0040001",
+      "explanation": "CHG0040001 (planlı pencere) gözlem aralığını (24.11.2026 15:00 – 25.11.2026 07:00) kapsıyor.",
+      "late": false,
+      "evaluated_at": "2026-11-25T05:00:00Z",
+      "anomaly_status": null,
+      "anomaly_status_label": null
+     }
+    ],
+    "changes": [
+     {
+      "number": "CHG0040001",
+      "short_description": "IST-CRM-03 bellek artırımı",
+      "type": "normal",
+      "type_label": "normal",
+      "state": "implement",
+      "state_label": "uygulamada",
+      "approval": "approved",
+      "approval_label": "onaylandı",
+      "start_date": "2026-11-24T10:00:00Z",
+      "end_date": "2026-11-25T10:00:00Z",
+      "work_start": "2026-11-24T11:00:00Z",
+      "work_end": null
+     }
+    ],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "5cb077a2aaf90c894107711d2befc7f9",
@@ -19821,7 +20379,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "ad9999465bbd3afdc462ad8bfb6f8711",
@@ -20229,7 +20795,77 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [
+     {
+      "attribute": "ram",
+      "label": "RAM (MB)",
+      "old": 8192,
+      "new": 16384,
+      "old_display": "8 GB",
+      "new_display": "16 GB",
+      "source": "BMC",
+      "observed_from": "2026-11-24T12:00:00Z",
+      "observed_at": "2026-11-25T04:00:00Z",
+      "verdict": "unauthorized",
+      "verdict_label": "Yetkisiz değişiklik",
+      "change_number": null,
+      "explanation": "Gözlem aralığını (24.11.2026 15:00 – 25.11.2026 07:00) kapsayan onaylı değişiklik kaydı yok; bakılan kayıtlar: CHG0040002: yetkili değil (tür: normal, durum: yetkilendirme, onay: bekliyor); CHG0040003: pencere (planlı 20.11.2026 09:00 – 20.11.2026 10:00, gerçekleşen 20.11.2026 09:00 – 20.11.2026 09:40) gözlem aralığıyla örtüşmüyor",
+      "late": false,
+      "evaluated_at": "2026-11-25T05:00:00Z",
+      "anomaly_status": "open",
+      "anomaly_status_label": "Açık"
+     }
+    ],
+    "changes": [
+     {
+      "number": "CHG0040002",
+      "short_description": "IST-DC-04 bellek artırımı (onay bekliyor)",
+      "type": "normal",
+      "type_label": "normal",
+      "state": "authorize",
+      "state_label": "yetkilendirme",
+      "approval": "requested",
+      "approval_label": "bekliyor",
+      "start_date": "2026-11-24T10:00:00Z",
+      "end_date": "2026-11-25T10:00:00Z",
+      "work_start": null,
+      "work_end": null
+     },
+     {
+      "number": "CHG0040003",
+      "short_description": "Yapılandırma yedeği (standart)",
+      "type": "standard",
+      "type_label": "standart",
+      "state": "closed",
+      "state_label": "kapandı",
+      "approval": "not_requested",
+      "approval_label": "istenmedi",
+      "start_date": "2026-11-20T06:00:00Z",
+      "end_date": "2026-11-20T07:00:00Z",
+      "work_start": "2026-11-20T06:00:00Z",
+      "work_end": "2026-11-20T06:40:00Z"
+     }
+    ],
+    "anomalies": [
+     {
+      "sys_id": "a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5",
+      "status": "open",
+      "status_label": "Açık",
+      "severity": "high",
+      "detected_at": "2026-11-25T05:00:00Z",
+      "explanation": "IST-DC-04: RAM (MB) 8192 → 16384. Kaynak: BMC. Gözlem aralığını (24.11.2026 15:00 – 25.11.2026 07:00) kapsayan onaylı değişiklik kaydı yok; bakılan kayıtlar: CHG0040002: yetkili değil (tür: normal, durum: yetkilendirme, onay: bekliyor); CHG0040003: pencere (planlı 20.11.2026 09:00 – 20.11.2026 10:00, gerçekleşen 20.11.2026 09:00 – 20.11.2026 09:40) gözlem aralığıyla örtüşmüyor",
+      "related_change": null,
+      "reviewed_by": null,
+      "reviewed_at": null,
+      "review_note": null
+     }
+    ],
+    "open_unauthorized": 1,
+    "can_review": false
+   },
+   "unauthorized_changes": 1
   },
   {
    "sys_id": "15de32c2a95a4826be374c1b0cfd5e53",
@@ -20618,7 +21254,15 @@
     "security": false,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "d106bea2bf5847af99e09099a4c0c80e",
@@ -21000,7 +21644,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "1c694cf7d754e95270130aba3029dc71",
@@ -21408,7 +22060,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "e7e0000000000000000000000000000c",
@@ -21706,7 +22366,15 @@
     "security": true,
     "itsm": false
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "13517218cdde418e09f77a701d1ee27e",
@@ -22125,7 +22793,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 1
+   "unauthorized_count": 1,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "8bc88d39125b9ca46890a8ae3c0c8791",
@@ -22533,7 +23209,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "f0f0639d4014d386b2b14d9cc09c7126",
@@ -22914,7 +23598,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   },
   {
    "sys_id": "f91d9301f6638186e695f4c8a703a216",
@@ -23237,7 +23929,15 @@
     "security": true,
     "itsm": true
    },
-   "unauthorized_count": 0
+   "unauthorized_count": 0,
+   "change_control": {
+    "observations": [],
+    "changes": [],
+    "anomalies": [],
+    "open_unauthorized": 0,
+    "can_review": false
+   },
+   "unauthorized_changes": 0
   }
  ],
  "queue": [
@@ -23539,6 +24239,24 @@
     "query_reference": "sys_class_nameINSTANCEOFcmdb_ci_server^evren.coverage.itsm=false",
     "collection_status": "complete",
     "depends_on": "ServiceNow"
+   }
+  },
+  {
+   "id": "CMDB-05",
+   "title": "Onaylı değişiklik kaydı olmadan yapılandırması değişen CI",
+   "status": "fail",
+   "why": "Keşfin gözlediği izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) onaylı bir değişiklik penceresine düşmüyor (ADR-0025).",
+   "evidence": [
+    {
+     "sys_id": "ad9999465bbd3afdc462ad8bfb6f8711",
+     "name": "IST-DC-04"
+    }
+   ],
+   "provenance": {
+    "source_system": "Evren",
+    "query_reference": "evren.anomaly.kind=unauthorized_change^status=open",
+    "collection_status": "complete",
+    "depends_on": "ServiceNowChange"
    }
   }
  ]

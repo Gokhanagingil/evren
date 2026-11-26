@@ -18,6 +18,7 @@ Davranış:
 Olay omurgası (U2, ADR-0017):
 
 * Her turda alım geçidinden kapanışı istenen çalışmalar kapatılır (``finalize_ready_runs``).
+* Her turda yetkisiz değişiklik gözlemleri değerlendirilir (``evaluate_config_changes``, ADR-0025).
 * ``EVREN_KAFKA_BOOTSTRAP`` tanımlıysa outbox olayları Kafka'ya yayınlanır (outbox'a yazım çalışanı uyandırır).
 * Kaynak kayıtlarının Kafka'dan alımı ayrı süreçtir: ``python -m evren_reconciler.worker --ingest`` (``IngestWorker``);
   bölüm sayısı kadar örnek paralel çalışabilir.
@@ -130,7 +131,8 @@ class Worker:
     def run_once(self, conn: psycopg.Connection[Any]) -> dict[str, int]:
         """Bekleyen tüm istekleri uygular (her tür ``batch`` kadar, iş kalmayana dek)."""
         store = ReconcilerStore(conn, self.md)
-        totals = {"manual": 0, "decision": 0, "split": 0, "failed": 0, "runs_closed": 0, "published": 0}
+        totals = {"manual": 0, "decision": 0, "split": 0, "failed": 0, "runs_closed": 0, "published": 0,
+                  "config_changes": 0}
         while not self.stop.is_set():
             results = store.apply_requests(self.config.batch)
             done = 0
@@ -143,6 +145,13 @@ class Worker:
             if done == 0:  # pragma: no cover - savunma
                 break
         totals["runs_closed"] = len(store.finalize_ready_runs())
+        # Yetkisiz değişiklik: bekleme süresi dolan gözlemler ve açık anomalilerin yeniden denenmesi (ADR-0025)
+        evaluated = store.evaluate_config_changes()
+        totals["config_changes"] = sum(evaluated.values())
+        if evaluated["unauthorized"] or evaluated["late_authorized"]:
+            log.info("değişiklik denetimi: onaylı=%d yetkisiz=%d bastırılan=%d sonradan onaylı=%d",
+                     evaluated["authorized"], evaluated["unauthorized"], evaluated["suppressed"],
+                     evaluated["late_authorized"])
         if self.outbox is not None:
             try:
                 totals["published"] = self.outbox.publish_pending(conn)

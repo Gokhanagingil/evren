@@ -54,6 +54,7 @@ class SourceRole:
     ci_attribute_source: bool = True
     reference_source: bool = False  # ServiceNow referans tablolarını (grup, kişi, konum…) yazar (ADR-0022)
     posture_source: bool = False    # kısıtlı güvenlik duruşunu (cmdb.ci_security_posture) yazar (ADR-0023)
+    change_source: bool = False     # değişiklik kayıtlarını (ref.sn_change_request, ref.sn_task_ci) yazar (ADR-0025)
 
 
 @dataclass(frozen=True)
@@ -103,6 +104,7 @@ class SourceRegistry:
                 ci_attribute_source=bool(r.get("ci_attribute_source", True)),
                 reference_source=bool(r.get("reference_source", False)),
                 posture_source=bool(r.get("posture_source", False)),
+                change_source=bool(r.get("change_source", False)),
             )
             for r in document.get("source_roles", [])
         ]
@@ -141,6 +143,15 @@ class SourceRegistry:
         """Kaynak ``ref.*`` referans tablolarını yazabilir mi (rolü referans kaynağı, kaynak etkin/devrediliyor)."""
         src = self.source(name)
         return self.roles[src.role].reference_source and src.lifecycle in ("active", "retiring")
+
+    def writes_changes(self, name: str) -> bool:
+        """Kaynak değişiklik kayıtlarını yazabilir mi (rolü değişiklik kaynağı, kaynak etkin/devrediliyor)."""
+        src = self.source(name)
+        return self.roles[src.role].change_source and src.lifecycle in ("active", "retiring")
+
+    def writes_role_table(self, name: str, writer: str) -> bool:
+        """``ref.*`` tablosunu yazan rol yeteneği: ``reference`` (ITSM referansları) veya ``change`` (ADR-0025)."""
+        return self.writes_changes(name) if writer == "change" else self.writes_references(name)
 
     def writes_posture(self, name: str) -> bool:
         """Kaynak kısıtlı güvenlik duruşunu yazabilir mi (rolü duruş kaynağı, kaynak etkin/devrediliyor)."""

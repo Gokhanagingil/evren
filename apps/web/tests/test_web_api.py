@@ -441,3 +441,59 @@ def test_security_reader_sees_restricted_posture_with_notice(page, base_url):
     finally:
         with psycopg.connect(autocommit=True) as conn:
             conn.execute("DELETE FROM cmdb.ci_security_posture WHERE ci_sys_id = %s", (ci,))
+
+
+def test_unauthorized_change_review_with_keyboard(page, base_url):
+    """ADR-0025: CI ayrıntısında gözlenen değişiklik ve değişiklik kaydı görünür; Veri sorumlusu yetkisiz değişikliği
+    klavyeyle "İncelendi" ve gerekçeli "Yanlış alarm" olarak işaretler, sonra yeniden açar. Karar denetim izinde."""
+    import psycopg
+
+    with psycopg.connect(autocommit=True) as conn:
+        ci = conn.execute("""SELECT sys_id FROM cmdb.cmdb_ci WHERE sys_class_name LIKE 'cmdb_ci_%%server'
+                              ORDER BY sys_id DESC LIMIT 1""").fetchone()[0]
+        anomaly = conn.execute(
+            """INSERT INTO insight.anomaly (kind, severity, ci_sys_id, data_source, window_start, window_end,
+                                            explanation)
+               VALUES ('unauthorized_change', 'high', %s, 'BMC', now() - interval '6 hours', now(),
+                       'webtest: RAM değişti') RETURNING sys_id""", (ci,)).fetchone()[0]
+        conn.execute("""INSERT INTO insight.config_change (ci_sys_id, sys_class_name, attribute, old_value, new_value,
+                            data_source, observed_from, observed_at, verdict, anomaly_sys_id, detail)
+                        VALUES (%s, 'cmdb_ci_server', 'ram', '8192', '16384', 'BMC', now() - interval '6 hours', now(),
+                                'unauthorized', %s, '{"explanation": "kapsayan onaylı değişiklik kaydı yok"}')""",
+                     (ci, anomaly))
+    try:
+        page.goto(base_url + f"/#/ci/{ci}")
+        page.wait_for_selector("#ciAnomalies")
+        box = page.locator("#detailContent")
+        expect(box).to_contain_text("Değişiklik denetimi")
+        expect(box).to_contain_text("Onaysız değişiklik.")
+        expect(page.locator("#ciObservations")).to_contain_text("RAM (MB)")
+        status = page.locator("#ciAnomalies .pills").first  # durum etiketi (düğme etiketleri değil)
+        expect(status).to_contain_text("Açık")
+        page.locator("#ciAnomalies button[data-review='acknowledged']").focus()
+        page.keyboard.press("Enter")
+        expect(status).to_contain_text("İncelendi")
+        expect(page.locator("#ciAnomalies")).to_be_focused()  # karar sonrası odak sonuçta, panelin başında değil
+        page.locator("#ciAnomalies button[data-review='false_positive']").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#reviewNote")).to_be_focused()
+        page.keyboard.press("Enter")  # gerekçesiz gönderilemez
+        expect(page.locator("#reviewNote")).to_have_attribute("aria-invalid", "true")
+        page.locator("#reviewNote").fill("Değişiklik başka bir sistemde kayıtlı (webtest)")
+        page.keyboard.press("Enter")
+        expect(status).to_contain_text("Yanlış alarm")
+        expect(page.locator("#ciAnomalies")).to_contain_text("Gerekçe: Değişiklik başka bir sistemde kayıtlı")
+        expect(box).not_to_contain_text("Onaysız değişiklik.")
+        expect(page.locator("#ciObservations")).to_contain_text("Karar: Yanlış alarm")
+        shot(page, "web_api_unauthorized_change_review")
+        page.locator("#ciAnomalies button[data-review='open']").focus()
+        page.keyboard.press("Enter")
+        expect(status).to_contain_text("Açık")
+        with psycopg.connect(autocommit=True) as conn:
+            decisions = conn.execute("""SELECT detail->>'to' FROM audit.security_event WHERE action = 'anomaly_review'
+                                         AND resource = %s ORDER BY id""", (f"anomaly:{anomaly}",)).fetchall()
+            assert [d[0] for d in decisions] == ["acknowledged", "false_positive", "open"]
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM insight.config_change WHERE anomaly_sys_id = %s", (anomaly,))
+            conn.execute("DELETE FROM insight.anomaly WHERE sys_id = %s", (anomaly,))

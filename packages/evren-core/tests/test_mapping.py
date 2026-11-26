@@ -9,7 +9,7 @@ import yaml
 from evren_core.connectors import FieldMapping, MappingError, resolve_path
 from evren_core.identity import Outcome
 from evren_core.identity.adapters import source_record_from_ingest
-from evren_core.reference import REFERENCE_TABLES
+from evren_core.reference import ROLE_TABLES
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RUN = uuid.UUID("00000000-0000-4000-8000-000000000001")
@@ -36,8 +36,8 @@ def test_every_mapping_file_parses_and_targets_known_classes_and_fields(repo_roo
         m = FieldMapping.from_dict(yaml.safe_load(f.read_text(encoding="utf-8")))
         assert m.data_source in known_sources, f
         classes = [m.default_class] + [r.class_name for r in m.class_rules]
-        if all(c in REFERENCE_TABLES for c in classes):  # referans tabloları (ADR-0022): sütunlar tek listeden
-            allowed = set().union(*(REFERENCE_TABLES[c].columns for c in classes))
+        if all(c in ROLE_TABLES for c in classes):  # referans/değişiklik tabloları (ADR-0022/0025): tek liste
+            allowed = set().union(*(ROLE_TABLES[c].columns for c in classes))
             assert set(m.attributes) <= allowed, f"{f}: referans tablosunda olmayan alanlar {set(m.attributes) - allowed}"
             assert not m.relations and m.require, f"{f}: referans eşlemesi tabloyla sınırlı olmalı"
             continue

@@ -138,6 +138,7 @@
 <path data-edge="breaker:reconcile" d="M1050.0 781.0H1030.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="identity:match_queue" d="M640.0 830.0V870.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="reconcile:unauthorized" d="M940.0 830.0V870.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="breaker:unauthorized" d="M1066.0 830.0V850.0H1014.0V870.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="6 5"/>
 <path data-edge="reconcile:analytics" d="M1014.0 830.0V850.0H1066.0V870.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="dependent_ids:match_queue" d="M430.0 919.0H450.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)" stroke-dasharray="6 5"/>
 <g class="node" id="n-change_filter" data-node="change_filter" data-chapter="sense" tabindex="0" role="button" aria-label="Değişim süzgeci: İçerik özeti aynıysa işlem yok">

@@ -216,11 +216,19 @@ export async function splitCi(ciId, linkId, note) {
   });
 }
 
+/** Yetkisiz değişiklik anomalisinin insan kararı (ADR-0025): incelendi, yanlış alarm (gerekçe zorunlu), yeniden aç. */
+export async function reviewAnomaly(id, status, note) {
+  return api(`/api/v1/anomalies/${encodeURIComponent(id)}/review`, {
+    method: 'POST', body: JSON.stringify({ status, note: note || null }),
+  });
+}
+
 const SCOPE_TEST = {
   izlenmeyen: (c) => c.server && !c.coverage.monitoring,
   korumasiz: (c) => c.server && !c.coverage.security,
   'itsm-yok': (c) => c.server && !c.coverage.itsm,
   yetkisiz: (c) => c.unauthorized_count > 0,
+  'yetkisiz-degisiklik': (c) => (c.unauthorized_changes || 0) > 0,
 };
 
 /** CI arama: API'de sunucu tarafında sayfalanır (imleç); demoda istemcide süzülür. */

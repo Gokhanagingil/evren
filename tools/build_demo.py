@@ -29,6 +29,15 @@ from typing import Any, Protocol
 import yaml
 
 from _bootstrap import REPO_ROOT
+from evren_core.change_control import (
+    ANOMALY_STATUS_TR,
+    APPROVAL_TR,
+    STATE_TR,
+    TYPE_TR,
+    VERDICT_TR,
+    ChangeRecord,
+    evaluate,
+)
 from evren_core.circuit_breaker import evaluate_run
 from evren_core.connectors import FieldMapping
 from evren_core.identity import IdentityEngine, IdentityResolver, InMemoryCandidateIndex, InMemoryLinkStore, Outcome, RuleSet
@@ -547,6 +556,7 @@ def assemble(p: Pipeline, md, refs: dict[str, str], hosts: list[Host]) -> dict[s
         })
 
     sources_out, runs_state = build_sources(p, source_stats)
+    build_change_control(cis, md)
     controls = build_controls(cis, runs_state)
     servers = [c for c in cis if c["server"]]
     return {
@@ -563,6 +573,7 @@ def assemble(p: Pipeline, md, refs: dict[str, str], hosts: list[Host]) -> dict[s
             "unprotected": sum(1 for c in servers if not c["coverage"]["security"]),
             "not_in_itsm": sum(1 for c in servers if not c["coverage"]["itsm"]),
             "unauthorized_attempts": sum(c["unauthorized_count"] for c in cis),
+            "unauthorized_changes": sum(c["unauthorized_changes"] for c in cis),
             "records": sum(s["stats"]["records"] for s in sources_out),
         },
         "roles": [{"name": r["name"], "label_tr": r["label_tr"], "kind": r["kind"],
@@ -659,6 +670,66 @@ def build_rules(md, p: Pipeline) -> dict[str, Any]:
     }
 
 
+def build_change_control(cis: list[dict[str, Any]], md) -> None:
+    """Değişiklik denetimi önizlemesi (ADR-0025). İki üretim sunucusunda keşfin (BMC) gördüğü RAM değişikliği gerçek
+    değerlendirme mantığıyla (``evren_core.change_control``) onaylı pencereye göre sınıflanır. Değişiklik kayıtları
+    (CHG004xxxx) sentetiktir; API modunda bu bölüm uzlaştırıcının ``insight.config_change`` kayıtlarından gelir."""
+    policy = md.change_policy
+    for c in cis:
+        c["change_control"] = {"observations": [], "changes": [], "anomalies": [], "open_unauthorized": 0,
+                               "can_review": False}
+        c["unauthorized_changes"] = 0
+
+    def ram(c: dict[str, Any]) -> dict[str, Any] | None:
+        return next((a for a in c["attributes"] if a["attribute"] == "ram" and isinstance(a["value"], int)), None)
+
+    picks = sorted((c for c in cis if c["server"] and c["used_for"] == "Production" and ram(c)),
+                   key=lambda c: c["name"])[:2]
+    if len(picks) < 2:
+        return
+    observed_from, observed_at = NOW - timedelta(hours=18), NOW - timedelta(hours=2)
+    scenario = [
+        (picks[0], [ChangeRecord("c4" * 16, "CHG0040001", "normal", "implement", "approved",
+                                 NOW - timedelta(hours=20), NOW + timedelta(hours=4), NOW - timedelta(hours=19))],
+         f"{picks[0]['name']} bellek artırımı"),
+        (picks[1], [ChangeRecord("c5" * 16, "CHG0040002", "normal", "authorize", "requested",
+                                 NOW - timedelta(hours=20), NOW + timedelta(hours=4)),
+                    ChangeRecord("c6" * 16, "CHG0040003", "standard", "closed", "not_requested",
+                                 NOW - timedelta(days=5), NOW - timedelta(days=5) + timedelta(hours=1),
+                                 NOW - timedelta(days=5), NOW - timedelta(days=5) + timedelta(minutes=40))],
+         f"{picks[1]['name']} bellek artırımı (onay bekliyor)"),
+    ]
+    for c, records, desc in scenario:
+        a = ram(c)
+        verdict = evaluate(observed_from, observed_at, records, policy, NOW)
+        state = "authorized" if verdict.authorized else "unauthorized"
+        text = verdict.explanation(observed_from, observed_at)
+        anomalies = [] if verdict.authorized else [{
+            "sys_id": "a5" * 16, "status": "open", "status_label": ANOMALY_STATUS_TR["open"],
+            "severity": policy.severity_for({"used_for": c["used_for"]}), "detected_at": fmt(observed_at + policy.grace),
+            "explanation": f"{c['name']}: {a['label']} {a['value'] // 2} → {a['value']}. Kaynak: BMC. {text}",
+            "related_change": None, "reviewed_by": None, "reviewed_at": None, "review_note": None}]
+        c["change_control"] = {
+            "observations": [{
+                "attribute": "ram", "label": a["label"], "old": a["value"] // 2, "new": a["value"],
+                "old_display": f"{a['value'] // 2048} GB", "new_display": a["display"], "source": "BMC",
+                "observed_from": fmt(observed_from), "observed_at": fmt(observed_at), "verdict": state,
+                "verdict_label": VERDICT_TR[state], "change_number": verdict.change.number if verdict.change else None,
+                "explanation": text, "late": False, "evaluated_at": fmt(observed_at + policy.grace),
+                "anomaly_status": "open" if anomalies else None,
+                "anomaly_status_label": ANOMALY_STATUS_TR["open"] if anomalies else None}],
+            "changes": [{"number": r.number, "short_description": desc if i == 0 else "Yapılandırma yedeği (standart)",
+                         "type": r.type, "type_label": TYPE_TR[r.type or "other"], "state": r.state,
+                         "state_label": STATE_TR[r.state or "other"], "approval": r.approval,
+                         "approval_label": APPROVAL_TR[r.approval or "other"],
+                         "start_date": fmt(r.start_date) if r.start_date else None,
+                         "end_date": fmt(r.end_date) if r.end_date else None,
+                         "work_start": fmt(r.work_start) if r.work_start else None,
+                         "work_end": fmt(r.work_end) if r.work_end else None} for i, r in enumerate(records)],
+            "anomalies": anomalies, "open_unauthorized": len(anomalies), "can_review": False}
+        c["unauthorized_changes"] = c["change_control"]["open_unauthorized"]
+
+
 def build_controls(cis: list[dict[str, Any]], states: dict[str, str]) -> list[dict[str, Any]]:
     """GRC Platformu'na gidecek kontrol sonuçlarının önizlemesi (docs/08). Kısmi veri → inconclusive."""
     servers = [c for c in cis if c["server"]]
@@ -692,6 +763,10 @@ def build_controls(cis: list[dict[str, Any]], states: dict[str, str]) -> list[di
              [c for c in servers if not c["coverage"]["itsm"]],
              "sys_class_nameINSTANCEOFcmdb_ci_server^evren.coverage.itsm=false",
              "Keşifte bulunan ama mevcut CMDB'de olmayan sunucular; gölge mod raporu."),
+        item("CMDB-05", "Onaylı değişiklik kaydı olmadan yapılandırması değişen CI", "ServiceNowChange",
+             [c for c in cis if c["unauthorized_changes"]], "evren.anomaly.kind=unauthorized_change^status=open",
+             "Keşfin gözlediği izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) onaylı bir "
+             "değişiklik penceresine düşmüyor (ADR-0025)."),
     ]
 
 

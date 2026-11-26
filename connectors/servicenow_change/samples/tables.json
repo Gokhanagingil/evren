@@ -1,0 +1,35 @@
+{
+ "_aciklama": "SENTETİK örnek veri — ServiceNow Table API yanıt biçiminde (sysparm_display_value=false: durum kodu, onay değeri, UTC tarih, referanslar sys_id). Gerçek kurum verisi değildir. CI sys_id'leri connectors/servicenow_cmdb/samples ile aynıdır (ist-app-02, esx01, IST-DC2-CORE-SW01).",
+ "tables": {
+  "change_request": [
+   {"sys_id": "c1a0000000000000000000000000c001", "active": "true", "number": "CHG0030001", "short_description": "ist-app-02 bellek artırımı",
+    "type": "normal", "state": "-1", "approval": "approved", "start_date": "2026-11-01 00:00:00",
+    "end_date": "2027-12-31 23:00:00", "work_start": "2026-11-01 00:30:00", "work_end": "", "cmdb_ci": "",
+    "sys_updated_on": "2026-11-25 07:00:00"},
+   {"sys_id": "c1a0000000000000000000000000c002", "active": "true", "number": "CHG0030002", "short_description": "esx01 firmware güncellemesi",
+    "type": "normal", "state": "-3", "approval": "requested", "start_date": "2026-11-01 00:00:00",
+    "end_date": "2027-12-31 23:00:00", "work_start": "", "work_end": "", "cmdb_ci": "7d3e4f5061728394a5b6c7d8e9f0a1b2",
+    "sys_updated_on": "2026-11-25 07:05:00"},
+   {"sys_id": "c1a0000000000000000000000000c003", "active": "false", "number": "CHG0030003", "short_description": "Çekirdek anahtar yapılandırma yedeği (standart)",
+    "type": "standard", "state": "3", "approval": "not requested", "start_date": "2026-11-20 20:00:00",
+    "end_date": "2026-11-20 21:00:00", "work_start": "2026-11-20 20:05:00", "work_end": "2026-11-20 20:40:00",
+    "cmdb_ci": "9f5061728394a5b6c7d8e9f0a1b2c3d4", "sys_updated_on": "2026-11-20 20:45:00"},
+   {"sys_id": "c1a0000000000000000000000000c004", "active": "false", "number": "CHG0030004", "short_description": "esx01 acil yeniden başlatma (iptal)",
+    "type": "emergency", "state": "4", "approval": "approved", "start_date": "2026-11-01 00:00:00",
+    "end_date": "2027-12-31 23:00:00", "work_start": "", "work_end": "", "cmdb_ci": "7d3e4f5061728394a5b6c7d8e9f0a1b2",
+    "sys_updated_on": "2026-11-25 08:00:00"}
+  ],
+  "task_ci": [
+   {"sys_id": "c1b0000000000000000000000000d001", "task": "c1a0000000000000000000000000c001",
+    "ci_item": "5b1c2d3e4f5061728394a5b6c7d8e9f0", "sys_updated_on": "2026-11-25 07:00:00"},
+   {"sys_id": "c1b0000000000000000000000000d002", "task": "c1a0000000000000000000000000c002",
+    "ci_item": "7d3e4f5061728394a5b6c7d8e9f0a1b2", "sys_updated_on": "2026-11-25 07:05:00"},
+   {"sys_id": "c1b0000000000000000000000000d099", "task": "fa00000000000000000000000000e099",
+    "ci_item": "5b1c2d3e4f5061728394a5b6c7d8e9f0", "sys_updated_on": "2026-11-25 09:00:00"}
+  ],
+  "incident": [
+   {"sys_id": "fa00000000000000000000000000e099", "number": "INC0010099", "sys_class_name": "incident",
+    "sys_updated_on": "2026-11-25 09:00:00"}
+  ]
+ }
+}

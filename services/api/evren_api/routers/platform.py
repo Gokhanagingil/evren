@@ -210,6 +210,11 @@ def _control(ctx: Ctx, cid: str, title: str, role: str | None, where: sql.Compos
                            "depends_on": ", ".join(deps) or None, "evaluated_at": datetime.now(UTC).isoformat()}}
 
 
+_UNAUTHORIZED_CHANGE = sql.SQL(
+    "EXISTS (SELECT 1 FROM insight.anomaly a WHERE a.ci_sys_id = ci.sys_id AND a.kind = 'unauthorized_change' "
+    "AND a.status IN ('open', 'acknowledged'))")
+
+
 @router.get("/controls")
 def controls(ctx: Ctx = Depends(context)) -> list[dict[str, Any]]:
     """GRC Platformu'na giden CMDB kontrolleri. Bağımlı rolün son çalışması sağlıklı değilse ``inconclusive``."""
@@ -231,6 +236,10 @@ def controls(ctx: Ctx = Depends(context)) -> list[dict[str, Any]]:
                  _and(_SERVER, _not(_coverage_sql("itsm"))),
                  "sys_class_nameINSTANCEOFcmdb_ci_server^evren.coverage.itsm=false",
                  "Keşifte bulunan ama mevcut CMDB'de olmayan sunucular; gölge mod raporu.", st),
+        _control(ctx, "CMDB-05", "Onaylı değişiklik kaydı olmadan yapılandırması değişen CI", "ChangeManagement",
+                 _UNAUTHORIZED_CHANGE, "evren.anomaly.kind=unauthorized_change^status=open",
+                 "Keşfin gözlediği izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) onaylı bir "
+                 "değişiklik penceresine düşmüyor (ADR-0025).", st),
     ]
 
 
@@ -251,6 +260,9 @@ def summary(ctx: Ctx = Depends(context)) -> dict[str, Any]:
         unauth = cur.fetchone()[0]  # type: ignore[index]
         cur.execute("SELECT count(*) FROM ingest.source_record")
         records = cur.fetchone()[0]  # type: ignore[index]
+        cur.execute("""SELECT count(*) FROM insight.anomaly WHERE kind = 'unauthorized_change'
+                          AND status IN ('open', 'acknowledged')""")
+        unauthorized_changes = cur.fetchone()[0]  # type: ignore[index]
         cur.execute("SELECT EXISTS (SELECT 1 FROM ingest.source_run WHERE notes LIKE 'sentetik%%')")
         synthetic = cur.fetchone()[0]  # type: ignore[index]
         worker = _worker_status(cur)
@@ -259,6 +271,7 @@ def summary(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             "queue_insufficient": q.get("insufficient", 0),
             "queue_unmatched": q.get("unmatched_shadow", 0) + q.get("unmatched_retiring", 0),
             "unmonitored": unmon, "unprotected": unprot, "not_in_itsm": noitsm, "unauthorized_attempts": unauth,
+            "unauthorized_changes": unauthorized_changes,
             "records": records, "synthetic": synthetic, "worker": worker}
 
 

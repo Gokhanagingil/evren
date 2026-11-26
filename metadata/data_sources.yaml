@@ -48,6 +48,7 @@ source_roles:
     label_tr: Değişiklik kayıtları
     kind: itsm
     ci_attribute_source: false
+    change_source: true   # change_request + task_ci yalnızca ref.sn_change_request/ref.sn_task_ci'ya (ADR-0025)
     description_tr: Onaylı değişiklik pencereleri. CI özniteliği yazmaz; yetkisiz değişiklik tespitine girdi verir.
   - name: Manual
     label_tr: Elle giriş
@@ -128,7 +129,7 @@ data_sources:
     lifecycle: active
     product: {vendor: ServiceNow, name: Change Management, interface: "Table API: change_request + task_ci"}
     connector: servicenow_change
-    mappings: []
+    mappings: [connectors/servicenow_change/change.mapping.yaml]
     schedule: "*/10 * * * *"
     authoritative_for_tr: Yetkili değişiklik penceresi (yetkisiz değişiklik tespiti için)
   - name: Manual

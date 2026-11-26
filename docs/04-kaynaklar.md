@@ -163,7 +163,22 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - Yalnızca referans kaynağı rolü (ITSM, `reference_source: true`) yazar; gölgedeki kaynak yazmaz. Entra veya Evren kaynaklı satır ezilmez; silinen kayıt pasifleşir.
   - Entegrasyon kullanıcısının bu tablolarda okuma rolü olmalıdır (ServiceNow'da ACL değiştirilmez; var olan okuma rolü verilir).
   - Henüz yok: grup üyeliği (`sys_user_grmember`; ABAC ile, U8) ve kişi/grup verisinin Entra ile eşlenmesi.
-- **Change kayıtları:** `change_request` + `task_ci`. Yetkisiz değişiklik tespiti için onaylı pencere sağlar. CI özniteliği yazmaz (`ci_attribute_source: false`).
+- **Change kayıtları (ADR-0025, göç 0021):** ayrı bağlayıcı `servicenow_change`, ayrı veri kaynağı `ServiceNowChange`, rol `ChangeManagement` (`change_source: true`, `ci_attribute_source: false`). Yetkisiz değişiklik tespiti için onaylı pencere sağlar; CI özniteliği yazmaz.
+  - Tablolar: `change_request` (`number`, `short_description`, `type`, `state`, `approval`, `start_date`, `end_date`, `work_start`, `work_end`, `cmdb_ci`) ve `task_ci` (`task`, `ci_item`). Alanlar `evren_core/reference.py` → `CHANGE_TABLES`'tan istenir.
+  - Kapsam: tam liste açık (`active=true`) değişiklikleri ve son `lookback_days` (varsayılan 30, `EVREN_SOURCE_LOOKBACK_DAYS`) içinde güncellenen veya bitişi bu tarihten sonra olanları alır. `task_ci`'dan yalnızca değişiklik kayıtlarının satırları (`task.sys_class_name=change_request`): bağlı değişikliği açık olanlar ile kendisi veya bağlı değişikliği güncellenenler. Delta yalnızca güncellenenleri alır.
+  - Eşleme (`connectors/servicenow_change/change.mapping.yaml`) durum, onay ve türü Evren'in değişiklik sözlüğüne çevirir: `-5…4` → `new … canceled`. Kurumun eklediği kod `other` olur ve yetki saymaz; özelleştirilmiş durum kodu varsa eşleme dosyasına eklenir.
+  - Uzlaştırıcı kaydı `ref.sn_change_request` ve `ref.sn_task_ci`'ya aynı sys_id ile yazar; yalnızca değişiklik kaynağı rolü yazar, gölge kaynak yazmaz.
+  - Entegrasyon kullanıcısının `change_request` ve `task_ci` tablolarında okuma rolü olmalıdır (ACL değiştirilmez; var olan okuma rolü verilir). Saat dilimi UTC olmalıdır (delta tarihi).
+  - Sınır: Table API silinen kaydı göstermez; `task_ci`'dan sonradan çıkarılan CI kapsamda kalabilir (eksik tespit yönünde). Tam liste çalışmaları bunu sınırlar.
+
+### Yetkisiz değişiklik tespiti (F1-04, ADR-0025)
+
+Gözlemci rolündeki kaynak (Keşif, Sanallaştırma, Ağ keşfi, Uç nokta güvenliği; `metadata/change_control.yaml`) **kendi kaydında** izlenen bir özniteliği (RAM, CPU, işletim sistemi, seri, firmware) boş olmayan bir değerden başka bir değere değiştirdiğinde ve bu golden record'u değiştirdiğinde `insight.config_change`'e gözlem yazılır. Değişiklik aralığı: kaynağın eski değeri son gördüğü an → yeni değeri ilk gördüğü an.
+
+- Uzlaştırıcı çalışanı her turda bekleme süresi (60 dk) dolan gözlemleri değerlendirir. CI'a (`cmdb_ci` veya `task_ci`; Evren'de doğan CI için replika sys_id'si) bağlı, yetkili (planlandı/uygulamada/gözden geçirme/kapandı; onaylı veya standart) ve penceresi (planlı veya gerçekleşen, ±60 dk) aralığa değen kayıt varsa sonuç **onaylı**, yoksa **yetkisiz** ve `insight.anomaly` `unauthorized_change` (üretimde yüksek önem).
+- Açık anomali 7 gün boyunca yeniden denenir: sonradan kaydedilen onaylı değişiklik kapsarsa kapanır, kanıt ve "kayıt sonradan açıldı" işareti kalır.
+- Devre kesici çalışmayı açtıysa gözlem `suppressed` olur, anomali açılmaz.
+- CI ayrıntısında "Değişiklik denetimi" bölümü; Veri sorumlusu (`anomaly_review`) "İncelendi", gerekçeli "Yanlış alarm" ve "Yeniden aç" kararı verir; karar denetim izinde. GRC kontrolü **CMDB-05**.
 
 ## Gelecekte eklenebilecek kaynaklar
 

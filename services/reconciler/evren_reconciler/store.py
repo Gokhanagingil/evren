@@ -11,6 +11,10 @@ Her kaynak kaydı kendi veritabanı işleminde işlenir:
 
 Çalışma sonunda devre kesici değerlendirilir; yalnızca ``OK`` ise görülmeyen kayıtlar ``missing`` olur.
 CI hiçbir zaman silinmez; eskime ayrı bir kural adımıdır (F1-06).
+
+Yetkisiz değişiklik (ADR-0025): gözlemci rolündeki kaynağın kendi kaydında izlenen öznitelik değişip golden record'u
+değiştirdiğinde ``insight.config_change``'e gözlem yazılır; ``evaluate_config_changes`` bekleme süresinden sonra onaylı
+değişiklik penceresine göre karar verir ve gerekirse ``unauthorized_change`` anomalisi açar.
 """
 from __future__ import annotations
 
@@ -29,6 +33,7 @@ from psycopg import sql
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
+from evren_core.change_control import ChangeRecord, evaluate
 from evren_core.circuit_breaker import BreakerState, BreakerVerdict, evaluate_run
 from evren_core.envelope import IngestRecord
 from evren_core.identity import IdentityResolver, Outcome, Resolution, RuleSet, extract_keys
@@ -36,7 +41,7 @@ from evren_core.identity.adapters import source_record_from_ingest
 from evren_core.identity.index import CandidateProfile
 from evren_core.metadata import CORE_COLUMNS, Metadata
 from evren_core.reconcile import Reconciler, SourceValues
-from evren_core.reference import REFERENCE_TABLES, ReferenceDataError, coerce_reference, is_reference
+from evren_core.reference import ROLE_TABLES, ReferenceDataError, coerce_reference, is_reference
 
 from .pg_identity import PostgresCandidateIndex, PostgresLinkStore, keys_from_json
 
@@ -68,6 +73,16 @@ class ApplyResult:
     ci_sys_id: str | None = None
     changes: list[dict[str, Any]] = field(default_factory=list)
     summary: str = ""
+
+
+@dataclass(frozen=True)
+class Observation:
+    """Kaynağın kendi kaydında gördüğü öznitelik değişimi (ADR-0025): eski değeri son ve yeni değeri ilk gördüğü an."""
+
+    data_source: str
+    observed_from: datetime | None
+    observed_at: datetime
+    attributes: frozenset[str]
 
 
 @dataclass(frozen=True)
@@ -139,6 +154,7 @@ class ReconcilerStore:
         self.reconciler = Reconciler.from_metadata(metadata.hierarchy, metadata.reconciliation, self.registry)
         self.actor = actor
         self.clock = clock or (lambda: datetime.now(UTC))
+        self.policy = metadata.change_policy
 
     # ------------------------------------------------------------------ çalışma yaşam döngüsü
     def start_run(self, run_id: UUID, data_source: str, *, mode: str = "snapshot",
@@ -287,15 +303,18 @@ class ReconcilerStore:
         return self._process(record, attach_to=None, method=None)
 
     def apply_reference(self, record: IngestRecord) -> ApplyResult:
-        """ServiceNow referans kaydı → ``ref.<tablo>`` (ADR-0022). Kaynak kaydı ve çalışma sayaçları CI kaydıyla aynı.
+        """ServiceNow referans veya değişiklik kaydı → ``ref.<tablo>`` (ADR-0022, ADR-0025). Kaynak kaydı ve çalışma
+        sayaçları CI kaydıyla aynı.
 
-        * Yalnızca referans kaynağı rolündeki etkin/devredilen kaynak yazar; gölge kaynağın kaydı sayılır, yazılmaz.
-        * Sütunlar ``REFERENCE_TABLES``'tan; değer türü uymayan kayıt yazılmaz (``reference_invalid``).
+        * Referans tablolarını yalnızca referans kaynağı rolü, değişiklik tablolarını (``change_request``,
+          ``task_ci``) yalnızca değişiklik kaynağı rolü yazar; kaynak etkin veya devrediliyor olmalı. Gölge kaynağın
+          ve yetkisiz rolün kaydı sayılır, yazılmaz.
+        * Sütunlar ``ROLE_TABLES``'tan; değer türü uymayan kayıt yazılmaz (``reference_invalid``).
         * Entra/Evren kaynaklı satır ezilmez (``reference_protected``); kullanıcı adı çakışması ``reference_conflict``.
         * Silinen kayıt ``active`` sütunu olan tabloda pasifleşir; satır silinmez."""
-        spec = REFERENCE_TABLES[record.class_hint]
+        spec = ROLE_TABLES[record.class_hint]
         digest = content_hash(record)
-        table = sql.Identifier("ref", spec.name)
+        table = sql.Identifier("ref", spec.db_table)
         with self.conn.transaction(), self.conn.cursor() as cur:
             cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
                         (f"{record.data_source}:{record.source_key}",))
@@ -308,8 +327,9 @@ class ReconcilerStore:
                             (record.observed_at, record.run_id, record.data_source, record.source_key))
                 return ApplyResult("unchanged")
             self._upsert_source_record(cur, record, digest)
-            if not self.registry.writes_references(record.data_source):
-                return ApplyResult("reference_skipped", summary=f"{record.data_source} referans verisi yazmaz "
+            if not self.registry.writes_role_table(record.data_source, spec.writer):
+                what = "değişiklik kaydı" if spec.writer == "change" else "referans verisi"
+                return ApplyResult("reference_skipped", summary=f"{record.data_source} {what} yazmaz "
                                                                "(rol veya yaşam döngüsü)")
             try:
                 values = coerce_reference(spec.name, record.source_key, record.attributes)
@@ -325,7 +345,7 @@ class ReconcilerStore:
                 return ApplyResult("reference_deactivated" if cur.rowcount else "reference_protected")
             cols = list(values)
             update = sql.SQL(", ").join(sql.SQL("{c} = EXCLUDED.{c}").format(c=sql.Identifier(c)) for c in cols)
-            where = sql.SQL(" WHERE {t}.source = 'servicenow'").format(t=sql.Identifier(spec.name)) \
+            where = sql.SQL(" WHERE {t}.source = 'servicenow'").format(t=sql.Identifier(spec.db_table)) \
                 if spec.has_source else sql.SQL("")
             query = sql.SQL("INSERT INTO {t} (sys_id, {cols}, sys_updated_on) VALUES (%s, {vals}, now()) "
                             "ON CONFLICT (sys_id) DO UPDATE SET {upd}, sys_updated_on = now(){where}").format(
@@ -355,8 +375,8 @@ class ReconcilerStore:
         with self.conn.transaction(), self.conn.cursor() as cur:
             cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
                         (f"{record.data_source}:{record.source_key}",))
-            cur.execute("SELECT content_hash FROM ingest.source_record WHERE data_source = %s AND source_key = %s",
-                        (record.data_source, record.source_key))
+            cur.execute("""SELECT content_hash, attributes, last_seen, status FROM ingest.source_record
+                            WHERE data_source = %s AND source_key = %s""", (record.data_source, record.source_key))
             row = cur.fetchone()
             links = PostgresLinkStore(cur)
             linked = links.get(record.data_source, record.source_key)
@@ -398,7 +418,9 @@ class ReconcilerStore:
                                                   resolver.family(record.class_hint), keys))
                 self._close_open_candidates(cur, record, "Kimlik otomatik çözüldü")
                 self._write_posture(cur, record, ci)
-                return ApplyResult(res.outcome.value, ci, self._reconcile(cur, ci, record.run_id), res.summary_tr)
+                observed = self._observation(record, row) if res.outcome is Outcome.LINKED else None
+                return ApplyResult(res.outcome.value, ci, self._reconcile(cur, ci, record.run_id, observed=observed),
+                                   res.summary_tr)
 
             if res.outcome is Outcome.NEW:
                 if not self.registry.may_create_ci(record.data_source):
@@ -416,6 +438,183 @@ class ReconcilerStore:
             kind = "review" if res.outcome is Outcome.REVIEW else "insufficient"
             self._enqueue(cur, record, res, kind, priority=2 if kind == "review" else 4, note=None)
             return ApplyResult(kind, res.ci_sys_id, [], res.summary_tr)
+
+    # ------------------------------------------------------------------ yetkisiz değişiklik (ADR-0025)
+    def _observation(self, record: IngestRecord, row: tuple[Any, ...] | None) -> Observation | None:
+        """Kaynağın kendi kaydında boş olmayan bir değerden başka bir değere değişen öznitelikler. Yalnızca gözlemci
+        rolündeki kaynak; önceki kayıt silinmiş veya kayıt eski tarihliyse (sıra dışı) gözlem yok."""
+        if row is None or not self.policy.enabled or row[3] == "deleted":
+            return None
+        if self.registry.role_of(record.data_source) not in self.policy.observer_roles:
+            return None
+        prior_seen: datetime | None = row[2]
+        if prior_seen is not None and prior_seen > record.observed_at:
+            return None
+        old = row[1] or {}
+        new = record.model_dump(mode="json")["attributes"]
+        changed = frozenset(k for k, v in new.items()
+                            if v not in (None, "") and old.get(k) not in (None, "") and old.get(k) != v)
+        return Observation(record.data_source, prior_seen, record.observed_at, changed) if changed else None
+
+    def _record_observations(self, cur: psycopg.Cursor[Any], ci: str, cls: str, run_id: UUID | None,
+                             observed: Observation, changes: list[dict[str, Any]]) -> int:
+        """Gözlemi yapan kaynağın kazandığı, izlenen ve önceden dolu özniteliklerdeki değişimleri yazar."""
+        watched = self.policy.watched_for(cls, self.hierarchy)
+        written = 0
+        for ch in changes:
+            if (ch["reason"] != "reconciliation" or ch["source"] != observed.data_source or ch["old"] is None
+                    or ch["attribute"] not in observed.attributes or ch["attribute"] not in watched):
+                continue
+            cur.execute(
+                """INSERT INTO insight.config_change (ci_sys_id, sys_class_name, attribute, old_value, new_value,
+                                                      data_source, run_id, observed_from, observed_at, recorded_at)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                (ci, cls, ch["attribute"], Jsonb(ch["old"]), Jsonb(_jsonable(ch["new"])), observed.data_source,
+                 run_id, observed.observed_from, observed.observed_at, self.clock()))
+            written += 1
+        return written
+
+    def _change_candidates(self, cur: psycopg.Cursor[Any], ci: str, lo: datetime, hi: datetime,
+                           now: datetime) -> list[ChangeRecord]:
+        """CI'a (``cmdb_ci`` veya ``task_ci``) bağlı, penceresi aralığa değen değişiklik kayıtları. CI Evren'de doğup
+        replikaya gittiyse ServiceNow'daki sys_id'si de aranır (``sync.sn_ci_map``)."""
+        cur = self.conn.cursor()  # çağıranın imleci sözlük satırı döndürebilir
+        cur.execute("SELECT sn_sys_id FROM sync.sn_ci_map WHERE evren_sys_id = %s AND sn_sys_id IS NOT NULL", (ci,))
+        ids = [ci, *(r[0] for r in cur.fetchall())]
+        tol = self.policy.tolerance
+        cur.execute(
+            """SELECT cr.sys_id, cr.number, cr.type, cr.state, cr.approval, cr.start_date, cr.end_date,
+                      cr.work_start, cr.work_end
+                 FROM ref.sn_change_request cr
+                WHERE (cr.cmdb_ci = ANY(%(ids)s::bpchar[])
+                       OR EXISTS (SELECT 1 FROM ref.sn_task_ci t
+                                   WHERE t.task = cr.sys_id AND t.ci_item = ANY(%(ids)s::bpchar[])))
+                  AND ((cr.start_date <= %(hi)s AND cr.end_date >= %(lo)s)
+                       OR (cr.work_start <= %(hi)s AND COALESCE(cr.work_end, %(now)s) >= %(lo)s))
+                ORDER BY cr.number LIMIT 100""",
+            {"ids": ids, "lo": lo - tol, "hi": hi + tol, "now": now})
+        cols = ("sys_id", "number", "type", "state", "approval", "start_date", "end_date", "work_start", "work_end")
+        rows = cur.fetchall()
+        cur.close()
+        return [ChangeRecord.from_row(dict(zip(cols, r, strict=True))) for r in rows]
+
+    def _describe(self, cur: psycopg.Cursor[Any], ci: str, cls: str, rows: list[dict[str, Any]]
+                  ) -> tuple[str, dict[str, Any]]:
+        """Anomali için CI adı ve öznitelik özeti (Türkçe) ile önem kuralının okuduğu CI alanları."""
+        with self.conn.cursor(row_factory=dict_row) as dcur:
+            dcur.execute("SELECT * FROM cmdb.cmdb_ci WHERE sys_id = %s", (ci,))
+            current = dcur.fetchone() or {}
+        values = {**(current.get("class_attributes") or {}), **{k: v for k, v in current.items()
+                                                                 if k != "class_attributes"}}
+        fields = self.md.fields_of(cls) if cls in self.hierarchy else {}
+        parts = [f"{fields.get(r['attribute'], {}).get('label_tr', r['attribute'])} "
+                 f"{r['old_value']} → {r['new_value']}" for r in rows]
+        return f"{current.get('name') or ci}: " + "; ".join(parts), values
+
+    def evaluate_config_changes(self, *, limit: int = 200) -> dict[str, int]:
+        """Bekleme süresi dolan gözlemleri onaylı değişiklik penceresine göre değerlendirir; açık yetkisiz değişiklik
+        anomalilerini sonradan gelen kayda karşı yeniden dener (ADR-0025 §5–6).
+
+        * Çalışma kapanmadıysa gözlem bekler; devre kesici çalışmayı açtıysa ``suppressed`` (anomali yok).
+        * CI, kaynak ve gözlem anı başına tek anomali; önem kuralı CI alanlarından.
+        * İnsanın ``false_positive``/``resolved`` dediği anomaliye dokunulmaz."""
+        counts = {"authorized": 0, "unauthorized": 0, "suppressed": 0, "late_authorized": 0}
+        if not self.policy.enabled:
+            return counts
+        now = self.clock()
+        with self.conn.transaction(), self.conn.cursor(row_factory=dict_row) as cur:
+            cur.execute(
+                """SELECT c.sys_id, c.ci_sys_id, c.sys_class_name, c.attribute, c.old_value, c.new_value,
+                          c.data_source, c.run_id, c.observed_from, c.observed_at,
+                          r.run_id IS NOT NULL AS has_run, r.finished_at, r.breaker_state
+                     FROM insight.config_change c LEFT JOIN ingest.source_run r ON r.run_id = c.run_id
+                    WHERE c.verdict = 'pending' AND GREATEST(c.recorded_at, c.observed_at) <= %s
+                    ORDER BY c.recorded_at, c.sys_id LIMIT %s
+                      FOR UPDATE OF c SKIP LOCKED""", (now - self.policy.grace, limit))
+            groups: dict[tuple[str, str, datetime], list[dict[str, Any]]] = {}
+            for r in cur.fetchall():
+                if r["has_run"] and r["finished_at"] is None:
+                    continue  # çalışma kapanmadan karar verilmez
+                groups.setdefault((r["ci_sys_id"], r["data_source"], r["observed_at"]), []).append(r)
+            for (ci, ds, observed_at), rows in groups.items():
+                ids = [r["sys_id"] for r in rows]
+                if rows[0]["breaker_state"] == BreakerState.OPEN.value:
+                    cur.execute(
+                        """UPDATE insight.config_change SET verdict = 'suppressed', evaluated_at = %s, detail = %s
+                            WHERE sys_id = ANY(%s::bpchar[])""",
+                        (now, Jsonb({"explanation": "Devre kesici çalışmayı açtı; çalışma güvenilir değil, yetkisiz "
+                                                    "değişiklik kararı verilmedi."}), ids))
+                    counts["suppressed"] += len(rows)
+                    continue
+                observed_from = rows[0]["observed_from"]
+                candidates = self._change_candidates(cur, ci, observed_from or observed_at, observed_at, now)
+                verdict = evaluate(observed_from, observed_at, candidates, self.policy, now)
+                text = verdict.explanation(observed_from, observed_at)
+                detail = {"explanation": text, "considered": list(verdict.considered), "window": verdict.window}
+                if verdict.authorized and verdict.change:
+                    cur.execute(
+                        """UPDATE insight.config_change SET verdict = 'authorized', evaluated_at = %s,
+                                  change_sys_id = %s, change_number = %s, detail = %s
+                            WHERE sys_id = ANY(%s::bpchar[])""",
+                        (now, verdict.change.sys_id, verdict.change.number, Jsonb(detail), ids))
+                    counts["authorized"] += len(rows)
+                    continue
+                summary, values = self._describe(cur, ci, rows[0]["sys_class_name"], rows)
+                cur.execute(
+                    """INSERT INTO insight.anomaly (kind, severity, ci_sys_id, data_source, detected_at, window_start,
+                                                    window_end, details, explanation)
+                       VALUES ('unauthorized_change', %s, %s, %s, %s, %s, %s, %s, %s) RETURNING sys_id""",
+                    (self.policy.severity_for(values), ci, ds, now, observed_from, observed_at,
+                     Jsonb({"observations": ids, "attributes": [
+                         {"attribute": r["attribute"], "old": r["old_value"], "new": r["new_value"]} for r in rows],
+                         "run_id": str(rows[0]["run_id"]) if rows[0]["run_id"] else None,
+                         "considered": list(verdict.considered)}),
+                     f"{summary}. Kaynak: {ds}. {text}"))
+                anomaly = cur.fetchone()["sys_id"]  # type: ignore[index]
+                cur.execute(
+                    """UPDATE insight.config_change SET verdict = 'unauthorized', evaluated_at = %s, anomaly_sys_id = %s,
+                              detail = %s WHERE sys_id = ANY(%s::bpchar[])""", (now, anomaly, Jsonb(detail), ids))
+                counts["unauthorized"] += len(rows)
+            counts["late_authorized"] = self._recheck_unauthorized(cur, now, limit)
+        return counts
+
+    def _recheck_unauthorized(self, cur: psycopg.Cursor[Any], now: datetime, limit: int) -> int:
+        """Açık yetkisiz değişiklik anomalisini sonradan kaydedilen onaylı değişikliğe karşı yeniden dener (10 dakikada
+        bir, ``recheck_days`` boyunca). Kapsanırsa gözlem ``authorized`` olur, anomali ``resolved``; kanıt kalır."""
+        cur.execute(
+            """SELECT a.sys_id AS anomaly, c.ci_sys_id, c.observed_from, c.observed_at,
+                      array_agg(c.sys_id::text ORDER BY c.sys_id) AS ids
+                 FROM insight.config_change c JOIN insight.anomaly a ON a.sys_id = c.anomaly_sys_id
+                WHERE c.verdict = 'unauthorized' AND a.status IN ('open', 'acknowledged')
+                  AND c.observed_at >= %s AND c.evaluated_at <= %s
+                GROUP BY 1, 2, 3, 4 ORDER BY 4 LIMIT %s""",
+            (now - self.policy.recheck, now - timedelta(minutes=10), limit))
+        late = 0
+        for g in cur.fetchall():
+            ids = list(g["ids"])
+            candidates = self._change_candidates(cur, g["ci_sys_id"], g["observed_from"] or g["observed_at"],
+                                                 g["observed_at"], now)
+            verdict = evaluate(g["observed_from"], g["observed_at"], candidates, self.policy, now)
+            if not (verdict.authorized and verdict.change):
+                cur.execute("UPDATE insight.config_change SET evaluated_at = %s WHERE sys_id = ANY(%s::bpchar[])",
+                            (now, ids))
+                continue
+            note = (f"Sonradan kaydedilen değişiklik kaydı kapsıyor: {verdict.change.number} "
+                    f"({verdict.window} pencere).")
+            cur.execute(
+                """UPDATE insight.config_change SET verdict = 'authorized', evaluated_at = %s, change_sys_id = %s,
+                          change_number = %s, detail = detail || %s WHERE sys_id = ANY(%s::bpchar[])""",
+                (now, verdict.change.sys_id, verdict.change.number,
+                 Jsonb({"late": True, "explanation": note, "window": verdict.window}), ids))
+            cur.execute(
+                """UPDATE insight.anomaly SET status = 'resolved', related_change = %s,
+                          explanation = explanation || ' ' || %s,
+                          details = details || %s
+                    WHERE sys_id = %s AND status IN ('open', 'acknowledged')""",
+                (verdict.change.number, note, Jsonb({"resolution": "late_change_record",
+                                                     "resolved_at": now.isoformat()}), g["anomaly"]))
+            late += len(ids)
+        return late
 
     # ------------------------------------------------------------------ kısıtlı güvenlik duruşu (ADR-0023)
     def _write_posture(self, cur: psycopg.Cursor[Any], record: IngestRecord, ci: str) -> bool:
@@ -580,12 +779,15 @@ class ReconcilerStore:
 
     def _reconcile(self, cur: psycopg.Cursor[Any], ci: str, run_id: UUID | None, *,
                    released: str | None = None, reason: str = "reconciliation",
-                   force: bool = False) -> list[dict[str, Any]]:
+                   force: bool = False, observed: Observation | None = None) -> list[dict[str, Any]]:
         """CI'ın etkin bağlı kaynak kayıtlarını uzlaştırır.
 
         ``released``: CI'dan değer çekilen veri kaynağı — ayırmada ayrılan kaynak, elle düzenlemede değeri kaldırılan
         Manual. Önceki kazananı bu kaynak olan ve artık hiçbir kaynağın bildirmediği öznitelikler temizlenir;
         denetimde neden ayırmada ``split``, elle düzenlemede ``manual``.
+
+        ``observed``: kaydı yeni işlenen kaynağın kendi kaydında değişen öznitelikler (ADR-0025). Bu kaynağın kazandığı
+        ve izlenen özniteliklerdeki golden record değişimi ``insight.config_change``'e gözlem olarak yazılır.
         """
         cur.execute(
             """SELECT sr.data_source, sr.attributes, sr.last_seen, sr.content_hash, sr.first_seen
@@ -677,6 +879,8 @@ class ReconcilerStore:
                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (ci, cls, ch["attribute"], Jsonb(ch["old"]), Jsonb(ch["new"]), ch["source"], self.actor, ch["reason"],
                  Jsonb({"run_id": str(run_id) if run_id else None})))
+        if observed is not None:
+            self._record_observations(cur, ci, cls, run_id, observed, changes)
         conflicts = {name: [list(a) for a in attempts] for name, attempts in report.rejected.items()}
         if dropped:
             conflicts["_dropped"] = dropped

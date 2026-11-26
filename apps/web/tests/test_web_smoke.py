@@ -153,6 +153,32 @@ def test_ci_360_provenance(page, base_url):
     assert page.evaluate("document.activeElement.tagName") == "TR"
 
 
+def test_change_control_section_and_scope(page, base_url):
+    """ADR-0025: onaysız değişiklik kapsam süzgeci, CI ayrıntısında değişiklik denetimi ve GRC kontrolü CMDB-05."""
+    flagged = [c for c in DEMO["cis"] if c["unauthorized_changes"]]
+    assert flagged, "demo verisinde onaysız değişiklik örneği olmalı"
+    page.goto(base_url + "/#/ci/kapsam=yetkisiz-degisiklik")
+    page.wait_for_selector("#ciCount")
+    page.wait_for_function(f"document.querySelector('#ciCount').textContent === '{len(flagged)} kayıt'")
+    page.locator("tbody tr").first.focus()
+    page.keyboard.press("Enter")
+    page.wait_for_selector("#ciObservations")
+    body = page.locator("#detailContent").inner_text()
+    assert "Değişiklik denetimi" in body and "Onaysız değişiklik." in body and "Yetkisiz değişiklik" in body
+    assert "CHG0040002" in body and "onay: bekliyor" in body and "kapsayan onaylı değişiklik kaydı yok" in body
+    shot(page, "web_ci_change_control")
+    page.keyboard.press("Escape")
+    assert not detail_open(page)
+    authorized = next(c for c in DEMO["cis"] if c["change_control"]["observations"] and not c["unauthorized_changes"])
+    page.goto(base_url + f"/#/ci/{authorized['sys_id']}")
+    page.wait_for_selector("#ciObservations")
+    text = page.locator("#ciObservations").inner_text()
+    assert "Onaylı değişiklik" in text and "CHG0040001" in text
+    page.goto(base_url + "/#/kontroller/CMDB-05")
+    page.wait_for_selector("#detail.open")
+    assert flagged[0]["name"] in page.locator("#detailContent").inner_text()
+
+
 def test_queue_review_and_decision(page, base_url):
     review = next(q for q in DEMO["queue"] if q["kind"] == "review" and len(q["candidates"]) > 1)
     page.goto(base_url + f"/#/kuyruk/{review['id']}")

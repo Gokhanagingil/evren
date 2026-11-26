@@ -170,7 +170,7 @@
       "kind_label": "ServiceNow",
       "chapter": "sources",
       "phase": "F0",
-      "text": "Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları, yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar.",
+      "text": "Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları (change_request, task_ci) ayrı bağlayıcı ve ayrı veri kaynağıyla (Değişiklik kayıtları rolü) çekilir; durum kodları Evren'in değişiklik sözlüğüne çevrilir ve yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar (ADR-0025).",
       "tech": [
         "Table API (anahtar sıralı sayfalama: sys_id>SON^ORDERBYsys_id)",
         "sys_updated_on ile artımlı çekme",
@@ -405,12 +405,19 @@
       "kind_label": "Evren bileşeni",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Gözlenen konfigürasyon sapması (RAM, OS, yazılım) onaylı bir Change penceresiyle eşleşmiyorsa anomali kaydı açılır. GRC kontrollerine doğrudan beslenebilir.",
+      "text": "Keşfin kendi kaydında gördüğü izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) değişiklik aralığına değen yetkili ve onaylı bir değişiklik kaydı yoksa yetkisiz değişiklik anomalisi açılır (ADR-0025). Karar gecikmelidir (geç kaydedilen acil değişiklik); sonradan gelen onaylı kayıt anomaliyi kanıtıyla kapatır. Devre kesici çalışmayı açtıysa karar verilmez. Veri sorumlusu \"incelendi\" veya gerekçeli \"yanlış alarm\" der; GRC kontrolü CMDB-05'e kanıt gider.",
       "tech": [
+        "metadata/change_control.yaml",
+        "insight.config_change",
         "ref.sn_change_request",
+        "ref.sn_task_ci",
         "insight.anomaly"
       ],
-      "security": []
+      "security": [
+        "Kurallar rol sözlüğüyle (ürün kodu eşlemede)",
+        "Devre kesici açıkken bastırma",
+        "Karar anomaly_review izniyle ve denetim izinde"
+      ]
     },
     "analytics": {
       "label": "Trend ve anomali",

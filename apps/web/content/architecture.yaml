@@ -59,6 +59,7 @@ chapters:
       - {from: breaker, to: reconcile}
       - {from: identity, to: match_queue}
       - {from: reconcile, to: unauthorized}
+      - {from: breaker, to: unauthorized, style: dashed}
       - {from: reconcile, to: analytics}
       - {from: dependent_ids, to: match_queue, style: dashed}
 
@@ -176,7 +177,7 @@ details:
     security: [Kısıtlı veri sınıfı, Yalnızca güvenlik rolleri okur]
   src_servicenow:
     phase: F0
-    text: Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları, yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar.
+    text: Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları (change_request, task_ci) ayrı bağlayıcı ve ayrı veri kaynağıyla (Değişiklik kayıtları rolü) çekilir; durum kodları Evren'in değişiklik sözlüğüne çevrilir ve yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar (ADR-0025).
     tech: ["Table API (anahtar sıralı sayfalama: sys_id>SON^ORDERBYsys_id)", sys_updated_on ile artımlı çekme, "connectors/sources/servicenow.py", "sys_id korunur (sys_id_key, sync.sn_ci_map)", "Referans verileri ref.* (grup, kişi, konum, şirket, departman, maliyet merkezi, model; ADR-0022)"]
     security: [Ayrı entegrasyon kullanıcısı, IP kısıtı, "Kişisel veri en az: yalnızca izinli sütunlar (evren_core.reference)", "Referans yolu CMDB'ye yazamaz; sütun düzeyi yetki"]
   connectors:
@@ -231,9 +232,9 @@ details:
     security: [Eşleştirme analisti rolü, Her karar denetim izinde]
   unauthorized:
     phase: F1
-    text: Gözlenen konfigürasyon sapması (RAM, OS, yazılım) onaylı bir Change penceresiyle eşleşmiyorsa anomali kaydı açılır. GRC kontrollerine doğrudan beslenebilir.
-    tech: [ref.sn_change_request, insight.anomaly]
-    security: []
+    text: Keşfin kendi kaydında gördüğü izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) değişiklik aralığına değen yetkili ve onaylı bir değişiklik kaydı yoksa yetkisiz değişiklik anomalisi açılır (ADR-0025). Karar gecikmelidir (geç kaydedilen acil değişiklik); sonradan gelen onaylı kayıt anomaliyi kanıtıyla kapatır. Devre kesici çalışmayı açtıysa karar verilmez. Veri sorumlusu "incelendi" veya gerekçeli "yanlış alarm" der; GRC kontrolü CMDB-05'e kanıt gider.
+    tech: [metadata/change_control.yaml, insight.config_change, ref.sn_change_request, ref.sn_task_ci, insight.anomaly]
+    security: [Kurallar rol sözlüğüyle (ürün kodu eşlemede), Devre kesici açıkken bastırma, Karar anomaly_review izniyle ve denetim izinde]
   analytics:
     phase: F1
     text: Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0). F0'da gölge mod raporu mevcut CMDB'yi rol tabanlı karşılaştırır (kapsam, mükerrer, değer farkı) ve GRC için değiştirilemez kanıt üretir (ADR-0014).

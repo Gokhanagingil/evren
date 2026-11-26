@@ -20,6 +20,7 @@ from typing import Any
 
 import yaml
 
+from .change_control import ChangePolicy, validate_change_control
 from .classes import ClassHierarchy
 from .identity.rules import ATTRIBUTE_KEY_TYPES
 from .relations import ENFORCEMENT_MODES, RelationRules
@@ -95,6 +96,8 @@ class Metadata:
     relationship_rules: dict[str, Any] = field(default_factory=dict)
     #: ServiceNow uyum doğrulaması kanıt defteri (F0-07): ``{"checked_on", "sources", "items"}``
     verification: dict[str, Any] = field(default_factory=dict)
+    #: Yetkisiz değişiklik tespiti kuralları (ADR-0025): ``metadata/change_control.yaml``
+    change_control: dict[str, Any] = field(default_factory=dict)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -104,6 +107,11 @@ class Metadata:
     def sources(self) -> SourceRegistry:
         """Kaynak rolleri ve veri kaynakları (ADR-0009)."""
         return SourceRegistry.from_metadata({"source_roles": self.source_roles, "data_sources": self.data_sources})
+
+    @property
+    def change_policy(self) -> ChangePolicy:
+        """Yetkisiz değişiklik kuralları (ADR-0025); dosya yoksa tespit kapalı."""
+        return ChangePolicy.from_document(self.change_control or None)
 
     @property
     def relations(self) -> RelationRules:
@@ -166,6 +174,7 @@ def _load_base(d: Path) -> Metadata:
         health=_read(d / "health_rules.yaml") if (d / "health_rules.yaml").exists() else {},
         relationship_rules=_read(d / "relationship_rules.yaml") if (d / "relationship_rules.yaml").exists() else {},
         verification=_read(d / "verification.yaml") if (d / "verification.yaml").exists() else {},
+        change_control=_read(d / "change_control.yaml") if (d / "change_control.yaml").exists() else {},
     )
 
 
@@ -422,9 +431,26 @@ def validate(md: Metadata) -> ValidationReport:
             r.errors.append(f"Eskime kuralı sınıfı tanımsız: {s['applies_to']}")
         if s["absent_candidate_after_days"] <= s["stale_after_days"]:
             r.errors.append(f"{s['applies_to']}: absent_candidate_after_days > stale_after_days olmalı")
+    r.errors.extend(validate_change_control(
+        md.change_control, roles=role_set, hierarchy=md.hierarchy, fields_of=md.fields_of,
+        products=sorted(_product_words(md))))
     if not r.errors:
         r.errors.extend(validate_verification(md))
     return r
+
+
+def _product_words(md: Metadata) -> set[str]:
+    """Kurallarda geçmemesi gereken ürün ve veri kaynağı adları (kural 8). Elle giriş ve platform kaynakları hariç."""
+    kinds = {r["name"]: r.get("kind") for r in md.source_roles}
+    out: set[str] = set()
+    for s in md.data_sources:
+        if kinds.get(s.get("role")) in ("manual", "platform"):
+            continue
+        out.add(str(s["name"]))
+        vendor = (s.get("product") or {}).get("vendor")
+        if vendor:
+            out.add(str(vendor))
+    return out
 
 
 VERIFICATION_KINDS = ("classes", "fields", "choices", "relationship_types", "relationship_rules", "identification")

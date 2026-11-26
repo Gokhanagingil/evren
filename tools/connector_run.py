@@ -87,6 +87,11 @@ def source_http(spec: SourceSpec, args: argparse.Namespace, env: dict[str, str]
                 ) -> tuple[HttpClient, dict[str, Any], RecordingTransport | None]:
     options: dict[str, Any] = {k: v for k, v in (("page_size", args.page_size), ("release", args.api_release))
                                if v and k in spec.options}
+    if "lookback_days" in spec.options and env.get("EVREN_SOURCE_LOOKBACK_DAYS", "").strip():
+        try:
+            options["lookback_days"] = int(env["EVREN_SOURCE_LOOKBACK_DAYS"])
+        except ValueError:
+            raise ConfigError("EVREN_SOURCE_LOOKBACK_DAYS tam sayı olmalı") from None
     recorder = None
     if args.simulate or args.replay:
         if spec.auth == "login":
