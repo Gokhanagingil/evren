@@ -263,6 +263,7 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                 "reason": "Ayırma isteği uygulanmayı bekliyor" if pending else blocker[2] if blocker else None}
 
     coverage = {flag: any(role in rs for role in roles.values()) for flag, rs in COVERAGE_ROLES.items()}
+    posture = _security_posture(ctx, sys_id, grant)
     return {
         "sys_id": sys_id, "class": cls, "class_label": pres.class_label(cls), "name": doc.get("name") or "(adsız)",
         "fqdn": doc.get("fqdn"), "ip_address": doc.get("ip_address"), "os": doc["class_attributes"].get("os"),
@@ -284,7 +285,26 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         "server": cls in md.hierarchy and "cmdb_ci_server" in md.hierarchy.ancestors(cls),
         "coverage": coverage, "unauthorized_count": len(rejected),
         "golden_version": doc.get("golden_version"), "sys_updated_on": doc.get("sys_updated_on"),
+        **({"security_posture": posture} if posture is not None else {}),
     }
+
+
+def _security_posture(ctx: Ctx, sys_id: str, grant: Any) -> dict[str, Any] | None:
+    """KISITLI güvenlik duruşu (ADR-0023): yalnızca ``restricted`` okuma yetkisiyle (Güvenlik okuyucu, Denetçi).
+    Yetkisiz kullanıcıya bölümün varlığı da gösterilmez; her gösterim denetim izine ``restricted_read`` yazılır."""
+    if not grant.can_see("restricted"):
+        return None
+    row = ctx.conn.execute(
+        """SELECT data_source, protection_status, health_status, exposure_level, risk_score, vulnerabilities_critical,
+                  vulnerabilities_high, last_seen, observed_at FROM cmdb.ci_security_posture WHERE ci_sys_id = %s""",
+        (sys_id,)).fetchone()
+    if row is None:
+        return None
+    ds, protection, health, exposure, risk, crit, high, seen, observed = row
+    ctx.security_event("restricted_read", "allow", f"cmdb_ci:{sys_id}", {"table": "cmdb.ci_security_posture"})
+    return {"data_source": ds, "protection_status": protection, "health_status": health, "exposure_level": exposure,
+            "risk_score": risk, "vulnerabilities_critical": crit, "vulnerabilities_high": high,
+            "last_seen": seen.isoformat() if seen else None, "observed_at": observed.isoformat()}
 
 
 @router.patch("/ci/{sys_id}", dependencies=[Depends(require_csrf)], status_code=202)

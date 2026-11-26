@@ -11,6 +11,7 @@ Bir izin şu boyutlardan oluşur:
 - **İşlem:** `read`, `create`, `write`, `delete`, `merge`, `split`, `review_match`, `ingest`, `schema_draft`, `schema_approve`, `rules_admin`, `iam_admin`, `audit_read`, `connector_read`, `connector_admin` (0018: bağlayıcı kimlikleri ve çalışmayı açan kimlik; sır hiçbir zaman gösterilmez. 0019, ADR-0021: `connector_read` bağlayıcı örneklerini ve çalıştırma isteklerini de gösterir; `connector_admin` ile "şimdi çalıştır", istek iptali, kimlik verme — belirteç bir kez — ve kimlik iptali).
 - **Alanlar:** liste; NULL tüm alanlar demektir.
 - **En yüksek hassasiyet:** `public` < `internal` < `confidential` < `restricted`. Alanın `sys_dictionary.sensitivity` değeriyle karşılaştırılır.
+  Kısıtlı güvenlik duruşu (`cmdb.ci_security_posture`, ADR-0023) CI ayrıntısında yalnızca sınıf için `read` yetkisi `restricted` olan rollere (Güvenlik okuyucu, Denetçi, break-glass) döner; her gösterim `audit.security_event`'e `restricted_read` olarak yazılır.
 - **Koşul (ABAC):** satır düzeyi. Örnek: `{"field": "support_group", "op": "in", "value": "$user.groups"}`.
 - **Etki:** `allow` / `deny`. Çakışmada `deny` kazanır.
 

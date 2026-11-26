@@ -291,9 +291,9 @@ details:
     security: [Gizli alan değerleri olaya konmaz]
   security_posture:
     phase: F1
-    text: Defender kaynaklı maruziyet, risk ve zafiyet sayıları ayrı tabloda tutulur. Genel okuyucu rolü bu tabloyu göremez.
-    tech: [cmdb.ci_security_posture]
-    security: [Kısıtlı sınıf, Okuma denetim izinde]
+    text: Uç nokta güvenliği kaynağının (bugün Defender) maruziyet, risk, sağlık ve koruma durumu ayrı tabloda tutulur. Zarfta ayrı bölümle gelir; kaynak kaydına, CI'a, dizine ve olaya girmez. Genel okuyucu rolü bu tabloyu göremez.
+    tech: [cmdb.ci_security_posture, "IngestRecord.posture (ADR-0023)", "ReconcilerStore._write_posture"]
+    security: [Kısıtlı sınıf, "Yalnızca uç nokta güvenliği rolü yazar (rol içi sıra)", "API yalnızca restricted yetkiyle; okuma denetim izinde (restricted_read)"]
   backup_dr:
     phase: F1
     text: Şifreli, test edilmiş yedekler. RPO ve RTO hedefleri iş etki analiziyle belirlenir (ISO 22301).

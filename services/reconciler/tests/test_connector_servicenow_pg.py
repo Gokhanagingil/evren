@@ -9,7 +9,7 @@ from __future__ import annotations
 import dataclasses
 import secrets
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 
 from conftest import REPO
 
@@ -240,3 +240,67 @@ def test_invalid_conflicting_or_shadow_reference_is_not_written(as_reconciler, m
     model = next(r for r in recs if r.class_hint == "cmdb_model")
     assert shadow.apply(model).outcome == "reference_skipped"
     assert fetch(as_reconciler, "SELECT count(*) FROM ref.cmdb_model WHERE sys_id = %s", model.source_key) == [(0,)]
+
+
+def test_defender_posture_goes_only_to_restricted_table(as_reconciler, metadata):
+    """ADR-0023: duruş yalnızca cmdb.ci_security_posture'a; kaynak kaydında, CI'da ve değişim geçmişinde yok."""
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    run(store, "servicenow")
+    recs, _ = run(store, "defender")
+    assert fetch(as_reconciler, """SELECT data_source, exposure_level, risk_score, health_status, protection_status
+                                     FROM cmdb.ci_security_posture WHERE ci_sys_id = %s""", APP) == [
+        ("Defender", "Medium", "Low", "Active", "Onboarded")]
+    as_reconciler.execute("RESET ROLE")  # denetim izini uzlaştırıcı okuyamaz (yalnızca ekler)
+    leaks = fetch(as_reconciler, """SELECT (SELECT string_agg(attributes::text || lookup::text || external_ids::text, '')
+                                              FROM ingest.source_record WHERE data_source = 'Defender'),
+                                           (SELECT to_jsonb(ci)::text FROM cmdb.cmdb_ci ci WHERE sys_id = %s),
+                                           (SELECT coalesce(string_agg(to_jsonb(c)::text, ''), '')
+                                              FROM audit.ci_change c WHERE ci_sys_id = %s)""", APP, APP)[0]
+    as_reconciler.execute("SET ROLE evren_app_reconciler")
+    for text in leaks:
+        assert "exposure" not in text and "risk_score" not in text and "riskScore" not in text
+    # değişmeyen kayıt sonraki çalışmada duruşu tazeler (kuyruk kararından sonra ilk çalışmada da yazılır)
+    later, run_id = NOW + timedelta(hours=6), uuid.uuid4()
+    store.start_run(run_id, "Defender", started_at=later)
+    app = next(r for r in recs if r.posture and r.attributes.get("name") == "ist-app-02")
+    assert store.apply(app.model_copy(update={"run_id": run_id, "observed_at": later})).outcome == "unchanged"
+    assert fetch(as_reconciler, "SELECT observed_at FROM cmdb.ci_security_posture WHERE ci_sys_id = %s", APP) == [
+        (later,)]
+
+
+def test_posture_is_written_only_by_the_posture_role_and_by_rank(as_reconciler, metadata):
+    as_reconciler.execute("RESET ROLE")
+    as_reconciler.execute("""INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank, lifecycle)
+                             VALUES ('EDR2', 'Yeni EDR (test)', 'security', 'EndpointSecurity', 2, 'retiring')""")
+    as_reconciler.execute("SET ROLE evren_app_reconciler")
+    edr2 = {"name": "EDR2", "label_tr": "Yeni EDR (test)", "role": "EndpointSecurity", "role_rank": 2,
+            "lifecycle": "retiring", "connector": "defender", "mappings": []}
+    md = dataclasses.replace(metadata, data_sources=[*metadata.data_sources, edr2])
+    store = ReconcilerStore(as_reconciler, md, clock=lambda: NOW)
+    run(store, "servicenow")
+    recs = records("defender")[2]
+    run(store, "defender")
+    app = next(r for r in recs if r.posture and r.attributes.get("name") == "ist-app-02")
+    rid = uuid.uuid4()
+    store.start_run(rid, "EDR2", started_at=NOW)
+    forged = app.model_copy(update={"data_source": "EDR2", "run_id": rid, "source_key": "edr2-app",
+                                    "posture": app.posture.model_copy(update={"exposure_level": "High"})})
+    assert store.apply(forged).ci_sys_id == APP
+    assert fetch(as_reconciler, "SELECT data_source, exposure_level FROM cmdb.ci_security_posture WHERE ci_sys_id = %s",
+                 APP) == [("Defender", "Medium")]  # rol içi sırası küçük olan kaynak kazanır
+    # duruş kaynağı rolünde olmayan kaynak (izleme) duruş gönderse de yazılmaz
+    ds, zrun, zrecs = records("zabbix")
+    store.start_run(zrun, ds, started_at=NOW)
+    zbx = next(r for r in zrecs if r.attributes.get("name") == "ank-db-14")
+    res = store.apply(zbx.model_copy(update={"posture": app.posture}))
+    assert res.ci_sys_id and fetch(as_reconciler, "SELECT count(*) FROM cmdb.ci_security_posture WHERE ci_sys_id = %s",
+                                   res.ci_sys_id) == [(0,)]
+
+
+def test_shadow_endpoint_source_writes_no_posture(as_reconciler, metadata):
+    md = dataclasses.replace(metadata, data_sources=[{**d, "lifecycle": "shadow"} if d["name"] == "Defender" else d
+                                                     for d in metadata.data_sources])
+    store = ReconcilerStore(as_reconciler, md, clock=lambda: NOW)
+    run(store, "servicenow")
+    run(store, "defender")
+    assert fetch(as_reconciler, "SELECT count(*) FROM cmdb.ci_security_posture") == [(0,)]

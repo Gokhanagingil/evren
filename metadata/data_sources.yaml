@@ -37,6 +37,7 @@ source_roles:
   - name: EndpointSecurity
     label_tr: Uç nokta güvenliği
     kind: security
+    posture_source: true   # kısıtlı güvenlik duruşu yalnızca cmdb.ci_security_posture'a (ADR-0023)
     description_tr: Koruma durumu, cihaz kimliği ve kısıtlı güvenlik duruşu verisi.
   - name: ITSM
     label_tr: ITSM / mevcut CMDB

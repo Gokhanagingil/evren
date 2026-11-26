@@ -131,6 +131,30 @@ def test_defender_scope_excludes_workstations(repo_root, now):
     assert server.external_ids["aad_device_id"].startswith("80fe8ff8")
 
 
+def test_defender_posture_is_kept_out_of_attributes(repo_root, now):
+    """ADR-0023: risk/maruziyet yalnızca posture bölümünde; CI özniteliği olmaz, bilinmeyen değer boşa düşer."""
+    m = mapping(repo_root, "defender/mapping.yaml")
+    raw = {**fixture("defender_machine.json"), "onboardingStatus": "Onboarded", "lastSeen": "2026-11-26T05:41:10Z"}
+    rec = m.apply(raw, run_id=RUN, observed_at=now)
+    assert rec.posture is not None and rec.posture.exposure_level == raw["exposureLevel"]
+    assert rec.posture.risk_score == raw["riskScore"] and rec.posture.health_status == raw["healthStatus"]
+    assert rec.posture.protection_status == raw["onboardingStatus"] and rec.posture.last_seen is not None
+    flat = json.dumps(rec.model_dump(mode="json", exclude={"posture"}), ensure_ascii=False)
+    for word in ("riskScore", "exposureLevel", "risk_score", "exposure_level"):
+        assert word not in flat
+    odd = m.apply({**raw, "exposureLevel": "Severe", "riskScore": "Critical"}, run_id=RUN, observed_at=now)
+    assert odd.posture.exposure_level is None and odd.posture.risk_score is None  # bilinmeyen değer kayıt reddetmez
+    with pytest.raises(MappingError, match="duruşu"):
+        m.apply({**raw, "lastSeen": "dün"}, run_id=RUN, observed_at=now)
+
+
+def test_posture_section_rejects_unknown_fields():
+    doc = {"data_source": "Defender", "source_key": "id", "class": "cmdb_ci_server",
+           "posture": {"cve_list": {"from": "cves"}}}
+    with pytest.raises(MappingError, match="Geçersiz duruş alanları"):
+        FieldMapping.from_dict(doc)
+
+
 def test_nnmi_l3_switch_classified_as_switch(repo_root, now):
     rec = mapping(repo_root, "nnmi/mapping.yaml").apply(fixture("nnmi_node.json"), run_id=RUN, observed_at=now)
     assert rec.class_hint == "cmdb_ci_ip_switch"

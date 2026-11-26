@@ -21,7 +21,9 @@ from datetime import datetime
 from typing import Any
 from uuid import UUID
 
-from ..envelope import IngestRecord, LookupData, RelationRef
+from pydantic import ValidationError
+
+from ..envelope import IngestRecord, LookupData, RelationRef, SecurityPosture
 
 __all__ = ["TRANSFORMS", "FieldMapping", "MappingError", "resolve_path"]
 
@@ -166,6 +168,7 @@ class FieldMapping:
     relations: list[dict[str, Any]] = field(default_factory=list)
     include_when: list[tuple[str, re.Pattern[str]]] = field(default_factory=list)
     require: list[tuple[str, re.Pattern[str]]] = field(default_factory=list)
+    posture: dict[str, FieldSpec] = field(default_factory=dict)  # kısıtlı güvenlik duruşu (ADR-0023)
 
     @classmethod
     def from_dict(cls, doc: Mapping[str, Any]) -> FieldMapping:
@@ -173,12 +176,15 @@ class FieldMapping:
             if required not in doc:
                 raise MappingError(f"Eşleme dosyasında '{required}' zorunlu")
         unknown = set(doc) - {"data_source", "source_key", "class", "class_rules", "include_when", "require",
-                              "attributes", "lookup", "external_ids", "relations", "description", "verify"}
+                              "attributes", "lookup", "external_ids", "relations", "description", "verify", "posture"}
         if unknown:
             raise MappingError(f"Eşleme dosyasında bilinmeyen anahtarlar: {sorted(unknown)}")
         lookup_keys = set((doc.get("lookup") or {}).keys())
         if not lookup_keys <= set(LookupData.model_fields):
             raise MappingError(f"Geçersiz lookup alanları: {sorted(lookup_keys - set(LookupData.model_fields))}")
+        posture_keys = set((doc.get("posture") or {}).keys())
+        if not posture_keys <= set(SecurityPosture.model_fields):
+            raise MappingError(f"Geçersiz duruş alanları: {sorted(posture_keys - set(SecurityPosture.model_fields))}")
         rules = [
             ClassRule(r["when"]["from"], re.compile(r["when"]["matches"]), r["class"])
             for r in doc.get("class_rules", [])
@@ -194,6 +200,7 @@ class FieldMapping:
             relations=list(doc.get("relations", [])),
             include_when=[(w["from"], re.compile(w["matches"])) for w in doc.get("include_when", [])],
             require=[(w["from"], re.compile(w["matches"])) for w in doc.get("require", [])],
+            posture={k: FieldSpec.parse(v) for k, v in (doc.get("posture") or {}).items()},
         )
 
     @staticmethod
@@ -244,6 +251,11 @@ class FieldMapping:
                     type=rel["type"], direction=rel["direction"], target_source_key=str(t),
                     target_data_source=rel.get("target_data_source"), target_class_hint=rel.get("target_class"),
                 ))
+        posture_values = {k: v for k, spec in self.posture.items() if (v := spec.extract(raw)) not in (None, "", [])}
+        try:
+            posture = SecurityPosture(**posture_values) if posture_values else None
+        except ValidationError:
+            raise MappingError("Güvenlik duruşu değerleri sözleşmeye uymuyor (değer iletiye yazılmaz)") from None
         return IngestRecord(
             data_source=self.data_source,
             run_id=run_id,
@@ -254,4 +266,5 @@ class FieldMapping:
             external_ids=external,
             relations=relations,
             observed_at=observed_at,
+            posture=posture,
         )

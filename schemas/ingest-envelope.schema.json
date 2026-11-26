@@ -41,6 +41,18 @@
           "title": "Observed At",
           "type": "string"
         },
+        "posture": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SecurityPosture"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Kısıtlı güvenlik duruşu (yalnızca uç nokta güvenliği rolü; ADR-0023)"
+        },
         "raw_ref": {
           "anyOf": [
             {
@@ -185,6 +197,118 @@
         "target_source_key"
       ],
       "title": "RelationRef",
+      "type": "object"
+    },
+    "SecurityPosture": {
+      "additionalProperties": false,
+      "description": "KISITLI güvenlik duruşu (ADR-0023). Yalnızca ``cmdb.ci_security_posture``'a yazılır; CI özniteliği, kaynak kaydı,\ndeğişim geçmişi, arama dizini ve olay olmaz. Yalnızca uç nokta güvenliği rolündeki kaynak yazabilir.",
+      "properties": {
+        "exposure_level": {
+          "anyOf": [
+            {
+              "enum": [
+                "None",
+                "Low",
+                "Medium",
+                "High"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Exposure Level"
+        },
+        "health_status": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ör. Active, Inactive",
+          "title": "Health Status"
+        },
+        "last_seen": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Last Seen"
+        },
+        "protection_status": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ör. Onboarded",
+          "title": "Protection Status"
+        },
+        "risk_score": {
+          "anyOf": [
+            {
+              "enum": [
+                "None",
+                "Informational",
+                "Low",
+                "Medium",
+                "High"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Risk Score"
+        },
+        "vulnerabilities_critical": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vulnerabilities Critical"
+        },
+        "vulnerabilities_high": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Vulnerabilities High"
+        }
+      },
+      "title": "SecurityPosture",
       "type": "object"
     }
   },

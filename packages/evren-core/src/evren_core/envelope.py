@@ -15,7 +15,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-__all__ = ["IngestEnvelope", "IngestRecord", "LookupData", "RelationRef", "RunEnvelope", "RunSummary"]
+__all__ = ["IngestEnvelope", "IngestRecord", "LookupData", "RelationRef", "RunEnvelope", "RunSummary", "SecurityPosture"]
 
 DATA_SOURCE_PATTERN = r"^[A-Za-z][A-Za-z0-9_.-]{1,63}$"
 CLASS_PATTERN = r"^[a-z][a-z0-9_]{1,79}$"
@@ -45,6 +45,19 @@ class RelationRef(_Strict):
     target_class_hint: str | None = Field(default=None, pattern=CLASS_PATTERN)
 
 
+class SecurityPosture(_Strict):
+    """KISITLI güvenlik duruşu (ADR-0023). Yalnızca ``cmdb.ci_security_posture``'a yazılır; CI özniteliği, kaynak kaydı,
+    değişim geçmişi, arama dizini ve olay olmaz. Yalnızca uç nokta güvenliği rolündeki kaynak yazabilir."""
+
+    protection_status: str | None = Field(default=None, max_length=64, description="Ör. Onboarded")
+    health_status: str | None = Field(default=None, max_length=64, description="Ör. Active, Inactive")
+    exposure_level: Literal["None", "Low", "Medium", "High"] | None = None
+    risk_score: Literal["None", "Informational", "Low", "Medium", "High"] | None = None
+    vulnerabilities_critical: int | None = Field(default=None, ge=0)
+    vulnerabilities_high: int | None = Field(default=None, ge=0)
+    last_seen: datetime | None = None
+
+
 class IngestRecord(_Strict):
     schema_version: Literal[1] = 1
     data_source: str = Field(pattern=DATA_SOURCE_PATTERN)
@@ -58,6 +71,8 @@ class IngestRecord(_Strict):
     deleted: bool = Field(default=False, description="Kaynak nesnenin silindiğini açıkça bildirir (delta modu)")
     observed_at: datetime
     raw_ref: str | None = Field(default=None, max_length=1024, description="Ham yükün arşivdeki konumu")
+    posture: SecurityPosture | None = Field(default=None, description="Kısıtlı güvenlik duruşu (yalnızca uç nokta "
+                                                                       "güvenliği rolü; ADR-0023)")
 
 
 class RunSummary(_Strict):

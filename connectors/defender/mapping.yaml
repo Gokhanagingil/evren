@@ -1,7 +1,8 @@
 # Microsoft Defender for Endpoint — Machine varlığı (GET /api/machines)
 # Kapsam: yalnızca sunucu işletim sistemleri (iş istasyonları bu fazın dışında).
-# Güvenlik öznitelikleri (riskScore, exposureLevel) cmdb_key_value'ya ve insight katmanına
-# gider; sözlükte sensitivity: restricted olarak işaretlenir (docs/07).
+# Güvenlik duruşu (riskScore, exposureLevel, healthStatus, onboardingStatus) KISITLI veridir: CI özniteliği olmaz,
+# kaynak kaydına yazılmaz; yalnızca posture bölümüyle cmdb.ci_security_posture'a gider (ADR-0023). Bilinmeyen değer
+# "*": null ile boşa düşer.
 description: Uç nokta koruma kapsamı ve güvenlik duruşu
 data_source: Defender
 source_key: id
@@ -25,3 +26,9 @@ lookup:
 external_ids:
   defender_machine_id: {from: id}
   aad_device_id: {from: aadDeviceId}
+posture:
+  protection_status: {from: onboardingStatus}
+  health_status: {from: healthStatus}
+  exposure_level: {from: exposureLevel, map: {None: None, Low: Low, Medium: Medium, High: High, "*": null}}
+  risk_score: {from: riskScore, map: {None: None, Informational: Informational, Low: Low, Medium: Medium, High: High, "*": null}}
+  last_seen: {from: lastSeen}

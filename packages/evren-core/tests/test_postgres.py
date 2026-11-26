@@ -235,6 +235,12 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "INSERT INTO ref.sys_user (sys_id, user_name, source) VALUES (repeat('e', 32), 'x', "
                                  "'entra')"),
         ("evren_app_api", "UPDATE ref.sys_user_group SET name = 'x' WHERE false"),
+        # ADR-0023: kısıtlı duruşu yalnızca uzlaştırıcı yazar; API yalnızca okur (hassasiyet denetimi API'de)
+        ("evren_app_api", "UPDATE cmdb.ci_security_posture SET risk_score = 'High' WHERE false"),
+        ("evren_app_api", "DELETE FROM cmdb.ci_security_posture WHERE false"),
+        ("evren_app_ingest", "SELECT count(*) FROM cmdb.ci_security_posture"),
+        ("evren_app_connector", "SELECT count(*) FROM cmdb.ci_security_posture"),
+        ("evren_auditor_ro", "UPDATE cmdb.ci_security_posture SET risk_score = 'High' WHERE false"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):

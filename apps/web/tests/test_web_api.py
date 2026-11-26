@@ -37,7 +37,8 @@ def base_url():
     with socket.socket() as s:
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
-    roles = "evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer"
+    roles = ("evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer,"
+             "evren_security_reader")
     settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": roles,
                                   "EVREN_DEV_USER": "arayuz-testi", "EVREN_DEV_NAME": "Arayüz Testi",
                                   "EVREN_DB_POOL_SIZE": "4"})
@@ -414,3 +415,29 @@ def test_connector_admin_runs_cancels_and_issues_token_once_with_keyboard(page, 
             conn.execute("DELETE FROM ingest.connector_instance WHERE name = %s", (inst,))
             conn.execute("DELETE FROM ingest.worker_heartbeat WHERE worker_id = %s", (runner,))
             conn.execute("DELETE FROM ingest.connector_credential WHERE name = %s", (cred,))
+
+
+def test_security_reader_sees_restricted_posture_with_notice(page, base_url):
+    """ADR-0023: Güvenlik okuyucu CI ayrıntısında kısıtlı duruş bölümünü görür (uyarı notuyla); görüntüleme denetimde."""
+    import psycopg
+
+    with psycopg.connect(autocommit=True) as conn:
+        ci = conn.execute("""SELECT ci.sys_id FROM cmdb.cmdb_ci ci WHERE NOT EXISTS (SELECT 1 FROM
+                               cmdb.ci_security_posture p WHERE p.ci_sys_id = ci.sys_id) ORDER BY ci.sys_id LIMIT 1""").fetchone()[0]
+        conn.execute("""INSERT INTO cmdb.ci_security_posture (ci_sys_id, data_source, protection_status, health_status,
+                                                             exposure_level, risk_score, observed_at)
+                        VALUES (%s, 'Defender', 'Onboarded', 'Active', 'High', 'Low', now())""", (ci,))
+    try:
+        page.goto(base_url + f"/#/ci/{ci}")
+        page.wait_for_selector("#detail.open")
+        box = page.locator("#detailContent")
+        expect(box).to_contain_text("Güvenlik duruşu (kısıtlı)")
+        expect(box).to_contain_text("Kısıtlı bilgi.")
+        expect(box).to_contain_text("Yüksek")
+        shot(page, "web_api_ci_security_posture")
+        with psycopg.connect(autocommit=True) as conn:
+            assert conn.execute("""SELECT count(*) FROM audit.security_event WHERE action = 'restricted_read'
+                                    AND resource = %s""", (f"cmdb_ci:{ci}",)).fetchone()[0] >= 1
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM cmdb.ci_security_posture WHERE ci_sys_id = %s", (ci,))

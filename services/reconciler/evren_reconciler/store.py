@@ -119,6 +119,8 @@ def _manual_note(outcome: dict[str, dict[str, Any]]) -> str:
 def content_hash(record: IngestRecord) -> str:
     doc = record.model_dump(mode="json", include={"class_hint", "attributes", "lookup", "external_ids", "relations",
                                                   "deleted"})
+    if record.posture is not None:  # duruşu olmayan kayıtların özeti değişmez (ADR-0023)
+        doc["posture"] = record.posture.model_dump(mode="json")
     return hashlib.sha256(json.dumps(doc, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
 
 
@@ -364,6 +366,7 @@ class ReconcilerStore:
                             (record.observed_at, record.run_id, record.data_source, record.source_key))
                 if linked:
                     self._touch_discovered(cur, linked, src.name, record.observed_at)
+                    self._write_posture(cur, record, linked)  # kuyruk kararından sonra ilk çalışmada da yazılır
                 return ApplyResult("unchanged", linked)
             self._upsert_source_record(cur, record, digest)
             index = PostgresCandidateIndex(cur)
@@ -377,6 +380,7 @@ class ReconcilerStore:
                 self._attach(cur, index, resolver, record, keys, attach_to, method=method, rule="import" if created
                              else method, resolution=None)
                 manual = method == "manual"
+                self._write_posture(cur, record, attach_to)
                 changes = self._reconcile(cur, attach_to, record.run_id, released="Manual" if manual else None,
                                           reason="manual" if manual else "reconciliation")
                 return ApplyResult("linked", attach_to, changes, "İlk yükleme" if created else "Elle bağlandı")
@@ -393,6 +397,7 @@ class ReconcilerStore:
                     index.upsert(CandidateProfile(ci, self._profile_class(index, ci, record.class_hint),
                                                   resolver.family(record.class_hint), keys))
                 self._close_open_candidates(cur, record, "Kimlik otomatik çözüldü")
+                self._write_posture(cur, record, ci)
                 return ApplyResult(res.outcome.value, ci, self._reconcile(cur, ci, record.run_id), res.summary_tr)
 
             if res.outcome is Outcome.NEW:
@@ -405,11 +410,44 @@ class ReconcilerStore:
                 ci = self._create_ci(cur, record)
                 self._attach(cur, index, resolver, record, keys, ci, method="rule", rule="yeni CI", resolution=res)
                 self._close_open_candidates(cur, record, "Yeni CI açıldı")
+                self._write_posture(cur, record, ci)
                 return ApplyResult("new", ci, self._reconcile(cur, ci, record.run_id), res.summary_tr)
 
             kind = "review" if res.outcome is Outcome.REVIEW else "insufficient"
             self._enqueue(cur, record, res, kind, priority=2 if kind == "review" else 4, note=None)
             return ApplyResult(kind, res.ci_sys_id, [], res.summary_tr)
+
+    # ------------------------------------------------------------------ kısıtlı güvenlik duruşu (ADR-0023)
+    def _write_posture(self, cur: psycopg.Cursor[Any], record: IngestRecord, ci: str) -> bool:
+        """Bağlı CI'ın duruşunu ``cmdb.ci_security_posture``'a yazar. Yalnızca duruş kaynağı rolündeki etkin/devredilen
+        kaynak yazar; aynı CI'ın daha öncelikli (rol içi sırası küçük) kaynağının satırı ezilmez."""
+        p = record.posture
+        if p is None:
+            return False
+        ds = record.data_source
+        if not self.registry.writes_posture(ds):
+            if not self.registry.is_shadow(ds):
+                log.warning("Duruş verisi yok sayıldı: %s duruş kaynağı rolünde değil", ds)
+            return False
+        cur.execute("SELECT data_source FROM cmdb.ci_security_posture WHERE ci_sys_id = %s FOR UPDATE", (ci,))
+        row = cur.fetchone()
+        if row and row[0] != ds and row[0] in self.registry.sources and self.registry.writes_posture(row[0]) \
+                and self.registry.rank_of(row[0]) < self.registry.rank_of(ds):
+            return False
+        cur.execute(
+            """INSERT INTO cmdb.ci_security_posture (ci_sys_id, data_source, protection_status, health_status,
+                                                    exposure_level, risk_score, vulnerabilities_critical,
+                                                    vulnerabilities_high, last_seen, observed_at)
+               VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+               ON CONFLICT (ci_sys_id) DO UPDATE SET data_source = EXCLUDED.data_source,
+                 protection_status = EXCLUDED.protection_status, health_status = EXCLUDED.health_status,
+                 exposure_level = EXCLUDED.exposure_level, risk_score = EXCLUDED.risk_score,
+                 vulnerabilities_critical = EXCLUDED.vulnerabilities_critical,
+                 vulnerabilities_high = EXCLUDED.vulnerabilities_high, last_seen = EXCLUDED.last_seen,
+                 observed_at = EXCLUDED.observed_at""",
+            (ci, ds, p.protection_status, p.health_status, p.exposure_level, p.risk_score, p.vulnerabilities_critical,
+             p.vulnerabilities_high, p.last_seen, record.observed_at))
+        return True
 
     # ------------------------------------------------------------------ yardımcılar: kaynak kaydı, bağ, kuyruk
     def _upsert_source_record(self, cur: psycopg.Cursor[Any], record: IngestRecord, digest: str) -> None:

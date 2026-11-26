@@ -134,7 +134,7 @@ services:
       EVREN_PORT: "8088"
       EVREN_DEV_USER: gelistirici
       EVREN_DEV_NAME: Geliştirici
-      EVREN_DEV_ROLES: evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer
+      EVREN_DEV_ROLES: evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer,evren_security_reader
       EVREN_DATABASE_URL_FILE: /run/secrets/api_dsn
       EVREN_SESSION_KEY_FILE: /run/secrets/session_key
     secrets: [api_dsn, session_key]

@@ -368,6 +368,11 @@ def smoke_connector_run(token: str) -> None:
         check({lk["data_source"] for lk in app.get("links") or []}
               >= {"ServiceNow", "Zabbix", "vCenter", "BMC", "Defender"},
               "akıl katmanı: beş kaynak ServiceNow'dan gelen CI'a bağlandı (seri, UUID, MAC; sys_id aynı)")
+        posture = app.get("security_posture") or {}
+        names = {a["attribute"] for a in app.get("attributes") or []}
+        check(posture.get("exposure_level") == "Medium" and posture.get("data_source") == "Defender"
+              and not names & {"exposure_level", "risk_score", "health_status", "protection_status"},
+              "kısıtlı güvenlik duruşu yalnızca cmdb.ci_security_posture'da; Güvenlik okuyucu rolüyle görünüyor (ADR-0023)")
 
         step("Bağlayıcı çalıştırıcı: NNMi simülatörü (SOAP getNodes, güvenli XML) → Ağ rolü")
         _connector_run("nnmi", nn_token, 3)

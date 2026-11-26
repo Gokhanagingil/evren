@@ -104,6 +104,11 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - Çağrı: `GET /api/machines?$top=…`. Sonraki sayfa yalnızca aynı ana bilgisayardaysa `@odata.nextLink` ile izlenir.
   - Belirtecin süresi dolarsa bir kez yenilenir. API adresi varsayılan olarak `https://api.security.microsoft.com`.
   - Risk ve maruziyet CI'a yazılmaz.
+- **Kısıtlı duruş yolu (ADR-0023):** eşlemenin `posture:` bölümü koruma ve sağlık durumu, maruziyet, risk puanı ve son görülmeyi zarfın ayrı `posture` bölümüne koyar. Bilinmeyen değer boşa düşer.
+  - Uzlaştırıcı, kayıt bir CI'a bağlandıktan sonra yalnızca `cmdb.ci_security_posture`'a yazar. Kaynak kaydında, CI özniteliğinde, değişim geçmişinde ve arama dizininde duruş yoktur.
+  - Yalnızca `posture_source` rolü (EndpointSecurity) yazar; devirde rol içi sırası küçük kaynak kazanır, gölge ürün yazmaz.
+  - API yalnızca Güvenlik okuyucu, Denetçi ve break-glass rollerine gösterir; her gösterim denetim izine yazılır.
+  - Henüz yok: zafiyet sayıları (ayrı zafiyet API'si, `vulnerabilities_*` sütunları boş kalır).
 
 ## NNMi (F1)
 

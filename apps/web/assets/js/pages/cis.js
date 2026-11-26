@@ -5,6 +5,24 @@ import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from 
 import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, splitCi, srcChip } from '../lib/data.js';
 import { openEditDialog } from './ci-edit.js';
 
+// KISITLI güvenlik duruşu (ADR-0023): API yalnızca Güvenlik okuyucu/Denetçi rolüne döndürür; her gösterim denetim izinde.
+const POSTURE_TONE = { None: 'good', Informational: 'good', Low: 'good', Medium: 'warn', High: 'bad' };
+const POSTURE_TR = { None: 'Yok', Informational: 'Bilgi', Low: 'Düşük', Medium: 'Orta', High: 'Yüksek' };
+function postureSection(p) {
+  const level = (v) => (v ? pill(POSTURE_TR[v] || v, POSTURE_TONE[v] || '') : '—');
+  return section('Güvenlik duruşu (kısıtlı)',
+    h('p', { class: 'notice warn small', role: 'note' }, h('strong', {}, 'Kısıtlı bilgi. '),
+      'Yetkinize göre gösteriliyor ve görüntüleme denetim izine yazıldı; paylaşmayın veya rapora kopyalamayın.'),
+    kv([
+      ['Maruziyet düzeyi', level(p.exposure_level)], ['Risk puanı', level(p.risk_score)],
+      ['Koruma durumu', p.protection_status || '—'], ['Sağlık', p.health_status || '—'],
+      ['Kritik / yüksek zafiyet', p.vulnerabilities_critical == null && p.vulnerabilities_high == null ? 'Bilinmiyor'
+        : `${p.vulnerabilities_critical ?? '—'} / ${p.vulnerabilities_high ?? '—'}`],
+      ['Kaynakta son görülme', p.last_seen ? formatDateTime(p.last_seen) : '—'],
+      ['Kaynak · gözlem', `${p.data_source} · ${formatDateTime(p.observed_at)}`],
+    ]));
+}
+
 const SCOPES = {
   '': 'Tüm kapsam',
   izlenmeyen: 'İzlenmeyen sunucular',
@@ -189,6 +207,7 @@ export async function renderCis(view, param) {
           c.rejected.map((r) => `${r.attempts.map((x) => x.source).join(', ')} "${r.label}" alanına ${r.attempts.map((x) => x.display).join(', ')} yazmaya çalıştı; bu alan bu kaynağın rolüne kapalı, değer alınmadı.`).join(' ')) : null,
         section('Öznitelikler ve kaynakları', h('p', { class: 'muted small' }, 'Bir satırı açın: değeri veren kaynak, uygulanan kural ve ezilen değerler. Turuncu nokta: kaynaklar farklı değer bildiriyor.'),
           h('div', { class: 'attrs' }, c.attributes.map(attrRow))),
+        c.security_posture ? postureSection(c.security_posture) : null,
         c.relations.length ? section('İlişkiler', h('ul', { class: 'mini' }, c.relations.map((r) => h('li', {},
           h('span', { class: 'muted' }, `${r.direction === 'parent' ? r.type.split('::')[0] : r.type.split('::')[1]} · `),
           h('a', { href: `#/ci/${r.target}` }, r.target_name))))) : null,
