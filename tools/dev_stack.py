@@ -16,8 +16,8 @@ Duman testi yalnızca 127.0.0.1'e bağlanır ve şunları doğrular: API hazır,
 canlı; API'den gönderilen bir elle düzenleme konteynerdeki uzlaştırıcı tarafından uygulanıyor (golden record
 değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı; olay omurgası uçtan uca çalışıyor (geçici bağlayıcı
 kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali); bağlayıcı çalıştırıcı
-(ServiceNow ilk yüklemesi sys_id korunarak, Zabbix ve vCenter simülatörleri → eşleme → geçit → uzlaştırıcı →
-ilişkiler ve tek CI); arama (dizinleyici →
+(ServiceNow ilk yüklemesi sys_id korunarak, Zabbix, vCenter ve BMC simülatörleri → eşleme → geçit → uzlaştırıcı →
+ilişkiler ve dört kaynaklı tek CI); arama (dizinleyici →
 OpenSearch → yetki süzgeçli API; Türkçe harf, yazım hatası, ayırıcısız yazım). Hiçbir sır yazdırılmaz.
 """
 from __future__ import annotations
@@ -275,7 +275,7 @@ def smoke_event_backbone() -> tuple[str, str]:
 
 
 SAMPLES = {"zabbix": "connectors/zabbix/samples", "vcenter": "connectors/vcenter/samples",
-           "servicenow": "connectors/servicenow_cmdb/samples"}
+           "servicenow": "connectors/servicenow_cmdb/samples", "bmc_discovery": "connectors/bmc_discovery/samples"}
 SN_APP_SYS_ID = "5b1c2d3e4f5061728394a5b6c7d8e9f0"  # örnek ServiceNow kaydı (ist-app-02)
 
 
@@ -328,6 +328,7 @@ def smoke_connector_run(token: str) -> None:
     kimlikleriyle çalışır. Kaynak verisi sentetiktir; gerçek kaynak kabulü yerine geçmez."""
     sn_name, sn_token = _issue("ServiceNow")
     vc_name, vc_token = _issue("vCenter")
+    bmc_name, bmc_token = _issue("BMC")
     try:
         step("Bağlayıcı çalıştırıcı: ServiceNow simülatörü (Table API) → ilk yükleme, sys_id korunur")
         _connector_run("servicenow", sn_token, 5)
@@ -348,12 +349,15 @@ def smoke_connector_run(token: str) -> None:
         check(("Registered on::Has registered", "child", "ist-app-02 (Uygulama)") in rels
               and ("Virtualized by::Virtualizes", "child", "ist-app-02") in rels,
               "ilişkiler yazıldı: VM örneği ve misafir sunucu → ESXi (nitelikli anahtar)")
+
+        step("Bağlayıcı çalıştırıcı: BMC Helix Discovery simülatörü (data/search) → Keşif rolü")
+        _connector_run("bmc_discovery", bmc_token, 3)
         _s, app = http("GET", f"{API}/api/v1/ci/{SN_APP_SYS_ID}")
-        check({lk["data_source"] for lk in app.get("links") or []} >= {"ServiceNow", "Zabbix", "vCenter"},
-              "akıl katmanı: Zabbix ve vCenter, ServiceNow'dan gelen CI'a bağlandı (seri numarası; sys_id aynı)")
+        check({lk["data_source"] for lk in app.get("links") or []} >= {"ServiceNow", "Zabbix", "vCenter", "BMC"},
+              "akıl katmanı: Zabbix, vCenter ve BMC, ServiceNow'dan gelen CI'a bağlandı (seri numarası; sys_id aynı)")
     finally:
-        _revoke(sn_name)
-        _revoke(vc_name)
+        for name in (sn_name, vc_name, bmc_name):
+            _revoke(name)
 
 
 def smoke_search(name: str, sys_id: str) -> None:

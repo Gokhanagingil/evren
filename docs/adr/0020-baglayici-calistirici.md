@@ -125,6 +125,14 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
   Önceden bu mantık yalnızca demo yükleyicide vardı. Olay omurgasından gelen ServiceNow kaydı yeni sys_id'li CI açardı ve ServiceNow task'larındaki CI referansları kopardı.
 - **Henüz yok:** referans verileri (`sys_user_group`, `sys_user`, `cmn_location`, `core_company`, `cmn_cost_center`) yükleme yolu. CI'daki referans alanları yumuşak referanstır (yabancı anahtar yok), yani CI'lar bu veriler olmadan da alınır; adlar görünmez. F0-08'in parçası olarak sıradadır.
 
+### 11. BMC Helix Discovery: data/search, sabit sonuç kümesi, sayı denetimi (U5.2)
+
+- **Uç:** `GET /api/v{sürüm}/data/search?query=…&format=object&limit=…`. Kimlik doğrulama `Authorization: Bearer` ile yapılır; belirteç Discovery kullanıcısınındır ve dosyadan okunur. Sürüm kuruluma göre değişir (on-prem 25.2 örneklerinde 1.12, SaaS'ta 1.13; `--api-release`).
+- **Sayfalama:** ilk yanıt `count`, `offset`, `next_offset` ve `results_id` döndürür. Sonraki sayfalar `results_id` + `offset` ile istenir.
+  - Sunucunun verdiği `next` adresi izlenmez; adres istemcide kurulur, böylece belirteç başka bir adrese gitmez.
+  - Sonuç kümesi `results_id` ile sabittir. Toplanan sayı `count`'a eşit değilse çalışma tamamlanmamış sayılır.
+- **Kapsam:** eşleme masaüstlerini dışarıda bırakır (`include_when: host_type`). Hypervisor düğümü ESXi sınıfına gider. Sorgudaki ilişki yolu (MAC adresleri) ve alan adları `verify: true` işaretlidir; kurum örneğinde doğrulanır (F1-01).
+
 ## Sonuçlar
 
 - Yeni kaynak eklemek için üç iş gerekir: `sources/<kaynak>.py` (istemci ve mümkünse simülatör), `SOURCES` kaydı ve eşleme dosyası. Çalıştırıcı, geçit istemcisi ve güvenlik kuralları ortaktır.

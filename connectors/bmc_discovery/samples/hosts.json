@@ -1,0 +1,33 @@
+{
+ "_aciklama": "SENTETİK örnek veri — BMC Helix Discovery data/search (format=object) Host sonuçları biçiminde. Gerçek kurum verisi değildir. Kurum ortamında tools/connector_run.py --record ile gerçek yanıtlar kaydedilir.",
+ "hosts": [
+  {"key": "b7c2e94a1d3f5a6b7c8d9e0f1a2b3c4d/Host", "name": "ist-app-02", "hostname": "ist-app-02", "local_fqdn": "ist-app-02.corp.ornek.local",
+   "dns_domain": "corp.ornek.local", "os": "Red Hat Enterprise Linux 9.4 (Plow)", "os_type": "Red Hat Enterprise Linux", "os_class": "UNIX",
+   "os_version": "9.4", "os_edition": "Server", "serial": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e7 f8",
+   "uuid": "421A2B3C-4D5E-6F70-8192-A3B4C5D6E7F8", "vendor": "VMware, Inc.", "model": "VMware7,1", "num_processors": 4,
+   "cores_per_processor": 1, "num_logical_processors": 4, "processor_type": "Intel(R) Xeon(R) Gold 6338 CPU @ 2.00GHz",
+   "processor_speed": 2000, "ram": 15872, "virtual": true, "host_type": "Linux Server", "last_update_success": "2026-11-26T04:12:09+00:00",
+   "ip_addrs": ["10.20.30.52"], "mac_addrs": ["00:50:56:9A:01:02"]},
+  {"key": "c8d3fa5b2e4a6b7c8d9e0f1a2b3c4d5e/Host", "name": "ank-db-14", "hostname": "ank-db-14", "local_fqdn": "ank-db-14.corp.ornek.local",
+   "dns_domain": "corp.ornek.local", "os": "Oracle Linux Server 8.9", "os_type": "Oracle Linux", "os_class": "UNIX",
+   "os_version": "8.9", "os_edition": "Server", "serial": "VMware-42 1a 2b 3c 4d 5e 6f 70-81 92 a3 b4 c5 d6 e8 00",
+   "uuid": "421A2B3C-4D5E-6F70-8192-A3B4C5D6E800", "vendor": "VMware, Inc.", "model": "VMware7,1", "num_processors": 8,
+   "cores_per_processor": 1, "num_logical_processors": 8, "processor_type": "Intel(R) Xeon(R) Gold 6338 CPU @ 2.00GHz",
+   "processor_speed": 2000, "ram": 64512, "virtual": true, "host_type": "Linux Server", "last_update_success": "2026-11-26T04:13:40+00:00",
+   "ip_addrs": ["10.40.10.14"], "mac_addrs": ["00:50:56:9A:04:04"]},
+  {"key": "d9e40b6c3f5b7c8d9e0f1a2b3c4d5e6f/Host", "name": "esx01", "hostname": "esx01", "local_fqdn": "esx01.ist.ornek.local",
+   "dns_domain": "ist.ornek.local", "os": "VMware ESXi 8.0.3", "os_type": "VMware ESXi", "os_class": "Other",
+   "os_version": "8.0.3", "os_edition": "", "serial": "CZ2150ABCD", "uuid": "37383638-3330-4D32-3231-313530324B53",
+   "vendor": "HPE", "model": "ProLiant DL380 Gen10 Plus", "num_processors": 2, "cores_per_processor": 24,
+   "num_logical_processors": 96, "processor_type": "Intel(R) Xeon(R) Gold 6342 CPU @ 2.80GHz", "processor_speed": 2800,
+   "ram": 786432, "virtual": false, "host_type": "Hypervisor", "last_update_success": "2026-11-26T04:02:51+00:00",
+   "ip_addrs": ["10.20.1.21"], "mac_addrs": ["94:40:C9:A1:02:10", "94:40:C9:A1:02:11"]},
+  {"key": "eaf51c7d4a6c8d9e0f1a2b3c4d5e6f70/Host", "name": "IST-PC-0042", "hostname": "IST-PC-0042", "local_fqdn": "ist-pc-0042.corp.ornek.local",
+   "dns_domain": "corp.ornek.local", "os": "Microsoft Windows 11 Enterprise", "os_type": "Windows", "os_class": "Windows",
+   "os_version": "10.0.22631", "os_edition": "Enterprise", "serial": "5CG2345XYZ", "uuid": "8F1E2D3C-4B5A-6978-8796-A5B4C3D2E1F0",
+   "vendor": "HP", "model": "EliteBook 840 G9", "num_processors": 1, "cores_per_processor": 12, "num_logical_processors": 16,
+   "processor_type": "12th Gen Intel(R) Core(TM) i7-1265U", "processor_speed": 1800, "ram": 32768, "virtual": false,
+   "host_type": "Windows Desktop", "last_update_success": "2026-11-25T18:20:00+00:00",
+   "ip_addrs": ["10.60.12.42"], "mac_addrs": ["F8:0D:AC:12:34:56"]}
+ ]
+}

@@ -50,7 +50,7 @@
 | F0-08 | ServiceNow salt okunur hesap ve Evren ortamından SN'ye ağ erişimi; SaaS/MID Server bilgisi | Devam ediyor |
 | F0-11 | vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi | Devam ediyor |
 | F0-13 | Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri | Devam ediyor |
-| F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Planlandı |
+| F1-01 | BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı | Devam ediyor |
 | F1-02 | Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni | Planlandı |
 | F1-03 | NNMi web servis kullanıcısı ve NNMi sürümü | Planlandı |
 | F1-04 | ServiceNow change_request ve task_ci okuma izni | Planlandı |
@@ -129,8 +129,8 @@ _Ay 3–6 · Mar – May 2027 (öneri)_ · 2/20 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
-- [ ] **F1-01** BMC Helix Discovery bağlayıcısı ve alan adlarının kurum örneğinde doğrulanması — _Planlandı_
-  - Not: Eşleme hazır (connectors/bmc_discovery); on-prem ve SaaS aynı REST API'yi kullanır.
+- [ ] **F1-01** BMC Helix Discovery bağlayıcısı ve alan adlarının kurum örneğinde doğrulanması — _Devam ediyor_
+  - Not: 26.11.2026: eşleme ve REST istemcisi hazır (U5.2: data/search, results_id ile sayfalama, sayı denetimi, simülatör; uzlaştırıcı ve yığın duman testiyle sınandı). On-prem ve SaaS aynı REST API'yi kullanır. Alan adlarının ve sorgudaki ilişki yolunun kurum örneğinde doğrulanması U10'da.
   - Sizden gereken: BMC Helix Discovery API kullanıcısı; kurulum on-prem mi SaaS mı
 - [ ] **F1-02** Defender bağlayıcısı; kısıtlı güvenlik duruşu tablosu — _Planlandı_
   - Sizden gereken: Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni

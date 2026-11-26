@@ -121,6 +121,11 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - `ram` MB, `processor_speed` MHz döner; sanal sunucuda işletim sisteminin gördüğü bellek vCenter değerinden biraz azdır (vCenter önceliklidir).
   - `host_type` "… Desktop" olan düğümler kapsam dışıdır.
 - Alan adları kurum örneğinde doğrulanınca eşlemedeki `verify: true` kaldırılır (F1-01).
+- **İstemci (U5.2):** `evren_core/connectors/sources/bmc_discovery.py`.
+  - Çağrı: `GET /api/v1.x/data/search?format=object` (sorgu `HOST_QUERY`).
+  - Kimlik doğrulama: Discovery kullanıcısının API belirteci (`EVREN_SOURCE_TOKEN_FILE`, Bearer).
+  - Sayfalama: `results_id` + `offset`; toplanan sayı `count`'la karşılaştırılır.
+  - API sürümü: `--api-release` (varsayılan 1.12).
 
 ## ServiceNow (F0 ilk yükleme, F1 çekme, F1 Change)
 

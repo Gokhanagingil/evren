@@ -88,8 +88,9 @@
       "phase": "F1",
       "text": "BMC Helix Discovery (eski adıyla BMC Discovery / ADDM) Keşif rolünü doldurur; işletim sistemi, donanım ve seri numarası için yetkili kaynaktır. On-prem appliance ve Helix SaaS aynı REST API'yi kullanır. Kurallar ürüne değil role bağlı olduğundan keşif ürünü değişirse yalnızca bağlayıcı ve eşleme değişir (ADR-0009).",
       "tech": [
-        "REST /api/v1.x/data/search (Host düğümü)",
-        "connectors/bmc_discovery/host.mapping.yaml"
+        "REST /api/v1.x/data/search (Host düğümü; results_id ile sayfalama)",
+        "connectors/bmc_discovery/host.mapping.yaml",
+        "connectors/sources/bmc_discovery.py"
       ],
       "security": [
         "Salt okunur erişim"
