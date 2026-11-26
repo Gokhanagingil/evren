@@ -16,7 +16,7 @@
  "note": "Sentetik tatbikat: Keşif-B gerçek bir ürün değildir. Aynı adımlar gerçek bir ürün değişiminde data_sources.yaml'daki yaşam döngüsü değişiklikleriyle (taslak → onay → yayın) uygulanır.",
  "rules_sha256": {
   "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
-  "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+  "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
  },
  "phases": [
   {
@@ -48,7 +48,7 @@
    "orphaned_by_attribute": [],
    "rules_sha256": {
     "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
-    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+    "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
     "BMC": true
@@ -151,7 +151,7 @@
    "orphaned_by_attribute": [],
    "rules_sha256": {
     "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
-    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+    "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
     "BMC": true,
@@ -382,7 +382,7 @@
    "orphaned_by_attribute": [],
    "rules_sha256": {
     "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
-    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+    "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
     "BMC": false,
@@ -677,7 +677,7 @@
    ],
    "rules_sha256": {
     "metadata/reconciliation_rules.yaml": "a100227f134dd549e67748ec3682f1b53ad42abb9bcb2c7aec571ea130ed942d",
-    "metadata/identification_rules.yaml": "3365220f4a5909556f817bc9da8523ea1ece2c6ca90b0f1645cd962edb6b0e1f"
+    "metadata/identification_rules.yaml": "b6541edff4872875225e11500f29e24e026063515fa50aaaf2407394fb57ca0e"
    },
    "may_create_ci": {
     "BMC": false,
