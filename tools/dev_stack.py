@@ -441,6 +441,20 @@ def smoke_connector_runner() -> None:
 
         final = wait_for("çalışmanın uzlaştırıcıda kapanışı", closed, timeout=120)
         check(final["completed"] is True, "istek ile geçitteki çalışma aynı run_id; uzlaştırıcı tamamladı")
+
+        step("Ham yük arşivi (ADR-0024): şifreli arşiv ve kaynağa bağlanmadan yeniden işleme")
+        listed = compose("exec", "-T", "connector-runner", "python", "/app/deploy/evren.py", "connector-archive", "list",
+                         capture=True)
+        archived = {r["run_id"]: r for r in json.loads(listed.stdout.strip().splitlines()[-1])}
+        mine = archived.get(done["run_id"]) or {}
+        check(mine.get("records") == 5 and mine.get("completed") is True and mine.get("key_id"),
+              f"çalışma şifreli arşivde: {mine.get('records')} ham nesne, {mine.get('segments')} parça")
+        redo = compose("exec", "-T", "connector-runner", "python", "/app/deploy/evren.py", "connector-run",
+                       "--connector", "zabbix", "--name", "zabbix-sim", "--from-archive", mine["path"], "--dry-run",
+                       check=False, capture=True)
+        rep = json.loads(redo.stdout.strip().splitlines()[-1]) if redo.stdout.strip() else {}
+        check(redo.returncode == 0 and rep.get("from_archive") and rep.get("sent") == 5,
+              f"arşivden yeniden işleme (kaynaksız, kuru): gönderilecek {rep.get('sent')} kayıt")
     finally:
         compose("--profile", "runner", "stop", "connector-runner", check=False, capture=True)
         http("POST", f"{API}/api/v1/credentials/{name}/revoke", {})

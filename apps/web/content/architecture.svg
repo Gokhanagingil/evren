@@ -44,7 +44,7 @@
 <path data-edge="src_servicenow:connectors" d="M1066.0 376.0V396.0H1014.0V416.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="connectors:ingest_gateway" d="M614.0 479.0V519.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="ingest_gateway:kafka" d="M630.0 558.5H650.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
-<path data-edge="kafka:raw_archive" d="M1030.0 558.5H1050.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="connectors:raw_archive" d="M1014.0 479.0V499.0H1066.0V519.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <g class="node" id="n-src_vcenter" data-node="src_vcenter" data-chapter="sources" tabindex="0" role="button" aria-label="vCenter: VM, ESXi, küme datastore">
 <rect x="50.0" y="278.0" width="180.0" height="98.0" rx="10" fill="#e9f2f7" stroke="#2a617d" stroke-width="1.6"/>
 <rect x="190.0" y="287.0" width="30" height="18" rx="9" fill="#2a617d"/>
@@ -117,13 +117,13 @@
 <text x="664.0" y="563.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">ingest.record · ingest.run</text>
 <text x="664.0" y="579.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">yeniden oynatılabilir</text>
 </g>
-<g class="node" id="n-raw_archive" data-node="raw_archive" data-chapter="sources" tabindex="0" role="button" aria-label="Ham yük arşivi: Saklama politikası, raw_ref ile izlenir">
+<g class="node" id="n-raw_archive" data-node="raw_archive" data-chapter="sources" tabindex="0" role="button" aria-label="Ham yük arşivi: Şifreli parçalar, saklama süresi, yeniden işleme">
 <rect x="1050.0" y="519.0" width="180.0" height="79.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
 <rect x="1190.0" y="528.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
 <text x="1205.0" y="541.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
 <text x="1064.0" y="545.0" fill="#26346b" font-size="14" font-weight="700" text-anchor="start">Ham yük arşivi</text>
-<text x="1064.0" y="563.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Saklama politikası,</text>
-<text x="1064.0" y="579.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">raw_ref ile izlenir</text>
+<text x="1064.0" y="563.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Şifreli parçalar, saklama</text>
+<text x="1064.0" y="579.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">süresi, yeniden işleme</text>
 </g>
 </g>
 <g id="ch-sense" data-chapter="sense">

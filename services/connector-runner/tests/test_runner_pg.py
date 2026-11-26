@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import dataclasses
 import os
 import sys
 import time
@@ -128,6 +129,36 @@ def test_child_environment_has_no_database_address(tmp_path, metadata, gateway, 
     env = runner.child_env(runner.instances[PREFIX + "zbx"])
     assert "EVREN_DATABASE_URL" not in env and "PGPASSWORD" not in env and "EVREN_DATABASE_URL_FILE" not in env
     assert env["EVREN_CONNECTOR_TOKEN_FILE"] == str(token) and env["EVREN_GATEWAY_ALLOW_HTTP"] == "1"
+    assert "EVREN_ARCHIVE_DIR" not in env  # arşiv kapalıysa aktarılmaz
+
+
+def test_runner_archives_runs_and_prunes_expired(tmp_path, metadata, gateway, token):
+    """ADR-0024: çalıştırıcı arşiv ayarını alt sürece aktarır; gerçek bağlayıcı çalışması şifreli arşiv yazar;
+    saklama süresi dolan çalışma silinir."""
+    from cryptography.fernet import Fernet
+
+    from evren_core.connectors.archive import ArchiveWriter, load_keys, runs
+
+    key = tmp_path / "archive.key"
+    key.write_text(Fernet.generate_key().decode(), encoding="utf-8")
+    root = tmp_path / "arsiv"
+    runner = make_runner(tmp_path, metadata, gateway.url, token)
+    runner.config = dataclasses.replace(runner.config, archive_dir=str(root), archive_key_file=str(key),
+                                        archive_retention_days=30)
+    env = runner.child_env(runner.instances[PREFIX + "zbx"])
+    assert env["EVREN_ARCHIVE_DIR"] == str(root) and env["EVREN_ARCHIVE_KEY_FILE"] == str(key)
+    with runner.open() as conn:
+        runner.register(conn)
+        rid = api_request(PREFIX + "zbx")
+        runner.cycle(conn)
+        drive(runner, conn)
+    assert request_row(rid)["status"] == "succeeded"
+    listed = runs(root)
+    assert len(listed) == 1 and listed[0]["records"] == 5 and listed[0]["completed"] is True
+    old = ArchiveWriter(root, "Zabbix", uuid.uuid4(), load_keys(key), started_at=datetime.now(UTC) - timedelta(days=60))
+    old.close(completed=True)
+    assert runner.prune_archive(force=True) == [str(old.dir.relative_to(root))]
+    assert len(runs(root)) == 1
 
 
 def test_failed_run_note_is_redacted(tmp_path, metadata, gateway, token):

@@ -16,6 +16,10 @@ Yapılandırma ortam değişkenleriyle; **sırlar yalnızca dosyadan** okunur, k
 * Geçit: ``EVREN_GATEWAY_URL``, ``EVREN_CONNECTOR_TOKEN_FILE`` (``evren connector issue`` ile verilen belirteç),
   isteğe bağlı ``EVREN_GATEWAY_CA_FILE``. Düz http yalnızca ``EVREN_GATEWAY_ALLOW_HTTP=1`` ile (geliştirme yığını).
 
+Ham yük arşivi (ADR-0024): ``EVREN_ARCHIVE_DIR`` + ``EVREN_ARCHIVE_KEY_FILE`` tanımlıysa her ham nesne şifreli parça
+dosyalarına yazılır ve kayıtlar ``raw_ref`` taşır. ``--from-archive <çalışma dizini>`` kaynağa bağlanmadan arşivi bugünkü
+eşlemeyle yeniden işler (yeni çalışma; asıl çalışma tamamlanmamışsa delta).
+
 ``--simulate`` ve ``--replay`` kaynağa bağlanmaz; ``--dry-run`` geçide göndermez (``--out`` ile kayıtlar NDJSON
 dosyasına yazılır; dosya kaynak verisi içerir, kurum dışına çıkarılmaz). ``--record`` gerçek kaynak yanıtlarını
 kaydeder; kayıtlar kişisel veri içerebilir, repoya koymadan önce gözden geçirin.
@@ -36,6 +40,7 @@ from pathlib import Path
 from typing import Any
 
 from _bootstrap import REPO_ROOT
+from evren_core.connectors.archive import ArchiveError, ArchiveSource, ArchiveWriter, load_keys, open_run
 from evren_core.connectors.gateway import DryRunGateway, GatewayClient
 from evren_core.connectors.http import (
     HttpClient,
@@ -141,6 +146,8 @@ def main(argv: list[str] | None = None, env: dict[str, str] | None = None) -> in
     src.add_argument("--simulate", metavar="KLASÖR", help="kaynak yerine simülatör (örnek veri klasörü)")
     src.add_argument("--replay", metavar="KLASÖR", help="kaydedilmiş yanıtları oynat")
     src.add_argument("--record", metavar="KLASÖR", help="gerçek kaynak yanıtlarını kaydet")
+    src.add_argument("--from-archive", metavar="ÇALIŞMA", help="ham yük arşivinden yeniden işle (kaynağa bağlanmaz; "
+                                                                "EVREN_ARCHIVE_DIR altındaki <kaynak>/<tarih>/<run_id>)")
     ap.add_argument("--dry-run", action="store_true", help="geçide gönderme; yalnızca rapor")
     ap.add_argument("--out", metavar="DOSYA", help="kuru çalıştırmada kayıtları NDJSON olarak yaz")
     ap.add_argument("--page-size", type=int, help="kaynak sayfa boyutu")
@@ -156,23 +163,49 @@ def main(argv: list[str] | None = None, env: dict[str, str] | None = None) -> in
     if args.batch_size < 1 or (args.page_size is not None and args.page_size < 1) or not 0 <= args.retries <= 10:
         ap.error("--batch-size ve --page-size pozitif, --retries 0–10 olmalı")
     spec = SOURCES[args.connector]
+    run_id = args.run_id or uuid.uuid4()
+    mode = args.mode
+    writer: ArchiveWriter | None = None
+    archive_hook = None
+    recorder = None
     try:
-        http, options, recorder = source_http(spec, args, env)
-        client = spec.build(http, options)
+        archive_root = env.get("EVREN_ARCHIVE_DIR", "").strip()
+        if args.from_archive:
+            if not archive_root:
+                raise ConfigError("--from-archive için EVREN_ARCHIVE_DIR gerekli")
+            source = ArchiveSource(open_run(archive_root, args.from_archive, load_keys(env.get("EVREN_ARCHIVE_KEY_FILE"))))
+            if source.data_source != spec.data_source:
+                raise ConfigError(f"Arşiv {source.data_source} kaynağına ait; --connector {spec.key} değil")
+            client: Any = source
+            mode = source.mode  # asıl çalışma tamamlanmamışsa delta
+            archive_hook = source.ref  # yeniden işlenen kayıt asıl arşiv başvurusunu taşır
+        else:
+            http, options, recorder = source_http(spec, args, env)
+            client = spec.build(http, options)
+            if archive_root:
+                writer = ArchiveWriter(Path(archive_root), spec.data_source, run_id,
+                                       load_keys(env.get("EVREN_ARCHIVE_KEY_FILE")), mode=mode)
+                archive_hook = writer.add
         mappings = load_mappings(REPO_ROOT / "connectors" / spec.mapping_dir, spec.data_source)
         port = gateway(args, env)
-    except (ConfigError, HttpError, MappingError, OSError, ValueError) as exc:
+    except (ConfigError, ArchiveError, HttpError, MappingError, OSError, ValueError) as exc:
         print(f"Yapılandırma hatası: {exc}", file=sys.stderr)
         return 2
+    report = None
     try:
-        report = ConnectorRunner(client, mappings, port).run(args.mode, args.since, args.run_id)
+        report = ConnectorRunner(client, mappings, port, archive=archive_hook).run(mode, args.since, run_id)
     except HttpError as exc:  # çalışma geçitte açılamadı
         print(f"Çalışma açılamadı: {exc}", file=sys.stderr)
         return 1
     finally:
         if recorder:
             recorder.save()
-    print(json.dumps(report.as_json(), ensure_ascii=False))
+        if writer:
+            writer.close(completed=bool(report and report.completed))
+    out = report.as_json()
+    if args.from_archive:
+        out["from_archive"] = True
+    print(json.dumps(out, ensure_ascii=False))
     return 0 if report.completed else 1
 
 

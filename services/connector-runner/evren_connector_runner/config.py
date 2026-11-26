@@ -196,6 +196,9 @@ class RunnerConfig:
     health_file: str | None = None
     metadata_dir: Path = REPO_ROOT / "metadata"
     log_level: str = "WARNING"
+    archive_dir: str | None = None          # ham yük arşivi kökü (ADR-0024); alt sürece aktarılır
+    archive_key_file: str | None = None     # Fernet anahtar dosyası (yol; sır değil)
+    archive_retention_days: int = 30        # günde bir kez süresi dolanlar silinir
 
     @classmethod
     def from_env(cls, env: Mapping[str, str] | None = None, **overrides: Any) -> RunnerConfig:
@@ -223,6 +226,22 @@ class RunnerConfig:
             tz = ZoneInfo(env.get("EVREN_SCHEDULE_TZ", "Europe/Istanbul"))
         except (ZoneInfoNotFoundError, ValueError):
             raise ConfigError("EVREN_SCHEDULE_TZ geçerli bir zaman dilimi değil") from None
+        archive_dir = env.get("EVREN_ARCHIVE_DIR", "").strip() or None
+        archive_key = env.get("EVREN_ARCHIVE_KEY_FILE", "").strip() or None
+        try:
+            retention = int(env.get("EVREN_ARCHIVE_RETENTION_DAYS", "30"))
+        except ValueError:
+            raise ConfigError("EVREN_ARCHIVE_RETENTION_DAYS sayı olmalı") from None
+        if not 1 <= retention <= 3650:
+            raise ConfigError("EVREN_ARCHIVE_RETENTION_DAYS 1–3650 olmalı")
+        if archive_dir:
+            from evren_core.connectors.archive import ArchiveError, load_keys
+            try:
+                load_keys(archive_key)  # anahtar yoksa veya geçersizse çalıştırıcı açılmaz (düz metin arşiv yok)
+            except ArchiveError as exc:
+                raise ConfigError(str(exc)) from None
+            if not archive_dir.startswith("/"):
+                raise ConfigError("EVREN_ARCHIVE_DIR mutlak yol olmalı")
         values: dict[str, Any] = {
             "conninfo": conninfo, "connectors_file": Path(env["EVREN_CONNECTORS_FILE"]), "gateway_url": gateway,
             "role": env.get("EVREN_DB_ROLE", "evren_app_connector"), "poll_seconds": poll, "max_parallel": parallel,
@@ -230,7 +249,8 @@ class RunnerConfig:
             "allow_simulate": env.get("EVREN_CONNECTOR_ALLOW_SIMULATE") == "1",
             "health_file": env.get("EVREN_WORKER_HEALTH_FILE") or None,
             "metadata_dir": Path(env.get("EVREN_METADATA_DIR", str(REPO_ROOT / "metadata"))),
-            "log_level": env.get("EVREN_LOG_LEVEL", "WARNING")}
+            "log_level": env.get("EVREN_LOG_LEVEL", "WARNING"), "archive_dir": archive_dir,
+            "archive_key_file": archive_key, "archive_retention_days": retention}
         if env.get("EVREN_RUNNER_NAME"):
             values["worker_id"] = f"{env['EVREN_RUNNER_NAME']}:{os.getpid()}"
         values.update(overrides)

@@ -48,6 +48,11 @@ def main(argv: list[str] | None = None) -> int:
     conn_dir = DIR / "connector"
     conn_dir.mkdir(exist_ok=True)
     os.chmod(conn_dir, 0o755)  # noqa: S103  # nosec B103
+    # Ham yük arşivi anahtarı (ADR-0024): Fernet biçimi = 32 rastgele baytın URL güvenli base64'ü
+    archive_key = conn_dir / "archive.key"
+    if not archive_key.exists() or args.force:
+        archive_key.write_text(base64.urlsafe_b64encode(secrets.token_bytes(32)).decode() + "\n", encoding="utf-8")
+        os.chmod(archive_key, 0o644)  # konteyner kullanıcısı okur (yalnızca yerel geliştirme)
     print(f"Sırlar hazır: {DIR.relative_to(ROOT)}/ ({len(list(DIR.iterdir()))} dosya)")
     return 0
 

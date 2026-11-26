@@ -26,7 +26,7 @@ chapters:
       - {id: connectors, kind: engine, col: 1, row: 1, span: 4, label: Bağlayıcı çalıştırıcı + eşleme dosyaları, sub: ["Şimdi çalıştır ve zamanlama · çekme, sayfalama · kaynak JSON → ServiceNow alan adları"]}
       - {id: ingest_gateway, kind: security, col: 1, row: 2, span: 2, label: Alım geçidi, sub: ["mTLS · şema doğrulama ·", "kaynak başına yetki"]}
       - {id: kafka, kind: store, col: 3, row: 2, span: 2, label: Olay omurgası (Kafka), sub: ["ingest.record · ingest.run", "yeniden oynatılabilir"]}
-      - {id: raw_archive, kind: store, col: 5, row: 2, label: Ham yük arşivi, sub: ["Saklama politikası,", "raw_ref ile izlenir"]}
+      - {id: raw_archive, kind: store, col: 5, row: 2, label: Ham yük arşivi, sub: ["Şifreli parçalar, saklama", "süresi, yeniden işleme"]}
     edges:
       - {from: src_vcenter, to: connectors}
       - {from: src_bmc, to: connectors}
@@ -36,7 +36,7 @@ chapters:
       - {from: src_servicenow, to: connectors}
       - {from: connectors, to: ingest_gateway}
       - {from: ingest_gateway, to: kafka}
-      - {from: kafka, to: raw_archive}
+      - {from: connectors, to: raw_archive}
 
   - id: sense
     number: "02"
@@ -196,9 +196,9 @@ details:
     security: [SASL/mTLS, Konu bazlı yetki]
   raw_archive:
     phase: F1
-    text: Ham kaynak yükleri sorun analizi ve yeniden işleme için saklanır. Saklama süresi veri sınıflandırmasına göre belirlenir.
-    tech: [Kurum nesne deposu]
-    security: [Şifreli depolama, Saklama politikası]
+    text: Bağlayıcının çektiği ham nesneler çalıştırıcı tarafında şifreli parça dosyalarına yazılır; kayıtlar raw_ref ile arşive bağlanır. Eşleme düzeltilince kaynağa gitmeden arşivden yeniden işlenir (yeni çalışma, geçit ve uzlaştırıcıdan geçer). Saklama süresi dolanlar günde bir kez silinir.
+    tech: ["evren_core.connectors.archive (ADR-0024)", "Fernet (cryptography; yeni bağımlılık yok)", "connector_run.py --from-archive · evren connector-archive", "Dosya sistemi (kurum şifreli birimi); S3 yazıcısı sonra"]
+    security: ["Şifreleme zorunlu, anahtar dosyadan, anahtar döndürme", "Parça özeti manifestte; kurcalama açık hata", "Kısıtlı veri sınıfı: API ve arayüzde gösterilmez", "Saklama süresi (EVREN_ARCHIVE_RETENTION_DAYS)"]
   change_filter:
     phase: F0
     text: Her kaynak kaydının normalleştirilmiş içerik özeti tutulur. Değişmeyen kayıtlar uzlaştırmaya girmez. Günlük hacmin büyük kısmı böylece maliyetsiz geçer.

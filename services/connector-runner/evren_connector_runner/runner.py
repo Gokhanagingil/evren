@@ -104,6 +104,7 @@ class Runner:
         self.started_at = time.time()
         self._last_minute: datetime | None = None
         self._last_cycle = 0.0
+        self._last_prune = float("-inf")
 
     # ------------------------------------------------------------------ bağlantı
     def open(self) -> psycopg.Connection[Any]:
@@ -121,6 +122,7 @@ class Runner:
         self.register(conn)
         opened = self.schedule(conn)
         recovered = self.recover(conn)
+        self.prune_archive()
         started = self.claim(conn)
         if self.config.health_file:
             Path(self.config.health_file).touch()
@@ -163,6 +165,21 @@ class Runner:
                     (inst.name, inst.connector, inst.data_source,
                      inst.schedule.expression if inst.schedule else None, inst.schedule_mode, self.config.tz.key,
                      self._next_run(inst), inst.enabled, inst.max_runtime_minutes, self.config.worker_id))
+
+    def prune_archive(self, *, force: bool = False) -> list[str]:
+        """Ham yük arşivinde saklama süresi dolan çalışmaları günde bir kez siler (ADR-0024)."""
+        if not self.config.archive_dir or (not force and time.monotonic() - self._last_prune < 86400):
+            return []
+        self._last_prune = time.monotonic()
+        from evren_core.connectors.archive import ArchiveError, prune
+        try:
+            removed = prune(self.config.archive_dir, self.config.archive_retention_days, now=self.clock())
+        except (ArchiveError, OSError) as exc:
+            log.warning("arşiv temizliği yapılamadı (%s)", type(exc).__name__)
+            return []
+        if removed:
+            log.info("arşiv: saklama süresi dolan %d çalışma silindi", len(removed))
+        return removed
 
     # ------------------------------------------------------------------ zamanlama (ADR-0021 §4)
     def due_minutes(self) -> list[datetime]:
@@ -302,6 +319,9 @@ class Runner:
             env["EVREN_GATEWAY_CA_FILE"] = self.config.gateway_ca_file
         if self.config.gateway_allow_http:
             env["EVREN_GATEWAY_ALLOW_HTTP"] = "1"
+        if self.config.archive_dir:  # ham yük arşivi (ADR-0024): yol ve anahtar dosyası YOLU
+            env["EVREN_ARCHIVE_DIR"] = self.config.archive_dir
+            env["EVREN_ARCHIVE_KEY_FILE"] = self.config.archive_key_file or ""
         env.update(inst.source_env())
         return env
 

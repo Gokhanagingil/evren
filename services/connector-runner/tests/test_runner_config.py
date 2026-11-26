@@ -128,3 +128,24 @@ def test_redact_removes_config_values_and_urls():
                   ["/run/secrets/zbx"])
     assert "/run/secrets" not in note and "zabbix.kurum" not in note and len(note) == 298
     assert Path("/run/secrets/zbx").name not in note
+
+
+def test_archive_settings_require_a_valid_key_and_absolute_dir(tmp_path):
+    """ADR-0024: arşiv açıksa anahtar zorunlu (düz metin arşiv yok); yol mutlak; saklama süresi sınırlı."""
+    from cryptography.fernet import Fernet
+
+    base = {"EVREN_CONNECTORS_FILE": str(tmp_path / "c.yaml"), "EVREN_GATEWAY_URL": "https://gecit:8089",
+            "EVREN_ARCHIVE_DIR": str(tmp_path / "arsiv")}
+    with pytest.raises(ConfigError, match="anahtar"):
+        RunnerConfig.from_env(base)
+    key = tmp_path / "archive.key"
+    key.write_text("gecersiz", encoding="utf-8")
+    with pytest.raises(ConfigError, match="geçersiz"):
+        RunnerConfig.from_env({**base, "EVREN_ARCHIVE_KEY_FILE": str(key)})
+    key.write_text(Fernet.generate_key().decode(), encoding="utf-8")
+    cfg = RunnerConfig.from_env({**base, "EVREN_ARCHIVE_KEY_FILE": str(key), "EVREN_ARCHIVE_RETENTION_DAYS": "7"})
+    assert cfg.archive_dir == str(tmp_path / "arsiv") and cfg.archive_retention_days == 7
+    for bad in ({"EVREN_ARCHIVE_DIR": "goreli/arsiv"}, {"EVREN_ARCHIVE_RETENTION_DAYS": "0"}):
+        with pytest.raises(ConfigError):
+            RunnerConfig.from_env({**base, "EVREN_ARCHIVE_KEY_FILE": str(key), **bad})
+    assert RunnerConfig.from_env({k: v for k, v in base.items() if k != "EVREN_ARCHIVE_DIR"}).archive_dir is None

@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 14/54 adım tamamlandı
+**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 15/54 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -125,7 +125,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 2/20 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 3/20 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -154,7 +154,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-12** ServiceNow'da elle yapılan değişikliklerin çekilmesi — _Planlandı_
 - [x] **F1-13** Ürün değişimi tatbikatı: ikinci bir keşif kaynağını gölge modda çalıştırıp kapsam ve değer farkını raporlama
   - Not: Sentetik tatbikat (tools/build_drill.py, Veri Kaynakları sayfası): BMC → Keşif-B gölge → etkin/devir → emekli; 9 denetim geçti, kural dosyaları değişmedi. Gerçek veritabanında rereconcile_source ile aynı geçişler testli. Bulgular: eşleme kapsamı farkı, adlandırma farkı. Gerçek ikinci ürün geldiğinde tatbikat onunla tekrarlanır.
-- [ ] **F1-14** Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla) — _Planlandı_
+- [x] **F1-14** Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla)
+  - Not: 26.11.2026 (ADR-0024, U5.4): çalıştırıcı tarafında şifreli parça dosyaları (Fernet, anahtar döndürme), veri içermeyen manifest ve özet denetimi, göreli raw_ref, saklama süresiyle günlük temizlik, connector_run --from-archive ile kaynaksız yeniden işleme; yığın duman testinde sınandı. S3 yazıcısı ve saklama süresinin kurum onayı U10.
 - [ ] **F1-15** Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry) — _Planlandı_
 - [ ] **F1-16** Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı — _Planlandı_
 - [ ] **F1-17** Sahiplik ve sertifikasyon: CI sahibinin periyodik onayı, sahipsiz CI raporu — _Planlandı_

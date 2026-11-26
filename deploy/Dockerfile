@@ -50,6 +50,8 @@ COPY schemas schemas
 COPY apps/web apps/web
 COPY deploy/evren.py deploy/evren.py
 COPY deploy/connectors.dev.yaml deploy/connectors.dev.yaml
+# Ham yük arşivi bağlama noktası (ADR-0024): yalnızca uygulama kullanıcısı okur/yazar; üretimde şifreli birim bağlanır
+RUN install -d -m 0700 -o 10001 -g 10001 /var/lib/evren/archive
 USER 10001
 EXPOSE 8088 8089
 ENTRYPOINT ["python", "/app/deploy/evren.py"]

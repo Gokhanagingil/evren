@@ -98,6 +98,11 @@ services:
       EVREN_RUNNER_NAME: dev-runner
       EVREN_WORKER_POLL_SECONDS: "5"
       EVREN_WORKER_HEALTH_FILE: /tmp/connector-runner.alive
+      # Ham yük arşivi (ADR-0024): şifreli parçalar; geliştirmede bellek içi, üretimde şifreli kalıcı birim
+      EVREN_ARCHIVE_DIR: /var/lib/evren/archive
+      EVREN_ARCHIVE_KEY_FILE: /run/connector/archive.key
+      EVREN_ARCHIVE_RETENTION_DAYS: "7"
+    tmpfs: ["/tmp", "/var/lib/evren/archive:uid=10001,gid=10001,mode=0700"]
     secrets: [connector_dsn]
     volumes: ["./secrets/connector:/run/connector:ro"]
     healthcheck:

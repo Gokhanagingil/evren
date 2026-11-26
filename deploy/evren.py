@@ -10,6 +10,7 @@
     evren connector    bağlayıcı kimlikleri: issue | list | revoke (yönetici bağlantısı)
     evren connector-run  bağlayıcı çalıştır: kaynak → eşleme → alım geçidi (--connector zabbix; --help)
     evren connector-runner  bağlayıcı çalıştırıcı servisi: istekler + zamanlama (EVREN_CONNECTORS_FILE; --once, --check)
+    evren connector-archive  ham yük arşivi: list | verify <çalışma> | prune --days N (EVREN_ARCHIVE_DIR)
     evren demo         sentetik demo verisini yükle (yalnızca EVREN_ALLOW_DEMO=1; boş geliştirme veritabanı)
     evren healthcheck  api|gateway|worker|ingest|indexer|connector-runner — konteyner sağlık denetimi
 
@@ -91,6 +92,12 @@ def connector_run(args: list[str]) -> int:
     return cr.main(args)
 
 
+def connector_archive(args: list[str]) -> int:
+    import connector_archive as ca
+
+    return ca.main(args)
+
+
 def connector_runner(args: list[str]) -> int:
     from evren_connector_runner import main as runner_main
 
@@ -167,6 +174,8 @@ def main(argv: list[str]) -> int:
         return connector_run(rest)
     if cmd == "connector-runner":
         return connector_runner(rest)
+    if cmd == "connector-archive":
+        return connector_archive(rest)
     if cmd == "migrate":
         return migrate(rest)
     if cmd == "demo":

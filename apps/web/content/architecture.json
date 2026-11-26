@@ -262,20 +262,25 @@
     "raw_archive": {
       "label": "Ham yük arşivi",
       "sub": [
-        "Saklama politikası,",
-        "raw_ref ile izlenir"
+        "Şifreli parçalar, saklama",
+        "süresi, yeniden işleme"
       ],
       "kind": "store",
       "kind_label": "Veri deposu",
       "chapter": "sources",
       "phase": "F1",
-      "text": "Ham kaynak yükleri sorun analizi ve yeniden işleme için saklanır. Saklama süresi veri sınıflandırmasına göre belirlenir.",
+      "text": "Bağlayıcının çektiği ham nesneler çalıştırıcı tarafında şifreli parça dosyalarına yazılır; kayıtlar raw_ref ile arşive bağlanır. Eşleme düzeltilince kaynağa gitmeden arşivden yeniden işlenir (yeni çalışma, geçit ve uzlaştırıcıdan geçer). Saklama süresi dolanlar günde bir kez silinir.",
       "tech": [
-        "Kurum nesne deposu"
+        "evren_core.connectors.archive (ADR-0024)",
+        "Fernet (cryptography; yeni bağımlılık yok)",
+        "connector_run.py --from-archive · evren connector-archive",
+        "Dosya sistemi (kurum şifreli birimi); S3 yazıcısı sonra"
       ],
       "security": [
-        "Şifreli depolama",
-        "Saklama politikası"
+        "Şifreleme zorunlu, anahtar dosyadan, anahtar döndürme",
+        "Parça özeti manifestte; kurcalama açık hata",
+        "Kısıtlı veri sınıfı: API ve arayüzde gösterilmez",
+        "Saklama süresi (EVREN_ARCHIVE_RETENTION_DAYS)"
       ]
     },
     "change_filter": {
