@@ -38,3 +38,116 @@ rules:
     parent_reference: cmdb_ci
     entries:
       - {priority: 100, attributes: [mac_address]}
+
+  # --- U4.2 (ADR-0019): yeni sınıflar ------------------------------------------------------------------
+  # Sınıf anahtarı (attr:<alan>) kurum genelinde tekil özniteliktir: farklı değer çelişki sayılır.
+  - applies_to: cmdb_ci_cloud_service_account
+    independent: true
+    description: Bulut hizmet hesabı / aboneliği — sağlayıcının hesap kimliği
+    verify: true
+    entries:
+      - {priority: 100, attributes: [account_id]}
+      - {priority: 200, attributes: [correlation_id], evren_extension: true}
+
+  - applies_to: cmdb_ci_cluster
+    independent: true
+    description: Küme (Windows, vCenter dışı, Kubernetes) — küme kimliği; ad tek başına yetmez
+    verify: true
+    entries:
+      - {priority: 100, attributes: [cluster_id]}
+      - {priority: 200, attributes: [correlation_id], evren_extension: true}
+
+  - applies_to: cmdb_ci_ip_network
+    independent: true
+    description: IP ağı — CIDR biçiminde alt ağ (VRF çakışması olan kurumda bağımlı kurala çevrilmeli)
+    verify: true
+    entries:
+      - {priority: 100, attributes: [subnet], evren_extension: true}
+
+  - applies_to: cmdb_ci_oslv_container
+    independent: true
+    description: Konteyner — çalışma zamanının verdiği konteyner kimliği
+    verify: true
+    entries:
+      - {priority: 100, attributes: [correlation_id]}
+
+  # CSDM ve yönetişim kayıtları keşfedilmez; elle veya ServiceNow'dan gelir. Ad sınıf ailesi içinde aranır,
+  # çelişki denetimi yine çalışır (kural 7).
+  - applies_to: cmdb_ci_service
+    independent: true
+    description: Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad
+    verify: true
+    entries:
+      - {priority: 100, attributes: [correlation_id], evren_extension: true}
+      - {priority: 200, attributes: [name], evren_extension: true}
+
+  - applies_to: cmdb_ci_business_app
+    independent: true
+    description: İş uygulaması — korelasyon kimliği, sonra ad
+    verify: true
+    entries:
+      - {priority: 100, attributes: [correlation_id], evren_extension: true}
+      - {priority: 200, attributes: [name], evren_extension: true}
+
+  - applies_to: cmdb_ci_business_capability
+    independent: true
+    description: İş yeteneği — ad
+    verify: true
+    entries:
+      - {priority: 100, attributes: [name], evren_extension: true}
+
+  - applies_to: cmdb_ci_business_process
+    independent: true
+    description: İş süreci — ad
+    verify: true
+    entries:
+      - {priority: 100, attributes: [name], evren_extension: true}
+
+  - applies_to: cmdb_ci_information_object
+    independent: true
+    description: Bilgi nesnesi — ad
+    verify: true
+    entries:
+      - {priority: 100, attributes: [name], evren_extension: true}
+
+  # Bağımlı CI'lar: yalnızca üst CI bağlamında tekildir. Üst bağlam çözümlemesi U7'de (F1-07);
+  # o zamana kadar çözümleyici güvenli varsayılanla "kimlik yetersiz" döner, küresel ad eşleştirmesi yapmaz.
+  - applies_to: cmdb_ci_kubernetes_component
+    independent: false
+    description: Kubernetes bileşeni — küme bağlamında ad alanı + ad
+    verify: true
+    parent_relation: {type: "Contains::Contained by", parent_class: cmdb_ci_kubernetes_cluster}
+    entries:
+      - {priority: 100, attributes: [namespace, name]}
+
+  - applies_to: cmdb_ci_file_system
+    independent: false
+    description: Dosya sistemi — bağlı bilgisayar bağlamında bağlama noktası
+    verify: true
+    parent_reference: computer
+    entries:
+      - {priority: 100, attributes: [mount_point]}
+
+  - applies_to: cmdb_ci_cluster_node
+    independent: false
+    description: Küme düğümü — küme bağlamında ad
+    verify: true
+    parent_reference: cluster
+    entries:
+      - {priority: 100, attributes: [name]}
+
+  - applies_to: cmdb_ci_logical_datacenter
+    independent: false
+    description: Bulut bölgesi — hizmet hesabı bağlamında bölge
+    verify: true
+    parent_relation: {type: "Hosted on::Hosts", parent_class: cmdb_ci_cloud_service_account}
+    entries:
+      - {priority: 100, attributes: [region]}
+
+  - applies_to: cmdb_ci_database
+    independent: false
+    description: Veritabanı kataloğu — veritabanı örneği bağlamında ad
+    verify: true
+    parent_relation: {type: "Contains::Contained by", parent_class: cmdb_ci_db_instance}
+    entries:
+      - {priority: 100, attributes: [name]}

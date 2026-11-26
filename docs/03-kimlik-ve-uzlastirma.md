@@ -14,6 +14,7 @@ Kurallar: `metadata/identification_rules.yaml`, `metadata/reconciliation_rules.y
 | UUID | Biçim; sıfır ve bilinen fabrika UUID'leri reddedilir; **bayt sırası çevrilmiş** biçim de denenir | SMBIOS 2.6 öncesi farkı |
 | MAC | Tek biçim; multicast reddedilir; HSRP/VRRP, VPN ve yerel yönetimli MAC **zayıf** | Paylaşılan sanal MAC iki yönlendiriciyi birleştirmez |
 | IP | Loopback, link-local, multicast reddedilir; IP zayıf kanıttır | DHCP, NAT |
+| Sınıf anahtarı (`attr:<alan>`) | Kurum genelinde tekil sınıf özniteliği: bulut hesap kimliği, küme kimliği, alt ağ. Küçük harf; alt ağ CIDR'ye çevrilir | `10.1.2.5/24` → `subnet=10.1.2.0/24` |
 
 **Türkçe tuzağı:** Python'da `"İ".lower()` iki karakter döndürür, JavaScript'te `toLowerCase('tr')` ise `I`'yı `ı` yapar. Kimlik anahtarlarında yerel ayardan bağımsız `ascii_fold` kullanılır.
 
@@ -31,15 +32,28 @@ Kurallar: `metadata/identification_rules.yaml`, `metadata/reconciliation_rules.y
    | 300 | ad | |
    | 400 | MAC + ad | |
 
+   - Bu tablo donanım kuralıdır. Sınıfa göre kurallar (ADR-0019):
+
+     | Sınıf | Kural |
+     | --- | --- |
+     | VM örneği | korelasyon kimliği; vCenter UUID + nesne kimliği |
+     | Bulut hizmet hesabı | hesap kimliği (`account_id`); korelasyon kimliği |
+     | Küme (Kubernetes dahil) | küme kimliği (`cluster_id`); korelasyon kimliği. Ad tek başına yetmez |
+     | IP ağı | alt ağ (CIDR) |
+     | Konteyner | korelasyon kimliği (çalışma zamanı kimliği) |
+     | Servis, iş uygulaması, iş yeteneği, iş süreci, bilgi nesnesi | korelasyon kimliği, sonra ad (sınıf ailesi içinde) |
+     | **Bağımlı:** uygulama, ağ adaptörü, Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu | üst CI bağlamında (ör. küme + ad alanı + ad; bilgisayar + bağlama noktası) |
+
    - Öznitelik kayıtta yoksa girdi atlanır.
    - Tek eşleşme varsa çelişki denetimine geçilir.
    - Birden fazla eşleşme "CMDB'de olası mükerrer" olarak incelemeye düşer.
-3. **Çelişki denetimi.** Seri, UUID, işletim sistemi ailesi, sınıf (kardeş sınıflar) veya iki gerçek alan adındaki FQDN çelişiyorsa kural eşleşse bile otomatik birleştirme yapılmaz. ServiceNow IRE'den temel farkımız budur.
+3. **Çelişki denetimi.** Seri, UUID, işletim sistemi ailesi, sınıf anahtarı (aynı alanda farklı değer: iki ayrı küme kimliği), sınıf (kardeş sınıflar) veya iki gerçek alan adındaki FQDN çelişiyorsa kural eşleşse bile otomatik birleştirme yapılmaz. ServiceNow IRE'den temel farkımız budur.
 4. **Olasılıksal skor.** Kurallar sonuç vermezse aday dizininden gelen CI'lar skorlanır (log-odds toplamı → lojistik):
 
    | Kanıt | Ağırlık |
    | --- | --- |
    | UUID / harici kimlik / korelasyon | +9 |
+   | Sınıf anahtarı (hesap, küme kimliği, alt ağ) | +8 |
    | VMware seri | +8 |
    | Seri | +7 |
    | FQDN | +5 |
@@ -50,6 +64,7 @@ Kurallar: `metadata/identification_rules.yaml`, `metadata/reconciliation_rules.y
    | IP | +1 |
    | Seri çelişkisi | −4 |
    | UUID çelişkisi | −5 |
+   | Sınıf anahtarı çelişkisi | −5 |
    | OS çelişkisi | −3 |
    | Sınıf çelişkisi | −3 |
    | FQDN çelişkisi | −2,5 |
@@ -61,7 +76,8 @@ Kurallar: `metadata/identification_rules.yaml`, `metadata/reconciliation_rules.y
    - Otomatik birleştirme: ≥ 0,97 **ve** ikinci adaydan en az 0,10 fark.
    - İnceleme: ≥ 0,35.
    - Altı: yeni CI.
-6. **Bağımlı sınıflar** (uygulama, ağ adaptörü) yalnızca üst CI bağlamında tanımlanır. Bu uygulanana kadar `insufficient` döner (F1-07).
+6. **Bağımlı sınıflar** (uygulama, ağ adaptörü, Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu) yalnızca üst CI bağlamında tanımlanır. Bu uygulanana kadar `insufficient` döner (F1-07, U7). Bağlam öznitelikleri (ad alanı, bağlama noktası, bölge, VLAN) küresel aday dizinine girmez: `default` ad alanı yüzlerce kümede vardır.
+7. **Aile.** Adaylar sınıf ailesi içinde aranır. Aile listesinde olmayan dal, `cmdb_ci`'ın ilk alt sınıfıyla kendi ailesini kurar (ADR-0019).
 
 Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlarıyla kalibre edilir; hedef ölçüt yanlış birleştirme oranı < %0,5.
 

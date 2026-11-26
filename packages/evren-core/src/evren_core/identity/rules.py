@@ -13,7 +13,16 @@ from dataclasses import dataclass
 
 from ..classes import ClassHierarchy
 
-__all__ = ["ATTRIBUTE_KEY_TYPES", "IdentificationRule", "IdentifierEntry", "RuleSet"]
+__all__ = ["ATTRIBUTE_KEY_TYPES", "CLASS_KEY_ATTRIBUTES", "CONTEXT_KEY_ATTRIBUTES", "IdentificationRule",
+           "IdentifierEntry", "RuleSet"]
+
+#: Sınıfa özgü, kurum genelinde tekil kimlik öznitelikleri (ADR-0019). Kayıttan ``attr:<alan>`` anahtarı
+#: olarak çıkarılır, aday dizinine girer, eşleşmesi güçlü kanıt, farklı değeri çelişkidir.
+CLASS_KEY_ATTRIBUTES: tuple[str, ...] = ("account_id", "cluster_id", "subnet")
+
+#: Yalnızca üst CI bağlamında anlamlı öznitelikler (Kubernetes ad alanı, bağlama noktası, bölge…). Bağımlı
+#: kurallarda kullanılır; küresel dizine girmez (``default`` ad alanı yüzlerce kümede vardır).
+CONTEXT_KEY_ATTRIBUTES: tuple[str, ...] = ("namespace", "mount_point", "region", "vlan_id")
 
 #: Kural özniteliği → aday dizini anahtar türü. ``None``: eşleştirmede değiştirici, anahtar değil.
 ATTRIBUTE_KEY_TYPES: Mapping[str, str | None] = {
@@ -28,6 +37,8 @@ ATTRIBUTE_KEY_TYPES: Mapping[str, str | None] = {
     "vcenter_uuid": "vmobj",
     "object_id": "vmobj",
     "external_id": "ext",
+    **{a: "attr:" + a for a in CLASS_KEY_ATTRIBUTES},
+    **{a: "attr:" + a for a in CONTEXT_KEY_ATTRIBUTES},
 }
 
 

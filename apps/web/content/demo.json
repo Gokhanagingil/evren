@@ -1933,6 +1933,245 @@
       "evren_extension": false
      }
     ]
+   },
+   {
+    "applies_to": "cmdb_ci_cloud_service_account",
+    "class_label": "Bulut hizmet hesabı",
+    "description": "Bulut hizmet hesabı / aboneliği — sağlayıcının hesap kimliği",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "account_id"
+      ],
+      "evren_extension": false
+     },
+     {
+      "priority": 200,
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_cluster",
+    "class_label": "Küme",
+    "description": "Küme (Windows, vCenter dışı, Kubernetes) — küme kimliği; ad tek başına yetmez",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "cluster_id"
+      ],
+      "evren_extension": false
+     },
+     {
+      "priority": 200,
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_ip_network",
+    "class_label": "IP ağı",
+    "description": "IP ağı — CIDR biçiminde alt ağ (VRF çakışması olan kurumda bağımlı kurala çevrilmeli)",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "subnet"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_oslv_container",
+    "class_label": "Konteyner",
+    "description": "Konteyner — çalışma zamanının verdiği konteyner kimliği",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": false
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_service",
+    "class_label": "Servis",
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true
+     },
+     {
+      "priority": 200,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_business_app",
+    "class_label": "İş uygulaması",
+    "description": "İş uygulaması — korelasyon kimliği, sonra ad",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true
+     },
+     {
+      "priority": 200,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_business_capability",
+    "class_label": "İş yeteneği",
+    "description": "İş yeteneği — ad",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_business_process",
+    "class_label": "İş süreci",
+    "description": "İş süreci — ad",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_information_object",
+    "class_label": "Bilgi nesnesi",
+    "description": "Bilgi nesnesi — ad",
+    "independent": true,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "class_label": "Kubernetes bileşeni",
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "independent": false,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_file_system",
+    "class_label": "Dosya sistemi",
+    "description": "Dosya sistemi — bağlı bilgisayar bağlamında bağlama noktası",
+    "independent": false,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "mount_point"
+      ],
+      "evren_extension": false
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_cluster_node",
+    "class_label": "Küme düğümü",
+    "description": "Küme düğümü — küme bağlamında ad",
+    "independent": false,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_logical_datacenter",
+    "class_label": "Mantıksal veri merkezi (bölge)",
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "independent": false,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "region"
+      ],
+      "evren_extension": false
+     }
+    ]
+   },
+   {
+    "applies_to": "cmdb_ci_database",
+    "class_label": "Veritabanı (katalog)",
+    "description": "Veritabanı kataloğu — veritabanı örneği bağlamında ad",
+    "independent": false,
+    "entries": [
+     {
+      "priority": 100,
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false
+     }
+    ]
    }
   ]
  },

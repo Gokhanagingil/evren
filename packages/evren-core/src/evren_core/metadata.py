@@ -354,13 +354,24 @@ def validate(md: Metadata) -> ValidationReport:
         prios = [e["priority"] for e in rule["entries"]]
         if len(prios) != len(set(prios)):
             r.errors.append(f"{where}: tekrarlanan öncelik")
+        cls_fields = md.fields_of(rule["applies_to"]) if rule["applies_to"] in known else {}
         for e in rule["entries"]:
             for a in e["attributes"]:
                 if a not in ATTRIBUTE_KEY_TYPES:
                     r.errors.append(f"{where}: desteklenmeyen öznitelik {a}")
+                elif str(ATTRIBUTE_KEY_TYPES[a] or "").startswith("attr:") and a not in cls_fields:
+                    r.errors.append(f"{where}: sınıf anahtarı '{a}' bu sınıfta veya atalarında tanımlı değil")
+        if not rule.get("independent", True) and not (rule.get("parent_relation") or rule.get("parent_reference")):
+            r.errors.append(f"{where}: bağımlı kural üst bağlam ister (parent_relation veya parent_reference)")
         rel = (rule.get("parent_relation") or {}).get("type")
         if rel and rel not in rel_names:
             r.errors.append(f"{where}: ilişki tipi tanımsız {rel}")
+        parent_cls = (rule.get("parent_relation") or {}).get("parent_class")
+        if parent_cls and parent_cls not in known:
+            r.errors.append(f"{where}: üst sınıf tanımsız {parent_cls}")
+        ref = rule.get("parent_reference")
+        if ref and (cls_fields.get(ref) or {}).get("type") != "reference":
+            r.errors.append(f"{where}: parent_reference '{ref}' bu sınıfta referans alanı değil")
 
     # Uzlaştırma
     rec = md.reconciliation

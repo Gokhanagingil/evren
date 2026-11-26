@@ -7,10 +7,12 @@ from datetime import datetime
 from enum import StrEnum
 from typing import Any
 
-__all__ = ["KEY_TYPES", "Feature", "IdentityKeys", "Outcome", "Resolution", "SourceRecord"]
+__all__ = ["CLASS_KEY_PREFIX", "KEY_TYPES", "Feature", "IdentityKeys", "Outcome", "Resolution", "SourceRecord"]
 
-#: Aday dizininde kullanılan anahtar türleri.
+#: Aday dizininde kullanılan anahtar türleri. Bunlara ek olarak sınıfa özgü kimlik öznitelikleri
+#: ``attr:<alan>`` türüyle dizinlenir (ör. ``attr:account_id``; ADR-0019, ``rules.CLASS_KEY_ATTRIBUTES``).
 KEY_TYPES = ("name", "compact", "fqdn", "serial", "uuid", "mac", "ip", "ext", "correlation", "vmobj")
+CLASS_KEY_PREFIX = "attr:"
 
 
 @dataclass(frozen=True)
@@ -46,6 +48,16 @@ class IdentityKeys:
     correlation_ids: frozenset[str] = frozenset()
     vm_objects: frozenset[str] = frozenset()
     os_families: frozenset[str] = frozenset()
+    #: Sınıfa özgü kimlik öznitelikleri, ``alan=değer`` biçiminde (bulut hesap kimliği, küme kimliği, alt ağ).
+    class_keys: frozenset[str] = frozenset()
+
+    def class_key_map(self) -> dict[str, frozenset[str]]:
+        """``{"account_id": {"123"}}``: öznitelik başına değerler."""
+        out: dict[str, set[str]] = {}
+        for item in self.class_keys:
+            attr, _, value = item.partition("=")
+            out.setdefault(attr, set()).add(value)
+        return {k: frozenset(v) for k, v in out.items()}
 
     def merged(self, other: IdentityKeys) -> IdentityKeys:
         return replace(
@@ -65,6 +77,7 @@ class IdentityKeys:
             "ext": self.external_ids,
             "correlation": self.correlation_ids,
             "vmobj": self.vm_objects,
+            **{CLASS_KEY_PREFIX + attr: values for attr, values in self.class_key_map().items()},
         }
 
     @property
@@ -72,14 +85,14 @@ class IdentityKeys:
         """Yeni CI açmaya yetecek kimlik var mı? Kaynak içi harici kimlik ve IP tek başına yetmez."""
         return any(
             (self.names, self.fqdns, self.serials, self.vmware_serials, self.uuids, self.macs,
-             self.correlation_ids, self.vm_objects)
+             self.correlation_ids, self.vm_objects, self.class_keys)
         )
 
     @property
     def is_empty(self) -> bool:
         return not any(
             (self.names, self.fqdns, self.serials, self.vmware_serials, self.uuids, self.macs,
-             self.external_ids, self.correlation_ids, self.vm_objects)
+             self.external_ids, self.correlation_ids, self.vm_objects, self.class_keys)
         )
 
 

@@ -174,3 +174,26 @@ def test_import_keeps_servicenow_sys_id_and_review_goes_to_queue(as_reconciler, 
 def test_reconciler_least_privilege(as_reconciler, statement):
     with pytest.raises(psycopg.errors.InsufficientPrivilege), as_reconciler.transaction():
         as_reconciler.execute(statement)
+
+
+def test_class_identity_keys_are_indexed_and_match_across_sources(as_reconciler, metadata):
+    """U4.2 (ADR-0019): bulut hesabı account_id ile tanınır; anahtar dizinde attr:account_id türüyle durur."""
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    first = store.apply(rec("vCenter", "acc-1", uuid.uuid4(), cls="cmdb_ci_cloud_service_account",
+                            name="Üretim aboneliği", account_id="4F2A-99B1"))
+    second = store.apply(rec("BMC", "acc-x", uuid.uuid4(), cls="cmdb_ci_cloud_service_account",
+                             name="Azure Prod", account_id="4f2a-99b1"))
+    assert first.ci_sys_id and second.ci_sys_id == first.ci_sys_id
+    keys = fetch(as_reconciler, "SELECT key_type, value FROM ingest.identity_key WHERE ci_sys_id = %s "
+                                "AND key_type LIKE 'attr:%%'", first.ci_sys_id)
+    assert keys == [("attr:account_id", "4f2a-99b1")]
+    doc = fetch(as_reconciler, "SELECT class_attributes FROM cmdb.cmdb_ci WHERE sys_id = %s", first.ci_sys_id)[0][0]
+    assert doc["account_id"]  # sınıf alanı JSONB'de, sözlük tetikleyicisinden geçti
+
+
+def test_identity_key_type_constraint_rejects_unknown_types(conn):
+    with pytest.raises(psycopg.errors.CheckViolation), conn.transaction():
+        conn.execute("INSERT INTO ingest.identity_key (key_type, value, ci_sys_id) "
+                     "VALUES ('attr:Kötü Alan', 'x', repeat('0', 32))")
+    with pytest.raises(psycopg.errors.CheckViolation), conn.transaction():
+        conn.execute("INSERT INTO ingest.identity_key (key_type, value, ci_sys_id) VALUES ('hostname', 'x', repeat('0', 32))")

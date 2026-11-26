@@ -1,6 +1,7 @@
 """Kaynak kaydından kimlik anahtarlarının çıkarılması."""
 from __future__ import annotations
 
+import ipaddress
 from collections.abc import Iterable
 from typing import Any
 
@@ -15,6 +16,7 @@ from ..normalize import (
     uuid_variants,
 )
 from .model import IdentityKeys, SourceRecord
+from .rules import CLASS_KEY_ATTRIBUTES
 
 __all__ = ["extract_keys"]
 
@@ -36,6 +38,19 @@ def _values(record: SourceRecord, fields: Iterable[str], lookup_name: str | None
     if lookup_name:
         out.extend(v for v in record.lookup.get(lookup_name, ()) if v not in (None, ""))
     return out
+
+
+def _class_key_value(attr: str, raw: Any) -> str | None:
+    """Sınıf anahtarı normalizasyonu: alt ağ CIDR'ye (``10.1.2.5/24`` → ``10.1.2.0/24``), diğerleri küçük harf."""
+    text = str(raw).strip()
+    if not text or len(text) > 255:
+        return None
+    if attr == "subnet":
+        try:
+            return ipaddress.ip_network(text, strict=False).with_prefixlen
+        except ValueError:
+            return None
+    return text.lower()
 
 
 def extract_keys(record: SourceRecord) -> IdentityKeys:
@@ -83,6 +98,10 @@ def extract_keys(record: SourceRecord) -> IdentityKeys:
     if vc and obj:
         vm_objects.add(f"{str(vc).strip().lower()}:{str(obj).strip().lower()}")
 
+    class_keys = {f"{a}={v}" for a in CLASS_KEY_ATTRIBUTES
+                  if record.attributes.get(a) not in (None, "")
+                  and (v := _class_key_value(a, record.attributes[a])) is not None}
+
     return IdentityKeys(
         names=frozenset(names),
         compacts=frozenset(compacts),
@@ -97,4 +116,5 @@ def extract_keys(record: SourceRecord) -> IdentityKeys:
         correlation_ids=frozenset(correlation),
         vm_objects=frozenset(vm_objects),
         os_families=frozenset(families),
+        class_keys=frozenset(class_keys),
     )

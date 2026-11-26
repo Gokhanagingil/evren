@@ -61,6 +61,21 @@ Bu sürüm ilk kez bir dal yerleşimini bilerek ServiceNow'a bırakıyor: Kubern
 - Kurallar `meta.cmdb_rel_rule` tablosuna tohumlanır. Yabancı anahtarlar sınıfa ve ilişki tipine bağlıdır. Herkes okuyabilir; yalnızca göç/tohum rolü yazar. Yetki testleri bunu doğrular.
 - Bağlayıcı eşleme dosyalarındaki ve demo verisindeki her ilişki bu kurallarla test edilir. Yeni bir eşleme izinsiz ilişki üretirse CI kırmızıya döner.
 
+### 5. Sınıfa özgü kimlik anahtarı ve yeni sınıfların kimlik kuralları (U4.2)
+
+- Kimlik anahtarlarına `attr:<alan>` türü eklendi (`IdentityKeys.class_keys`). Kurum genelinde tekil sınıf öznitelikleri `CLASS_KEY_ATTRIBUTES` listesindedir: `account_id`, `cluster_id`, `subnet`. Bunlar aday dizinine girer.
+  - Eşleşme güçlü kanıttır (+8). Aynı alanda farklı değer çelişkidir (−5) ve kural eşleşse bile otomatik birleştirmeyi durdurur.
+  - Alt ağ CIDR'ye çevrilir; geçersiz değer anahtar üretmez.
+- Bağlam öznitelikleri (`CONTEXT_KEY_ATTRIBUTES`: ad alanı, bağlama noktası, bölge, VLAN) yalnızca bağımlı kurallarda kullanılır, küresel dizine girmez.
+- `ingest.identity_key` tür kısıtı `attr:` ile başlayan, ServiceNow alan adı biçimindeki türleri kabul eder (göç 0015).
+- Yeni kurallar:
+  - **Bağımsız:** bulut hizmet hesabı (hesap kimliği), küme (küme kimliği; ad tek başına yetmez), IP ağı (alt ağ), konteyner (çalışma zamanı kimliği), servis/iş uygulaması/iş yeteneği/iş süreci/bilgi nesnesi (korelasyon kimliği, sonra ad).
+  - **Bağımlı:** Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu. Bunlar U7'ye kadar `insufficient` döner.
+- Doğrulayıcı üç hatayı reddeder:
+  - sınıfta tanımlı olmayan sınıf anahtarı,
+  - üst bağlamı olmayan bağımlı kural,
+  - referans olmayan `parent_reference`.
+
 ## Sonuçlar
 
 - U5 bağlayıcıları (vCenter kümeleri, NNMi alt ağları, Defender uç noktaları, Kubernetes, bulut) yazacakları sınıfı bulur.
@@ -70,6 +85,7 @@ Bu sürüm ilk kez bir dal yerleşimini bilerek ServiceNow'a bırakıyor: Kubern
 
 ## Bilinçli sınırlar
 
-- Yeni sınıfların kimlik kuralları (seri, hesap kimliği, küme kimliği…) U4.2'dedir. O zamana kadar bu sınıflar genel kurallarla ve olasılıksal skorla eşleşir; çelişkide kuyruğa düşer.
+- Bağımlı yeni sınıfların (Kubernetes bileşeni, dosya sistemi, küme düğümü, bulut bölgesi, veritabanı kataloğu) üst bağlamda çözümlenmesi U7'dedir. O zamana kadar güvenli varsayılanla `insufficient` dönerler.
+- IP ağı kuralı alt ağı kurum genelinde tekil sayar. VRF ile çakışan özel adres aralıkları kullanan kurumda kural bağımlıya (yönlendirme alanı bağlamı) çevrilmelidir.
 - İlişki kuralları ServiceNow'un önerdiği listenin bir alt kümesidir. Depolama topolojisi (SAN/LUN) kuralları depolama bağlayıcısıyla gelir.
 - CSDM 5 aşama/durum adları ve dinamik CI grubu, bilgi nesnesi gibi sınıflar kurum örneğinden doğrulanmalıdır.

@@ -21,6 +21,7 @@ class ScoringWeights:
     uuid_match: float = 9.0
     external_id_match: float = 9.0
     correlation_match: float = 9.0
+    class_key_match: float = 8.0
     vmware_serial_match: float = 8.0
     serial_match: float = 7.0
     fqdn_match: float = 5.0
@@ -33,6 +34,7 @@ class ScoringWeights:
     ip_overlap: float = 1.0
     serial_conflict: float = -4.0
     uuid_conflict: float = -5.0
+    class_key_conflict: float = -5.0
     os_conflict: float = -3.0
     name_digit_conflict: float = -3.5
     name_mismatch: float = -1.5
@@ -131,6 +133,11 @@ def contradictions(a: IdentityKeys, b: IdentityKeys, w: ScoringWeights = DEFAULT
     if a.os_families and b.os_families and not (a.os_families & b.os_families):
         out.append(Feature("os_conflict", w.os_conflict,
                            f"İşletim sistemi ailesi farklı: {sorted(a.os_families)} ≠ {sorted(b.os_families)}"))
+    ak, bk = a.class_key_map(), b.class_key_map()
+    for attr in sorted(set(ak) & set(bk)):
+        if not (ak[attr] & bk[attr]):
+            out.append(Feature("class_key_conflict", w.class_key_conflict,
+                               f"Sınıf kimliği farklı ({attr}): {sorted(ak[attr])} ≠ {sorted(bk[attr])}"))
     return out
 
 
@@ -144,6 +151,10 @@ def score(a: IdentityKeys, b: IdentityKeys, w: ScoringWeights = DEFAULT_WEIGHTS)
                                 f"Harici kimlik eşleşti: {sorted(a.external_ids & b.external_ids)[0]}"))
     if (a.correlation_ids & b.correlation_ids) or (a.vm_objects & b.vm_objects):
         features.append(Feature("correlation_match", w.correlation_match, "Korelasyon/nesne kimliği eşleşti"))
+    common_class_keys = a.class_keys & b.class_keys
+    if common_class_keys:
+        features.append(Feature("class_key_match", w.class_key_match,
+                                f"Sınıf kimliği eşleşti: {sorted(common_class_keys)[0]}"))
     if a.vmware_serials & b.vmware_serials:
         features.append(Feature("vmware_serial_match", w.vmware_serial_match, "VMware seri numarası eşleşti"))
     if a.serials & b.serials:
