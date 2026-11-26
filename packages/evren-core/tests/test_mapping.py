@@ -9,6 +9,7 @@ import yaml
 from evren_core.connectors import FieldMapping, MappingError, resolve_path
 from evren_core.identity import Outcome
 from evren_core.identity.adapters import source_record_from_ingest
+from evren_core.reference import REFERENCE_TABLES
 
 FIXTURES = Path(__file__).parent / "fixtures"
 RUN = uuid.UUID("00000000-0000-4000-8000-000000000001")
@@ -35,6 +36,11 @@ def test_every_mapping_file_parses_and_targets_known_classes_and_fields(repo_roo
         m = FieldMapping.from_dict(yaml.safe_load(f.read_text(encoding="utf-8")))
         assert m.data_source in known_sources, f
         classes = [m.default_class] + [r.class_name for r in m.class_rules]
+        if all(c in REFERENCE_TABLES for c in classes):  # referans tabloları (ADR-0022): sütunlar tek listeden
+            allowed = set().union(*(REFERENCE_TABLES[c].columns for c in classes))
+            assert set(m.attributes) <= allowed, f"{f}: referans tablosunda olmayan alanlar {set(m.attributes) - allowed}"
+            assert not m.relations and m.require, f"{f}: referans eşlemesi tabloyla sınırlı olmalı"
+            continue
         for cls in classes:
             assert cls in metadata.hierarchy, f"{f}: {cls}"
         allowed = set(metadata.fields_of(m.default_class)) | {"bios_uuid", "vcenter_uuid", "correlation_id"}
@@ -100,7 +106,7 @@ def test_vcenter_vm_and_guest_have_distinct_source_keys(repo_root, now):
 
 
 def test_servicenow_import_keeps_sys_id(repo_root, engine, now):
-    raw = {"sys_id": "0123456789abcdef0123456789abcdef", "sys_class_name": "cmdb_ci_linux_server",
+    raw = {"sys_id": "0123456789abcdef0123456789abcdef", "sys_class_name": "cmdb_ci_linux_server", "_table": "cmdb_ci_server",
            "name": "ist-erp-01", "serial_number": "CZJ1234567", "used_for": "Production",
            "support_group": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "operational_status": "1"}
     rec = mapping(repo_root, "servicenow_cmdb/server.mapping.yaml").apply(raw, run_id=RUN, observed_at=now)

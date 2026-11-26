@@ -22,6 +22,7 @@ from evren_core.connectors.sources.nnmi import NNMiClient, NNMiSimulator
 from evren_core.connectors.sources.servicenow import ServiceNowClient, ServiceNowSimulator
 from evren_core.connectors.sources.vcenter import VCenterClient, VCenterSimulator
 from evren_core.connectors.sources.zabbix import ZabbixClient, ZabbixSimulator
+from evren_core.reference import REFERENCE_TABLES
 from evren_reconciler import ReconcilerStore
 
 NOW = datetime(2026, 11, 26, 7, 0, tzinfo=UTC)
@@ -89,7 +90,8 @@ def run(store: ReconcilerStore, name: str):
 def test_servicenow_records_keep_their_sys_id_through_the_pipeline(as_reconciler, metadata):
     store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
     recs, results = run(store, "servicenow")
-    assert all(r.ci_sys_id == rec.source_key for rec, r in zip(recs, results, strict=True))
+    assert all(r.ci_sys_id == rec.source_key for rec, r in zip(recs, results, strict=True)
+               if rec.class_hint not in REFERENCE_TABLES)  # referans kayıtları CI değildir (ADR-0022)
     assert fetch(as_reconciler, """SELECT method FROM ingest.identity_link
                                    WHERE data_source = 'ServiceNow' AND source_key = %s AND active""", APP) == [
         ("import",)]
@@ -166,3 +168,75 @@ def test_shadow_servicenow_does_not_create_cis(as_reconciler, metadata):
     _recs, results = run(store, "servicenow")
     assert not any(r.ci_sys_id for r in results)
     assert fetch(as_reconciler, "SELECT count(*) FROM cmdb.cmdb_ci WHERE sys_id = %s", APP) == [(0,)]
+
+
+GROUP = "a1b2c3d4e5f60718293a4b5c6d7e8f90"  # örnek ServiceNow grubu: Linux Sistem Ekibi (CI'ların destek grubu)
+GONE = "b2c3d4e5f60718293a4b5c6d7e8f90a3"   # örnek kullanıcı: active=false
+MODEL = "2b3c4d5e6f708192a3b4c5d6e7f8019a"
+
+
+def test_reference_tables_are_loaded_with_same_sys_id_and_skip_identity(as_reconciler, metadata):
+    """ADR-0022: referans kayıtları ref.<tablo>'ya aynı sys_id ile yazılır; CI açılmaz, kimlik bağı kurulmaz."""
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    recs, results = run(store, "servicenow")
+    refs = {rec.source_key: res.outcome for rec, res in zip(recs, results, strict=True)
+            if rec.class_hint in REFERENCE_TABLES}
+    assert len(refs) == 12 and set(refs.values()) == {"reference"}
+    assert fetch(as_reconciler, "SELECT name, manager, active, source FROM ref.sys_user_group WHERE sys_id = %s",
+                 GROUP) == [("Linux Sistem Ekibi (SENTETİK)", "b2c3d4e5f60718293a4b5c6d7e8f90a2", True, "servicenow")]
+    assert fetch(as_reconciler, "SELECT user_name, email, active FROM ref.sys_user WHERE sys_id = %s", GONE) == [
+        ("ornek.ayrilan", None, False)]
+    assert fetch(as_reconciler, "SELECT name, manufacturer FROM ref.cmdb_model WHERE sys_id = %s", MODEL) == [
+        ("Örnek Sunucu R760 (SENTETİK)", "3c4d5e6f708192a3b4c5d6e7f8019a2b")]
+    assert fetch(as_reconciler, "SELECT model_id FROM cmdb.cmdb_ci WHERE sys_id = '7d3e4f5061728394a5b6c7d8e9f0a1b2'") \
+        == [(MODEL,)]
+    assert fetch(as_reconciler, "SELECT count(*) FROM cmdb.cmdb_ci WHERE sys_id = ANY(%s)", list(refs)) == [(0,)]
+    assert fetch(as_reconciler, "SELECT count(*) FROM ingest.identity_link WHERE source_key = ANY(%s)", list(refs)) == \
+        [(0,)]
+    # çalışma sayaçları referans kayıtlarını da sayar (geçit kapanışı bildirilen sayıyla eşleşir)
+    run_id = recs[0].run_id
+    assert fetch(as_reconciler, "SELECT record_count FROM ingest.source_run WHERE run_id = %s", run_id) == [(17,)]
+    again = run(store, "servicenow")[1]
+    assert {r.outcome for r in again} == {"unchanged"}
+
+
+def test_reference_does_not_overwrite_evren_rows_and_deleted_record_deactivates(as_reconciler, metadata):
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    as_reconciler.execute("RESET ROLE")
+    as_reconciler.execute("INSERT INTO ref.sys_user_group (sys_id, name, source) VALUES (%s, 'Evren Grubu', 'evren')",
+                          (GROUP,))
+    as_reconciler.execute("SET ROLE evren_app_reconciler")
+    recs, results = run(store, "servicenow")
+    out = {rec.source_key: res.outcome for rec, res in zip(recs, results, strict=True)}
+    assert out[GROUP] == "reference_protected"
+    assert fetch(as_reconciler, "SELECT name, source FROM ref.sys_user_group WHERE sys_id = %s", GROUP) == [
+        ("Evren Grubu", "evren")]
+    ds, run_id, recs2 = records("servicenow")
+    cc = next(r for r in recs2 if r.class_hint == "cmn_cost_center")
+    store.start_run(run_id, ds, started_at=NOW)
+    assert store.apply(cc.model_copy(update={"deleted": True})).outcome == "reference_deactivated"
+    assert fetch(as_reconciler, "SELECT active FROM ref.cmn_cost_center WHERE sys_id = %s", cc.source_key) == [(False,)]
+    loc = next(r for r in recs2 if r.class_hint == "cmn_location")  # etkinlik sütunu yok: satır korunur
+    assert store.apply(loc.model_copy(update={"deleted": True})).outcome == "reference_kept"
+
+
+def test_invalid_conflicting_or_shadow_reference_is_not_written(as_reconciler, metadata):
+    store = ReconcilerStore(as_reconciler, metadata, clock=lambda: NOW)
+    ds, run_id, recs = records("servicenow")
+    store.start_run(run_id, ds, started_at=NOW)
+    group = next(r for r in recs if r.source_key == GROUP)
+    bad = group.model_copy(update={"source_key": "c" * 32, "attributes": {**group.attributes, "manager": "x' OR 1=1"}})
+    assert store.apply(bad).outcome == "reference_invalid"
+    assert fetch(as_reconciler, "SELECT count(*) FROM ref.sys_user_group WHERE sys_id = %s", "c" * 32) == [(0,)]
+    user = next(r for r in recs if r.class_hint == "sys_user")
+    as_reconciler.execute("RESET ROLE")
+    as_reconciler.execute("INSERT INTO ref.sys_user (sys_id, user_name, source) VALUES (%s, %s, 'entra')",
+                          ("d" * 32, user.attributes["user_name"]))
+    as_reconciler.execute("SET ROLE evren_app_reconciler")
+    assert store.apply(user).outcome == "reference_conflict"  # aynı kullanıcı adı Entra'dan var
+    md = dataclasses.replace(metadata, data_sources=[{**d, "lifecycle": "shadow"} if d["name"] == "ServiceNow" else d
+                                                     for d in metadata.data_sources])
+    shadow = ReconcilerStore(as_reconciler, md, clock=lambda: NOW)
+    model = next(r for r in recs if r.class_hint == "cmdb_model")
+    assert shadow.apply(model).outcome == "reference_skipped"
+    assert fetch(as_reconciler, "SELECT count(*) FROM ref.cmdb_model WHERE sys_id = %s", model.source_key) == [(0,)]

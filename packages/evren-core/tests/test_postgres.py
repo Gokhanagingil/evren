@@ -223,6 +223,18 @@ def test_segregation_of_duties_enforced():
                                  "1, 1, 'x')"),
         ("evren_app_ingest", "SELECT ingest.revoke_connector_credential('x1', 'x')"),
         ("evren_app_indexer", "SELECT count(*) FROM ingest.connector_run_request"),
+        # 0020 (ADR-0022): uzlaştırıcı referansı yalnızca izinli sütunlarla yazar; kaynak, Entra alanları, grup üyeliği,
+        # silme ve değişiklik kayıtları yok
+        ("evren_app_reconciler", "UPDATE ref.sys_user SET source = 'servicenow' WHERE false"),
+        ("evren_app_reconciler", "UPDATE ref.sys_user SET entra_oid = NULL WHERE false"),
+        ("evren_app_reconciler", "UPDATE ref.sys_user_group SET entra_group_id = NULL WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM ref.sys_user_group WHERE false"),
+        ("evren_app_reconciler", "INSERT INTO ref.sys_user_grmember (\"group\", \"user\") VALUES "
+                                 "(repeat('a', 32), repeat('b', 32))"),
+        ("evren_app_reconciler", "UPDATE ref.sn_change_request SET state = 'x' WHERE false"),
+        ("evren_app_reconciler", "INSERT INTO ref.sys_user (sys_id, user_name, source) VALUES (repeat('e', 32), 'x', "
+                                 "'entra')"),
+        ("evren_app_api", "UPDATE ref.sys_user_group SET name = 'x' WHERE false"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -429,3 +441,19 @@ def test_credential_functions_validate_and_audit():
     finally:
         psql("UPDATE ingest.data_source SET lifecycle = 'active' WHERE name = 'ServiceNowChange'; "
              "DELETE FROM ingest.connector_credential WHERE name LIKE 'test-api-%'")
+
+
+def test_reconciler_reference_grants_match_reference_tables():
+    """0020: uzlaştırıcının ref sütun yetkileri evren_core.reference.REFERENCE_TABLES ile birebir (ADR-0022)."""
+    from evren_core.reference import REFERENCE_TABLES
+
+    rows = psql("""SELECT table_name || ':' || privilege_type || ':' || string_agg(column_name, ',' ORDER BY column_name)
+                     FROM information_schema.column_privileges
+                    WHERE grantee = 'evren_app_reconciler' AND table_schema = 'ref'
+                      AND privilege_type IN ('INSERT', 'UPDATE')
+                    GROUP BY table_name, privilege_type ORDER BY 1""").splitlines()
+    expected = []
+    for t in sorted(REFERENCE_TABLES.values(), key=lambda t: t.name):
+        cols = set(t.columns) | {"sys_updated_on"}
+        expected += [f"{t.name}:INSERT:{','.join(sorted(cols | {'sys_id'}))}", f"{t.name}:UPDATE:{','.join(sorted(cols))}"]
+    assert rows == sorted(expected)

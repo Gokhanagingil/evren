@@ -59,7 +59,7 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
 - **Yeniden deneme:** bağlantı hatası, 429 ve 5xx için geri çekilmeli (1, 2, 4, 8 sn; `--retries`), `Retry-After`'a uyulur. 4xx kalıcıdır.
 - **Kayıt dosyaları:** `--record` ve `--out` kurum verisi içerir; repoya konmaz. Repodaki `connectors/*/samples/` verisi sentetiktir.
 - **Konteynerde:** `evren connector-run …`; geliştirme yığınında `docker compose run --rm -T -e EVREN_CONNECTOR_TOKEN_FILE=/dev/stdin connector connector-run --connector zabbix --simulate connectors/zabbix/samples < belirtec`.
-- **Durum:** Zabbix (U5.1) ve vCenter (U5.2) istemcileri hazır; ServiceNow, BMC, NNMi ve Defender istemcileri U5.2'nin devamı; zamanlama ve arayüzden "şimdi çalıştır" U5.3.
+- **Durum:** altı kaynağın istemcisi hazır (Zabbix, vCenter, ServiceNow + referans verileri, BMC, Defender, NNMi; U5.1–U5.2). Zamanlama ve arayüzden "şimdi çalıştır" çalıştırıcı servisiyle (ADR-0021).
 - **Kaynağa göre kimlik bilgisi:** Zabbix API belirteci (`EVREN_SOURCE_TOKEN_FILE`); vCenter kullanıcı (`EVREN_SOURCE_USER`) + parola dosyası (`EVREN_SOURCE_PASSWORD_FILE`), API sürümü `--api-release` (varsayılan 8.0.1.0).
 - **Eşleme koşulları:** `require` (hepsi sağlanmalı; ör. nesne türü VM ve şablon değil) ve `include_when` (en az biri; ör. misafir adı bildirilmiş).
 
@@ -140,7 +140,7 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
 
 - **CMDB ilk yükleme:** `cmdb_ci` soyağacı, `cmdb_rel_ci` ve referans tabloları aynı sys_id ile.
 - **İstemci (U5.2):** `evren_core/connectors/sources/servicenow.py`, Table API.
-  - Okunan tablolar: `cmdb_ci_server` ve `cmdb_ci_netgear` (alt sınıflarıyla).
+  - Okunan tablolar: `cmdb_ci_server` ve `cmdb_ci_netgear` (alt sınıflarıyla), ardından referans tabloları.
   - Sayfalama `sys_id>SON^ORDERBYsys_id` ile anahtar sırasına göredir; kısa sayfada durmaz, boş sayfaya kadar devam eder.
   - Referanslar sys_id olarak gelir. Kimlik doğrulama Basic'tir (`EVREN_SOURCE_USER` + `EVREN_SOURCE_PASSWORD_FILE`).
 - **Entegrasyon kullanıcısı:** salt okunur (CMDB tablolarında okuma), saat dilimi **UTC** (delta sorgusu tarihi kullanıcının saat dilimiyle yorumlanır). Kullanıcı, okunacak tüm CI kayıtlarını görebilmelidir: ACL tam bir sayfayı gizlerse sayfalama orada biter.
@@ -149,7 +149,12 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - Eşleme yoksa CI aynı sys_id ile açılır.
   - Keşif ve izleme kaynakları sonra bu CI'a kimlik kurallarıyla (seri, UUID, MAC) bağlanır.
 - **Artımlı çekme:** `sys_updated_on` ile (`--mode delta --since …`). Geçiş döneminde SN'de yapılan elle değişiklikler "ServiceNow" kaynağı olarak uzlaştırmaya girer.
-- **Henüz yok:** referans verilerinin (grup, kullanıcı, konum, şirket, maliyet merkezi) yükleme yolu (F0-08).
+- **Referans verileri (ADR-0022, göç 0020):** CI tablolarından sonra aynı çalışmada `sys_user`, `sys_user_group`, `cmn_location`, `core_company`, `cmn_department`, `cmn_cost_center` ve `cmdb_model` okunur.
+  - Her tablodan yalnızca `evren_core/reference.py`'deki izinli sütunlar istenir. Kişisel veri en azdır: kullanıcıda yalnızca kullanıcı adı, ad, e-posta, departman ve etkinlik.
+  - Eşleme: `connectors/servicenow_cmdb/reference.mapping.yaml`. Sınıf ipucu tablo adıdır; uzlaştırıcı kaydı kimlik çözümlemesine sokmaz, `ref.<tablo>`'ya aynı sys_id ile yazar.
+  - Yalnızca referans kaynağı rolü (ITSM, `reference_source: true`) yazar; gölgedeki kaynak yazmaz. Entra veya Evren kaynaklı satır ezilmez; silinen kayıt pasifleşir.
+  - Entegrasyon kullanıcısının bu tablolarda okuma rolü olmalıdır (ServiceNow'da ACL değiştirilmez; var olan okuma rolü verilir).
+  - Henüz yok: grup üyeliği (`sys_user_grmember`; ABAC ile, U8) ve kişi/grup verisinin Entra ile eşlenmesi.
 - **Change kayıtları:** `change_request` + `task_ci`. Yetkisiz değişiklik tespiti için onaylı pencere sağlar. CI özniteliği yazmaz (`ci_attribute_source: false`).
 
 ## Gelecekte eklenebilecek kaynaklar

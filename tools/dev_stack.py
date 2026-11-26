@@ -336,9 +336,13 @@ def smoke_connector_run(token: str) -> None:
     nn_name, nn_token = _issue("NNMi")
     try:
         step("Bağlayıcı çalıştırıcı: ServiceNow simülatörü (Table API) → ilk yükleme, sys_id korunur")
-        _connector_run("servicenow", sn_token, 5)
+        _connector_run("servicenow", sn_token, 5 + 12)  # 5 CI + 12 referans kaydı (ADR-0022)
         status, ci = http("GET", f"{API}/api/v1/ci/{SN_APP_SYS_ID}")
         check(status == 200 and ci["name"] == "ist-app-02", f"CI ServiceNow sys_id'siyle açıldı ({SN_APP_SYS_ID})")
+        shown = {a["attribute"]: a["display"] for a in ci.get("attributes") or []}
+        check(shown.get("support_group") == "Linux Sistem Ekibi (SENTETİK)"
+              and shown.get("cost_center") == "BT Altyapı Masraf Merkezi (SENTETİK)",
+              f"referans verileri yüklendi: destek grubu ve maliyet merkezi adıyla görünüyor ({shown.get('support_group')})")
 
         step("Bağlayıcı çalıştırıcı: Zabbix simülatörü (JSON-RPC) → geçit → uzlaştırıcı")
         _connector_run("zabbix", token, 5)

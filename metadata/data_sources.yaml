@@ -41,7 +41,8 @@ source_roles:
   - name: ITSM
     label_tr: ITSM / mevcut CMDB
     kind: itsm
-    description_tr: Geçiş dönemindeki eski CMDB; ilk yükleme ve yönetişim öznitelikleri.
+    reference_source: true   # grup, kişi, konum, şirket, departman, maliyet merkezi, model (ADR-0022)
+    description_tr: Geçiş dönemindeki eski CMDB; ilk yükleme, yönetişim öznitelikleri ve referans verileri.
   - name: ChangeManagement
     label_tr: Değişiklik kayıtları
     kind: itsm
@@ -115,7 +116,7 @@ data_sources:
     lifecycle: active
     product: {vendor: ServiceNow, name: CMDB, interface: "Table API (salt okunur)"}
     connector: servicenow_cmdb
-    mappings: [connectors/servicenow_cmdb/server.mapping.yaml]
+    mappings: [connectors/servicenow_cmdb/server.mapping.yaml, connectors/servicenow_cmdb/reference.mapping.yaml]
     sys_id_key: true   # kaynak anahtarı SN sys_id'si: ilk görüldüğünde CI aynı sys_id ile açılır (ADR-0004)
     schedule: "*/15 * * * *"
     authoritative_for_tr: Yönetişim öznitelikleri (geçiş döneminde), referans veriler

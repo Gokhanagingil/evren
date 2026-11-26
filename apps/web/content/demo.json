@@ -55,7 +55,7 @@
    "name": "ITSM",
    "label_tr": "ITSM / mevcut CMDB",
    "kind": "itsm",
-   "description_tr": "Geçiş dönemindeki eski CMDB; ilk yükleme ve yönetişim öznitelikleri.",
+   "description_tr": "Geçiş dönemindeki eski CMDB; ilk yükleme, yönetişim öznitelikleri ve referans verileri.",
    "ci_attribute_source": true
   },
   {
@@ -902,7 +902,8 @@
    },
    "connector": "servicenow_cmdb",
    "mappings": [
-    "connectors/servicenow_cmdb/server.mapping.yaml"
+    "connectors/servicenow_cmdb/server.mapping.yaml",
+    "connectors/servicenow_cmdb/reference.mapping.yaml"
    ],
    "schedule": "*/15 * * * *",
    "authoritative_for_tr": "Yönetişim öznitelikleri (geçiş döneminde), referans veriler",

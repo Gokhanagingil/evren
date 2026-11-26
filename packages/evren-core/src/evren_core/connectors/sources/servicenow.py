@@ -11,7 +11,10 @@
   göre yorumlar; entegrasyon kullanıcısının saat dilimi **UTC** olmalıdır (docs/04). Delta silinen kaydı göstermez;
   delta çalışması "görülmeyeni eksik say" işlemine girmez (ADR-0017).
 * **Tablolar:** ``cmdb_ci_server`` (alt sınıflarıyla: Windows, Linux, ESX…) ve ``cmdb_ci_netgear`` (switch, router,
-  güvenlik duvarı). Üst tablo sorgusu alt sınıf kayıtlarını da döndürür; sınıf ``sys_class_name``'den gelir.
+  güvenlik duvarı). Üst tablo sorgusu alt sınıf kayıtlarını da döndürür; sınıf ``sys_class_name``'den gelir. Ardından
+  aynı çalışmada referans tabloları (``sys_user``, ``sys_user_group``, ``cmn_location``, ``core_company``,
+  ``cmn_department``, ``cmn_cost_center``, ``cmdb_model``; ADR-0022): her tablodan yalnızca izinli sütunlar istenir
+  (``evren_core.reference``); kişisel veri en azdır.
 * **Hata:** ServiceNow hata gövdesi (``error.message``, ``error.detail``) kurum bilgisi içerebilir; iletiye yazılmaz.
 
 ``ServiceNowSimulator`` kullanılan alt kümeyi örnek veriyle yanıtlar (testler, duman testi, demo).
@@ -27,16 +30,25 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
 
+from ...reference import REFERENCE_TABLES
 from ..http import HttpClient, HttpError, HttpResponse
 
-__all__ = ["FIELDS", "TABLES", "ServiceNowClient", "ServiceNowSimulator"]
+__all__ = ["CI_TABLES", "FIELDS", "TABLES", "ServiceNowClient", "ServiceNowSimulator", "fields_for"]
 
-TABLES = ("cmdb_ci_server", "cmdb_ci_netgear")
+CI_TABLES = ("cmdb_ci_server", "cmdb_ci_netgear")
 FIELDS = (
     "sys_id", "sys_class_name", "name", "fqdn", "ip_address", "serial_number", "mac_address", "os", "os_version",
-    "support_group", "owned_by", "managed_by", "used_for", "location", "company", "cost_center",
+    "support_group", "owned_by", "managed_by", "used_for", "location", "company", "cost_center", "model_id",
     "operational_status", "install_status", "short_description", "sys_updated_on",
 )
+# Referans tabloları aynı çalışmada CI tablolarından sonra çekilir (ADR-0022); alanlar tek listeden.
+TABLES = (*CI_TABLES, *REFERENCE_TABLES)
+
+
+def fields_for(table: str) -> tuple[str, ...]:
+    """Tablo için istenen alanlar: referans tablosunda yalnızca izinli sütunlar, CI tablosunda ``FIELDS``."""
+    ref = REFERENCE_TABLES.get(table)
+    return ref.fields if ref else FIELDS
 _TABLE = re.compile(r"^[a-z][a-z0-9_]{0,79}$")
 _SYSID = re.compile(r"^[0-9a-f]{32}$")
 
@@ -60,7 +72,7 @@ class ServiceNowClient:
         self.http, self.tables, self.page_size = http, tuple(tables), page_size
 
     def _page(self, table: str, query: str) -> list[dict[str, Any]]:
-        params = {"sysparm_query": query, "sysparm_fields": ",".join(FIELDS), "sysparm_limit": self.page_size,
+        params = {"sysparm_query": query, "sysparm_fields": ",".join(fields_for(table)), "sysparm_limit": self.page_size,
                   "sysparm_exclude_reference_link": "true", "sysparm_display_value": "false",
                   "sysparm_no_count": "true"}
         doc = self.http.get_json(f"/api/now/table/{table}", **params)

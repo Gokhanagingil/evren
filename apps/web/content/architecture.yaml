@@ -176,9 +176,9 @@ details:
     security: [Kısıtlı veri sınıfı, Yalnızca güvenlik rolleri okur]
   src_servicenow:
     phase: F0
-    text: Geçişin başında ServiceNow CMDB aynı sys_id'lerle Evren'e yüklenir. Change kayıtları, yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar.
-    tech: ["Table API (anahtar sıralı sayfalama: sys_id>SON^ORDERBYsys_id)", sys_updated_on ile artımlı çekme, "connectors/sources/servicenow.py", "sys_id korunur (sys_id_key, sync.sn_ci_map)"]
-    security: [Ayrı entegrasyon kullanıcısı, IP kısıtı]
+    text: Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları, yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar.
+    tech: ["Table API (anahtar sıralı sayfalama: sys_id>SON^ORDERBYsys_id)", sys_updated_on ile artımlı çekme, "connectors/sources/servicenow.py", "sys_id korunur (sys_id_key, sync.sn_ci_map)", "Referans verileri ref.* (grup, kişi, konum, şirket, departman, maliyet merkezi, model; ADR-0022)"]
+    security: [Ayrı entegrasyon kullanıcısı, IP kısıtı, "Kişisel veri en az: yalnızca izinli sütunlar (evren_core.reference)", "Referans yolu CMDB'ye yazamaz; sütun düzeyi yetki"]
   connectors:
     phase: F0
     text: Bağlayıcı yalnızca veriyi eksiksiz çeker; anlamlandırma eşleme dosyasındadır. Sayfalama tamamlanmadan çalışma "tamamlandı" sayılmaz; bu, GRC Platformu'ndaki collection_status ilkesinin aynısıdır. Her veri kaynağı bir kaynak rolünü (Keşif, Sanallaştırma, Ağ, İzleme, Uç nokta güvenliği, ITSM) doldurur; yeni ürün önce gölge modda çalışır, sonra devralır.

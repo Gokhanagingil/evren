@@ -190,6 +190,7 @@ NET = [
 def sn_server(g: Gen, h: Host, refs: dict[str, str], sys_id: str | None = None, serial: str | None = None) -> dict:
     cls = "cmdb_ci_linux_server" if h.family == "linux" else "cmdb_ci_win_server"
     return {
+        "_table": "cmdb_ci_server",  # ServiceNow istemcisinin eklediği tablo adı (eşleme tabloya göre seçer, ADR-0022)
         "sys_id": sys_id or g.hex(), "sys_class_name": cls, "name": h.name, "fqdn": h.fqdn if not h.virtual else "",
         "ip_address": h.ip, "serial_number": serial if serial is not None else h.serial, "os": OS[h.family][1],
         "support_group": ref_id(refs, "group", h.group), "owned_by": ref_id(refs, "user", h.owner) if h.owner else "",
@@ -350,7 +351,8 @@ def feed(sink: Sink) -> tuple[dict[str, str], list[Host]]:
         sid = g.hex()
         cls = {"switchrouter": "cmdb_ci_ip_switch", "switch": "cmdb_ci_ip_switch", "router": "cmdb_ci_ip_router",
                "firewall": "cmdb_ci_ip_firewall"}[cat]
-        raw = {"sys_id": sid, "sys_class_name": cls, "name": name.lower(), "ip_address": f"10.0.0.{i + 1}",
+        raw = {"_table": "cmdb_ci_netgear", "sys_id": sid, "sys_class_name": cls, "name": name.lower(),
+               "ip_address": f"10.0.0.{i + 1}",
                "serial_number": net_serials[name], "support_group": refs["group:Ağ Operasyon"],
                "owned_by": refs[f"user:{USERS[1]}"], "used_for": "Production",
                "location": refs[f"location:{LOCATIONS['ist' if name.startswith('IST') else 'ank']}"],

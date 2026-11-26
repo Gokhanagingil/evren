@@ -15,6 +15,8 @@ verify: true
 data_source: ServiceNow
 source_key: sys_id
 class: cmdb_ci_server
+require:
+  - {from: _table, matches: "^cmdb_ci_(server|netgear)$"}   # referans tabloları reference.mapping.yaml'da (ADR-0022)
 class_rules:
   - when: {from: sys_class_name, matches: "^cmdb_ci_win_server$"}
     class: cmdb_ci_win_server
@@ -42,6 +44,7 @@ attributes:
   location: {from: location}
   company: {from: company}
   cost_center: {from: cost_center}
+  model_id: {from: model_id}
   operational_status: {from: operational_status, transform: int}
   install_status: {from: install_status, transform: int}
   short_description: {from: short_description}

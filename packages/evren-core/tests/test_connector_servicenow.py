@@ -13,7 +13,8 @@ import pytest
 from evren_core.connectors.gateway import DryRunGateway
 from evren_core.connectors.http import HttpClient, HttpError, HttpResponse, RecordingTransport, ReplayTransport
 from evren_core.connectors.runtime import ConnectorRunner, load_mappings
-from evren_core.connectors.sources.servicenow import ServiceNowClient, ServiceNowSimulator, sn_datetime
+from evren_core.connectors.sources.servicenow import CI_TABLES, ServiceNowClient, ServiceNowSimulator, sn_datetime
+from evren_core.reference import REFERENCE_TABLES
 
 REPO = Path(__file__).resolve().parents[3]
 SAMPLES = REPO / "connectors" / "servicenow_cmdb" / "samples"
@@ -21,11 +22,11 @@ USER = "svc-evren-ro"
 PASSWORD = "sim-" + secrets.token_hex(8)  # her çalışmada rastgele
 
 
-def client(sim=None, page_size: int = 2, password: str = PASSWORD) -> ServiceNowClient:
+def client(sim=None, page_size: int = 2, password: str = PASSWORD, tables=None) -> ServiceNowClient:
     sim = sim or ServiceNowSimulator.from_dir(SAMPLES, user=USER, password=PASSWORD)
     http = HttpClient("https://ornek.service-now.com", transport=sim, retries=0,
                       auth_header=HttpClient.basic(USER, password))
-    return ServiceNowClient(http, page_size=page_size)
+    return ServiceNowClient(http, page_size=page_size, **({"tables": tables} if tables else {}))
 
 
 def queries(sim: ServiceNowSimulator) -> list[str]:
@@ -34,7 +35,7 @@ def queries(sim: ServiceNowSimulator) -> list[str]:
 
 def test_keyset_paging_until_empty_page():
     sim = ServiceNowSimulator.from_dir(SAMPLES, user=USER, password=PASSWORD)
-    rows = list(client(sim).fetch())
+    rows = list(client(sim, tables=CI_TABLES).fetch())
     assert [r["_table"] for r in rows] == ["cmdb_ci_server"] * 4 + ["cmdb_ci_netgear"]
     assert len(sim.calls) == 3 + 2  # tablo başına boş sayfaya kadar
     q = queries(sim)
@@ -56,9 +57,24 @@ def test_page_shortened_by_acl_does_not_stop_paging():
 def test_delta_uses_utc_updated_on():
     sim = ServiceNowSimulator.from_dir(SAMPLES, user=USER, password=PASSWORD)
     since = datetime(2026, 11, 21, 3, 0, tzinfo=timezone(timedelta(hours=3)))  # İstanbul 03:00 = UTC 00:00
-    rows = list(client(sim).fetch("delta", since))
+    rows = list(client(sim, tables=CI_TABLES).fetch("delta", since))
     assert {r["name"] for r in rows} == {"IST-MUH-11", "IST-DC2-CORE-SW01"}
     assert queries(sim)[0] == "sys_updated_on>=2026-11-21 00:00:00^ORDERBYsys_id"
+
+
+def test_reference_tables_follow_ci_tables_with_their_own_fields_only():
+    """ADR-0022: referans tabloları aynı çalışmada çekilir; her tablodan yalnızca izinli sütunlar istenir."""
+    sim = ServiceNowSimulator.from_dir(SAMPLES, user=USER, password=PASSWORD)
+    rows = list(client(sim, page_size=10).fetch())
+    order = list(dict.fromkeys(r["_table"] for r in rows))
+    assert order == [*CI_TABLES, *REFERENCE_TABLES]
+    asked = {c.split("?", 1)[0].rsplit("/", 1)[1]: dict(urllib.parse.parse_qsl(c.split("?", 1)[1]))["sysparm_fields"]
+             for c in sim.calls}
+    for table, spec in REFERENCE_TABLES.items():
+        assert asked[table].split(",") == list(spec.fields)
+    assert "phone" not in asked["sys_user"] and "title" not in asked["sys_user"]  # kişisel veri en az
+    user = next(r for r in rows if r["_table"] == "sys_user" and r["user_name"] == "ornek.ayrilan")
+    assert set(user) == {*REFERENCE_TABLES["sys_user"].fields, "_table"}
     with pytest.raises(HttpError, match="saat dilimi"):
         sn_datetime(datetime(2026, 11, 21))
 
@@ -97,15 +113,28 @@ def test_mapping_keeps_sys_id_and_reference_ids(tmp_path):
     out = tmp_path / "k.ndjson"
     report = ConnectorRunner(client(), load_mappings(REPO / "connectors" / "servicenow_cmdb", "ServiceNow"),
                              DryRunGateway(out)).run()
-    assert report.completed and report.sent == 5
+    assert report.completed and report.sent == 5 + 12
     assert report.by_class == {"cmdb_ci_linux_server": 1, "cmdb_ci_win_server": 1, "cmdb_ci_esx_server": 1,
-                               "cmdb_ci_server": 1, "cmdb_ci_ip_switch": 1}
+                               "cmdb_ci_server": 1, "cmdb_ci_ip_switch": 1, "sys_user": 3, "sys_user_group": 4,
+                               "cmn_location": 1, "core_company": 1, "cmn_department": 1, "cmn_cost_center": 1,
+                               "cmdb_model": 1}
     recs = {r["source_key"]: r for r in (json.loads(x) for x in out.read_text(encoding="utf-8").splitlines())}
     app = recs["5b1c2d3e4f5061728394a5b6c7d8e9f0"]
     assert app["external_ids"] == {"sn_sys_id": "5b1c2d3e4f5061728394a5b6c7d8e9f0"}
     assert app["attributes"]["support_group"] == "a1b2c3d4e5f60718293a4b5c6d7e8f90"
     assert app["attributes"]["operational_status"] == 1 and "managed_by" not in app["attributes"]  # boş alan yazılmaz
     assert app["lookup"]["mac_addresses"] == ["00:50:56:9a:01:02"]
+    esx = recs["7d3e4f5061728394a5b6c7d8e9f0a1b2"]
+    assert esx["attributes"]["model_id"] == "2b3c4d5e6f708192a3b4c5d6e7f8019a"
+    group = recs["a1b2c3d4e5f60718293a4b5c6d7e8f90"]  # CI'ların destek grubu: referans kaydı (ADR-0022)
+    assert group["class_hint"] == "sys_user_group" and group["attributes"] == {
+        "name": "Linux Sistem Ekibi (SENTETİK)", "manager": "b2c3d4e5f60718293a4b5c6d7e8f90a2",
+        "email": "linux@ornek.local", "active": "true"}
+    gone = next(r for r in recs.values() if r["attributes"].get("user_name") == "ornek.ayrilan")
+    assert gone["class_hint"] == "sys_user" and gone["attributes"]["active"] == "false" and "email" not in gone["attributes"]
+    for r in recs.values():  # referans kaydı yalnızca kendi tablosunun sütunlarını taşır
+        if r["class_hint"] in REFERENCE_TABLES:
+            assert set(r["attributes"]) <= set(REFERENCE_TABLES[r["class_hint"]].columns)
 
 
 def test_record_and_replay_without_credentials(tmp_path):

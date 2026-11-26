@@ -1,0 +1,49 @@
+# ServiceNow referans tabloları → Evren alım kaydı (F0-08, ADR-0022)
+#
+# Çekme: ServiceNow istemcisi CI tablolarından sonra aynı çalışmada her referans tablosunu çeker; her tablodan yalnızca
+# evren_core.reference.REFERENCE_TABLES'taki izinli sütunlar istenir (sysparm_fields). Kişisel veri en azdır.
+#
+# Kurallar:
+#   * class = tablo adı (sys_user_group…): uzlaştırıcı kaydı kimlik çözümlemesine sokmaz, ref.<tablo>'ya aynı
+#     sys_id ile yazar. Yalnızca referans kaynağı rolü (ITSM) yazar; gölgedeki kaynak yazmaz (ADR-0009).
+#   * Referanslar (manager, department, parent…) sys_id olarak kalır; boş değer NULL olur.
+#   * Değer türü uymayan kayıt yazılmaz (reference_invalid); Entra/Evren kaynaklı satır ezilmez.
+description: ServiceNow referans verileri (grup, kişi, konum, şirket, departman, maliyet merkezi, model; salt okunur)
+verify: true
+data_source: ServiceNow
+source_key: sys_id
+class: sys_user_group
+require:
+  - {from: _table, matches: "^(sys_user|sys_user_group|cmn_location|core_company|cmn_department|cmn_cost_center|cmdb_model)$"}
+class_rules:
+  - when: {from: _table, matches: "^sys_user$"}
+    class: sys_user
+  - when: {from: _table, matches: "^sys_user_group$"}
+    class: sys_user_group
+  - when: {from: _table, matches: "^cmn_location$"}
+    class: cmn_location
+  - when: {from: _table, matches: "^core_company$"}
+    class: core_company
+  - when: {from: _table, matches: "^cmn_department$"}
+    class: cmn_department
+  - when: {from: _table, matches: "^cmn_cost_center$"}
+    class: cmn_cost_center
+  - when: {from: _table, matches: "^cmdb_model$"}
+    class: cmdb_model
+attributes:
+  user_name: {from: user_name, transform: strip}
+  name: {from: name, transform: strip}
+  email: {from: email, transform: lower}
+  department: {from: department}
+  manager: {from: manager}
+  active: {from: active}
+  full_name: {from: full_name}
+  parent: {from: parent}
+  city: {from: city}
+  country: {from: country}
+  manufacturer: {from: manufacturer}
+  vendor: {from: vendor}
+  company: {from: company}
+  account_number: {from: account_number}
+  display_name: {from: display_name}
+  model_number: {from: model_number}

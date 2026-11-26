@@ -36,6 +36,7 @@ from evren_core.identity.adapters import source_record_from_ingest
 from evren_core.identity.index import CandidateProfile
 from evren_core.metadata import CORE_COLUMNS, Metadata
 from evren_core.reconcile import Reconciler, SourceValues
+from evren_core.reference import REFERENCE_TABLES, ReferenceDataError, coerce_reference, is_reference
 
 from .pg_identity import PostgresCandidateIndex, PostgresLinkStore, keys_from_json
 
@@ -264,7 +265,12 @@ class ReconcilerStore:
         * Yoksa CI aynı sys_id ile açılır (ilk yükleme) ya da o sys_id'li CI zaten varsa ona bağlanır.
 
         Böylece ServiceNow task'larındaki CI referansları dönüşümsüz çözülür ve replikadan geri gelen kayıt mükerrer
-        CI açmaz. Gölge veya devredilen kaynak CI açamayacağı için bu yola girmez."""
+        CI açmaz. Gölge veya devredilen kaynak CI açamayacağı için bu yola girmez.
+
+        Referans tablosu kaydı (``class_hint`` = ``sys_user_group`` gibi; ADR-0022) kimlik çözümlemesine girmez:
+        ``apply_reference``."""
+        if is_reference(record.class_hint):
+            return self.apply_reference(record)
         src = self.registry.source(record.data_source)
         if src.sys_id_key and _SYSID.match(record.source_key) and self.registry.may_create_ci(src.name):
             with self.conn.cursor() as cur:
@@ -277,6 +283,59 @@ class ReconcilerStore:
             if not linked:
                 return self.import_record(record, target)
         return self._process(record, attach_to=None, method=None)
+
+    def apply_reference(self, record: IngestRecord) -> ApplyResult:
+        """ServiceNow referans kaydı → ``ref.<tablo>`` (ADR-0022). Kaynak kaydı ve çalışma sayaçları CI kaydıyla aynı.
+
+        * Yalnızca referans kaynağı rolündeki etkin/devredilen kaynak yazar; gölge kaynağın kaydı sayılır, yazılmaz.
+        * Sütunlar ``REFERENCE_TABLES``'tan; değer türü uymayan kayıt yazılmaz (``reference_invalid``).
+        * Entra/Evren kaynaklı satır ezilmez (``reference_protected``); kullanıcı adı çakışması ``reference_conflict``.
+        * Silinen kayıt ``active`` sütunu olan tabloda pasifleşir; satır silinmez."""
+        spec = REFERENCE_TABLES[record.class_hint]
+        digest = content_hash(record)
+        table = sql.Identifier("ref", spec.name)
+        with self.conn.transaction(), self.conn.cursor() as cur:
+            cur.execute("SELECT pg_advisory_xact_lock(hashtextextended(%s, 0))",
+                        (f"{record.data_source}:{record.source_key}",))
+            cur.execute("SELECT content_hash FROM ingest.source_record WHERE data_source = %s AND source_key = %s",
+                        (record.data_source, record.source_key))
+            row = cur.fetchone()
+            if row and row[0] == digest:
+                cur.execute("""UPDATE ingest.source_record SET last_seen = %s, last_run = %s, status = 'active'
+                                WHERE data_source = %s AND source_key = %s""",
+                            (record.observed_at, record.run_id, record.data_source, record.source_key))
+                return ApplyResult("unchanged")
+            self._upsert_source_record(cur, record, digest)
+            if not self.registry.writes_references(record.data_source):
+                return ApplyResult("reference_skipped", summary=f"{record.data_source} referans verisi yazmaz "
+                                                               "(rol veya yaşam döngüsü)")
+            try:
+                values = coerce_reference(spec.name, record.source_key, record.attributes)
+            except ReferenceDataError as exc:
+                log.warning("Referans kaydı yazılmadı: %s %s (%s)", spec.name, record.source_key, exc)
+                return ApplyResult("reference_invalid", summary=f"Referans kaydı yazılmadı: {exc}")
+            guard = sql.SQL(" AND source = 'servicenow'") if spec.has_source else sql.SQL("")
+            if record.deleted:
+                if not spec.has_active:
+                    return ApplyResult("reference_kept", summary="Tabloda etkinlik sütunu yok; satır korunur")
+                cur.execute(sql.SQL("UPDATE {} SET active = false, sys_updated_on = now() WHERE sys_id = %s{}").format(
+                    table, guard), (record.source_key,))
+                return ApplyResult("reference_deactivated" if cur.rowcount else "reference_protected")
+            cols = list(values)
+            update = sql.SQL(", ").join(sql.SQL("{c} = EXCLUDED.{c}").format(c=sql.Identifier(c)) for c in cols)
+            where = sql.SQL(" WHERE {t}.source = 'servicenow'").format(t=sql.Identifier(spec.name)) \
+                if spec.has_source else sql.SQL("")
+            query = sql.SQL("INSERT INTO {t} (sys_id, {cols}, sys_updated_on) VALUES (%s, {vals}, now()) "
+                            "ON CONFLICT (sys_id) DO UPDATE SET {upd}, sys_updated_on = now(){where}").format(
+                t=table, cols=sql.SQL(", ").join(map(sql.Identifier, cols)),
+                vals=sql.SQL(", ").join([sql.Placeholder()] * len(cols)), upd=update, where=where)
+            try:
+                with self.conn.transaction():
+                    cur.execute(query, (record.source_key, *values.values()))
+            except psycopg.errors.UniqueViolation:
+                log.warning("Referans kaydı yazılmadı (benzersizlik çakışması): %s %s", spec.name, record.source_key)
+                return ApplyResult("reference_conflict", summary="Aynı kullanıcı adıyla başka bir satır var")
+            return ApplyResult("reference" if cur.rowcount else "reference_protected")
 
     def import_record(self, record: IngestRecord, ci_sys_id: str) -> ApplyResult:
         """İlk yükleme: CI verilen sys_id ile açılır (ServiceNow sys_id'si korunur), kimlik çözümlemesi yapılmaz."""

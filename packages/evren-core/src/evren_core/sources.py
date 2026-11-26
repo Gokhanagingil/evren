@@ -52,6 +52,7 @@ class SourceRole:
     kind: str
     description_tr: str = ""
     ci_attribute_source: bool = True
+    reference_source: bool = False  # ServiceNow referans tablolarını (grup, kişi, konum…) yazar (ADR-0022)
 
 
 @dataclass(frozen=True)
@@ -99,6 +100,7 @@ class SourceRegistry:
                 name=r["name"], label_tr=r["label_tr"], kind=r["kind"],
                 description_tr=r.get("description_tr", ""),
                 ci_attribute_source=bool(r.get("ci_attribute_source", True)),
+                reference_source=bool(r.get("reference_source", False)),
             )
             for r in document.get("source_roles", [])
         ]
@@ -132,6 +134,11 @@ class SourceRegistry:
         """Kaynak golden record özniteliği yazabilir mi (rol izin veriyor ve kaynak etkin/devrediliyor)."""
         src = self.source(name)
         return self.roles[src.role].ci_attribute_source and src.lifecycle in ("active", "retiring")
+
+    def writes_references(self, name: str) -> bool:
+        """Kaynak ``ref.*`` referans tablolarını yazabilir mi (rolü referans kaynağı, kaynak etkin/devrediliyor)."""
+        src = self.source(name)
+        return self.roles[src.role].reference_source and src.lifecycle in ("active", "retiring")
 
     def is_shadow(self, name: str) -> bool:
         return self.source(name).lifecycle == "shadow"
