@@ -19,6 +19,7 @@ Olay omurgası (U2, ADR-0017):
 
 * Her turda alım geçidinden kapanışı istenen çalışmalar kapatılır (``finalize_ready_runs``).
 * Her turda yetkisiz değişiklik gözlemleri değerlendirilir (``evaluate_config_changes``, ADR-0025).
+* Her turda süresi dolan sahiplik onayları geçersiz kılınır (``expire_attestations``, ADR-0027).
 * ``EVREN_KAFKA_BOOTSTRAP`` tanımlıysa outbox olayları Kafka'ya yayınlanır (outbox'a yazım çalışanı uyandırır).
 * Kaynak kayıtlarının Kafka'dan alımı ayrı süreçtir: ``python -m evren_reconciler.worker --ingest`` (``IngestWorker``);
   bölüm sayısı kadar örnek paralel çalışabilir.
@@ -131,8 +132,8 @@ class Worker:
     def run_once(self, conn: psycopg.Connection[Any]) -> dict[str, int]:
         """Bekleyen tüm istekleri uygular (her tür ``batch`` kadar, iş kalmayana dek)."""
         store = ReconcilerStore(conn, self.md)
-        totals = {"create": 0, "manual": 0, "relation": 0, "decision": 0, "split": 0, "failed": 0, "runs_closed": 0,
-                  "published": 0, "config_changes": 0}
+        totals = {"create": 0, "manual": 0, "relation": 0, "attest": 0, "decision": 0, "split": 0, "failed": 0,
+                  "runs_closed": 0, "published": 0, "config_changes": 0, "attestations_expired": 0}
         while not self.stop.is_set():
             results = store.apply_requests(self.config.batch)
             done = 0
@@ -152,6 +153,12 @@ class Worker:
             log.info("değişiklik denetimi: onaylı=%d yetkisiz=%d bastırılan=%d sonradan onaylı=%d",
                      evaluated["authorized"], evaluated["unauthorized"], evaluated["suppressed"],
                      evaluated["late_authorized"])
+        # Sahiplik onayı: süresi dolan veya onaylayanı artık sorumlu olmayan onaylar (ADR-0027)
+        expired = store.expire_attestations()
+        totals["attestations_expired"] = sum(expired.values())
+        if totals["attestations_expired"]:
+            log.info("sahiplik onayı geçersiz kılındı: süre=%d sahip değişti=%d", expired["expired"],
+                     expired["owner_changed"])
         if self.outbox is not None:
             try:
                 totals["published"] = self.outbox.publish_pending(conn)
@@ -160,14 +167,15 @@ class Worker:
         if self.config.health_file:
             # Konteyner sağlık denetimi: dosyanın değişme zamanı son turu gösterir (tools/../deploy/evren.py).
             Path(self.config.health_file).touch()
-        handled = totals["create"] + totals["manual"] + totals["relation"] + totals["decision"] + totals["split"]
+        handled = (totals["create"] + totals["manual"] + totals["relation"] + totals["attest"] + totals["decision"]
+                   + totals["split"])
         self.processed += handled
         self.failed += totals["failed"]
         self._heartbeat(conn, failed_now=totals["failed"] > 0)
         if handled:
-            log.info("istekler uygulandı: oluşturma=%d elle=%d ilişki=%d karar=%d ayırma=%d başarısız=%d",
-                     totals["create"], totals["manual"], totals["relation"], totals["decision"], totals["split"],
-                     totals["failed"])
+            log.info("istekler uygulandı: oluşturma=%d elle=%d ilişki=%d onay=%d karar=%d ayırma=%d başarısız=%d",
+                     totals["create"], totals["manual"], totals["relation"], totals["attest"], totals["decision"],
+                     totals["split"], totals["failed"])
         return totals
 
     def _heartbeat(self, conn: psycopg.Connection[Any], *, failed_now: bool = False, stopped: bool = False) -> None:

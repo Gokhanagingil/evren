@@ -104,6 +104,14 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - Hatalar: `413 dosya_cok_buyuk` (2 MB), `413 istek_cok_buyuk` (gövde 5 MB), `422 bos_dosya`, `422 csv_bozuk`, `422 cok_satir` (5000), `422 satir_yok`, `422 ad_sutunu_yok`, `422 gecerli_satir_yok`, `422 sinif_yok` (varsayılan sınıf), `422 idempotency_key_yok`, `403 yetki_yok`.
 - Var olan CI güncellenmez: kimliği var olan CI'a denk gelen satır `duplicate` olur ve o CI'ı gösterir. Aynı dosyada iki satır aynı CI'sa ilki açılır, ikincisi `duplicate` olur (satırlar sırayla işlenir).
 
+### Sahiplik onayı (ADR-0027)
+
+- `GET /api/v1/attestation/summary`: kapsamdaki CI sayıları duruma göre (`not_reviewed`, `valid`, `due_soon`, `expired`, `rejected`), sahipsiz sayısı, onay oranı, kişinin kendi CI'ları (`mine`), politikalar (`where_label` Türkçe), `user.mapped`, `can_attest`.
+- `GET /api/v1/attestation/items?view=mine|invalid|rejected|orphan&q=&limit=&offset=`: aciliyet sırasıyla CI'lar (durum, geçerlilik sonu, son onay, sorumlu, bekleyen istek). Okuma izni olmayan sınıfın CI'ı listelenmez.
+- `POST /api/v1/attestations` (CSRF, `idempotency_key`, `attest` izni): `{"items": ["<sys_id>", …] (1–200), "decision": "attested" | "rejected", "reason": "not_owner" | "not_exists" | "data_wrong", "note": "…"}` → `202 {"accepted": [{"ci", "request"}], "skipped": [{"ci", "reason"}]}`. Ret neden ve gerekçe ister. Uygun olmayan CI atlanır (kapsam dışı, sorumlu değil, bekleyen istek, bulunamadı); hiçbiri uygun değilse `409 onaylanacak_ci_yok` (ayrıntıda nedenler). Oturum `ref.sys_user`'a eşlenemezse `403 kullanici_kaydi_yok`.
+- `GET /api/v1/attestation-requests?ids=a,b,…`: isteklerin durumu (`pending | applied | rejected`) ve uzlaştırıcının notu.
+- CI ayrıntısında `attestation`: durum, politika, son onay (kişi adı, tarih), geçerlilik sonu, sorumlular, son istekler, açık ret anomalisi, `can_attest`, `blocker` ve `blocker_code`.
+
 ### Değişiklik denetimi (ADR-0025)
 
 - `GET /api/v1/ci/{sys_id}` yanıtındaki `change_control`:
@@ -197,6 +205,7 @@ Kafka `evren.cmdb.ci.changed.v1` (anahtar: `sys_id`, CloudEvents; outbox'tan yay
 | İzlenmeyen üretim sunucusu | `used_for=Production` ve Zabbix bağı yok | fail/pass |
 | Korumasız uç nokta | Sunucu sınıfı ve Defender bağı yok | fail/pass |
 | Yetkisiz değişiklik (CMDB-05, ADR-0025) | açık veya incelenen `insight.anomaly kind=unauthorized_change`; değişiklik kaynağı rolü sağlıklı değilse `inconclusive` | fail + kanıt listesi (CI) |
+| Sahiplik onayı geçersiz (CMDB-06, ADR-0027) | kapsamdaki CI'ın onay durumu `not_reviewed`, `expired` veya `rejected` (`metadata/attestation.yaml`) | fail + kanıt listesi (CI, durum) |
 | Sahipsiz kritik CI | `busines_criticality` yüksek ve `owned_by` boş | fail/pass |
 
 Kaynak çalışması devre kesicide `WARN` veya `OPEN` ise `collection_status=partial` gönderilir ve GRC Platformu sonucu `inconclusive` olur.

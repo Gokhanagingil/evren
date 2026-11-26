@@ -136,3 +136,12 @@ Ağırlıklar başlangıç değeridir. Eşleştirme kuyruğundaki insan kararlar
 Karar gecikmeli verilir (bekleme süresi; acil değişiklik kaydı geç gelebilir). Açık anomali bir süre yeniden denenir; sonradan gelen onaylı kayıt kapsarsa anomali kapanır, kanıt kalır. Devre kesici çalışmayı açtıysa karar verilmez (eşleme hatası toplu sahte kanıt üretmez).
 
 Bu kayıt GRC Platformu'nda "yetkisiz değişiklik" kontrolüne (CMDB-05) kanıt olur. Yanlış alarmı Veri sorumlusu gerekçesiyle işaretler; karar denetim izindedir.
+
+## 7. Sahiplik onayı (ADR-0027)
+
+Kapsamdaki CI'ın sorumlusu (`owned_by` veya `managed_by` alanındaki kişi) kaydı dönemsel olarak onaylar ya da neden ve gerekçeyle reddeder. Kapsam ve süre `metadata/attestation.yaml` dosyasındadır: üretimdeki altyapı, uygulama ve hizmetler 180 gün, diğerleri 365 gün. Emekli CI kapsam dışıdır.
+
+- Onay istek olarak kaydedilir. Uzlaştırıcı kişinin hâlâ sorumlu olduğunu ve CI'ın kapsamda olduğunu yeniden denetler. Sonra dört alanı yazar: `attestation_status`, `attested`, `attested_by`, `attested_date`. Bu alanlar CI'ın Manual kaynak kaydına yazılır ve uzlaştırmadan geçer; değişim nedeni `attestation`'dır. Hiçbir keşif veya ITSM kaynağı bu alanları yazamaz.
+- Süre dolunca ya da onaylayan artık sorumlu değilse dönemsel tarama CI'ı "Henüz incelenmedi" yapar. Son onayın kişi ve tarih bilgisi kanıt olarak kalır.
+- Ret, Veri sorumlusu için bir anomali açar. CI sonradan onaylanırsa anomali kapanır, kanıt kalır. Ret CI'ı silmez ve emekliye ayırmaz.
+- Sahipsiz CI'ın onay verecek kimsesi yoktur; bu CI'lar ayrı görünümde listelenir. Geçersiz onaylar GRC kontrolü CMDB-06'ya kanıt olur.

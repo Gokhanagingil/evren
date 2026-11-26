@@ -42,7 +42,9 @@ def me(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             "permissions": ctx.state.authorizer.summary(ctx.perms),
             "can": {"review_match": ctx.grant("match_queue", "review_match").allowed,
                     "read_ci": ctx.grant("cmdb_ci", "read").allowed,
-                    "create_ci": ctx.grant("cmdb_ci", "create").allowed}}
+                    "create_ci": ctx.grant("cmdb_ci", "create").allowed,
+                    "attest": ctx.grant("cmdb_ci", "attest").allowed},
+            "sys_user": (lambda u: {"mapped": u is not None, "name": u["name"] if u else None})(ctx.sys_user())}
 
 
 def _source_rows(ctx: Ctx) -> list[dict[str, Any]]:
@@ -241,7 +243,37 @@ def controls(ctx: Ctx = Depends(context)) -> list[dict[str, Any]]:
                  _UNAUTHORIZED_CHANGE, "evren.anomaly.kind=unauthorized_change^status=open",
                  "Keşfin gözlediği izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) onaylı bir "
                  "değişiklik penceresine düşmüyor (ADR-0025).", st),
+        _attestation_control(ctx),
     ]
+
+
+def _attestation_control(ctx: Ctx) -> dict[str, Any]:
+    """CMDB-06 (ADR-0027): sahiplik onayı kapsamındaki CI'lardan onayı geçersiz olanlar (hiç onaylanmamış, süresi
+    dolmuş, reddedilmiş). Kaynak rolüne bağlı değildir; toplama hep tamdır."""
+    md = ctx.state.metadata
+    pol = md.attestation_policy
+    period, params = pol.period_sql(md.hierarchy)
+    now = datetime.now(UTC)
+    evidence: list[dict[str, Any]] = []
+    total = 0
+    if pol.enabled:
+        with ctx.conn.cursor() as cur:
+            cur.execute(sql.SQL("""SELECT sys_id, name, state, count(*) OVER () FROM (
+                                       SELECT x.sys_id, x.name, {state} AS state
+                                         FROM (SELECT ci.*, {period} AS period_days FROM cmdb.cmdb_ci ci) x
+                                        WHERE x.period_days IS NOT NULL) a
+                                    WHERE state IN ('not_reviewed', 'expired', 'rejected')
+                                    ORDER BY lower(name) LIMIT 500""").format(
+                state=sql.SQL(pol.state_sql("x")), period=sql.SQL(period)), [now, now, *params])
+            for sid, name, state, n in cur.fetchall():
+                evidence.append({"sys_id": sid, "name": name, "state": state})
+                total = n
+    return {"id": "CMDB-06", "title": "Sahiplik onayı geçersiz kapsamdaki CI", "status": "fail" if evidence else "pass",
+            "why": "Sorumlusu kaydı onaylamamış, onayın süresi dolmuş veya sorumlu reddetmiş (ADR-0027).",
+            "evidence": evidence, "evidence_total": total,
+            "provenance": {"source_system": "Evren", "query_reference": "evren.attestation.state IN "
+                           "(not_reviewed, expired, rejected)", "collection_status": "complete", "depends_on": None,
+                           "evaluated_at": now.isoformat()}}
 
 
 @router.get("/summary")

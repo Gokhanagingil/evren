@@ -1,8 +1,9 @@
 """İstek bağlamı: kimlik, veritabanı bağlantısı, izinler ve CSRF denetimi."""
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -16,6 +17,8 @@ from .security import Principal
 
 __all__ = ["Ctx", "context", "require_csrf"]
 
+_GUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+
 
 @dataclass
 class Ctx:
@@ -23,6 +26,7 @@ class Ctx:
     conn: psycopg.Connection[Any]
     principal: Principal
     perms: list[dict[str, Any]]
+    _user: tuple[bool, dict[str, str] | None] = field(default=(False, None), repr=False)
 
     @property
     def state(self) -> Any:
@@ -37,6 +41,25 @@ class Ctx:
             self.security_event(f"{operation}:{resource}", "deny", resource)
             raise ApiError(403, "yetki_yok", "Bu işlem için yetkiniz yok.", [{"resource": resource, "operation": operation}])
         return g
+
+    def sys_user(self) -> dict[str, str] | None:
+        """Oturumdaki kişinin etkin ``ref.sys_user`` kaydı (sahiplik onayı, ADR-0027). Entra oturumunda yalnızca
+        değişmez nesne kimliğiyle (``entra_oid``) eşlenir; değişebilen UPN/e-posta yetki kararında kullanılmaz.
+        Geliştirme oturumunda kullanıcı adıyla. Eşlenemezse ``None``."""
+        if self._user[0]:
+            return self._user[1]
+        p = self.principal
+        if p.mode == "entra":
+            row = self.conn.execute(
+                "SELECT sys_id, user_name, name FROM ref.sys_user WHERE active AND entra_oid = %s::uuid",
+                (p.id,)).fetchone() if _GUID.match(p.id.lower()) else None
+        else:
+            row = self.conn.execute(
+                "SELECT sys_id, user_name, name FROM ref.sys_user WHERE active AND lower(user_name) = lower(%s)",
+                (p.id,)).fetchone()
+        user = {"sys_id": row[0], "user_name": row[1], "name": row[2] or row[1]} if row else None
+        self._user = (True, user)
+        return user
 
     def security_event(self, action: str, decision: str, resource: str | None = None,
                        detail: dict[str, Any] | None = None) -> None:

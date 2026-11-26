@@ -25,7 +25,7 @@ from .editing import EditPolicy
 from .entra import Entra
 from .errors import install_handlers
 from .present import Presenter
-from .routers import auth, ci, connectors, insight, manual, platform, queue, refs, reports, schema, search
+from .routers import attestation, auth, ci, connectors, insight, manual, platform, queue, refs, reports, schema, search
 from .rules_view import build_rules_view
 from .security import SessionCodec
 
@@ -160,7 +160,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
         return JSONResponse({"status": "ok"})
 
     for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, search.router,
-              connectors.router, insight.router, manual.router, auth.router):
+              connectors.router, insight.router, manual.router, attestation.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

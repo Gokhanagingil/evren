@@ -38,7 +38,9 @@ def test_health(client):
 def test_me_reports_roles_and_capabilities(client, reader):
     me = client.get("/api/v1/me").json()
     assert {r["name"] for r in me["roles"]} == {"evren_reader", "evren_match_reviewer"}
-    assert me["can"] == {"review_match": True, "read_ci": True, "create_ci": False}  # CI açma: Konfigürasyon analisti
+    assert me["can"] == {"review_match": True, "read_ci": True, "create_ci": False,  # CI açma: Konfigürasyon analisti
+                         "attest": False}  # sahiplik onayı: CI sahibi rolü (ADR-0027)
+    assert me["sys_user"] == {"mapped": False, "name": None}  # test kullanıcısının sys_user kaydı yok
     assert reader.get("/api/v1/me").json()["can"]["review_match"] is False
 
 

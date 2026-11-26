@@ -1,0 +1,30 @@
+# Sahiplik onayı (F1-17, ADR-0027).
+#
+# Kapsamdaki CI'ın sorumlusu (owner_fields alanlarındaki kişi) kaydı dönemsel olarak onaylar ("bu kayıt doğru,
+# sorumlusu benim") veya gerekçeyle reddeder. Onay süresi dolunca veya onaylayan artık sorumlu değilse CI yeniden
+# "Henüz incelenmedi" olur. Onayı yalnızca Evren'deki onay akışı yazar (uzlaştırıcı, Manual kaynak kaydı).
+#
+# Politikalar sırayla denenir; CI'a ilk uyan uygulanır. Hiçbirine uymayan CI kapsam dışıdır.
+# applies_to alt sınıflara kalıtılır. where: kök sınıfta sütun olarak saklanan seçim alanı → izinli değerler.
+# Doğrulama: tools/load_metadata.py --check (sınıf, alan, değer, süre, ürün adı yok).
+version: 1
+
+# Onay verebilecek kişileri tutan alanlar (sys_user referansı)
+owner_fields: [owned_by, managed_by]
+
+# Süre bitmeden bu kadar gün önce "süresi yaklaşıyor" görünür
+reminder_days: 30
+
+policies:
+  - name: uretim
+    label_tr: Üretimdeki altyapı, uygulama ve hizmetler
+    applies_to: [cmdb_ci_server, cmdb_ci_netgear, cmdb_ci_storage_device, cmdb_ci_db_instance, cmdb_ci_appl,
+                 cmdb_ci_business_app, cmdb_ci_service]
+    where: {used_for: [Production]}
+    period_days: 180
+
+  - name: genel
+    label_tr: Diğer altyapı, uygulama ve hizmetler
+    applies_to: [cmdb_ci_server, cmdb_ci_netgear, cmdb_ci_storage_device, cmdb_ci_db_instance, cmdb_ci_appl,
+                 cmdb_ci_business_app, cmdb_ci_service]
+    period_days: 365

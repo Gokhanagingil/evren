@@ -265,6 +265,16 @@ def test_segregation_of_duties_enforced():
                                  "VALUES ('cmdb_ci_server', 1, 'x')"),
         ("evren_readonly", "SELECT count(*) FROM ingest.import_batch"),
         ("evren_app_connector", "SELECT count(*) FROM ingest.import_batch"),
+        # 0025 (ADR-0027): sahiplik onayı isteği; API sonucu ve onay alanlarını yazamaz, uzlaştırıcı isteği değiştiremez
+        ("evren_app_api", "UPDATE ingest.attestation_request SET status = 'applied' WHERE false"),
+        ("evren_app_api", "INSERT INTO ingest.attestation_request (ci_sys_id, decision, attester_user, requested_by, "
+                          "status) SELECT sys_id, 'attested', sys_id, 'x', 'applied' FROM cmdb.cmdb_ci WHERE false"),
+        ("evren_app_api", "UPDATE cmdb.cmdb_ci SET attestation_status = 'Attested' WHERE false"),
+        ("evren_app_reconciler", "UPDATE ingest.attestation_request SET decision = 'attested' WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM ingest.attestation_request WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM ingest.attestation_request"),
+        ("evren_app_connector", "SELECT count(*) FROM ingest.attestation_request"),
+        ("evren_app_mcp", "SELECT count(*) FROM ingest.attestation_request"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
         ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
@@ -316,6 +326,12 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_api", "SELECT file_name, row_count FROM ingest.import_batch"),
         ("evren_app_reconciler", "SELECT count(*) FROM ingest.import_batch"),
         ("evren_auditor_ro", "SELECT batch_id, row_no FROM ingest.manual_create"),
+        ("evren_app_api", "INSERT INTO ingest.attestation_request (ci_sys_id, decision, attester_user, requested_by) "
+                          "SELECT sys_id, 'attested', sys_id, 'x' FROM cmdb.cmdb_ci WHERE false"),
+        ("evren_app_reconciler", "UPDATE ingest.attestation_request SET status = 'applied', applied_at = now() "
+                                 "WHERE false"),
+        ("evren_auditor_ro", "SELECT decision, reason, attester_user FROM ingest.attestation_request"),
+        ("evren_app_api", "SELECT sys_id FROM ref.sys_user WHERE entra_oid IS NULL LIMIT 1"),
     ],
 )
 def test_allowed_paths_work(role, statement):
@@ -370,6 +386,7 @@ def test_credential_view_has_no_secret_column():
                 "WHERE table_schema = 'ingest' AND table_name = 'connector_credential_status'")
     assert "token_sha256" not in cols and "token_hint" in cols and cols.endswith("state")
     assert psql("SELECT count(*) FROM iam.permission WHERE resource = 'data_source' AND operation = 'connector_read'") == "2"
+    assert psql("SELECT string_agg(role, ',') FROM iam.permission WHERE operation = 'attest'") == "evren_ci_owner"
 
 
 INSTANCE = ("INSERT INTO ingest.connector_instance (name, connector, data_source, schedule, schedule_tz, "

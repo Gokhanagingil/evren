@@ -24,6 +24,7 @@ from ..deps import Ctx, context, require_csrf
 from ..errors import ApiError
 from ..idempotency import remember, replay, request_hash
 from ..present import COVERAGE_ROLES
+from .attestation import ci_attestation
 from .insight import ANOMALY_STATUS
 from .manual import manual_relation_keys
 from .platform import _SERVER, _and, _coverage_sql, _not
@@ -311,6 +312,7 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         "server": cls in md.hierarchy and "cmdb_ci_server" in md.hierarchy.ancestors(cls),
         "coverage": coverage, "unauthorized_count": len(rejected), "change_control": change_control,
         "unauthorized_changes": change_control["open_unauthorized"],
+        "attestation": ci_attestation(ctx, sys_id, cls, doc),
         "golden_version": doc.get("golden_version"), "sys_updated_on": doc.get("sys_updated_on"),
         **({"security_posture": posture} if posture is not None else {}),
     }

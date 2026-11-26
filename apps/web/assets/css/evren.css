@@ -109,6 +109,7 @@ svg.icon { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: curren
 .grid.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .grid.wide-left { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
 .cards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-bottom: 16px; }
+.cards.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .metric { padding: 16px 18px; border: 1px solid var(--stroke); border-radius: var(--radius); background: #fff; box-shadow: var(--shadow); text-align: left;
   display: block; width: 100%; position: relative; overflow: hidden; transition: border-color .12s, box-shadow .12s; color: inherit; text-decoration: none; }
 .metric::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--stroke2); }
@@ -412,7 +413,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ---------- duyarlı düzen */
 @media (max-width: 1280px) {
-  .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cards, .cards.five { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .grid.wide-left { grid-template-columns: 1fr; }
   .map-layout { grid-template-columns: 1fr; }
   .map-detail { position: static; max-height: none; }
@@ -435,7 +436,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   #topActions { justify-content: flex-start; margin-top: 12px; }
   #view { padding: 0 14px; }
   #detail { width: 100vw; }
-  .cards { grid-template-columns: 1fr 1fr; }
+  .cards, .cards.five { grid-template-columns: 1fr 1fr; }
   .metric-number { font-size: 22px; }
   .searchbar { width: 100%; }
   .filters, .filters select.compact { width: 100%; }

@@ -286,19 +286,21 @@
     "manual_input": {
       "label": "Elle girdi",
       "sub": [
-        "CI, ilişki, CSV →",
+        "CI, ilişki, CSV, onay →",
         "Manual kaynağı"
       ],
       "kind": "human",
       "kind_label": "İnsan kararı / arayüz",
       "chapter": "sources",
       "phase": "F1",
-      "text": "İnsanın girdiği CI, ilişki ve CSV satırları istek olarak kaydedilir; uzlaştırıcı onları Manual kaynak kaydı olarak keşifle aynı akıl katmanından geçirir. CI oluşturma kimlik çözümlemesinden geçer — aynı kimlikte CI varsa açılmaz, benzer CI varsa gerekçeli karar istenir — ve açılan CI'ın kimlik anahtarları dizine girer, böylece keşif onu sonradan tanır (ADR-0026). Elle düzenleme ve ayırma da aynı yoldadır (ADR-0011, ADR-0012).",
+      "text": "İnsanın girdiği CI, ilişki ve CSV satırları istek olarak kaydedilir; uzlaştırıcı onları Manual kaynak kaydı olarak keşifle aynı akıl katmanından geçirir. CI oluşturma kimlik çözümlemesinden geçer — aynı kimlikte CI varsa açılmaz, benzer CI varsa gerekçeli karar istenir — ve açılan CI'ın kimlik anahtarları dizine girer, böylece keşif onu sonradan tanır (ADR-0026). Elle düzenleme ve ayırma da aynı yoldadır (ADR-0011, ADR-0012). CI sorumlusunun dönemsel sahiplik onayı da istek olarak gelir; uzlaştırıcı kişiyi yeniden denetler, süre dolunca onayı geçersiz kılar (ADR-0027).",
       "tech": [
         "ingest.manual_create",
         "ingest.manual_edit",
         "ingest.split_request",
-        "Evren arayüzü · Yeni CI, Düzenle, Ayır"
+        "ingest.attestation_request",
+        "metadata/attestation.yaml",
+        "Evren arayüzü · Yeni CI, Düzenle, Ayır, Sahiplik Onayı"
       ],
       "security": [
         "Golden record'a API değil uzlaştırıcı yazar",

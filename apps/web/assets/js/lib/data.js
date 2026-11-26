@@ -272,6 +272,20 @@ export async function splitCi(ciId, linkId, note) {
 }
 
 /** Yetkisiz değişiklik anomalisinin insan kararı (ADR-0025): incelendi, yanlış alarm (gerekçe zorunlu), yeniden aç. */
+// Sahiplik onayı (U6.4, ADR-0027): yalnızca API modunda
+export const attestationSummary = () => api('/api/v1/attestation/summary');
+export function attestationItems(view, q = '') {
+  const p = new URLSearchParams({ view, limit: '500' });
+  if (q) p.set('q', q);
+  return api(`/api/v1/attestation/items?${p}`);
+}
+export function attest({ items, decision, reason = null, note = null }) {
+  return api('/api/v1/attestations', {
+    method: 'POST', body: JSON.stringify({ items, decision, reason, note, idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+export const attestationRequests = (ids) => api(`/api/v1/attestation-requests?ids=${ids.map(encodeURIComponent).join(',')}`);
+
 export async function reviewAnomaly(id, status, note) {
   return api(`/api/v1/anomalies/${encodeURIComponent(id)}/review`, {
     method: 'POST', body: JSON.stringify({ status, note: note || null }),

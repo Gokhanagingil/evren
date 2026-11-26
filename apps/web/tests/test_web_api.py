@@ -38,7 +38,7 @@ def base_url():
         s.bind(("127.0.0.1", 0))
         port = s.getsockname()[1]
     roles = ("evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer,"
-             "evren_security_reader")
+             "evren_security_reader,evren_ci_owner")
     settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": roles,
                                   "EVREN_DEV_USER": "arayuz-testi", "EVREN_DEV_NAME": "Arayüz Testi",
                                   "EVREN_DB_POOL_SIZE": "4"})
@@ -695,3 +695,76 @@ def test_csv_import_preview_commit_and_row_results(page, base_url):
     finally:
         stop.set()
         t.join(timeout=5)
+
+
+def test_attestation_bulk_approve_and_reject_with_keyboard(page, base_url):
+    """U6.4 (ADR-0027): "Bende" görünümünde toplu onay; CI panelinden gerekçeli ret (Enter/Esc), ret anomali açar;
+    sahipsiz görünümü; uzlaştırıcı arka planda uygular."""
+    from scenarios import apply_pending_attestations, make_owned_ci
+
+    first, first_name, _ = make_owned_ci("arayuz-testi")
+    second, _, _ = make_owned_ci("arayuz-testi", used_for="Test")
+    stop = threading.Event()
+
+    def worker():
+        while not stop.is_set():
+            apply_pending_attestations()
+            stop.wait(0.3)
+
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
+    try:
+        page.goto(base_url + "/#/sahiplik-onayi")
+        expect(page.locator("#attCards")).to_contain_text("Kapsamda")
+        expect(page.locator("#tab-mine")).to_have_attribute("aria-selected", "true")
+        page.fill("#attSearch", "onay-")
+        table = page.locator("#attTable")
+        expect(table).to_contain_text(first_name)
+        expect(table).to_contain_text("Henüz incelenmedi")
+        page.locator(f'input[data-pick="{first}"]').check()
+        page.locator(f'input[data-pick="{second}"]').check()
+        expect(page.locator("#attBulk")).to_have_text("Seçilenleri onayla (2)")
+        expect(page.locator("#attPolicies")).to_contain_text("Kullanım amacı: Üretim")
+        assert "null" not in page.locator("main").inner_text()  # boş dallar metin olarak basılmaz
+        shot(page, "web_api_attestation_mine")
+        page.locator("#attBulk").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#attStatus")).to_contain_text("2 istek uygulandı", timeout=20000)
+        row = page.locator("#attTable tr", has_text=first_name)
+        expect(row).to_contain_text("Onaylı")
+        # CI panelinden ret: neden + gerekçe; Esc vazgeçer, Enter gönderir
+        page.goto(base_url + f"/#/ci/{second}")
+        box = page.locator("#ciAttestation")
+        expect(box).to_contain_text("Onaylı")
+        expect(box).to_contain_text("Diğer altyapı")  # Test kullanımı → genel politika (365 gün)
+        page.locator("#ciAttestReject").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#attReason")).to_be_focused()
+        page.keyboard.press("Escape")
+        expect(page.locator("#attReason")).to_have_count(0)
+        page.locator("#ciAttestReject").click()
+        page.select_option("#attReason", "data_wrong")
+        page.locator("#attNote").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#attNote")).to_have_attribute("aria-invalid", "true")  # gerekçesiz gönderilmez
+        page.fill("#attNote", "Seri numarası kasadakiyle uyuşmuyor")
+        page.keyboard.press("Enter")
+        expect(page.locator("#ciAttestation")).to_contain_text("Reddedildi", timeout=20000)
+        expect(page.locator("#ciAttestation")).to_contain_text("Kayıttaki bilgiler yanlış")
+        expect(page.locator("#ciAttestation")).to_contain_text("Veri sorumlusunda")
+        shot(page, "web_api_attestation_rejected")
+        page.goto(base_url + "/#/sahiplik-onayi")
+        page.locator("#tab-orphan").click()
+        expect(page.locator("#attList")).to_contain_text("sahibi ve yöneteni boş")
+    finally:
+        stop.set()
+        t.join(timeout=5)
+
+
+def test_attestation_page_mobile_has_no_horizontal_overflow(browser, base_url):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, locale="tr-TR")
+    pg = context.new_page()
+    pg.goto(base_url + "/#/sahiplik-onayi")
+    pg.wait_for_selector("#attCards .metric")
+    assert pg.evaluate("document.documentElement.scrollWidth <= window.innerWidth + 1")
+    context.close()

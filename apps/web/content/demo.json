@@ -24258,6 +24258,200 @@
     "collection_status": "complete",
     "depends_on": "ServiceNowChange"
    }
+  },
+  {
+   "id": "CMDB-06",
+   "title": "Sahiplik onayı geçersiz kapsamdaki CI",
+   "status": "fail",
+   "why": "Sorumlusu kaydı onaylamamış, onayın süresi dolmuş veya sorumlu reddetmiş (ADR-0027).",
+   "evidence": [
+    {
+     "sys_id": "e7e00000000000000000000000000021",
+     "name": "ANK-DR-FW01"
+    },
+    {
+     "sys_id": "b8804eb1bb0da66dada7b15ac8222fda",
+     "name": "IST-DC1-FW01"
+    },
+    {
+     "sys_id": "1bb2c64aa76125b7dd3d79f442891f7b",
+     "name": "ank-bi-03"
+    },
+    {
+     "sys_id": "f9e7e92cb4b46528fa3f589873590516",
+     "name": "ank-db-04"
+    },
+    {
+     "sys_id": "3093cecaf82b51da5ed79369457afab3",
+     "name": "ank-erp-01"
+    },
+    {
+     "sys_id": "f73074bdaa8e5fcf32e54a1868894e02",
+     "name": "ank-log-01"
+    },
+    {
+     "sys_id": "26017ca49d18939ffc0d7a05f1e6df71",
+     "name": "ank-web-03"
+    },
+    {
+     "sys_id": "f8a694594583b4555ae2c859cbe68064",
+     "name": "ist-bi-01"
+    },
+    {
+     "sys_id": "e54df9eacc9ad7b7bc5cd3c4bfb2f4c1",
+     "name": "ist-bi-02"
+    },
+    {
+     "sys_id": "4cf28de3bd6938c379f7638412d32f1a",
+     "name": "ist-bi-04"
+    },
+    {
+     "sys_id": "2186feea402bab89007662533423a4b8",
+     "name": "ist-db-01"
+    },
+    {
+     "sys_id": "7b6e964fb3f620d67d94be76fd84523a",
+     "name": "ist-db-01"
+    },
+    {
+     "sys_id": "5c70306f195ac4d1aff951fbefab5475",
+     "name": "ist-db-02"
+    },
+    {
+     "sys_id": "9312131c529e2f077aeec1fe57e28a32",
+     "name": "ist-db-03"
+    },
+    {
+     "sys_id": "bd64e460809839f64310c7726adc4156",
+     "name": "ist-erp-02"
+    },
+    {
+     "sys_id": "f5c283c912d79b1aa9219662dd6b6a09",
+     "name": "ist-erp-03"
+    },
+    {
+     "sys_id": "6738378f8b8c7fc8015fe41a0ac1bd4d",
+     "name": "ist-erp-04"
+    },
+    {
+     "sys_id": "1fdd6eaf7df86ddefcc20794a5c67837",
+     "name": "ist-log-02"
+    },
+    {
+     "sys_id": "e7e00000000000000000000000000018",
+     "name": "ist-log-03"
+    },
+    {
+     "sys_id": "82cd67ad51e1f91c6b3568b2319dc830",
+     "name": "ist-log-04"
+    },
+    {
+     "sys_id": "5b8999b496b6614c4f10dfa35717b5d9",
+     "name": "ist-web-01"
+    },
+    {
+     "sys_id": "cf05df6108ba934345470b577a5173c6",
+     "name": "ist-web-02"
+    },
+    {
+     "sys_id": "2871d1f4438c70f5237afe1041da2d4d",
+     "name": "ist-web-04"
+    },
+    {
+     "sys_id": "247f35e7c54173515d09298a4c120414",
+     "name": "IST-DC1-EDGE-RT01"
+    },
+    {
+     "sys_id": "25e080ebaa1f8bc86c4f078067c98d93",
+     "name": "ANK-DR-CORE-SW01"
+    },
+    {
+     "sys_id": "14ee5bf3eda590094f932598695df05e",
+     "name": "IST-DC1-ACC-SW11"
+    },
+    {
+     "sys_id": "60e415e97b6f32f4b5a95cd8c4b50b63",
+     "name": "IST-DC1-ACC-SW12"
+    },
+    {
+     "sys_id": "1beeb2bd4a50e53b442681c5e4973d7d",
+     "name": "IST-DC1-CORE-SW01"
+    },
+    {
+     "sys_id": "be9ca9fd96c5aa0e39e2009cae74a6a0",
+     "name": "IST-DC1-CORE-SW02"
+    },
+    {
+     "sys_id": "b091478f6818c85906a48cd88b306f08",
+     "name": "ANK-CRM-04"
+    },
+    {
+     "sys_id": "d745dcf226c22d6e3a58ff3d395d8bab",
+     "name": "ANK-DC-02"
+    },
+    {
+     "sys_id": "c6a89c8a39701c272d7d8d4f280ff889",
+     "name": "ANK-FILE-02"
+    },
+    {
+     "sys_id": "4eb7baea205049270530f6897e1da053",
+     "name": "ANK-MUH-01"
+    },
+    {
+     "sys_id": "0c7a38326f372c4e7594c6ae0e3f1779",
+     "name": "IST-CRM-02"
+    },
+    {
+     "sys_id": "e98e3ffb8aff4ae7e599446f66f8c44d",
+     "name": "IST-CRM-03"
+    },
+    {
+     "sys_id": "5cb077a2aaf90c894107711d2befc7f9",
+     "name": "IST-DC-01"
+    },
+    {
+     "sys_id": "ad9999465bbd3afdc462ad8bfb6f8711",
+     "name": "IST-DC-04"
+    },
+    {
+     "sys_id": "15de32c2a95a4826be374c1b0cfd5e53",
+     "name": "IST-FILE-01"
+    },
+    {
+     "sys_id": "d106bea2bf5847af99e09099a4c0c80e",
+     "name": "IST-FILE-03"
+    },
+    {
+     "sys_id": "1c694cf7d754e95270130aba3029dc71",
+     "name": "IST-FILE-04"
+    },
+    {
+     "sys_id": "e7e0000000000000000000000000000c",
+     "name": "IST-MUH-02"
+    },
+    {
+     "sys_id": "13517218cdde418e09f77a701d1ee27e",
+     "name": "IST-MUH-03"
+    },
+    {
+     "sys_id": "8bc88d39125b9ca46890a8ae3c0c8791",
+     "name": "IST-MUH-04"
+    },
+    {
+     "sys_id": "f0f0639d4014d386b2b14d9cc09c7126",
+     "name": "ist-crm-01"
+    },
+    {
+     "sys_id": "f91d9301f6638186e695f4c8a703a216",
+     "name": "ist-dc-03"
+    }
+   ],
+   "provenance": {
+    "source_system": "Evren",
+    "query_reference": "evren.attestation.state IN (not_reviewed, expired, rejected)",
+    "collection_status": "complete",
+    "depends_on": null
+   }
   }
  ]
 }

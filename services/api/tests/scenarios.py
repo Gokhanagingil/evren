@@ -126,3 +126,35 @@ def make_sn_pair(*, same_serial: bool) -> tuple[str, str, str]:
                                              class_hint="cmdb_ci_linux_server", observed_at=datetime.now(UTC),
                                              attributes={"name": f"pair-{tag}", "serial_number": serial}), sid)
     return a, b, f"pair-{tag}"
+
+
+def make_owned_ci(user_name: str | None, *, used_for: str = "Production", cls: str = "cmdb_ci_linux_server",
+                  **extra: str) -> tuple[str, str, str | None]:
+    """Sorumlusu ``user_name`` olan (None: sahipsiz) testin kendine ait CI'ı; ITSM rolü sahibi yazar (U6.4).
+    Kullanıcı ``ref.sys_user``'da yoksa açılır. Döner: (CI sys_id, ad, sys_user sys_id)."""
+    md = load_metadata(REPO / "metadata")
+    tag = uuid.uuid4().hex[:8]
+    user = None
+    with psycopg.connect(autocommit=True) as conn:
+        if user_name:
+            conn.execute("INSERT INTO ref.sys_user (sys_id, user_name, name, source) VALUES (%s, %s, %s, 'evren') "
+                         "ON CONFLICT DO NOTHING", (uuid.uuid4().hex, user_name, user_name.replace("-", " ").title()))
+            (user,) = conn.execute("SELECT sys_id FROM ref.sys_user WHERE lower(user_name) = lower(%s)",
+                                   (user_name,)).fetchone()
+        conn.execute("SET ROLE evren_app_reconciler")
+        store = ReconcilerStore(conn, md)
+        run = store.start_run(uuid.uuid4(), "ServiceNow")
+        attrs = {"name": f"onay-{tag}", "serial_number": f"CZO{tag}", "used_for": used_for, **extra}
+        if user:
+            attrs["owned_by"] = user
+        ci = store.apply(IngestRecord(data_source="ServiceNow", run_id=run, source_key=f"onay-{tag}", class_hint=cls,
+                                      observed_at=datetime.now(UTC), attributes=attrs))
+    return ci.ci_sys_id, f"onay-{tag}", user
+
+
+def apply_pending_attestations() -> list[str]:
+    """Uzlaştırıcıyı bir tur çalıştırır (sahiplik onayı istekleri); sonuç türlerini döner (U6.4)."""
+    md = load_metadata(REPO / "metadata")
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        return [r.outcome for r in ReconcilerStore(conn, md).apply_attestations()]

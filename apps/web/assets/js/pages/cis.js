@@ -2,7 +2,8 @@
 // ("bu değer nereden geldi?"), API modunda değişim geçmişi.
 import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
-import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
+import { OUTCOME, ROLE_TR, attest, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
+import { STATE_TONE, openRejectDialog, waitForRequests } from './attestation.js';
 import { openEditDialog } from './ci-edit.js';
 import { openCreateDialog } from './ci-create.js';
 import { openImportDialog } from './ci-import.js';
@@ -228,6 +229,40 @@ export async function renderCis(view, param) {
   }
 
   /** Yetkisiz değişiklik kararı (ADR-0025): yanlış alarm gerekçe ister; karar sizin adınızla denetim izine yazılır. */
+  // Sahiplik onayı (U6.4, ADR-0027): durum, son onay, sorumlular; sorumluya Onayla / Reddet
+  function attestationSection(c, opener) {
+    const a = c.attestation;
+    if (mode !== 'api' || !a?.enabled || a.state === 'out_of_scope') return null;
+    const send = async (decision, reason = null, note = null) => {
+      try {
+        const res = await attest({ items: [c.sys_id], decision, reason, note });
+        toast(res.message);
+        const st = await waitForRequests(res.accepted.map((x) => x.request));
+        const r = st.requests[0];
+        if (r?.status === 'rejected') toast(`Uygulanmadı: ${r.result_note}`);
+        await open(c.sys_id, opener);
+        document.getElementById('ciAttestation')?.focus({ preventScroll: false });
+      } catch (err) {
+        toast(`Kaydedilemedi: ${err.details?.[0]?.reason || err.message}`);
+      }
+    };
+    const actions = a.can_attest ? h('div', { class: 'link-actions' },
+      h('button', { class: 'btn small', type: 'button', id: 'ciAttest', onclick: (ev) => { ev.currentTarget.disabled = true; send('attested'); } }, 'Onayla'),
+      h('button', { class: 'btn ghost small', type: 'button', id: 'ciAttestReject',
+        onclick: () => openRejectDialog({ name: c.name, reasons: a.reasons, onSend: (reason, note) => send('rejected', reason, note) }) }, 'Reddet…'))
+      : a.blocker && a.blocker_code !== 'role' ? h('p', { class: 'muted small' }, a.blocker) : null;
+    const last = a.history?.[0];
+    return section('Sahiplik onayı', h('div', { id: 'ciAttestation', tabindex: '-1' },
+      h('div', { class: 'pills' }, pill(a.state_label, STATE_TONE[a.state] || 'neutral'), a.pending ? pill('İstek uygulanıyor', 'neutral') : null,
+        a.orphan ? pill('Sahipsiz', 'bad') : null, a.open_rejection ? pill('Veri sorumlusunda', 'warn') : null),
+      a.state === 'rejected' && last?.decision === 'rejected' ? h('div', { class: 'notice bad', role: 'note' }, h('strong', {}, `${last.reason_label}. `), last.note || '') : null,
+      kv([['Politika', a.policy ? `${a.policy.label} · ${a.policy.period_days} gün` : '—'],
+        ['Son onay', a.attested_date ? `${formatDateTime(a.attested_date)} · ${a.attested_by || '—'}` : 'Hiç onaylanmadı'],
+        ['Geçerlilik sonu', a.valid_until ? formatDateTime(a.valid_until) : '—'],
+        ['Onay verebilen', a.owners.length ? a.owners.map((o) => o.name).join(', ') : h('span', { class: 'pill warn' }, 'Sahip ve yönetici yok')]]),
+      actions));
+  }
+
   function reviewFor(c, opener) {
     if (mode !== 'api' || !c.change_control?.can_review) return null;
     const send = async (a, status, note) => {
@@ -342,6 +377,7 @@ export async function renderCis(view, param) {
           h('div', { class: 'attrs' }, c.attributes.map(attrRow))),
         c.security_posture ? postureSection(c.security_posture) : null,
         changeSection(c.change_control, reviewFor(c, opener)),
+        attestationSection(c, opener),
         relationSection(c, opener),
         section('Kaynak kayıtları ve kimlik kararı', h('ul', { class: 'mini', id: 'ciLinks' }, c.links.map((l) => linkItem(c, l))),
           mode === 'api' && c.can_split && c.links.length > 1

@@ -33,7 +33,8 @@ from psycopg import sql
 from psycopg.rows import dict_row
 from psycopg.types.json import Jsonb
 
-from evren_core.change_control import ChangeRecord, evaluate
+from evren_core.attestation import ATTESTED, NOT_REVIEWED, REASONS_TR, REJECTED
+from evren_core.change_control import LOCAL_TZ, ChangeRecord, evaluate
 from evren_core.circuit_breaker import BreakerState, BreakerVerdict, evaluate_run
 from evren_core.envelope import IngestRecord
 from evren_core.identity import IdentityResolver, Outcome, Resolution, RuleSet, extract_keys
@@ -155,6 +156,7 @@ class ReconcilerStore:
         self.actor = actor
         self.clock = clock or (lambda: datetime.now(UTC))
         self.policy = metadata.change_policy
+        self.attestation = metadata.attestation_policy
 
     # ------------------------------------------------------------------ çalışma yaşam döngüsü
     def start_run(self, run_id: UUID, data_source: str, *, mode: str = "snapshot",
@@ -369,7 +371,8 @@ class ReconcilerStore:
             raise ValueError("Yalnızca Manual rolündeki kaynak kayıtları elle bağlanabilir")
         return self._process(record, attach_to=ci_sys_id, method="manual")
 
-    def _process(self, record: IngestRecord, *, attach_to: str | None, method: str | None) -> ApplyResult:
+    def _process(self, record: IngestRecord, *, attach_to: str | None, method: str | None,
+                 change_reason: str | None = None) -> ApplyResult:
         src = self.registry.source(record.data_source)
         digest = content_hash(record)
         with self.conn.transaction(), self.conn.cursor() as cur:
@@ -402,7 +405,7 @@ class ReconcilerStore:
                 manual = method == "manual"
                 self._write_posture(cur, record, attach_to)
                 changes = self._reconcile(cur, attach_to, record.run_id, released="Manual" if manual else None,
-                                          reason="manual" if manual else "reconciliation")
+                                          reason=change_reason or ("manual" if manual else "reconciliation"))
                 return ApplyResult("linked", attach_to, changes, "İlk yükleme" if created else "Elle bağlandı")
 
             res = resolver.resolve(sr, keys)
@@ -1366,11 +1369,130 @@ class ReconcilerStore:
         return set(row[0]) if row and row[0] else set()
 
     def apply_requests(self, limit: int = 100) -> dict[str, list[ApplyResult]]:
-        """Tüm insan isteklerini bir tur uygular: elle oluşturma, elle düzenleme, elle ilişki, kuyruk kararı, ayırma
-        (bu sırayla)."""
+        """Tüm insan isteklerini bir tur uygular: elle oluşturma, elle düzenleme, elle ilişki, sahiplik onayı, kuyruk
+        kararı, ayırma (bu sırayla)."""
         return {"create": self.apply_manual_creates(limit), "manual": self.apply_manual_edits(limit),
-                "relation": self.apply_manual_relations(limit), "decision": self.apply_decisions(limit),
-                "split": self.apply_splits(limit)}
+                "relation": self.apply_manual_relations(limit), "attest": self.apply_attestations(limit),
+                "decision": self.apply_decisions(limit), "split": self.apply_splits(limit)}
+
+    # ------------------------------------------------------------------ sahiplik onayı (ADR-0027)
+    def _write_attestation(self, ci: str, cls: str, values: dict[str, Any], actor: str) -> list[Any]:
+        """Onay alanlarını CI'ın Manual kaynak kaydına yazar ve uzlaştırır (neden ``attestation``). Diğer elle
+        değerler ve elle ilişkiler korunur."""
+        with self.conn.cursor() as tcur:  # çağıranın imleci dict_row olabilir
+            tcur.execute("SELECT attributes, relations FROM ingest.source_record WHERE data_source = 'Manual' "
+                         "AND source_key = %s", (ci,))
+            prev = tcur.fetchone()
+        merged = {**(dict(prev[0]) if prev else {}), **values}
+        record = IngestRecord(data_source="Manual", run_id=uuid4(), source_key=ci, class_hint=cls, attributes=merged,
+                              relations=list(prev[1] or []) if prev else [], observed_at=self.clock())
+        saved = self.actor
+        self.actor = actor
+        try:
+            return self._process(record, attach_to=ci, method="manual", change_reason="attestation").changes
+        finally:
+            self.actor = saved
+
+    def apply_attestations(self, limit: int = 100) -> list[ApplyResult]:
+        """API'nin kaydettiği sahiplik onayı isteklerini uygular (ADR-0027).
+
+        Uygulama anında yeniden denetlenir: CI kapsamda mı (politika), onay veren hâlâ sorumlu mu (``owner_fields``).
+        Geçerse ``attestation_status``, ``attested``, ``attested_by``, ``attested_date`` Manual kaydına yazılır.
+        Ret ``attestation_rejected`` anomalisi açar (CI başına tek açık); sonraki onay onu kapatır, kanıt kalır."""
+        policy = self.attestation
+
+        def handle(req: dict[str, Any]) -> ApplyResult:
+            ci = req["ci_sys_id"]
+            now = self.clock()
+            with self.conn.cursor(row_factory=dict_row) as cur:
+                cur.execute("SELECT to_jsonb(ci) AS doc FROM cmdb.cmdb_ci ci WHERE sys_id = %s FOR UPDATE", (ci,))
+                doc = cur.fetchone()["doc"]  # type: ignore[index]
+                cls = doc["sys_class_name"]
+                pol = policy.policy_for(cls, doc, self.hierarchy)
+                note = None
+                if pol is None:
+                    note = "CI sahiplik onayı kapsamında değil; onay uygulanmadı"
+                elif req["attester_user"] not in policy.owners(doc):
+                    note = "Onay veren artık bu CI'ın sorumlusu değil; onay uygulanmadı"
+                if note:
+                    cur.execute("""UPDATE ingest.attestation_request SET status = 'rejected', result_note = %s,
+                                          applied_at = now() WHERE sys_id = %s""", (note, req["sys_id"]))
+                    return ApplyResult("attest_rejected", ci, [], note)
+                attested = req["decision"] == "attested"
+                values = {"attestation_status": ATTESTED if attested else REJECTED, "attested": attested,
+                          "attested_by": req["attester_user"], "attested_date": now.isoformat()}
+                changes = self._write_attestation(ci, cls, values, req["requested_by"])
+                assert pol is not None
+                if attested:
+                    until = (now + pol.period).astimezone(LOCAL_TZ).strftime("%d.%m.%Y")
+                    note = f"Onaylandı; {pol.label_tr} politikasıyla {until} tarihine kadar geçerli"
+                    cur.execute(
+                        """UPDATE insight.anomaly SET status = 'resolved',
+                                  explanation = explanation || ' Sorumlu kaydı sonradan onayladı.',
+                                  details = details || %s
+                            WHERE ci_sys_id = %s AND kind = 'attestation_rejected' AND status IN ('open', 'acknowledged')""",
+                        (Jsonb({"resolution": "attested", "resolved_at": now.isoformat(),
+                                "request": req["sys_id"]}), ci))
+                else:
+                    reason = REASONS_TR[req["reason"]]
+                    note = f"Reddedildi ({reason}); Veri sorumlusuna anomali açıldı"
+                    cur.execute("""SELECT 1 FROM insight.anomaly WHERE ci_sys_id = %s AND kind = 'attestation_rejected'
+                                      AND status IN ('open', 'acknowledged')""", (ci,))
+                    if cur.fetchone() is None:
+                        cur.execute(
+                            """INSERT INTO insight.anomaly (kind, severity, ci_sys_id, data_source, detected_at, details,
+                                                            explanation)
+                               VALUES ('attestation_rejected', 'medium', %s, 'Manual', %s, %s, %s)""",
+                            (ci, now, Jsonb({"reason": req["reason"], "note": req["note"], "by": req["attester_user"],
+                                             "request": req["sys_id"], "policy": pol.name}),
+                             f"Sorumlu sahiplik onayını reddetti: {reason}. Gerekçe: {req['note']}"))
+                    else:
+                        note = f"Reddedildi ({reason}); açık anomali zaten var"
+                cur.execute("""UPDATE ingest.attestation_request SET status = 'applied', result_note = %s,
+                                      applied_at = now() WHERE sys_id = %s""", (note, req["sys_id"]))
+            return ApplyResult("attest_applied", ci, changes, note)
+
+        def fail(cur: psycopg.Cursor[Any], req: dict[str, Any], note: str) -> None:
+            cur.execute("""UPDATE ingest.attestation_request SET status = 'rejected', result_note = %s,
+                                  applied_at = now() WHERE sys_id = %s""", (note, req["sys_id"]))
+
+        return self._drain("attest", """
+            SELECT sys_id, ci_sys_id, decision, reason, note, attester_user, requested_by
+              FROM ingest.attestation_request WHERE status = 'pending' ORDER BY requested_at, sys_id
+             LIMIT 1 FOR UPDATE SKIP LOCKED""", handle, fail, limit)
+
+    def expire_attestations(self, limit: int = 500) -> dict[str, int]:
+        """Süresi dolan veya onaylayanı artık sorumlu olmayan onayı geçersiz kılar (ADR-0027 §5): kapsamdaki CI
+        ``Not Yet Reviewed`` olur, ``attested`` false; ``attested_by``/``attested_date`` son onayın kanıtı olarak kalır.
+        Sahip değişikliği reddi de sıfırlar (yeni sorumlu yeniden inceler). Yıkıcı değildir."""
+        policy = self.attestation
+        if not policy.enabled:
+            return {"expired": 0, "owner_changed": 0}
+        period, params = policy.period_sql(self.hierarchy)
+        owners = policy.owners_sql()
+        now = self.clock()
+        counts = {"expired": 0, "owner_changed": 0}
+        with self.conn.cursor() as cur:
+            # Politika ifadesi yalnızca doğrulanmış tanımlayıcılardan kurulur; değerler parametredir.
+            cur.execute(sql.SQL(
+                """SELECT sys_id, sys_class_name, owner_changed FROM (
+                        SELECT ci.sys_id, ci.sys_class_name, ci.attestation_status, ci.attested_date,
+                               {period} AS period_days,
+                               COALESCE(NOT (ci.attested_by::text = ANY({owners})), true) AS owner_changed
+                          FROM cmdb.cmdb_ci ci
+                         WHERE ci.attestation_status IN ('Attested', 'Rejected')) x
+                     WHERE period_days IS NOT NULL
+                       AND (owner_changed
+                            OR attestation_status = 'Attested'
+                               AND (attested_date IS NULL OR attested_date + make_interval(days => period_days) <= %s))
+                     ORDER BY sys_id LIMIT %s""").format(period=sql.SQL(period), owners=sql.SQL(owners)),
+                [*params, now, limit])
+            due = cur.fetchall()
+        for ci, cls, owner_changed in due:
+            with self.conn.transaction():
+                self._write_attestation(ci, cls, {"attestation_status": NOT_REVIEWED, "attested": False}, self.actor)
+            counts["owner_changed" if owner_changed else "expired"] += 1
+        return counts
 
     def _split_blocker(self, cur: psycopg.Cursor[Any], req: dict[str, Any]) -> str | None:
         cur.execute("SELECT active, ci_sys_id, method FROM ingest.identity_link WHERE sys_id = %s FOR UPDATE",

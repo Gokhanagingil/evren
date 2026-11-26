@@ -20,6 +20,7 @@ from typing import Any
 
 import yaml
 
+from .attestation import AttestationPolicy, validate_attestation
 from .change_control import ChangePolicy, validate_change_control
 from .classes import ClassHierarchy
 from .identity.rules import ATTRIBUTE_KEY_TYPES
@@ -98,6 +99,8 @@ class Metadata:
     verification: dict[str, Any] = field(default_factory=dict)
     #: Yetkisiz değişiklik tespiti kuralları (ADR-0025): ``metadata/change_control.yaml``
     change_control: dict[str, Any] = field(default_factory=dict)
+    #: Sahiplik onayı politikası (ADR-0027): ``metadata/attestation.yaml``
+    attestation: dict[str, Any] = field(default_factory=dict)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -112,6 +115,11 @@ class Metadata:
     def change_policy(self) -> ChangePolicy:
         """Yetkisiz değişiklik kuralları (ADR-0025); dosya yoksa tespit kapalı."""
         return ChangePolicy.from_document(self.change_control or None)
+
+    @property
+    def attestation_policy(self) -> AttestationPolicy:
+        """Sahiplik onayı politikası (ADR-0027); dosya yoksa onay kapalı."""
+        return AttestationPolicy.from_document(self.attestation or None)
 
     @property
     def relations(self) -> RelationRules:
@@ -175,6 +183,7 @@ def _load_base(d: Path) -> Metadata:
         relationship_rules=_read(d / "relationship_rules.yaml") if (d / "relationship_rules.yaml").exists() else {},
         verification=_read(d / "verification.yaml") if (d / "verification.yaml").exists() else {},
         change_control=_read(d / "change_control.yaml") if (d / "change_control.yaml").exists() else {},
+        attestation=_read(d / "attestation.yaml") if (d / "attestation.yaml").exists() else {},
     )
 
 
@@ -434,6 +443,13 @@ def validate(md: Metadata) -> ValidationReport:
     r.errors.extend(validate_change_control(
         md.change_control, roles=role_set, hierarchy=md.hierarchy, fields_of=md.fields_of,
         products=sorted(_product_words(md))))
+
+    def _choice_values(element: str) -> list[str] | None:
+        ch = md.choice_list("cmdb_ci", element)
+        return [str(v["value"]) for v in ch["values"]] if ch else None
+
+    r.errors.extend(validate_attestation(md.attestation, hierarchy=md.hierarchy, fields_of=md.fields_of,
+                                         choice_values=_choice_values, products=sorted(_product_words(md))))
     if not r.errors:
         r.errors.extend(validate_verification(md))
     return r

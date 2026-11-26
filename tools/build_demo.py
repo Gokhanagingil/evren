@@ -557,7 +557,7 @@ def assemble(p: Pipeline, md, refs: dict[str, str], hosts: list[Host]) -> dict[s
 
     sources_out, runs_state = build_sources(p, source_stats)
     build_change_control(cis, md)
-    controls = build_controls(cis, runs_state)
+    controls = build_controls(cis, runs_state, md)
     servers = [c for c in cis if c["server"]]
     return {
         "generated_at": fmt(NOW), "synthetic": True,
@@ -730,7 +730,7 @@ def build_change_control(cis: list[dict[str, Any]], md) -> None:
         c["unauthorized_changes"] = c["change_control"]["open_unauthorized"]
 
 
-def build_controls(cis: list[dict[str, Any]], states: dict[str, str]) -> list[dict[str, Any]]:
+def build_controls(cis: list[dict[str, Any]], states: dict[str, str], md: Any) -> list[dict[str, Any]]:
     """GRC Platformu'na gidecek kontrol sonuçlarının önizlemesi (docs/08). Kısmi veri → inconclusive."""
     servers = [c for c in cis if c["server"]]
     prod = [c for c in servers if c["used_for"] == "Production"]
@@ -767,6 +767,11 @@ def build_controls(cis: list[dict[str, Any]], states: dict[str, str]) -> list[di
              [c for c in cis if c["unauthorized_changes"]], "evren.anomaly.kind=unauthorized_change^status=open",
              "Keşfin gözlediği izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) onaylı bir "
              "değişiklik penceresine düşmüyor (ADR-0025)."),
+        # Demo verisinde hiçbir CI onaylanmamıştır: kapsamdaki her CI "henüz incelenmedi" (ADR-0027)
+        item("CMDB-06", "Sahiplik onayı geçersiz kapsamdaki CI", None,
+             [c for c in cis if md.attestation_policy.policy_for(c["class"], {"used_for": c["used_for"]}, md.hierarchy)],
+             "evren.attestation.state IN (not_reviewed, expired, rejected)",
+             "Sorumlusu kaydı onaylamamış, onayın süresi dolmuş veya sorumlu reddetmiş (ADR-0027)."),
     ]
 
 
