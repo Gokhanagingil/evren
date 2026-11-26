@@ -17,7 +17,7 @@ Her madde için bugünkü durum ve plan bağı verilir. Yüzdeler `apps/web/cont
 | A5 | **İlişki modeli**: ilişki tipleri ve izinli sınıf çiftleri | ServiceNow yalnız önerir; Evren zorlarsa "sunucu, uygulamada çalışır" gibi ters ilişki oluşmaz (daha iyisi) | 15 tip, 36 kalıtımlı kural, ters yön tespiti (U4.1); yazımda zorlama U7'de | U4 (tanım), U7 (zorlama) |
 | A6 | **Referans verileri**: kişi, grup, konum, şirket, departman, ürün modeli kataloğu, maliyet merkezi | Sahiplik ve model bilgisi bunlarsız serbest metne döner | 7 referans tablosu (maliyet merkezi dahil); ServiceNow'dan yükleme yok | F0-08, U10 |
 | A7 | **Sınıf başına kimlik kuralları** (IRE) ve bağımlı CI kuralları | Mükerrerin kökü. Her sınıfın kimliği farklıdır (seri, UUID, hesap kimliği…) | Donanım, VM, uygulama, adaptör var | U4, U7, F1-07 |
-| A8 | **Sınıf ağacı ve alan gezgini**, yönetişimli şema evrimi (değişiklik setleri) | Model görünür ve denetimli olmalı | Değişiklik setleri var; gezgin yok | U4 |
+| A8 | **Sınıf ağacı ve alan gezgini**, yönetişimli şema evrimi (değişiklik setleri) | Model görünür ve denetimli olmalı | Değişiklik setleri ve Veri Modeli sayfası var (U4.4) | — |
 
 ## B. Akıl katmanı — anlamlandırma (var olan çekirdek + U6–U8)
 

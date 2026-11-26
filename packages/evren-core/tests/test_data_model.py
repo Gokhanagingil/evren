@@ -238,3 +238,45 @@ def test_verification_backlog_covers_every_kind(metadata):
     assert "Provided by::Provides" in backlog["relationship_types"]
     assert any("cmdb_ci_kubernetes_pod" in r for r in backlog["relationship_rules"])
     assert "cmdb_ci_pc_hardware" not in backlog["classes"]
+
+
+# --- Veri Modeli görünümü (U4.4) ----------------------------------------------------------------------------
+
+
+def test_model_view_tree_is_complete_ordered_and_deterministic(metadata):
+    from evren_core.model_view import model_view
+
+    doc = model_view(metadata)
+    names = [c["name"] for c in doc["classes"]]
+    assert sorted(names) == sorted(c["name"] for c in metadata.classes) and names[0] == "cmdb_ci"
+    pos = {n: i for i, n in enumerate(names)}
+    for c in doc["classes"]:
+        assert c["depth"] == len(metadata.hierarchy.ancestors(c["name"])) - 1
+        if c["parent"]:
+            assert pos[c["parent"]] < pos[c["name"]]  # ebeveyn önce (derinlik öncelikli)
+        assert c["field_count"] == len(metadata.fields_of(c["name"]))
+    assert model_view(metadata) == doc
+    assert doc["stats"]["core_columns"] == 39 and doc["stats"]["to_verify"] == sum(len(v) for v in doc["backlog"].values())
+
+
+def test_model_view_identification_shows_inheritance_and_context(metadata):
+    from evren_core.model_view import model_view
+
+    by = {c["name"]: c for c in model_view(metadata)["classes"]}
+    linux = by["cmdb_ci_linux_server"]["identification"]
+    assert linux["inherited"] and linux["applies_to"] == "cmdb_ci_hardware" and linux["independent"]
+    assert [e["priority"] for e in linux["entries"]] == sorted(e["priority"] for e in linux["entries"])
+    pod = by["cmdb_ci_kubernetes_pod"]["identification"]
+    assert not pod["independent"] and pod["context"] == {
+        "kind": "relation", "type": "Contains::Contained by", "parent_class": "cmdb_ci_kubernetes_cluster"}
+    assert by["cmdb_ci_file_system"]["identification"]["context"] == {"kind": "reference", "field": "computer"}
+    assert by["cmdb_ci"]["identification"] is None
+
+
+def test_static_model_file_is_up_to_date(repo_root):
+    import sys
+
+    sys.path.insert(0, str(repo_root / "tools"))
+    import build_model
+
+    assert (repo_root / "apps/web/content/model.json").read_text(encoding="utf-8") == build_model.render()

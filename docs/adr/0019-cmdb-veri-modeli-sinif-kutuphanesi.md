@@ -86,6 +86,21 @@ Bu sürüm ilk kez bir dal yerleşimini bilerek ServiceNow'a bırakıyor: Kubern
   - Onay alanlarını **yalnızca Manual** yazar: ServiceNow'daki onay bilgisi Evren'e taşınmaz, Evren onay akışı tek kaynaktır.
   - Elle düzenleme formunda onay alanları yoktur; onaylar U6'da gelecek onay akışından geçer (F1-17).
 
+### 7. Veri Modeli sayfası (U4.4)
+
+- Görünüm tek bir çekirdek fonksiyondan üretilir (`evren_core.model_view`):
+  - API modunda `GET /api/v1/schema/model` canlı metadata'yı sunar; yayınlanmış değişiklik dosyaları dahildir.
+  - Demo modunda `tools/build_model.py` aynı görünümü `apps/web/content/model.json` olarak üretir; CI `--check` ile güncelliğini denetler.
+  - Bir test, API çıktısının statik dosyayla aynı olduğunu doğrular.
+- CI sayıları yalnızca kullanıcının okuyabildiği sınıflar için verilir; kısıtlı bir sınıfın varlığı sayı üzerinden sızmaz.
+- Kalıtılan alanlar ve bir sınıfa düşen ilişki önerileri istemcide ata zincirinden hesaplanır (`RelationRules.suggestions` ile aynı kural). Böylece dosya küçük kalır (≈120 KB).
+- Sayfanın içeriği:
+  - sınıf ağacı: Türkçe arama, "yalnızca doğrulanacaklar" süzgeci, aramada bağlam için üst sınıflar;
+  - ayrıntı paneli: kendi ve kalıtılan alanlar, kimlik kuralı ve bağlamı, izinli ilişkiler, SQL görünüm adı, CI sayısı;
+  - değer listeleri: bağımlı değerler ve eski alan karşılıkları;
+  - ilişki kuralları ve doğrulanacaklar.
+- Şema tasarımcısı panelden "Bu sınıfa alan ekle" ile değişiklik setini o sınıf seçili açar. Yayın akışı değişmez: taslak → onay → yayın, hazırlayan onaylayamaz.
+
 ## Sonuçlar
 
 - U5 bağlayıcıları (vCenter kümeleri, NNMi alt ağları, Defender uç noktaları, Kubernetes, bulut) yazacakları sınıfı bulur.

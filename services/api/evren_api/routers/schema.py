@@ -33,6 +33,7 @@ from evren_core.changeset import (
     parse_changes,
     render_change_file,
 )
+from evren_core.model_view import model_view
 from evren_core.normalize import ascii_fold
 
 from ..deps import Ctx, context, require_csrf
@@ -207,6 +208,25 @@ def catalog(ctx: Ctx = Depends(context)) -> dict[str, Any]:
         "can_approve": ctx.grant("schema", "schema_approve").allowed,
         "applied_change_files": sorted(ctx.state.applied_change_files),
     }
+
+
+@router.get("/model")
+def data_model(ctx: Ctx = Depends(context)) -> dict[str, Any]:
+    """Veri Modeli sayfası (U4.4): canlı metadata görünümü + okunabilir sınıflarda CI sayısı.
+
+    Sözlük herkese açık bilgi değildir ama CMDB okuyucusunun görmesi gerekir; CI sayıları yalnızca kullanıcının
+    okuyabildiği sınıflar için verilir (kısıtlı bir sınıfın varlığı sayı üzerinden sızmasın).
+    """
+    ctx.require("cmdb_ci", "read")
+    md = ctx.state.metadata
+    doc = model_view(md)
+    readable = {c for c in md.hierarchy.parents if ctx.grant(c, "read").allowed}
+    rows = ctx.conn.execute("SELECT sys_class_name, count(*) FROM cmdb.cmdb_ci "
+                            "WHERE sys_class_name = ANY(%s) GROUP BY 1", (sorted(readable),)).fetchall()
+    doc["ci_counts"] = {cls: int(n) for cls, n in rows}
+    doc["can_draft"] = ctx.grant("schema", "schema_draft").allowed
+    doc["applied_change_files"] = sorted(ctx.state.applied_change_files)
+    return doc
 
 
 @router.get("/change-sets")

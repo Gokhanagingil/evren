@@ -256,7 +256,7 @@ details:
     security: []
   dictionary:
     phase: F0
-    text: Sınıf ve alan tanımları veri olarak tutulur; yeni tablo veya alan eklemek DDL gerektirmez. 82 sınıflık ServiceNow uyumlu kütüphane (uç nokta, depolama, küme, Kubernetes, bulut, ara katman, CSDM) ve CSDM 5 yaşam döngüsü değer listeleri buradadır. Kurumdaki ServiceNow örneğinden dışa aktarılarak doğrulanır.
+    text: Sınıf ve alan tanımları veri olarak tutulur; yeni tablo veya alan eklemek DDL gerektirmez. 82 sınıflık ServiceNow uyumlu kütüphane (uç nokta, depolama, küme, Kubernetes, bulut, ara katman, CSDM) ve CSDM 5 yaşam döngüsü değer listeleri buradadır. Arayüzdeki Veri Modeli sayfası sınıf ağacını, alanları, kimlik kurallarını ve izinli ilişkileri gösterir; değişiklik oradan değişiklik setiyle başlatılır. Kurumdaki ServiceNow örneğinden dışa aktarılarak doğrulanır.
     tech: ["metadata/*.yaml", "tools/sn_metadata_export.py"]
     security: [Değişiklik yalnızca onaylı şema setiyle]
   provenance:

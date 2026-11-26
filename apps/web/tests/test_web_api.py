@@ -286,3 +286,31 @@ def test_change_set_draft_submit_then_other_person_approves_and_publishes(page, 
     expect(page.locator("#detail")).to_contain_text("metadata/changes/")
     assert page.locator("#csDownload").get_attribute("href").endswith(f"/{set_id}/artifact")
     shot(page, "api_changeset_published")
+
+
+def test_data_model_counts_from_db_and_add_field_opens_preset_change_set(page, base_url):
+    """U4.4: Veri Modeli API modunda canlı metadata + veritabanı CI sayıları; "Bu sınıfa alan ekle" değişiklik
+    setini sınıf seçili açar ve kayıttan sonra sete gider."""
+    import uuid
+
+    page.goto(base_url + "/#/veri-modeli")
+    page.wait_for_selector("#modelStats")
+    linux = page.locator("#view tbody tr[data-id='cmdb_ci_linux_server'] td").nth(3).inner_text()
+    assert int(linux.split()[0]) > 0  # demo envanteri veritabanında
+    assert page.locator("text=Demo modu").count() == 0
+    page.goto(base_url + "/#/veri-modeli/cmdb_ci_rack")
+    page.wait_for_selector("#detail.open #modelAddField")
+    page.click("#modelAddField")
+    page.wait_for_selector("#csName")
+    row = page.locator(".op-row").first
+    assert row.locator("select").nth(0).input_value() == "add_field"
+    assert row.locator("select").nth(1).input_value() == "cmdb_ci_rack"
+    element = f"u_oda_{uuid.uuid4().hex[:6]}"
+    page.fill("#csName", "Kabin odası alanı")
+    row.locator("input[type=text]").nth(0).fill(element)
+    row.locator("input[type=text]").nth(1).fill("Oda")
+    page.click("#csSave")
+    page.wait_for_url(re.compile(r".*#/sema/[0-9a-f]{32}$"))  # sıkı CSP: metin değerlendiren bekleme kullanılmaz
+    page.wait_for_selector("#detail.open #csChanges")
+    expect(page.locator("#csChanges")).to_contain_text(element)
+    shot(page, "api_model_change_set")

@@ -9,6 +9,7 @@ import { renderCis } from './pages/cis.js';
 import { renderControls } from './pages/controls.js';
 import { renderShadow } from './pages/shadow.js';
 import { renderSchema } from './pages/schema.js';
+import { renderModel } from './pages/model.js';
 import { renderSources } from './pages/sources.js';
 import { renderRules } from './pages/rules.js';
 import { renderBigPicture } from './pages/bigpicture.js';
@@ -22,6 +23,8 @@ const ROUTES = {
     help: 'Otomatik birleştirilmeyen kaynak kayıtları. Bir kayda tıklayın: kaynak kaydı ve adaylar yan yana, her kanıt ağırlığıyla açıklanır. Kararlar geri alınabilir.' },
   ci: { title: 'Konfigürasyon Öğeleri', icon: 'server', render: renderCis,
     help: 'Golden record. Bir CI açıldığında her özniteliğin hangi kaynaktan, hangi kuralla geldiği ve hangi değerlerin ezildiği görünür.' },
+  'veri-modeli': { title: 'Veri Modeli', icon: 'tree', render: renderModel,
+    help: 'ServiceNow uyumlu sınıf ağacı. Bir sınıfa tıklayın veya Tab ile gelip Enter\'a basın: alanları (kalıtılanlar dahil), kimlik kuralı, izinli ilişkiler ve SQL görünümü açılır. Değişiklik yalnızca değişiklik setiyle yapılır.' },
   kontroller: { title: 'GRC Kontrolleri', icon: 'shield', render: renderControls,
     help: 'GRC Platformu\'na giden CMDB tabanlı kontrol sonuçları. Kaynak verisi kısmi toplandıysa sonuç "kesin değil" olur.' },
   'golge-mod': { title: 'Gölge Mod Raporu', icon: 'layers', render: renderShadow,
@@ -42,7 +45,7 @@ const ROUTES = {
 
 const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk'] },
-  { group: 'CMDB', items: ['ci', 'kontroller', 'golge-mod'] },
+  { group: 'CMDB', items: ['ci', 'veri-modeli', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];

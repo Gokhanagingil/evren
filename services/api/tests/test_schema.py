@@ -21,6 +21,12 @@ def designer():
 
 
 @pytest.fixture(scope="module")
+def client_without_roles():
+    with make_client(("evren_iam_admin",), "rolsuz") as c:  # yalnız kimlik yönetimi: CMDB okuyamaz
+        yield c
+
+
+@pytest.fixture(scope="module")
 def approver():
     with make_client(("evren_reader", "evren_schema_approver"), "onayci") as c:
         yield c
@@ -45,6 +51,24 @@ def test_catalog_lists_classes_sources_and_capabilities(designer, approver):
     assert server["parent"] == "cmdb_ci_computer" and any(f["name"] == "name" for f in root["fields"])
     bmc = next(s for s in cat["sources"] if s["name"] == "BMC")
     assert bmc["lifecycle"] == "active" and [t["value"] for t in bmc["transitions"]] == ["retiring"]
+
+
+def test_data_model_view_matches_static_file_and_counts_readable_cis(designer, approver):
+    """U4.4: API ile demo modunun statik dosyası aynı görünümü verir; CI sayıları yalnız okunabilir sınıflarda."""
+    import json
+
+    doc = designer.get("/api/v1/schema/model").json()
+    static = json.loads((REPO / "apps/web/content/model.json").read_text(encoding="utf-8"))
+    for key in ("stats", "classes", "choices", "relationship_rules", "backlog"):
+        assert doc[key] == static[key], key
+    assert doc["can_draft"] is True and approver.get("/api/v1/schema/model").json()["can_draft"] is False
+    assert doc["ci_counts"].get("cmdb_ci_linux_server", 0) > 0  # demo envanteri yüklü
+    assert all(n > 0 for n in doc["ci_counts"].values())
+
+
+def test_data_model_view_requires_read(client_without_roles):
+    r = client_without_roles.get("/api/v1/schema/model")
+    assert r.status_code == 403 and r.json()["error"]["code"] == "yetki_yok"
 
 
 def test_full_flow_draft_review_approve_publish_and_artifact_applies(designer, approver, tmp_path):

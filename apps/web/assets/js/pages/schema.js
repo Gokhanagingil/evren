@@ -23,11 +23,12 @@ const select = (options, value) => {
 };
 const input = (attrs = {}) => h('input', { type: 'text', ...attrs });
 
-/** Bir işlemin formu: işlem türüne göre alanlar; ``read()`` API'ye gidecek işlemi döner. */
-function opRow(cat, onRemove) {
+/** Bir işlemin formu: işlem türüne göre alanlar; ``read()`` API'ye gidecek işlemi döner.
+ *  ``preset``: { op, table } — Veri Modeli sayfasından "bu sınıfa alan ekle" ile gelindiğinde. */
+function opRow(cat, onRemove, preset = null) {
   const classOpts = cat.classes.map((c) => [c.name, `${c.label_tr} (${c.name})`]);
   const byName = Object.fromEntries(cat.classes.map((c) => [c.name, c]));
-  const kind = select(cat.operations.map((o) => [o.op, o.label]), 'add_field');
+  const kind = select(cat.operations.map((o) => [o.op, o.label]), preset?.op || 'add_field');
   kind.setAttribute('aria-label', 'İşlem türü');
   const body = h('div', { class: 'edit-grid' });
   let read = () => null;
@@ -52,7 +53,7 @@ function opRow(cat, onRemove) {
     clear(body);
     const op = kind.value;
     if (op === 'add_field') {
-      const cls = select(classOpts, 'cmdb_ci_server');
+      const cls = select(classOpts, preset?.table && byName[preset.table] ? preset.table : 'cmdb_ci_server');
       const el = input({ placeholder: 'u_yedekleme_politikasi', maxlength: '62' });
       const label = input({ maxlength: '80' });
       const type = select(cat.field_types.map((t) => [t, TYPE_TR[t] || t]), 'string');
@@ -136,14 +137,14 @@ function opRow(cat, onRemove) {
   return row;
 }
 
-function openCreate(cat, refresh, opener) {
+function openCreate(cat, refresh, opener, preset = null) {
   const name = input({ id: 'csName', maxlength: '120', placeholder: 'Ör. Sunucu yedekleme alanı' });
   const desc = h('textarea', { id: 'csDesc', rows: '2', maxlength: '2000' });
   const ops = h('div', { class: 'op-list' });
   const errors = h('div', { 'aria-live': 'polite' });
   const remove = (row) => { row.remove(); };
-  const add = () => ops.append(opRow(cat, remove));
-  add();
+  const add = (p = null) => ops.append(opRow(cat, remove, p));
+  add(preset);
   const save = h('button', { class: 'btn', type: 'button', id: 'csSave', onclick: async () => {
     clear(errors);
     const changes = [...ops.children].map((r) => r.read());
@@ -165,7 +166,7 @@ function openCreate(cat, refresh, opener) {
     body: [
       h('p', {}, 'İşlemler sırayla uygulanır ve kaydetmeden önce tüm metadata kurallarıyla doğrulanır. Taslak, onaya gönderildikten sonra başka bir kişi tarafından onaylanır.'),
       errors, field('Ad', name), field('Açıklama', desc), ops,
-      h('button', { class: 'btn secondary small', type: 'button', id: 'csAddOp', onclick: add }, '+ İşlem ekle'),
+      h('button', { class: 'btn secondary small', type: 'button', id: 'csAddOp', onclick: () => add() }, '+ İşlem ekle'),
     ],
     footer: [h('button', { class: 'btn secondary', type: 'button', onclick: closeOverlay }, 'Vazgeç'), save],
     focus: name,
@@ -202,6 +203,12 @@ function detailBody(d) {
           `python -m evren_reconciler.worker --rereconcile ${d.changes.find((c) => c.op === 'set_source_lifecycle').element}`)) : null,
       h('p', { class: 'cell-sub mono', title: d.artifact_sha256 }, `SHA-256 ${d.artifact_sha256.slice(0, 20)}…`))) : null,
   ];
+}
+
+/** Başka sayfadan değişiklik seti başlatır (Veri Modeli → "Bu sınıfa alan ekle"); kayıttan sonra sete gider. */
+export async function openChangeSetFor(preset, opener) {
+  const cat = await schemaCatalog();
+  openCreate(cat, async (id) => { location.hash = `#/sema/${id}`; }, opener, preset);
 }
 
 export async function renderSchema(view, param) {

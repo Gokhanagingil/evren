@@ -38,6 +38,7 @@ jobs:
           python tools/build_plan.py --check
           python tools/build_demo.py --check
           python tools/build_drill.py --check
+          python tools/build_model.py --check
       - name: Birim testleri
         working-directory: packages/evren-core
         run: python -m pytest -q

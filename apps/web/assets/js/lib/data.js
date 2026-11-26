@@ -133,6 +133,16 @@ export function undoDemoDecision(id) { demoDecisions.delete(id); }
 
 /** Metadata değişiklik setleri (yalnızca API modu). */
 export const schemaCatalog = () => api('/api/v1/schema/catalog');
+/** Veri Modeli (U4.4). Demo modunda metadata'dan üretilmiş statik dosya; CI sayıları sentetik demo envanterinden. */
+export async function dataModel() {
+  if (!(await isApi())) {
+    const [m, d] = await Promise.all([loadJSON('/content/model.json'), demo()]);
+    const counts = {};
+    for (const c of d.cis) counts[c.class] = (counts[c.class] || 0) + 1;
+    return { ...m, ci_counts: counts, can_draft: false, demo: true };
+  }
+  return api('/api/v1/schema/model');
+}
 export const changeSets = () => api('/api/v1/schema/change-sets');
 export const changeSetDetail = (id) => api(`/api/v1/schema/change-sets/${encodeURIComponent(id)}`);
 export function createChangeSet(body) {

@@ -85,6 +85,7 @@ python tools/build_architecture.py
 python tools/build_big_picture.py
 python tools/build_plan.py          # roadmap.json → docs/PROJE-PLANI.md
 python tools/build_demo.py          # evren-core hattından sentetik demo.json
+python tools/build_model.py         # metadata'dan Veri Modeli sayfasının demo verisi (model.json)
 python tools/export_schemas.py
 
 # Arayüz (yerel, 127.0.0.1) ve tarayıcı duman testi
@@ -126,6 +127,8 @@ packages/evren-core/      Saf alan mantığı + testler
   opensearch_client.py    OpenSearch G/Ç adaptörü (standart kütüphane; çekirdekte OpenSearch'e dokunan tek modül)
   connectors/             bağlayıcı sözleşmesi, YAML alan eşleme motoru
   metadata.py             sözlük yükleme/doğrulama, tohum SQL, sn.* görünümler
+  relations.py            izinli ilişki kuralları (kalıtım, ters yön tespiti; ADR-0019)
+  model_view.py           Veri Modeli sayfasının görünümü (API ve model.json aynı kaynaktan)
   sources.py              kaynak rolleri, veri kaynağı yaşam döngüsü (ADR-0009)
   web.py                  güvenlik başlıkları (tek kaynak)
 connectors/<kaynak>/      kaynak başına eşleme dosyaları

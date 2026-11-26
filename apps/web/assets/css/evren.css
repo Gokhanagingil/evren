@@ -472,3 +472,28 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .comp-bar.good i { background: var(--good); } .comp-bar.warn i { background: #e0a020; } .comp-bar.bad i { background: var(--accent); }
 .comp-plan { white-space: nowrap; }
 .comp-plan .pill { margin: 0 4px 4px 0; display: inline-block; text-decoration: none; }
+
+/* Veri Modeli (U4.4): sınıf ağacı, ayrıntı paneli, kurallar */
+.tree-cell { display: block; }
+.tree-cell.lvl-1 { padding-left: 16px; } .tree-cell.lvl-2 { padding-left: 32px; } .tree-cell.lvl-3 { padding-left: 48px; }
+.tree-cell.lvl-4 { padding-left: 64px; } .tree-cell.lvl-5 { padding-left: 80px; } .tree-cell.lvl-6 { padding-left: 96px; }
+.tree-cell.lvl-7 { padding-left: 112px; }
+.tree-cell:not(.lvl-0) { border-left: 2px solid var(--stroke); margin-left: 2px; }
+.tree-cell.ctx .cell-primary { color: var(--muted); font-weight: 500; }
+.tree-cell .pill { margin-left: 6px; vertical-align: middle; }
+.chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+ul.chips { list-style: none; margin: 0; padding: 0; display: flex; }
+.chip.plain { background: #f0f1f3; color: var(--text2); font-weight: 600; white-space: normal; }
+.rule-steps { margin: 8px 0 0; padding: 0; list-style: none; font-size: 13px; }
+.rule-steps .mono { display: inline-block; min-width: 34px; color: var(--muted); }
+.rule-steps li { margin: 5px 0; }
+.rule-steps .pill { margin-left: 6px; }
+.rel-list { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+.rel-list li { padding: 7px 0; border-bottom: 1px solid var(--stroke); line-height: 1.7; }
+.rel-list li:last-child { border-bottom: 0; }
+details.inherited { margin-top: 10px; }
+details.inherited summary { cursor: pointer; font-weight: 600; font-size: 13px; padding: 6px 0; color: var(--text2); }
+details.inherited summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+label.check { display: inline-flex; gap: 6px; align-items: center; font-size: 13px; }
+label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: var(--accent); }
+#detailContent .kv + .section { margin-top: 18px; padding-top: 16px; border-top: 1px solid #eef0f2; }

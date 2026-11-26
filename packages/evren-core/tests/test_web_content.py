@@ -84,6 +84,8 @@ def test_component_status_is_complete_and_every_gap_is_planned(repo_root):
     rm = json.loads((repo_root / "apps/web/content/roadmap.json").read_text(encoding="utf-8"))
     comps = json.loads((repo_root / "apps/web/content/components.json").read_text(encoding="utf-8"))
     plan_ids = {it["id"] for p in rm["phases"] for it in p["items"]} | {it["id"] for it in rm["track"]["items"]}
+    plan_status = {it["id"]: it["status"] for p in rm["phases"] for it in p["items"]} | {
+        it["id"]: it["status"] for it in rm["track"]["items"]}
     assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", comps["updated_at"])
     seen: dict[str, dict] = {}
     for g in comps["groups"]:
@@ -97,6 +99,10 @@ def test_component_status_is_complete_and_every_gap_is_planned(repo_root):
             assert not unknown, f"{it['id']}: planda olmayan madde {unknown}"
             if it["pct"] < 100 and not it.get("optional"):
                 assert it["plan"], f"{it['id']}: %{it['pct']} ama hiçbir plan maddesine bağlı değil"
+                # Eksik, yalnızca tamamlanmış maddelere bağlı kalamaz: madde kapanınca eksik ya yapılmış ya da yeni
+                # bir maddeye taşınmış olmalı (yoksa boşluk planda kaybolur).
+                assert any(plan_status[ref] != "done" for ref in it["plan"]), \
+                    f"{it['id']}: %{it['pct']} ama bağlı olduğu maddelerin hepsi tamamlanmış {it['plan']}"
                 assert it["missing"], f"{it['id']}: eksik yazılmalı"
             if it["pct"] == 100:
                 assert not it["missing"], f"{it['id']}: %100 ise eksik olmamalı"

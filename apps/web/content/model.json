@@ -1,0 +1,5492 @@
+{
+ "backlog": {
+  "choices": [
+   "cmdb_ci.life_cycle_stage",
+   "cmdb_ci.life_cycle_stage_status"
+  ],
+  "classes": [
+   "cmdb_ci_aix_server",
+   "cmdb_ci_solaris_server",
+   "cmdb_ci_esx_server",
+   "cmdb_ci_lb",
+   "cmdb_ci_wap_network",
+   "cmdb_ci_vcenter",
+   "cmdb_ci_vcenter_datacenter",
+   "cmdb_ci_vcenter_cluster",
+   "cmdb_ci_vcenter_datastore",
+   "cmdb_ci_db_instance",
+   "cmdb_ci_db_mssql_instance",
+   "cmdb_ci_db_ora_instance",
+   "cmdb_ci_service_discovered",
+   "cmdb_ci_business_app",
+   "cmdb_ci_rack",
+   "cmdb_ci_storage_volume",
+   "cmdb_ci_storage_server",
+   "cmdb_ci_vlan",
+   "cmdb_ci_dns_name",
+   "cmdb_ci_win_cluster",
+   "cmdb_ci_oslv_container",
+   "cmdb_ci_docker_container",
+   "cmdb_ci_kubernetes_cluster",
+   "cmdb_ci_kubernetes_component",
+   "cmdb_ci_kubernetes_namespace",
+   "cmdb_ci_kubernetes_node",
+   "cmdb_ci_kubernetes_deployment",
+   "cmdb_ci_kubernetes_pod",
+   "cmdb_ci_kubernetes_service",
+   "cmdb_ci_azure_datacenter",
+   "cmdb_ci_aws_datacenter",
+   "cmdb_ci_app_server_tomcat",
+   "cmdb_ci_app_server_jboss",
+   "cmdb_ci_app_server_weblogic",
+   "cmdb_ci_app_server_websphere",
+   "cmdb_ci_apache_web_server",
+   "cmdb_ci_microsoft_iis_web_server",
+   "cmdb_ci_nginx_web_server",
+   "cmdb_ci_db_mysql_instance",
+   "cmdb_ci_db_postgresql_instance",
+   "cmdb_ci_db_db2_instance",
+   "cmdb_ci_database",
+   "cmdb_ci_business_capability",
+   "cmdb_ci_business_process",
+   "cmdb_ci_information_object",
+   "cmdb_ci_query_based_service",
+   "cmdb_ci_service_calculated",
+   "cmdb_ci_service_by_tags"
+  ],
+  "fields": [
+   "cmdb_ci.life_cycle_stage",
+   "cmdb_ci.life_cycle_stage_status",
+   "cmdb_ci.attested",
+   "cmdb_ci.attested_by",
+   "cmdb_ci.attested_date",
+   "cmdb_ci_vmware_instance.guest_id",
+   "cmdb_ci_vcenter.instance_uuid",
+   "cmdb_ci_business_app.it_application_owner",
+   "cmdb_ci_business_app.application_type",
+   "cmdb_ci_business_app.architecture_type",
+   "cmdb_ci_business_app.install_type",
+   "cmdb_ci_business_app.user_base",
+   "cmdb_ci_rack.rack_units",
+   "cmdb_ci_storage_device.computer",
+   "cmdb_ci_storage_device.storage_type",
+   "cmdb_ci_storage_device.size_bytes",
+   "cmdb_ci_file_system.computer",
+   "cmdb_ci_file_system.mount_point",
+   "cmdb_ci_file_system.file_system",
+   "cmdb_ci_file_system.capacity",
+   "cmdb_ci_file_system.free_space",
+   "cmdb_ci_ip_network.subnet",
+   "cmdb_ci_vlan.vlan_id",
+   "cmdb_ci_cluster.cluster_id",
+   "cmdb_ci_cluster.cluster_version",
+   "cmdb_ci_cluster.cluster_ip",
+   "cmdb_ci_cluster_node.cluster",
+   "cmdb_ci_cluster_node.server",
+   "cmdb_ci_oslv_container.image",
+   "cmdb_ci_kubernetes_component.namespace",
+   "cmdb_ci_cloud_service_account.datacenter_type",
+   "cmdb_ci_cloud_service_account.is_master_account",
+   "cmdb_ci_logical_datacenter.region",
+   "cmdb_ci_information_object.data_classification"
+  ],
+  "identification": [
+   "cmdb_ci_vm_instance",
+   "cmdb_ci_cloud_service_account",
+   "cmdb_ci_cluster",
+   "cmdb_ci_ip_network",
+   "cmdb_ci_oslv_container",
+   "cmdb_ci_service",
+   "cmdb_ci_business_app",
+   "cmdb_ci_business_capability",
+   "cmdb_ci_business_process",
+   "cmdb_ci_information_object",
+   "cmdb_ci_kubernetes_component",
+   "cmdb_ci_file_system",
+   "cmdb_ci_cluster_node",
+   "cmdb_ci_logical_datacenter",
+   "cmdb_ci_database"
+  ],
+  "relationship_rules": [
+   "cmdb_ci_appl --Runs on::Runs--> cmdb_ci_cluster",
+   "cmdb_ci_appl --Runs on::Runs--> cmdb_ci_oslv_container",
+   "cmdb_ci_vm_instance --Registered on::Has registered--> cmdb_ci_server",
+   "cmdb_ci_vm_instance --Hosted on::Hosts--> cmdb_ci_logical_datacenter",
+   "cmdb_ci_cluster --Members::Member of--> cmdb_ci_cluster_node",
+   "cmdb_ci_cluster_node --Hosted on::Hosts--> cmdb_ci_computer",
+   "cmdb_ci_vcenter --Contains::Contained by--> cmdb_ci_vcenter_datacenter",
+   "cmdb_ci_vcenter_datacenter --Contains::Contained by--> cmdb_ci_vcenter_cluster",
+   "cmdb_ci_vcenter_cluster --Members::Member of--> cmdb_ci_esx_server",
+   "cmdb_ci_rack --Contains::Contained by--> cmdb_ci_hardware",
+   "cmdb_ci_vlan --Contains::Contained by--> cmdb_ci_ip_network",
+   "cmdb_ci_ip_network --Contains::Contained by--> cmdb_ci_ip_address",
+   "cmdb_ci_computer --Uses::Used by--> cmdb_ci_storage_volume",
+   "cmdb_ci_db_instance --Contains::Contained by--> cmdb_ci_database",
+   "cmdb_ci_kubernetes_cluster --Contains::Contained by--> cmdb_ci_kubernetes_component",
+   "cmdb_ci_kubernetes_namespace --Contains::Contained by--> cmdb_ci_kubernetes_component",
+   "cmdb_ci_kubernetes_cluster --Hosted on::Hosts--> cmdb_ci_logical_datacenter",
+   "cmdb_ci_kubernetes_node --Hosted on::Hosts--> cmdb_ci_computer",
+   "cmdb_ci_kubernetes_pod --Runs on::Runs--> cmdb_ci_kubernetes_node",
+   "cmdb_ci_kubernetes_pod --Contains::Contained by--> cmdb_ci_oslv_container",
+   "cmdb_ci_oslv_container --Runs on::Runs--> cmdb_ci_computer",
+   "cmdb_ci_logical_datacenter --Hosted on::Hosts--> cmdb_ci_cloud_service_account",
+   "cmdb_ci_business_capability --Provided by::Provides--> cmdb_ci_business_app",
+   "cmdb_ci_business_capability --Contains::Contained by--> cmdb_ci_business_capability",
+   "cmdb_ci_business_process --Uses::Used by--> cmdb_ci_business_app",
+   "cmdb_ci_business_app --Consumes::Consumed by--> cmdb_ci_service_auto",
+   "cmdb_ci_business_app --Uses::Used by--> cmdb_ci_information_object",
+   "cmdb_ci_business_app --Sends data to::Receives data from--> cmdb_ci_business_app",
+   "service_offering --Contains::Contained by--> cmdb_ci_query_based_service"
+  ],
+  "relationship_types": [
+   "Registered on::Has registered",
+   "Provided by::Provides"
+  ]
+ },
+ "choices": [
+  {
+   "depends_on": null,
+   "element": "operational_status",
+   "label_tr": "Operasyonel durum",
+   "table": "cmdb_ci",
+   "values": [
+    {
+     "label": "Operational",
+     "label_tr": "Çalışıyor",
+     "value": "1"
+    },
+    {
+     "label": "Non-Operational",
+     "label_tr": "Çalışmıyor",
+     "value": "2"
+    },
+    {
+     "label": "Repair in Progress",
+     "label_tr": "Onarımda",
+     "value": "3"
+    },
+    {
+     "label": "DR Standby",
+     "label_tr": "Felaket kurtarma beklemede",
+     "value": "4"
+    },
+    {
+     "label": "Ready",
+     "label_tr": "Hazır",
+     "value": "5"
+    },
+    {
+     "label": "Retired",
+     "label_tr": "Emekli",
+     "value": "6"
+    },
+    {
+     "label": "Pipeline",
+     "label_tr": "Planlanan",
+     "value": "7"
+    },
+    {
+     "label": "Catalog",
+     "label_tr": "Katalog",
+     "value": "8"
+    }
+   ],
+   "verify": false
+  },
+  {
+   "depends_on": null,
+   "element": "install_status",
+   "label_tr": "Kurulum durumu",
+   "table": "cmdb_ci",
+   "values": [
+    {
+     "label": "Installed",
+     "label_tr": "Kurulu",
+     "value": "1"
+    },
+    {
+     "label": "On Order",
+     "label_tr": "Siparişte",
+     "value": "2"
+    },
+    {
+     "label": "In Maintenance",
+     "label_tr": "Bakımda",
+     "value": "3"
+    },
+    {
+     "label": "Pending Install",
+     "label_tr": "Kurulum bekliyor",
+     "value": "4"
+    },
+    {
+     "label": "Pending Repair",
+     "label_tr": "Onarım bekliyor",
+     "value": "5"
+    },
+    {
+     "label": "In Stock",
+     "label_tr": "Stokta",
+     "value": "6"
+    },
+    {
+     "label": "Retired",
+     "label_tr": "Emekli",
+     "value": "7"
+    },
+    {
+     "label": "Stolen",
+     "label_tr": "Çalıntı",
+     "value": "8"
+    },
+    {
+     "label": "Absent",
+     "label_tr": "Bulunamıyor",
+     "value": "100"
+    }
+   ],
+   "verify": false
+  },
+  {
+   "depends_on": null,
+   "element": "used_for",
+   "label_tr": "Kullanım amacı",
+   "table": "cmdb_ci",
+   "values": [
+    {
+     "label": "Production",
+     "label_tr": "Üretim",
+     "value": "Production"
+    },
+    {
+     "label": "Staging",
+     "label_tr": "Ön üretim",
+     "value": "Staging"
+    },
+    {
+     "label": "QA",
+     "label_tr": "Kalite güvence",
+     "value": "QA"
+    },
+    {
+     "label": "Test",
+     "label_tr": "Test",
+     "value": "Test"
+    },
+    {
+     "label": "Development",
+     "label_tr": "Geliştirme",
+     "value": "Development"
+    },
+    {
+     "label": "Demonstration",
+     "label_tr": "Demo",
+     "value": "Demonstration"
+    },
+    {
+     "label": "Training",
+     "label_tr": "Eğitim",
+     "value": "Training"
+    },
+    {
+     "label": "Disaster recovery",
+     "label_tr": "Felaket kurtarma",
+     "value": "Disaster recovery"
+    }
+   ],
+   "verify": false
+  },
+  {
+   "depends_on": null,
+   "element": "discovery_source",
+   "label_tr": "Keşif kaynağı",
+   "table": "cmdb_ci",
+   "values": [
+    {
+     "label": "Evren",
+     "label_tr": "Evren",
+     "value": "Evren"
+    },
+    {
+     "label": "vCenter",
+     "label_tr": "vCenter",
+     "value": "vCenter"
+    },
+    {
+     "label": "BMC",
+     "label_tr": "BMC",
+     "value": "BMC"
+    },
+    {
+     "label": "NNMi",
+     "label_tr": "NNMi",
+     "value": "NNMi"
+    },
+    {
+     "label": "Zabbix",
+     "label_tr": "Zabbix",
+     "value": "Zabbix"
+    },
+    {
+     "label": "Microsoft Defender",
+     "label_tr": "Microsoft Defender",
+     "value": "Defender"
+    },
+    {
+     "label": "ServiceNow",
+     "label_tr": "ServiceNow",
+     "value": "ServiceNow"
+    },
+    {
+     "label": "Manual Entry",
+     "label_tr": "Elle giriş",
+     "value": "Manual"
+    }
+   ],
+   "verify": false
+  },
+  {
+   "depends_on": null,
+   "element": "life_cycle_stage",
+   "label_tr": "Yaşam döngüsü aşaması",
+   "table": "cmdb_ci",
+   "values": [
+    {
+     "label": "Ideation",
+     "label_tr": "Fikir",
+     "value": "Ideation"
+    },
+    {
+     "label": "Design",
+     "label_tr": "Tasarım",
+     "value": "Design"
+    },
+    {
+     "label": "Build",
+     "label_tr": "Yapım",
+     "value": "Build"
+    },
+    {
+     "label": "Deploy",
+     "label_tr": "Devreye alma",
+     "value": "Deploy"
+    },
+    {
+     "label": "Operational",
+     "label_tr": "Operasyonel",
+     "value": "Operational"
+    },
+    {
+     "label": "End of Life",
+     "label_tr": "Ömür sonu",
+     "value": "End of Life"
+    }
+   ],
+   "verify": true
+  },
+  {
+   "depends_on": "life_cycle_stage",
+   "element": "life_cycle_stage_status",
+   "label_tr": "Aşama durumu",
+   "table": "cmdb_ci",
+   "values": [
+    {
+     "dependent_value": "Ideation",
+     "label": "Draft",
+     "label_tr": "Taslak",
+     "legacy": {
+      "operational_status": "7"
+     },
+     "value": "Draft"
+    },
+    {
+     "dependent_value": "Design",
+     "label": "Planning",
+     "label_tr": "Planlanıyor",
+     "legacy": {
+      "operational_status": "7"
+     },
+     "value": "Planning"
+    },
+    {
+     "dependent_value": "Build",
+     "label": "In Progress",
+     "label_tr": "Yapılıyor",
+     "legacy": {
+      "install_status": "4",
+      "operational_status": "7"
+     },
+     "value": "In Progress"
+    },
+    {
+     "dependent_value": "Deploy",
+     "label": "Ready",
+     "label_tr": "Hazır",
+     "legacy": {
+      "install_status": "1",
+      "operational_status": "5"
+     },
+     "value": "Ready"
+    },
+    {
+     "dependent_value": "Operational",
+     "label": "In Use",
+     "label_tr": "Kullanımda",
+     "legacy": {
+      "install_status": "1",
+      "operational_status": "1"
+     },
+     "value": "In Use"
+    },
+    {
+     "dependent_value": "Operational",
+     "label": "In Maintenance",
+     "label_tr": "Bakımda",
+     "legacy": {
+      "install_status": "3",
+      "operational_status": "3"
+     },
+     "value": "In Maintenance"
+    },
+    {
+     "dependent_value": "Operational",
+     "label": "Pending Retirement",
+     "label_tr": "Emeklilik bekliyor",
+     "legacy": {
+      "install_status": "1",
+      "operational_status": "1"
+     },
+     "value": "Pending Retirement"
+    },
+    {
+     "dependent_value": "End of Life",
+     "label": "Retired",
+     "label_tr": "Emekli",
+     "legacy": {
+      "install_status": "7",
+      "operational_status": "6"
+     },
+     "value": "Retired"
+    },
+    {
+     "dependent_value": "End of Life",
+     "label": "Missing",
+     "label_tr": "Kayıp",
+     "legacy": {
+      "install_status": "100",
+      "operational_status": "2"
+     },
+     "value": "Missing"
+    },
+    {
+     "dependent_value": "End of Life",
+     "label": "Stolen",
+     "label_tr": "Çalıntı",
+     "legacy": {
+      "install_status": "8",
+      "operational_status": "6"
+     },
+     "value": "Stolen"
+    },
+    {
+     "dependent_value": "End of Life",
+     "label": "Disposed",
+     "label_tr": "İmha edildi",
+     "legacy": {
+      "install_status": "7",
+      "operational_status": "6"
+     },
+     "value": "Disposed"
+    }
+   ],
+   "verify": true
+  }
+ ],
+ "classes": [
+  {
+   "children": [
+    "cmdb_ci_network_adapter",
+    "cmdb_ci_information_object",
+    "cmdb_ci_cloud_service_account",
+    "cmdb_ci_dns_name",
+    "cmdb_ci_hardware",
+    "cmdb_ci_file_system",
+    "cmdb_ci_ip_address",
+    "cmdb_ci_ip_network",
+    "cmdb_ci_business_process",
+    "cmdb_ci_business_app",
+    "cmdb_ci_business_capability",
+    "cmdb_ci_oslv_container",
+    "cmdb_ci_kubernetes_component",
+    "cmdb_ci_cluster",
+    "cmdb_ci_cluster_node",
+    "cmdb_ci_logical_datacenter",
+    "cmdb_ci_vm_object",
+    "cmdb_ci_service",
+    "cmdb_ci_appl",
+    "cmdb_ci_database",
+    "cmdb_ci_vlan"
+   ],
+   "depth": 0,
+   "family": null,
+   "field_count": 39,
+   "fields": [
+    {
+     "label_tr": "Ad",
+     "max_length": 255,
+     "name": "name",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Kısa açıklama",
+     "max_length": 1000,
+     "name": "short_description",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Seri numarası",
+     "max_length": 255,
+     "name": "serial_number",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Varlık etiketi",
+     "max_length": 255,
+     "name": "asset_tag",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "IP adresi",
+     "max_length": 255,
+     "name": "ip_address",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "MAC adresi",
+     "max_length": 255,
+     "name": "mac_address",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "FQDN",
+     "max_length": 255,
+     "name": "fqdn",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "DNS alanı",
+     "max_length": 255,
+     "name": "dns_domain",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "choice": true,
+     "label_tr": "Operasyonel durum",
+     "name": "operational_status",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "integer"
+    },
+    {
+     "choice": true,
+     "label_tr": "Kurulum durumu",
+     "name": "install_status",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "integer"
+    },
+    {
+     "choice": true,
+     "label_tr": "Kullanım amacı",
+     "max_length": 40,
+     "name": "used_for",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "choice": true,
+     "label_tr": "Keşif kaynağı",
+     "max_length": 40,
+     "name": "discovery_source",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "İlk keşif",
+     "name": "first_discovered",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "glide_date_time"
+    },
+    {
+     "label_tr": "Son keşif",
+     "name": "last_discovered",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "glide_date_time"
+    },
+    {
+     "label_tr": "Üretici",
+     "name": "manufacturer",
+     "reference": "core_company",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Model",
+     "name": "model_id",
+     "reference": "cmdb_model",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Konum",
+     "name": "location",
+     "reference": "cmn_location",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Şirket",
+     "name": "company",
+     "reference": "core_company",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Departman",
+     "name": "department",
+     "reference": "cmn_department",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Destek grubu",
+     "name": "support_group",
+     "reference": "sys_user_group",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Atama grubu",
+     "name": "assignment_group",
+     "reference": "sys_user_group",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Onay grubu",
+     "name": "change_control",
+     "reference": "sys_user_group",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Yöneten",
+     "name": "managed_by",
+     "reference": "sys_user",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Sahibi",
+     "name": "owned_by",
+     "reference": "sys_user",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Atanan kişi",
+     "name": "assigned_to",
+     "reference": "sys_user",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Mükerrer kaydı",
+     "name": "duplicate_of",
+     "reference": "cmdb_ci",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Korelasyon kimliği",
+     "max_length": 512,
+     "name": "correlation_id",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Nesne kimliği",
+     "max_length": 512,
+     "name": "object_id",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Kategori",
+     "max_length": 100,
+     "name": "category",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Alt kategori",
+     "max_length": 100,
+     "name": "subcategory",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Kurulum tarihi",
+     "name": "install_date",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "glide_date_time"
+    },
+    {
+     "label_tr": "Garanti bitişi",
+     "name": "warranty_expiration",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "glide_date"
+    },
+    {
+     "choice": true,
+     "label_tr": "Yaşam döngüsü aşaması",
+     "max_length": 100,
+     "name": "life_cycle_stage",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "choice": true,
+     "label_tr": "Aşama durumu",
+     "max_length": 100,
+     "name": "life_cycle_stage_status",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Yorumlar",
+     "max_length": 4000,
+     "name": "comments",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "string"
+    },
+    {
+     "label_tr": "Maliyet merkezi",
+     "name": "cost_center",
+     "reference": "cmn_cost_center",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Sahiplik onaylandı",
+     "name": "attested",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "boolean",
+     "verify": true
+    },
+    {
+     "label_tr": "Onaylayan",
+     "name": "attested_by",
+     "reference": "sys_user",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "reference",
+     "verify": true
+    },
+    {
+     "label_tr": "Onay tarihi",
+     "name": "attested_date",
+     "sensitivity": "internal",
+     "storage": "column",
+     "type": "glide_date_time",
+     "verify": true
+    }
+   ],
+   "identification": null,
+   "label": "Configuration Item",
+   "label_tr": "Konfigürasyon Öğesi",
+   "name": "cmdb_ci",
+   "parent": null,
+   "sn_view": "sn.cmdb_ci",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_network_adapter",
+   "field_count": 42,
+   "fields": [
+    {
+     "indexed": true,
+     "label_tr": "Bağlı olduğu CI",
+     "name": "cmdb_ci",
+     "reference": "cmdb_ci",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference"
+    },
+    {
+     "label_tr": "Ağ maskesi",
+     "max_length": 100,
+     "name": "netmask",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "DHCP",
+     "name": "dhcp_enabled",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "boolean"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_network_adapter",
+    "context": {
+     "field": "cmdb_ci",
+     "kind": "reference"
+    },
+    "description": "Ağ adaptörü — bağlı olduğu CI (cmdb_ci alanı) bağlamında MAC ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "mac_address"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": false
+   },
+   "label": "Network Adapter",
+   "label_tr": "Ağ adaptörü",
+   "name": "cmdb_ci_network_adapter",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_network_adapter",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_information_object",
+   "field_count": 40,
+   "fields": [
+    {
+     "label_tr": "Veri sınıflandırması",
+     "max_length": 40,
+     "name": "data_classification",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_information_object",
+    "context": null,
+    "description": "Bilgi nesnesi — ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Information Object",
+   "label_tr": "Bilgi nesnesi",
+   "name": "cmdb_ci_information_object",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_information_object",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_cloud_service_account",
+   "field_count": 42,
+   "fields": [
+    {
+     "indexed": true,
+     "label_tr": "Hesap/abonelik kimliği",
+     "max_length": 255,
+     "name": "account_id",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Veri merkezi tipi",
+     "max_length": 80,
+     "name": "datacenter_type",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Ana hesap",
+     "name": "is_master_account",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "boolean",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_cloud_service_account",
+    "context": null,
+    "description": "Bulut hizmet hesabı / aboneliği — sağlayıcının hesap kimliği",
+    "entries": [
+     {
+      "attributes": [
+       "account_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Cloud Service Account",
+   "label_tr": "Bulut hizmet hesabı",
+   "name": "cmdb_ci_cloud_service_account",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_cloud_service_account",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_dns_name",
+   "field_count": 39,
+   "fields": [],
+   "identification": null,
+   "label": "DNS Name",
+   "label_tr": "DNS adı",
+   "name": "cmdb_ci_dns_name",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_dns_name",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_netgear",
+    "cmdb_ci_computer",
+    "cmdb_ci_storage_device",
+    "cmdb_ci_rack",
+    "cmdb_ci_printer"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_hardware",
+   "field_count": 42,
+   "fields": [
+    {
+     "label_tr": "Donanım durumu",
+     "max_length": 40,
+     "name": "hardware_status",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Varsayılan ağ geçidi",
+     "max_length": 255,
+     "name": "default_gateway",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Firmware sürümü",
+     "max_length": 100,
+     "name": "firmware_version",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": false
+   },
+   "label": "Hardware",
+   "label_tr": "Donanım",
+   "name": "cmdb_ci_hardware",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_hardware",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_ip_firewall",
+    "cmdb_ci_wap_network",
+    "cmdb_ci_ip_router",
+    "cmdb_ci_ip_switch",
+    "cmdb_ci_lb"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_hardware",
+   "field_count": 46,
+   "fields": [
+    {
+     "label_tr": "Yönlendirme yapabilir",
+     "name": "can_route",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "boolean"
+    },
+    {
+     "label_tr": "Anahtarlama yapabilir",
+     "name": "can_switch",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "boolean"
+    },
+    {
+     "label_tr": "VLAN bölümleyebilir",
+     "name": "can_partitionvlans",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "boolean"
+    },
+    {
+     "label_tr": "Fiziksel arayüz sayısı",
+     "name": "physical_interface_count",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Network Gear",
+   "label_tr": "Ağ cihazı",
+   "name": "cmdb_ci_netgear",
+   "parent": "cmdb_ci_hardware",
+   "sn_view": "sn.cmdb_ci_netgear",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 46,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "IP Firewall",
+   "label_tr": "Güvenlik duvarı",
+   "name": "cmdb_ci_ip_firewall",
+   "parent": "cmdb_ci_netgear",
+   "sn_view": "sn.cmdb_ci_ip_firewall",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 46,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Wireless Access Point",
+   "label_tr": "Kablosuz erişim noktası",
+   "name": "cmdb_ci_wap_network",
+   "parent": "cmdb_ci_netgear",
+   "sn_view": "sn.cmdb_ci_wap_network",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 46,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "IP Router",
+   "label_tr": "Router",
+   "name": "cmdb_ci_ip_router",
+   "parent": "cmdb_ci_netgear",
+   "sn_view": "sn.cmdb_ci_ip_router",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 46,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "IP Switch",
+   "label_tr": "Switch",
+   "name": "cmdb_ci_ip_switch",
+   "parent": "cmdb_ci_netgear",
+   "sn_view": "sn.cmdb_ci_ip_switch",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 46,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Load Balancer",
+   "label_tr": "Yük dengeleyici",
+   "name": "cmdb_ci_lb",
+   "parent": "cmdb_ci_netgear",
+   "sn_view": "sn.cmdb_ci_lb",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_pc_hardware",
+    "cmdb_ci_server"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [
+    {
+     "label_tr": "Host adı",
+     "max_length": 255,
+     "name": "host_name",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "İşletim sistemi",
+     "max_length": 255,
+     "name": "os",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "OS sürümü",
+     "max_length": 100,
+     "name": "os_version",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "OS service pack",
+     "max_length": 100,
+     "name": "os_service_pack",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "OS alanı",
+     "max_length": 255,
+     "name": "os_domain",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "indexed": true,
+     "label_tr": "CPU sayısı",
+     "name": "cpu_count",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Çekirdek sayısı",
+     "name": "cpu_core_count",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "CPU hızı (MHz)",
+     "name": "cpu_speed",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "CPU tipi",
+     "max_length": 255,
+     "name": "cpu_type",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "indexed": true,
+     "label_tr": "RAM (MB)",
+     "name": "ram",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Disk alanı (GB)",
+     "name": "disk_space",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "decimal"
+    },
+    {
+     "indexed": true,
+     "label_tr": "Sanal",
+     "name": "virtual",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "boolean"
+    },
+    {
+     "label_tr": "Form faktörü",
+     "max_length": 40,
+     "name": "form_factor",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Computer",
+   "label_tr": "Bilgisayar",
+   "name": "cmdb_ci_computer",
+   "parent": "cmdb_ci_hardware",
+   "sn_view": "sn.cmdb_ci_computer",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Personal Computer",
+   "label_tr": "Kişisel bilgisayar",
+   "name": "cmdb_ci_pc_hardware",
+   "parent": "cmdb_ci_computer",
+   "sn_view": "sn.cmdb_ci_pc_hardware",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_storage_server",
+    "cmdb_ci_esx_server",
+    "cmdb_ci_linux_server",
+    "cmdb_ci_unix_server",
+    "cmdb_ci_win_server"
+   ],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Server",
+   "label_tr": "Sunucu",
+   "name": "cmdb_ci_server",
+   "parent": "cmdb_ci_computer",
+   "sn_view": "sn.cmdb_ci_server",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 4,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Storage Server",
+   "label_tr": "Depolama sunucusu (NAS)",
+   "name": "cmdb_ci_storage_server",
+   "parent": "cmdb_ci_server",
+   "sn_view": "sn.cmdb_ci_storage_server",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 4,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "ESX Server",
+   "label_tr": "ESXi host",
+   "name": "cmdb_ci_esx_server",
+   "parent": "cmdb_ci_server",
+   "sn_view": "sn.cmdb_ci_esx_server",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 4,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Linux Server",
+   "label_tr": "Linux sunucu",
+   "name": "cmdb_ci_linux_server",
+   "parent": "cmdb_ci_server",
+   "sn_view": "sn.cmdb_ci_linux_server",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_aix_server",
+    "cmdb_ci_solaris_server"
+   ],
+   "depth": 4,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "UNIX Server",
+   "label_tr": "UNIX sunucu",
+   "name": "cmdb_ci_unix_server",
+   "parent": "cmdb_ci_server",
+   "sn_view": "sn.cmdb_ci_unix_server",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 5,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "AIX Server",
+   "label_tr": "AIX sunucu",
+   "name": "cmdb_ci_aix_server",
+   "parent": "cmdb_ci_unix_server",
+   "sn_view": "sn.cmdb_ci_aix_server",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 5,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Solaris Server",
+   "label_tr": "Solaris sunucu",
+   "name": "cmdb_ci_solaris_server",
+   "parent": "cmdb_ci_unix_server",
+   "sn_view": "sn.cmdb_ci_solaris_server",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 4,
+   "family": "cmdb_ci_hardware",
+   "field_count": 55,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Windows Server",
+   "label_tr": "Windows sunucu",
+   "name": "cmdb_ci_win_server",
+   "parent": "cmdb_ci_server",
+   "sn_view": "sn.cmdb_ci_win_server",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_storage_volume",
+    "cmdb_ci_disk"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_hardware",
+   "field_count": 45,
+   "fields": [
+    {
+     "indexed": true,
+     "label_tr": "Bağlı bilgisayar",
+     "name": "computer",
+     "reference": "cmdb_ci_computer",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference",
+     "verify": true
+    },
+    {
+     "label_tr": "Depolama tipi",
+     "max_length": 40,
+     "name": "storage_type",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Boyut (bayt)",
+     "name": "size_bytes",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Storage Device",
+   "label_tr": "Depolama cihazı",
+   "name": "cmdb_ci_storage_device",
+   "parent": "cmdb_ci_hardware",
+   "sn_view": "sn.cmdb_ci_storage_device",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 45,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Storage Volume",
+   "label_tr": "Depolama birimi",
+   "name": "cmdb_ci_storage_volume",
+   "parent": "cmdb_ci_storage_device",
+   "sn_view": "sn.cmdb_ci_storage_volume",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_hardware",
+   "field_count": 45,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Disk",
+   "label_tr": "Disk",
+   "name": "cmdb_ci_disk",
+   "parent": "cmdb_ci_storage_device",
+   "sn_view": "sn.cmdb_ci_disk",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_hardware",
+   "field_count": 43,
+   "fields": [
+    {
+     "label_tr": "Birim (U) sayısı",
+     "name": "rack_units",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Rack",
+   "label_tr": "Kabin (rack)",
+   "name": "cmdb_ci_rack",
+   "parent": "cmdb_ci_hardware",
+   "sn_view": "sn.cmdb_ci_rack",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_hardware",
+   "field_count": 42,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_hardware",
+    "context": null,
+    "description": "Donanım (sunucu, ağ cihazı) — SN temel kuralı + UUID/FQDN uzantısı",
+    "entries": [
+     {
+      "attributes": [
+       "serial_number",
+       "serial_number_type"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": "cmdb_serial_number"
+     },
+     {
+      "attributes": [
+       "bios_uuid"
+      ],
+      "evren_extension": true,
+      "priority": 150,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "serial_number"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "fqdn"
+      ],
+      "evren_extension": true,
+      "priority": 280,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 300,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "mac_address",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 400,
+      "search_table": "cmdb_ci_network_adapter"
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Printer",
+   "label_tr": "Yazıcı",
+   "name": "cmdb_ci_printer",
+   "parent": "cmdb_ci_hardware",
+   "sn_view": "sn.cmdb_ci_printer",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_file_system",
+   "field_count": 44,
+   "fields": [
+    {
+     "indexed": true,
+     "label_tr": "Bağlı bilgisayar",
+     "name": "computer",
+     "reference": "cmdb_ci_computer",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference",
+     "verify": true
+    },
+    {
+     "label_tr": "Bağlama noktası",
+     "max_length": 1000,
+     "name": "mount_point",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Dosya sistemi tipi",
+     "max_length": 40,
+     "name": "file_system",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Kapasite (MB)",
+     "name": "capacity",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer",
+     "verify": true
+    },
+    {
+     "label_tr": "Boş alan (MB)",
+     "name": "free_space",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_file_system",
+    "context": {
+     "field": "computer",
+     "kind": "reference"
+    },
+    "description": "Dosya sistemi — bağlı bilgisayar bağlamında bağlama noktası",
+    "entries": [
+     {
+      "attributes": [
+       "mount_point"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "File System",
+   "label_tr": "Dosya sistemi",
+   "name": "cmdb_ci_file_system",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_file_system",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_ip_address",
+   "field_count": 42,
+   "fields": [
+    {
+     "label_tr": "IP sürümü",
+     "name": "ip_version",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Ağ maskesi",
+     "max_length": 100,
+     "name": "netmask",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Ağ adaptörü",
+     "name": "nic",
+     "reference": "cmdb_ci_network_adapter",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference"
+    }
+   ],
+   "identification": null,
+   "label": "IP Address",
+   "label_tr": "IP adresi",
+   "name": "cmdb_ci_ip_address",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_ip_address",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_ip_network",
+   "field_count": 40,
+   "fields": [
+    {
+     "label_tr": "Alt ağ (CIDR)",
+     "max_length": 100,
+     "name": "subnet",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_ip_network",
+    "context": null,
+    "description": "IP ağı — CIDR biçiminde alt ağ (VRF çakışması olan kurumda bağımlı kurala çevrilmeli)",
+    "entries": [
+     {
+      "attributes": [
+       "subnet"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "IP Network",
+   "label_tr": "IP ağı",
+   "name": "cmdb_ci_ip_network",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_ip_network",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_business_process",
+   "field_count": 39,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_business_process",
+    "context": null,
+    "description": "İş süreci — ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Business Process",
+   "label_tr": "İş süreci",
+   "name": "cmdb_ci_business_process",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_business_process",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_business_app",
+   "field_count": 44,
+   "fields": [
+    {
+     "label_tr": "BT uygulama sahibi",
+     "name": "it_application_owner",
+     "reference": "sys_user",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference",
+     "verify": true
+    },
+    {
+     "label_tr": "Uygulama tipi",
+     "max_length": 40,
+     "name": "application_type",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Mimari tipi",
+     "max_length": 40,
+     "name": "architecture_type",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Kurulum tipi",
+     "max_length": 40,
+     "name": "install_type",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Kullanıcı tabanı",
+     "max_length": 40,
+     "name": "user_base",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_business_app",
+    "context": null,
+    "description": "İş uygulaması — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Business Application",
+   "label_tr": "İş uygulaması",
+   "name": "cmdb_ci_business_app",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_business_app",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_business_capability",
+   "field_count": 39,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_business_capability",
+    "context": null,
+    "description": "İş yeteneği — ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Business Capability",
+   "label_tr": "İş yeteneği",
+   "name": "cmdb_ci_business_capability",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_business_capability",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_docker_container"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_oslv_container",
+   "field_count": 40,
+   "fields": [
+    {
+     "label_tr": "İmaj",
+     "max_length": 1000,
+     "name": "image",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_oslv_container",
+    "context": null,
+    "description": "Konteyner — çalışma zamanının verdiği konteyner kimliği",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "OS-level Virtualization Container",
+   "label_tr": "Konteyner",
+   "name": "cmdb_ci_oslv_container",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_oslv_container",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_oslv_container",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_oslv_container",
+    "context": null,
+    "description": "Konteyner — çalışma zamanının verdiği konteyner kimliği",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Docker Container",
+   "label_tr": "Docker konteyneri",
+   "name": "cmdb_ci_docker_container",
+   "parent": "cmdb_ci_oslv_container",
+   "sn_view": "sn.cmdb_ci_docker_container",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_kubernetes_namespace",
+    "cmdb_ci_kubernetes_deployment",
+    "cmdb_ci_kubernetes_node",
+    "cmdb_ci_kubernetes_pod",
+    "cmdb_ci_kubernetes_service"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 40,
+   "fields": [
+    {
+     "label_tr": "Ad alanı",
+     "max_length": 255,
+     "name": "namespace",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Kubernetes Component",
+   "label_tr": "Kubernetes bileşeni",
+   "name": "cmdb_ci_kubernetes_component",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_kubernetes_component",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Namespace",
+   "label_tr": "Kubernetes ad alanı",
+   "name": "cmdb_ci_kubernetes_namespace",
+   "parent": "cmdb_ci_kubernetes_component",
+   "sn_view": "sn.cmdb_ci_kubernetes_namespace",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Deployment",
+   "label_tr": "Kubernetes dağıtımı",
+   "name": "cmdb_ci_kubernetes_deployment",
+   "parent": "cmdb_ci_kubernetes_component",
+   "sn_view": "sn.cmdb_ci_kubernetes_deployment",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Node",
+   "label_tr": "Kubernetes düğümü",
+   "name": "cmdb_ci_kubernetes_node",
+   "parent": "cmdb_ci_kubernetes_component",
+   "sn_view": "sn.cmdb_ci_kubernetes_node",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Pod",
+   "label_tr": "Kubernetes pod",
+   "name": "cmdb_ci_kubernetes_pod",
+   "parent": "cmdb_ci_kubernetes_component",
+   "sn_view": "sn.cmdb_ci_kubernetes_pod",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_kubernetes_component",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_kubernetes_component",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_kubernetes_cluster",
+     "type": "Contains::Contained by"
+    },
+    "description": "Kubernetes bileşeni — küme bağlamında ad alanı + ad",
+    "entries": [
+     {
+      "attributes": [
+       "namespace",
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Service",
+   "label_tr": "Kubernetes servisi",
+   "name": "cmdb_ci_kubernetes_service",
+   "parent": "cmdb_ci_kubernetes_component",
+   "sn_view": "sn.cmdb_ci_kubernetes_service",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_kubernetes_cluster",
+    "cmdb_ci_win_cluster"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_cluster",
+   "field_count": 42,
+   "fields": [
+    {
+     "label_tr": "Küme kimliği",
+     "max_length": 255,
+     "name": "cluster_id",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Küme sürümü",
+     "max_length": 100,
+     "name": "cluster_version",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Küme IP adresi",
+     "max_length": 255,
+     "name": "cluster_ip",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_cluster",
+    "context": null,
+    "description": "Küme (Windows, vCenter dışı, Kubernetes) — küme kimliği; ad tek başına yetmez",
+    "entries": [
+     {
+      "attributes": [
+       "cluster_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Cluster",
+   "label_tr": "Küme",
+   "name": "cmdb_ci_cluster",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_cluster",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_cluster",
+   "field_count": 42,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_cluster",
+    "context": null,
+    "description": "Küme (Windows, vCenter dışı, Kubernetes) — küme kimliği; ad tek başına yetmez",
+    "entries": [
+     {
+      "attributes": [
+       "cluster_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Kubernetes Cluster",
+   "label_tr": "Kubernetes kümesi",
+   "name": "cmdb_ci_kubernetes_cluster",
+   "parent": "cmdb_ci_cluster",
+   "sn_view": "sn.cmdb_ci_kubernetes_cluster",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_cluster",
+   "field_count": 42,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_cluster",
+    "context": null,
+    "description": "Küme (Windows, vCenter dışı, Kubernetes) — küme kimliği; ad tek başına yetmez",
+    "entries": [
+     {
+      "attributes": [
+       "cluster_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Windows Cluster",
+   "label_tr": "Windows kümesi",
+   "name": "cmdb_ci_win_cluster",
+   "parent": "cmdb_ci_cluster",
+   "sn_view": "sn.cmdb_ci_win_cluster",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_cluster_node",
+   "field_count": 41,
+   "fields": [
+    {
+     "indexed": true,
+     "label_tr": "Küme",
+     "name": "cluster",
+     "reference": "cmdb_ci_cluster",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference",
+     "verify": true
+    },
+    {
+     "label_tr": "Sunucu",
+     "name": "server",
+     "reference": "cmdb_ci_computer",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_cluster_node",
+    "context": {
+     "field": "cluster",
+     "kind": "reference"
+    },
+    "description": "Küme düğümü — küme bağlamında ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Cluster Node",
+   "label_tr": "Küme düğümü",
+   "name": "cmdb_ci_cluster_node",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_cluster_node",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_aws_datacenter",
+    "cmdb_ci_azure_datacenter"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_logical_datacenter",
+   "field_count": 40,
+   "fields": [
+    {
+     "label_tr": "Bölge",
+     "max_length": 100,
+     "name": "region",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_logical_datacenter",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_cloud_service_account",
+     "type": "Hosted on::Hosts"
+    },
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "entries": [
+     {
+      "attributes": [
+       "region"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Logical Datacenter",
+   "label_tr": "Mantıksal veri merkezi (bölge)",
+   "name": "cmdb_ci_logical_datacenter",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_logical_datacenter",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_logical_datacenter",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_logical_datacenter",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_cloud_service_account",
+     "type": "Hosted on::Hosts"
+    },
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "entries": [
+     {
+      "attributes": [
+       "region"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "AWS Datacenter",
+   "label_tr": "AWS bölgesi",
+   "name": "cmdb_ci_aws_datacenter",
+   "parent": "cmdb_ci_logical_datacenter",
+   "sn_view": "sn.cmdb_ci_aws_datacenter",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_logical_datacenter",
+   "field_count": 40,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_logical_datacenter",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_cloud_service_account",
+     "type": "Hosted on::Hosts"
+    },
+    "description": "Bulut bölgesi — hizmet hesabı bağlamında bölge",
+    "entries": [
+     {
+      "attributes": [
+       "region"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Azure Datacenter",
+   "label_tr": "Azure bölgesi",
+   "name": "cmdb_ci_azure_datacenter",
+   "parent": "cmdb_ci_logical_datacenter",
+   "sn_view": "sn.cmdb_ci_azure_datacenter",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_vm_instance",
+    "cmdb_ci_vcenter",
+    "cmdb_ci_vcenter_datastore",
+    "cmdb_ci_vcenter_cluster",
+    "cmdb_ci_vcenter_datacenter"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 39,
+   "fields": [],
+   "identification": null,
+   "label": "Virtual Machine Object",
+   "label_tr": "Sanal makine nesnesi",
+   "name": "cmdb_ci_vm_object",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_vm_object",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_vmware_instance"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 45,
+   "fields": [
+    {
+     "label_tr": "vCPU",
+     "name": "cpus",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Bellek (MB)",
+     "name": "memory",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Disk sayısı",
+     "name": "disks",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Disk boyutu (GB)",
+     "name": "disks_size",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "decimal"
+    },
+    {
+     "label_tr": "Ağ kartı sayısı",
+     "name": "nics",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "integer"
+    },
+    {
+     "label_tr": "Durum",
+     "max_length": 40,
+     "name": "state",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_vm_instance",
+    "context": null,
+    "description": "Sanal makine örneği (vCenter nesnesi)",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "vcenter_uuid",
+       "object_id"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Virtual Machine Instance",
+   "label_tr": "Sanal makine örneği",
+   "name": "cmdb_ci_vm_instance",
+   "parent": "cmdb_ci_vm_object",
+   "sn_view": "sn.cmdb_ci_vm_instance",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 51,
+   "fields": [
+    {
+     "label_tr": "vCenter",
+     "name": "vcenter_ref",
+     "reference": "cmdb_ci_vcenter",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "reference"
+    },
+    {
+     "indexed": true,
+     "label_tr": "vCenter UUID",
+     "max_length": 100,
+     "name": "vcenter_uuid",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "indexed": true,
+     "label_tr": "BIOS UUID",
+     "max_length": 100,
+     "name": "bios_uuid",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Misafir OS kimliği",
+     "max_length": 100,
+     "name": "guest_id",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    },
+    {
+     "label_tr": "Şablon",
+     "name": "template",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "boolean"
+    },
+    {
+     "label_tr": "VMX yolu",
+     "max_length": 1000,
+     "name": "image_path",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_vm_instance",
+    "context": null,
+    "description": "Sanal makine örneği (vCenter nesnesi)",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "vcenter_uuid",
+       "object_id"
+      ],
+      "evren_extension": false,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "VMware Virtual Machine Instance",
+   "label_tr": "VMware sanal makine",
+   "name": "cmdb_ci_vmware_instance",
+   "parent": "cmdb_ci_vm_instance",
+   "sn_view": "sn.cmdb_ci_vmware_instance",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 41,
+   "fields": [
+    {
+     "label_tr": "Adres",
+     "max_length": 1000,
+     "name": "url",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Örnek UUID",
+     "max_length": 100,
+     "name": "instance_uuid",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": null,
+   "label": "VMware vCenter Instance",
+   "label_tr": "vCenter",
+   "name": "cmdb_ci_vcenter",
+   "parent": "cmdb_ci_vm_object",
+   "sn_view": "sn.cmdb_ci_vcenter",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 39,
+   "fields": [],
+   "identification": null,
+   "label": "VMware vCenter Datastore",
+   "label_tr": "vCenter datastore",
+   "name": "cmdb_ci_vcenter_datastore",
+   "parent": "cmdb_ci_vm_object",
+   "sn_view": "sn.cmdb_ci_vcenter_datastore",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 39,
+   "fields": [],
+   "identification": null,
+   "label": "VMware vCenter Cluster",
+   "label_tr": "vCenter kümesi",
+   "name": "cmdb_ci_vcenter_cluster",
+   "parent": "cmdb_ci_vm_object",
+   "sn_view": "sn.cmdb_ci_vcenter_cluster",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_vm_object",
+   "field_count": 39,
+   "fields": [],
+   "identification": null,
+   "label": "VMware vCenter Datacenter",
+   "label_tr": "vCenter veri merkezi",
+   "name": "cmdb_ci_vcenter_datacenter",
+   "parent": "cmdb_ci_vm_object",
+   "sn_view": "sn.cmdb_ci_vcenter_datacenter",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_query_based_service",
+    "cmdb_ci_service_business",
+    "service_offering",
+    "cmdb_ci_service_technical",
+    "cmdb_ci_service_auto"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [
+    {
+     "label_tr": "Servis sınıflandırması",
+     "max_length": 40,
+     "name": "service_classification",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "İş kritikliği",
+     "max_length": 40,
+     "name": "busines_criticality",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Service",
+   "label_tr": "Servis",
+   "name": "cmdb_ci_service",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_service",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Dynamic CI Group",
+   "label_tr": "Dinamik CI grubu",
+   "name": "cmdb_ci_query_based_service",
+   "parent": "cmdb_ci_service",
+   "sn_view": "sn.cmdb_ci_query_based_service",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Business Service",
+   "label_tr": "İş servisi",
+   "name": "cmdb_ci_service_business",
+   "parent": "cmdb_ci_service",
+   "sn_view": "sn.cmdb_ci_service_business",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Service Offering",
+   "label_tr": "Servis sunumu",
+   "name": "service_offering",
+   "parent": "cmdb_ci_service",
+   "sn_view": "sn.service_offering",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 2,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Technical Service",
+   "label_tr": "Teknik servis",
+   "name": "cmdb_ci_service_technical",
+   "parent": "cmdb_ci_service",
+   "sn_view": "sn.cmdb_ci_service_technical",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_service_by_tags",
+    "cmdb_ci_service_discovered",
+    "cmdb_ci_service_calculated"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Application Service",
+   "label_tr": "Uygulama servisi",
+   "name": "cmdb_ci_service_auto",
+   "parent": "cmdb_ci_service",
+   "sn_view": "sn.cmdb_ci_service_auto",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Tag-Based Application Service",
+   "label_tr": "Etiket tabanlı uygulama servisi",
+   "name": "cmdb_ci_service_by_tags",
+   "parent": "cmdb_ci_service_auto",
+   "sn_view": "sn.cmdb_ci_service_by_tags",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Mapped Application Service",
+   "label_tr": "Haritalanmış uygulama servisi",
+   "name": "cmdb_ci_service_discovered",
+   "parent": "cmdb_ci_service_auto",
+   "sn_view": "sn.cmdb_ci_service_discovered",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_service",
+   "field_count": 41,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_service",
+    "context": null,
+    "description": "Servis, servis sunumu, uygulama servisi — korelasyon kimliği, sonra ad",
+    "entries": [
+     {
+      "attributes": [
+       "correlation_id"
+      ],
+      "evren_extension": true,
+      "priority": 100,
+      "search_table": null
+     },
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": true,
+      "priority": 200,
+      "search_table": null
+     }
+    ],
+    "independent": true,
+    "inherited": true,
+    "verify": true
+   },
+   "label": "Calculated Application Service",
+   "label_tr": "Hesaplanan uygulama servisi",
+   "name": "cmdb_ci_service_calculated",
+   "parent": "cmdb_ci_service_auto",
+   "sn_view": "sn.cmdb_ci_service_calculated",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_app_server",
+    "cmdb_ci_db_instance",
+    "cmdb_ci_web_server"
+   ],
+   "depth": 1,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [
+    {
+     "label_tr": "Sürüm",
+     "max_length": 100,
+     "name": "version",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Sürüm tipi",
+     "max_length": 100,
+     "name": "edition",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "Kurulum dizini",
+     "max_length": 1000,
+     "name": "install_directory",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    },
+    {
+     "label_tr": "TCP port",
+     "max_length": 100,
+     "name": "tcp_port",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string"
+    }
+   ],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": false
+   },
+   "label": "Application",
+   "label_tr": "Uygulama",
+   "name": "cmdb_ci_appl",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_appl",
+   "verify": false
+  },
+  {
+   "children": [
+    "cmdb_ci_app_server_jboss",
+    "cmdb_ci_app_server_tomcat",
+    "cmdb_ci_app_server_weblogic",
+    "cmdb_ci_app_server_websphere"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Application Server",
+   "label_tr": "Uygulama sunucusu yazılımı",
+   "name": "cmdb_ci_app_server",
+   "parent": "cmdb_ci_appl",
+   "sn_view": "sn.cmdb_ci_app_server",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "JBoss",
+   "label_tr": "JBoss",
+   "name": "cmdb_ci_app_server_jboss",
+   "parent": "cmdb_ci_app_server",
+   "sn_view": "sn.cmdb_ci_app_server_jboss",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Tomcat",
+   "label_tr": "Tomcat",
+   "name": "cmdb_ci_app_server_tomcat",
+   "parent": "cmdb_ci_app_server",
+   "sn_view": "sn.cmdb_ci_app_server_tomcat",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "WebLogic",
+   "label_tr": "WebLogic",
+   "name": "cmdb_ci_app_server_weblogic",
+   "parent": "cmdb_ci_app_server",
+   "sn_view": "sn.cmdb_ci_app_server_weblogic",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "WebSphere",
+   "label_tr": "WebSphere",
+   "name": "cmdb_ci_app_server_websphere",
+   "parent": "cmdb_ci_app_server",
+   "sn_view": "sn.cmdb_ci_app_server_websphere",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_db_db2_instance",
+    "cmdb_ci_db_mssql_instance",
+    "cmdb_ci_db_mysql_instance",
+    "cmdb_ci_db_ora_instance",
+    "cmdb_ci_db_postgresql_instance"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Database Instance",
+   "label_tr": "Veritabanı örneği",
+   "name": "cmdb_ci_db_instance",
+   "parent": "cmdb_ci_appl",
+   "sn_view": "sn.cmdb_ci_db_instance",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "DB2 Instance",
+   "label_tr": "DB2 örneği",
+   "name": "cmdb_ci_db_db2_instance",
+   "parent": "cmdb_ci_db_instance",
+   "sn_view": "sn.cmdb_ci_db_db2_instance",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "MSSQL Instance",
+   "label_tr": "MSSQL örneği",
+   "name": "cmdb_ci_db_mssql_instance",
+   "parent": "cmdb_ci_db_instance",
+   "sn_view": "sn.cmdb_ci_db_mssql_instance",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "MySQL Instance",
+   "label_tr": "MySQL örneği",
+   "name": "cmdb_ci_db_mysql_instance",
+   "parent": "cmdb_ci_db_instance",
+   "sn_view": "sn.cmdb_ci_db_mysql_instance",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Oracle Instance",
+   "label_tr": "Oracle örneği",
+   "name": "cmdb_ci_db_ora_instance",
+   "parent": "cmdb_ci_db_instance",
+   "sn_view": "sn.cmdb_ci_db_ora_instance",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "PostgreSQL Instance",
+   "label_tr": "PostgreSQL örneği",
+   "name": "cmdb_ci_db_postgresql_instance",
+   "parent": "cmdb_ci_db_instance",
+   "sn_view": "sn.cmdb_ci_db_postgresql_instance",
+   "verify": true
+  },
+  {
+   "children": [
+    "cmdb_ci_apache_web_server",
+    "cmdb_ci_microsoft_iis_web_server",
+    "cmdb_ci_nginx_web_server"
+   ],
+   "depth": 2,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Web Server",
+   "label_tr": "Web sunucusu yazılımı",
+   "name": "cmdb_ci_web_server",
+   "parent": "cmdb_ci_appl",
+   "sn_view": "sn.cmdb_ci_web_server",
+   "verify": false
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Apache Web Server",
+   "label_tr": "Apache web sunucusu",
+   "name": "cmdb_ci_apache_web_server",
+   "parent": "cmdb_ci_web_server",
+   "sn_view": "sn.cmdb_ci_apache_web_server",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Microsoft IIS Web Server",
+   "label_tr": "IIS web sunucusu",
+   "name": "cmdb_ci_microsoft_iis_web_server",
+   "parent": "cmdb_ci_web_server",
+   "sn_view": "sn.cmdb_ci_microsoft_iis_web_server",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 3,
+   "family": "cmdb_ci_appl",
+   "field_count": 43,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_appl",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_hardware",
+     "type": "Runs on::Runs"
+    },
+    "description": "Uygulama — üst CI (Runs on::Runs → donanım) bağlamında ad ile tanımlanır",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": true,
+    "verify": false
+   },
+   "label": "Nginx Web Server",
+   "label_tr": "Nginx web sunucusu",
+   "name": "cmdb_ci_nginx_web_server",
+   "parent": "cmdb_ci_web_server",
+   "sn_view": "sn.cmdb_ci_nginx_web_server",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_database",
+   "field_count": 39,
+   "fields": [],
+   "identification": {
+    "applies_to": "cmdb_ci_database",
+    "context": {
+     "kind": "relation",
+     "parent_class": "cmdb_ci_db_instance",
+     "type": "Contains::Contained by"
+    },
+    "description": "Veritabanı kataloğu — veritabanı örneği bağlamında ad",
+    "entries": [
+     {
+      "attributes": [
+       "name"
+      ],
+      "evren_extension": false,
+      "priority": 100,
+      "search_table": null
+     }
+    ],
+    "independent": false,
+    "inherited": false,
+    "verify": true
+   },
+   "label": "Database",
+   "label_tr": "Veritabanı (katalog)",
+   "name": "cmdb_ci_database",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_database",
+   "verify": true
+  },
+  {
+   "children": [],
+   "depth": 1,
+   "family": "cmdb_ci_vlan",
+   "field_count": 40,
+   "fields": [
+    {
+     "label_tr": "VLAN numarası",
+     "max_length": 40,
+     "name": "vlan_id",
+     "sensitivity": "internal",
+     "storage": "jsonb",
+     "type": "string",
+     "verify": true
+    }
+   ],
+   "identification": null,
+   "label": "VLAN",
+   "label_tr": "VLAN",
+   "name": "cmdb_ci_vlan",
+   "parent": "cmdb_ci",
+   "sn_view": "sn.cmdb_ci_vlan",
+   "verify": true
+  }
+ ],
+ "reference_tables": [
+  {
+   "label_tr": "Kullanıcı",
+   "name": "sys_user"
+  },
+  {
+   "label_tr": "Grup",
+   "name": "sys_user_group"
+  },
+  {
+   "label_tr": "Konum",
+   "name": "cmn_location"
+  },
+  {
+   "label_tr": "Şirket",
+   "name": "core_company"
+  },
+  {
+   "label_tr": "Departman",
+   "name": "cmn_department"
+  },
+  {
+   "label_tr": "Model",
+   "name": "cmdb_model"
+  },
+  {
+   "label_tr": "Maliyet merkezi",
+   "name": "cmn_cost_center"
+  }
+ ],
+ "relationship_rules": {
+  "enforcement": "warn",
+  "rules": [
+   {
+    "child": "cmdb_ci",
+    "description": "Genel bağımlılık: hizmetten altyapıya her düzeyde (CSDM)",
+    "parent": "cmdb_ci",
+    "type": "Depends on::Used by",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_computer",
+    "description": "Yazılım bilgisayarda çalışır",
+    "parent": "cmdb_ci_appl",
+    "type": "Runs on::Runs",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_cluster",
+    "description": "Kümelenmiş yazılım",
+    "parent": "cmdb_ci_appl",
+    "type": "Runs on::Runs",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_oslv_container",
+    "description": null,
+    "parent": "cmdb_ci_appl",
+    "type": "Runs on::Runs",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_appl",
+    "description": "Entegrasyon",
+    "parent": "cmdb_ci_appl",
+    "type": "Sends data to::Receives data from",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_vm_instance",
+    "description": "Misafir işletim sistemi sunucusu ↔ VM örneği (vCenter, bulut)",
+    "parent": "cmdb_ci_computer",
+    "type": "Virtualized by::Virtualizes",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_server",
+    "description": "VM örneği hipervizöre kayıtlı",
+    "parent": "cmdb_ci_vm_instance",
+    "type": "Registered on::Has registered",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_logical_datacenter",
+    "description": "Bulut VM'i bölgede barınır",
+    "parent": "cmdb_ci_vm_instance",
+    "type": "Hosted on::Hosts",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_cluster",
+    "description": null,
+    "parent": "cmdb_ci_computer",
+    "type": "Cluster of::Cluster",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_cluster_node",
+    "description": null,
+    "parent": "cmdb_ci_cluster",
+    "type": "Members::Member of",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_computer",
+    "description": null,
+    "parent": "cmdb_ci_cluster_node",
+    "type": "Hosted on::Hosts",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_vcenter_datacenter",
+    "description": null,
+    "parent": "cmdb_ci_vcenter",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_vcenter_cluster",
+    "description": null,
+    "parent": "cmdb_ci_vcenter_datacenter",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_esx_server",
+    "description": null,
+    "parent": "cmdb_ci_vcenter_cluster",
+    "type": "Members::Member of",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_hardware",
+    "description": null,
+    "parent": "cmdb_ci_rack",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_netgear",
+    "description": "Fiziksel bağlantı",
+    "parent": "cmdb_ci_hardware",
+    "type": "Connects to::Connected by",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_netgear",
+    "description": null,
+    "parent": "cmdb_ci_netgear",
+    "type": "IP Connection::IP Connection",
+    "verify": false
+   },
+   {
+    "child": "cmdb_ci_ip_network",
+    "description": null,
+    "parent": "cmdb_ci_vlan",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_ip_address",
+    "description": null,
+    "parent": "cmdb_ci_ip_network",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_storage_volume",
+    "description": "Sunucu SAN/NAS birimini kullanır",
+    "parent": "cmdb_ci_computer",
+    "type": "Uses::Used by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_database",
+    "description": null,
+    "parent": "cmdb_ci_db_instance",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_kubernetes_component",
+    "description": null,
+    "parent": "cmdb_ci_kubernetes_cluster",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_kubernetes_component",
+    "description": null,
+    "parent": "cmdb_ci_kubernetes_namespace",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_logical_datacenter",
+    "description": null,
+    "parent": "cmdb_ci_kubernetes_cluster",
+    "type": "Hosted on::Hosts",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_computer",
+    "description": null,
+    "parent": "cmdb_ci_kubernetes_node",
+    "type": "Hosted on::Hosts",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_kubernetes_node",
+    "description": null,
+    "parent": "cmdb_ci_kubernetes_pod",
+    "type": "Runs on::Runs",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_oslv_container",
+    "description": null,
+    "parent": "cmdb_ci_kubernetes_pod",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_computer",
+    "description": null,
+    "parent": "cmdb_ci_oslv_container",
+    "type": "Runs on::Runs",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_cloud_service_account",
+    "description": "Bölge, bulut hesabında/aboneliğinde",
+    "parent": "cmdb_ci_logical_datacenter",
+    "type": "Hosted on::Hosts",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_business_app",
+    "description": null,
+    "parent": "cmdb_ci_business_capability",
+    "type": "Provided by::Provides",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_business_capability",
+    "description": "Yetenek hiyerarşisi",
+    "parent": "cmdb_ci_business_capability",
+    "type": "Contains::Contained by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_business_app",
+    "description": null,
+    "parent": "cmdb_ci_business_process",
+    "type": "Uses::Used by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_service_auto",
+    "description": "İş uygulaması → uygulama servisi (CSDM)",
+    "parent": "cmdb_ci_business_app",
+    "type": "Consumes::Consumed by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_information_object",
+    "description": null,
+    "parent": "cmdb_ci_business_app",
+    "type": "Uses::Used by",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_business_app",
+    "description": null,
+    "parent": "cmdb_ci_business_app",
+    "type": "Sends data to::Receives data from",
+    "verify": true
+   },
+   {
+    "child": "cmdb_ci_query_based_service",
+    "description": "Teknik servis sunumu → dinamik CI grubu",
+    "parent": "service_offering",
+    "type": "Contains::Contained by",
+    "verify": true
+   }
+  ]
+ },
+ "relationship_types": [
+  {
+   "label_tr": "Bağımlı::Kullanılır",
+   "name": "Depends on::Used by",
+   "verify": false
+  },
+  {
+   "label_tr": "Üzerinde çalışır::Çalıştırır",
+   "name": "Runs on::Runs",
+   "verify": false
+  },
+  {
+   "label_tr": "Barındırılır::Barındırır",
+   "name": "Hosted on::Hosts",
+   "verify": false
+  },
+  {
+   "label_tr": "Sanallaştırılır::Sanallaştırır",
+   "name": "Virtualized by::Virtualizes",
+   "verify": false
+  },
+  {
+   "label_tr": "İçerir::İçinde",
+   "name": "Contains::Contained by",
+   "verify": false
+  },
+  {
+   "label_tr": "Üyeleri::Üyesi",
+   "name": "Members::Member of",
+   "verify": false
+  },
+  {
+   "label_tr": "Kümesi::Küme",
+   "name": "Cluster of::Cluster",
+   "verify": false
+  },
+  {
+   "label_tr": "Bağlanır::Bağlanılır",
+   "name": "Connects to::Connected by",
+   "verify": false
+  },
+  {
+   "label_tr": "IP bağlantısı::IP bağlantısı",
+   "name": "IP Connection::IP Connection",
+   "verify": false
+  },
+  {
+   "label_tr": "Kullanır::Kullanılır",
+   "name": "Uses::Used by",
+   "verify": false
+  },
+  {
+   "label_tr": "Tüketir::Tüketilir",
+   "name": "Consumes::Consumed by",
+   "verify": false
+  },
+  {
+   "label_tr": "Sahibidir::Sahiplenilir",
+   "name": "Owns::Owned by",
+   "verify": false
+  },
+  {
+   "label_tr": "Veri gönderir::Veri alır",
+   "name": "Sends data to::Receives data from",
+   "verify": false
+  },
+  {
+   "label_tr": "Kayıtlı::Kayıtlı barındırır",
+   "name": "Registered on::Has registered",
+   "verify": true
+  },
+  {
+   "label_tr": "Sağlanır::Sağlar",
+   "name": "Provided by::Provides",
+   "verify": true
+  }
+ ],
+ "stats": {
+  "choice_lists": 6,
+  "classes": 82,
+  "core_columns": 39,
+  "fields": 113,
+  "identification_rules": 18,
+  "reference_tables": 7,
+  "relationship_rules": 36,
+  "relationship_types": 15,
+  "to_verify": 130
+ },
+ "version": 1
+}

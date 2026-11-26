@@ -203,6 +203,55 @@ def test_rules_grid_uses_roles_not_products(page, base_url):
     assert page.locator("text=Evren uzantısı").count() >= 1
 
 
+def test_data_model_tree_detail_and_tabs(page, base_url):
+    """U4.4: sınıf ağacı, arama (Türkçe), ayrıntı paneli (kalıtılan alanlar, kimlik kuralı, ilişkiler), sekmeler."""
+    model = json.loads((REPO / "apps/web/content/model.json").read_text(encoding="utf-8"))
+    page.goto(base_url + "/#/veri-modeli")
+    page.wait_for_selector("#modelStats")
+    assert page.locator("#view tbody tr").count() == model["stats"]["classes"]
+    assert page.locator("#nav a[data-route='veri-modeli']").get_attribute("aria-current") == "page"
+    # Türkçe arama: büyük İ ile yazılsa da bulur; bağlam için üst sınıflar da görünür
+    page.fill("#modelSearch", "KUBERNETES POD")
+    page.wait_for_function("document.querySelector('#modelCount').textContent.startsWith('1 sınıf')")
+    names = page.locator("#view tbody tr .cell-sub.mono").all_text_contents()
+    assert names[0] == "cmdb_ci" and names[-1] == "cmdb_ci_kubernetes_pod"
+    page.fill("#modelSearch", "İş uygulaması")
+    page.wait_for_function("document.querySelector('#modelCount').textContent.includes('eşleşti')")
+    assert "cmdb_ci_business_app" in page.locator("#view tbody").inner_text()
+    page.fill("#modelSearch", "")
+    # Klavyeyle ayrıntı: Enter açar, Esc kapatır
+    row = page.locator("#view tbody tr[data-id='cmdb_ci_linux_server']")
+    row.focus()
+    page.keyboard.press("Enter")
+    page.wait_for_selector("#detail.open")
+    detail = page.locator("#detailContent").inner_text()
+    assert "sn.cmdb_ci_linux_server" in detail and "Kalıtılan alanlar" in detail
+    assert "Donanım sınıfından kalıtılan" in detail or "Donanım" in detail
+    assert "Bu sınıf" in detail and "Üzerinde çalışır" in detail  # uygulama → bilgisayar kuralı (kalıtılan)
+    assert page.evaluate("location.hash") == "#/veri-modeli/cmdb_ci_linux_server"
+    assert page.locator("#modelAddField").count() == 0  # demo modunda değişiklik seti yok
+    page.keyboard.press("Escape")
+    page.wait_for_function("!document.querySelector('#detail').classList.contains('open')")
+    assert page.evaluate("location.hash") == "#/veri-modeli"
+    # Derin bağlantı: bağımlı sınıfın kimlik kuralı ve bağlamı
+    page.goto(base_url + "/#/veri-modeli/cmdb_ci_file_system")
+    page.wait_for_selector("#detail.open")
+    assert "Bağımlı" in page.locator("#detailContent").inner_text()
+    page.keyboard.press("Escape")
+    # Sekmeler: yaşam döngüsü bağımlı değerler ve eski alanlar; ilişki kuralları; doğrulanacaklar
+    page.click("#tab-degerler")
+    values = page.locator("#view").inner_text()
+    assert "Kullanımda" in values and "Operasyonel: Çalışıyor" in values
+    page.click("#tab-iliskiler")
+    assert page.locator("table[aria-label='İzinli ilişki kuralları'] tbody tr").count() == \
+        model["stats"]["relationship_rules"]
+    assert "Zorlama kipi: Uyar" in page.locator("#view").inner_text()
+    page.click("#tab-dogrulama")
+    assert f"{model['stats']['to_verify']} öğe" in page.locator("#view .notice.warn").inner_text()
+    assert page.evaluate("location.hash") == "#/veri-modeli/dogrulama"
+    shot(page, "web_data_model")
+
+
 def test_controls_inconclusive_principle(page, base_url):
     page.goto(base_url + "/#/kontroller")
     page.wait_for_selector("tbody tr")
@@ -222,7 +271,7 @@ def test_big_picture(page, base_url):
     page.wait_for_selector("#compGroups .comp-table")
     assert page.locator("#compTitle").inner_text().startswith("Bileşen durumu · genel %")
     model = page.locator("#comp-data_model")
-    assert "U4" in model.inner_text() and "CSDM" in model.inner_text()
+    assert "F0-07" in model.inner_text() and "CSDM" in model.inner_text()
     total = page.locator("#compGroups tbody tr").count()
     page.check("#compOnlyGaps")
     assert 0 < page.locator("#compGroups tbody tr").count() < total   # %100 olanlar gizlenir
@@ -304,7 +353,7 @@ def test_mobile_layout_has_no_horizontal_overflow(browser, base_url):
     errors: list[str] = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
     for route in ("#/genel-bakis", "#/kuyruk", "#/ci", "#/kaynaklar", "#/kurallar", "#/kontroller", "#/golge-mod",
-                  "#/sema", "#/buyuk-resim", "#/yol-haritasi"):
+                  "#/sema", "#/veri-modeli", "#/veri-modeli/cmdb_ci_linux_server", "#/buyuk-resim", "#/yol-haritasi"):
         pg.goto(base_url + "/" + route)
         pg.wait_for_selector("#view > *")
         pg.wait_for_timeout(150)
