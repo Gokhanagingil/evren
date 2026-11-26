@@ -34,7 +34,7 @@ function toLocalInput(iso) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function control(f, initial, onRefSearch) {
+export function control(f, initial, onRefSearch) {
   const id = `edit-${f.attribute}`;
   const common = { id, name: f.attribute, 'aria-describedby': hintText(f) ? `${id}-hint` : null };
   if (f.choices || f.type === 'boolean') {
@@ -60,7 +60,7 @@ function control(f, initial, onRefSearch) {
 }
 
 /** Denetim değerini API'nin beklediği biçime çevirir; boş → null (elle değeri kaldır). */
-function readValue(f, el) {
+export function readValue(f, el) {
   const v = el.value;
   if (v === NONE) return null;
   if (f.type === 'boolean') return v === 'true';

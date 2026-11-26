@@ -41,7 +41,8 @@ def me(ctx: Ctx = Depends(context)) -> dict[str, Any]:
     return {"id": p.id, "name": p.name, "mode": p.mode, "roles": roles,
             "permissions": ctx.state.authorizer.summary(ctx.perms),
             "can": {"review_match": ctx.grant("match_queue", "review_match").allowed,
-                    "read_ci": ctx.grant("cmdb_ci", "read").allowed}}
+                    "read_ci": ctx.grant("cmdb_ci", "read").allowed,
+                    "create_ci": ctx.grant("cmdb_ci", "create").allowed}}
 
 
 def _source_rows(ctx: Ctx) -> list[dict[str, Any]]:
@@ -285,18 +286,20 @@ def _worker_status(cur: Any) -> dict[str, Any]:
                             WHERE applied_at IS NULL AND status IN ('accepted', 'created_new', 'rejected')),
                           (SELECT count(*) FROM ingest.split_request WHERE status = 'pending'),
                           (SELECT count(*) FROM ingest.manual_edit WHERE status = 'pending'),
+                          (SELECT count(*) FROM ingest.manual_create WHERE status = 'pending'),
                           (SELECT count(*) FROM ingest.match_candidate WHERE apply_error IS NOT NULL)
                           + (SELECT count(*) FROM ingest.split_request WHERE result_note LIKE 'Uygulanamadı:%%')
-                          + (SELECT count(*) FROM ingest.manual_edit WHERE result_note LIKE 'Uygulanamadı:%%')""")
-    decisions, splits, edits, failed = cur.fetchone()
+                          + (SELECT count(*) FROM ingest.manual_edit WHERE result_note LIKE 'Uygulanamadı:%%')
+                          + (SELECT count(*) FROM ingest.manual_create WHERE result_note LIKE 'Uygulanamadı:%%')""")
+    decisions, splits, edits, creates, failed = cur.fetchone()
     cur.execute("""SELECT seen_at, poll_seconds, stopped_at IS NULL AND seen_at > now() - 2 * poll_seconds * interval '1 second'
                      FROM ingest.worker_heartbeat WHERE kind = 'requests' ORDER BY seen_at DESC LIMIT 1""")
     row = cur.fetchone()
     state = "none" if row is None else ("ok" if row[2] else "stale")
     return {"state": state, "last_seen": row[0].isoformat() if row else None,
             "poll_seconds": row[1] if row else None, "failed": failed,
-            "pending": {"decisions": decisions, "splits": splits, "edits": edits,
-                        "total": decisions + splits + edits},
+            "pending": {"decisions": decisions, "splits": splits, "edits": edits, "creates": creates,
+                        "total": decisions + splits + edits + creates},
             "ingest": _ingest_status(cur)}
 
 

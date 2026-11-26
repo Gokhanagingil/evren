@@ -51,6 +51,12 @@ class IdentityKeys:
     #: Sınıfa özgü kimlik öznitelikleri, ``alan=değer`` biçiminde (bulut hesap kimliği, küme kimliği, alt ağ).
     class_keys: frozenset[str] = frozenset()
 
+    def has_strong(self) -> bool:
+        """Ad dışında bir kimlik anahtarı var mı (seri, UUID, FQDN, MAC, IP, dış kimlik, sınıf anahtarı)? Ad tek başına
+        kimlik değildir (kural 7)."""
+        return bool(self.fqdns or self.serials or self.vmware_serials or self.uuids or self.macs or self.ips
+                    or self.external_ids or self.correlation_ids or self.vm_objects or self.class_keys)
+
     def class_key_map(self) -> dict[str, frozenset[str]]:
         """``{"account_id": {"123"}}``: öznitelik başına değerler."""
         out: dict[str, set[str]] = {}

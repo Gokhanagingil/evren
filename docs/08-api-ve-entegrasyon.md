@@ -79,6 +79,14 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - Yanıt `202`: `{"id", "status": "pending", …}`; olay `evren.ci.split.requested.v1`. Uygulandığında `evren.ci.split.v1`.
 - `409 tek_kaynak` (elle giriş kaydı sayılmaz), `409 bekleyen_ayirma`, `422 elle_giris_bagi`, `422 ilk_yukleme_bagi`, `422 kaynak_ci_acamaz`, `422 bag_yok`, `422 hedef_yok`, `422 sinif_uyumsuz`, `403 yetki_yok`.
 
+### Elle CI oluşturma (ADR-0026)
+
+- `GET /api/v1/meta/creatable-classes`: kişinin CI açabileceği sınıflar (`create` izni, kök hariç). `GET /api/v1/me` → `can.create_ci`.
+- `GET /api/v1/meta/classes/{sınıf}/form`: elle yazılabilen alanlar (elle düzenlemeyle aynı politika), `required: ["name"]`, `identity` (tanımlama kuralındaki öznitelikler; keşfin CI'ı sonradan tanıması için).
+- `POST /api/v1/ci` (CSRF başlığı, `idempotency_key`): `{"sys_class_name": "cmdb_ci_linux_server", "attributes": {"name": "…", "serial_number": "…"}, "note": "…", "force_new": false}` → `202 {"id", "status": "pending"}`. `force_new` gerekçe (`note`) ister. Hatalar: `422 ad_zorunlu`, `422 gecersiz_alan`, `422 kok_sinif`, `422 sinif_yok`, `403 yetki_yok`.
+- `GET /api/v1/ci-requests/{id}`: `status` = `pending | created | duplicate | needs_decision | rejected`, `result_ci` (açılan veya var olan CI), `candidates` (belirsiz eşleşmede; ad, sınıf, olasılık), `result_note`.
+- Uzlaştırıcı isteği kimlik çözümlemesinden geçirir: kesin eşleşmede CI açılmaz (zorlanamaz), belirsiz eşleşmede veya kimlik anahtarı olmadan aynı ailede aynı adda karar istenir; açılan CI'ın kimlik anahtarları dizine girer.
+
 ### Değişiklik denetimi (ADR-0025)
 
 - `GET /api/v1/ci/{sys_id}` yanıtındaki `change_control`:

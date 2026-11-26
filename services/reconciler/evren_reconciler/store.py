@@ -1053,6 +1053,111 @@ class ReconcilerStore:
              WHERE e.status = 'pending' ORDER BY e.requested_at, e.sys_id
              LIMIT 1 FOR UPDATE OF e SKIP LOCKED""", handle, fail, limit)
 
+    # ------------------------------------------------------------------ elle CI oluşturma (ADR-0026)
+    def apply_manual_creates(self, limit: int = 100) -> list[ApplyResult]:
+        """API'nin kaydettiği elle CI oluşturma isteklerini kimlik çözümlemesinden geçirip uygular (ADR-0026).
+
+        * Eşleşme yok veya kimlik anahtarı yok: CI açılır; CI başına tek ``Manual`` kaynak kaydı (``source_key`` = CI
+          sys_id) kimlik anahtarlarıyla dizine girer (keşif aynı CI'ı sonradan tanır) ve uzlaşır (neden ``manual``).
+        * Kesin eşleşme (tanımlama kuralı): açılmaz, ``duplicate``; var olan CI sonuçta. Zorlama yok (kural 7).
+        * Belirsiz eşleşme (skor, inceleme) veya kimlik anahtarı olmadan aynı ailede aynı ad: açılmaz,
+          ``needs_decision``; adaylar sonuçta. Gerekçeli ``force_new`` ile yeniden istenirse açılır.
+        Bağın, değişimin ve CI'ı açanın sahibi isteği yapan kişidir."""
+        def handle(req: dict[str, Any]) -> ApplyResult:
+            cls = req["sys_class_name"]
+            with self.conn.cursor() as cur:
+                if cls not in self.hierarchy or cls == "cmdb_ci" or not self.registry.may_create_ci("Manual"):
+                    note = "Bu sınıfta elle CI açılamaz (kök sınıf, tanımsız sınıf veya elle giriş kaynağı CI açamıyor)"
+                    self._finish_create(cur, req, "rejected", None, {}, note)
+                    return ApplyResult("create_rejected", None, [], note)
+                probe = IngestRecord(data_source="Manual", run_id=uuid4(), source_key=req["sys_id"], class_hint=cls,
+                                     attributes=req["attributes"], observed_at=self.clock())
+                index = PostgresCandidateIndex(cur)
+                resolver = IdentityResolver(self.rules, index, PostgresLinkStore(cur))
+                sr = source_record_from_ingest(probe)
+                keys = extract_keys(sr)
+                res = resolver.resolve(sr, keys)
+                if res.outcome in (Outcome.RULE_MATCH, Outcome.LINKED) and res.ci_sys_id:
+                    name = self._ci_name(cur, res.ci_sys_id)
+                    note = (f"Bu kimlik zaten '{name}' CI'ında var ({res.summary_tr}"
+                            f"{': ' + res.rule if res.rule else ''}); yeni CI açılmadı. Var olan CI'ı düzenleyin.")
+                    self._finish_create(cur, req, "duplicate", res.ci_sys_id,
+                                        {"outcome": res.outcome.value, "rule": res.rule,
+                                         "reasons": list(res.reasons)}, note)
+                    return ApplyResult("create_duplicate", res.ci_sys_id, [], note)
+                candidates = self._create_candidates(cur, res, cls, str(req["attributes"].get("name") or ""))
+                if candidates and not req["force_new"]:
+                    note = ("Benzer CI'lar var; yeni CI açılmadı. Adayları inceleyin; yine de açmak için gerekçe yazıp "
+                            "'yeni CI aç' deyin.")
+                    self._finish_create(cur, req, "needs_decision", None,
+                                        {"outcome": res.outcome.value, "candidates": candidates,
+                                         "reasons": list(res.reasons)}, note)
+                    return ApplyResult("create_needs_decision", None, [], note)
+                actor = self.actor
+                self.actor = req["requested_by"]  # CI'ı açan, bağın ve değişimin sahibi insan
+                try:
+                    ci = self._create_ci(cur, probe)
+                    record = probe.model_copy(update={"source_key": ci})
+                    self._upsert_source_record(cur, record, content_hash(record))
+                    self._attach(cur, index, resolver, record, keys, ci, method="manual",
+                                 rule="elle oluşturma" + (" (gerekçeli)" if req["force_new"] else ""), resolution=res)
+                    changes = self._reconcile(cur, ci, record.run_id, reason="manual")
+                finally:
+                    self.actor = actor
+                warn = "" if keys.has_strong() else (" Kimlik anahtarı (seri, FQDN, IP, MAC) yok: keşif bu CI'ı "
+                                                     "tanıyamayabilir; bilinen bir anahtar eklemeniz önerilir.")
+                note = f"CI açıldı ({len(changes)} öznitelik).{warn}"
+                self._finish_create(cur, req, "created", ci,
+                                    {"outcome": res.outcome.value, "forced": bool(req["force_new"] and candidates),
+                                     "candidates": candidates, "identity_keys": keys.has_strong()}, note)
+                return ApplyResult("created", ci, changes, note)
+
+        def fail(cur: psycopg.Cursor[Any], req: dict[str, Any], note: str) -> None:
+            self._finish_create(cur, req, "rejected", None, {}, note)
+
+        return self._drain("create", """
+            SELECT sys_id, sys_class_name, attributes, force_new, requested_by FROM ingest.manual_create
+             WHERE status = 'pending' ORDER BY requested_at, sys_id
+             LIMIT 1 FOR UPDATE SKIP LOCKED""", handle, fail, limit)
+
+    @staticmethod
+    def _finish_create(cur: psycopg.Cursor[Any], req: dict[str, Any], status: str, ci: str | None,
+                       result: dict[str, Any], note: str) -> None:
+        cur.execute("""UPDATE ingest.manual_create SET status = %s, result_ci = %s, result = %s, result_note = %s,
+                              applied_at = now() WHERE sys_id = %s""", (status, ci, Jsonb(result), note, req["sys_id"]))
+
+    @staticmethod
+    def _ci_name(cur: psycopg.Cursor[Any], ci: str) -> str:
+        cur.execute("SELECT name FROM cmdb.cmdb_ci WHERE sys_id = %s", (ci,))
+        row = cur.fetchone()
+        return (row[0] if row else None) or ci
+
+    def _create_candidates(self, cur: psycopg.Cursor[Any], res: Resolution, cls: str,
+                           name: str) -> list[dict[str, Any]]:
+        """Belirsiz eşleşmenin adayları; kimlik anahtarı yoksa aynı sınıf ailesinde aynı adı taşıyan CI'lar (ad tek
+        başına kimlik değildir; yalnızca insana gösterilir)."""
+        found: dict[str, float | None] = {}
+        if res.outcome in (Outcome.SCORE_MATCH, Outcome.REVIEW):
+            if res.ci_sys_id:
+                found[res.ci_sys_id] = res.probability
+            for ci, prob in res.candidates:
+                found.setdefault(ci, prob)
+        if name.strip():
+            cur.execute("""SELECT sys_id, sys_class_name FROM cmdb.cmdb_ci
+                            WHERE lower(name) = lower(%s) ORDER BY sys_id LIMIT 20""", (name.strip(),))
+            for ci, other in cur.fetchall():
+                if other in self.hierarchy and self.hierarchy.compatible(cls, other):
+                    found.setdefault(ci, None)
+        if not found:
+            return []
+        cur.execute("SELECT sys_id, name, sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = ANY(%s::bpchar[])",
+                    (list(found),))
+        rows = {r[0]: r for r in cur.fetchall()}
+        out = [{"sys_id": ci, "name": rows[ci][1], "class": rows[ci][2],
+                "probability": round(float(prob), 3) if prob is not None else None}
+               for ci, prob in found.items() if ci in rows]
+        return sorted(out, key=lambda c: (-(c["probability"] or 0), c["name"] or ""))[:10]
+
     # ------------------------------------------------------------------ birleştirmeyi ayırma (split)
     def apply_splits(self, limit: int = 100) -> list[ApplyResult]:
         """API'nin kaydettiği ayırma isteklerini uygular (CLAUDE.md kural 3: birleştirme geri alınabilir).
@@ -1151,9 +1256,9 @@ class ReconcilerStore:
         return set(row[0]) if row and row[0] else set()
 
     def apply_requests(self, limit: int = 100) -> dict[str, list[ApplyResult]]:
-        """Tüm insan isteklerini bir tur uygular: elle düzenleme, kuyruk kararı, ayırma (bu sırayla)."""
-        return {"manual": self.apply_manual_edits(limit), "decision": self.apply_decisions(limit),
-                "split": self.apply_splits(limit)}
+        """Tüm insan isteklerini bir tur uygular: elle oluşturma, elle düzenleme, kuyruk kararı, ayırma (bu sırayla)."""
+        return {"create": self.apply_manual_creates(limit), "manual": self.apply_manual_edits(limit),
+                "decision": self.apply_decisions(limit), "split": self.apply_splits(limit)}
 
     def _split_blocker(self, cur: psycopg.Cursor[Any], req: dict[str, Any]) -> str | None:
         cur.execute("SELECT active, ci_sys_id, method FROM ingest.identity_link WHERE sys_id = %s FOR UPDATE",

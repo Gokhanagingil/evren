@@ -178,6 +178,27 @@ export async function editCi(ciId, attributes, note) {
   });
 }
 
+/** Elle CI oluşturma (U6.1, ADR-0026; yalnızca API modu): istek uzlaştırıcıda kimlik çözümlemesinden geçer. */
+export async function creatableClasses() {
+  return api('/api/v1/meta/creatable-classes');
+}
+
+export async function createForm(cls) {
+  return api(`/api/v1/meta/classes/${encodeURIComponent(cls)}/form`);
+}
+
+export async function createCi({ cls, attributes, note, force = false }) {
+  return api('/api/v1/ci', {
+    method: 'POST',
+    body: JSON.stringify({ sys_class_name: cls, attributes, note: note || null, force_new: force,
+      idempotency_key: `ui-${crypto.randomUUID()}` }),
+  });
+}
+
+export async function createStatus(id) {
+  return api(`/api/v1/ci-requests/${encodeURIComponent(id)}`);
+}
+
 /** Referans verisi araması (grup, kişi, konum…). */
 export async function refSearch(table, q = '', limit = 200) {
   const p = new URLSearchParams({ limit: String(limit) });

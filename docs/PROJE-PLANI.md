@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 15/54 adım tamamlandı
+**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 15/55 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -21,7 +21,7 @@
 - [x] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Tamamlandı_ (ilgili: F1-08)
 - [x] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Tamamlandı_ (ilgili: F0-17, F0-07, F1-11)
 - [x] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Tamamlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
-- [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_ (ilgili: F1-17)
+- [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Devam ediyor_ (ilgili: F1-21, F1-17)
 - [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-20)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
@@ -125,7 +125,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 3/20 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 3/21 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -163,6 +163,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-18** Uyum denetimi (beklenen–gerçek): metadata ile tanımlı kurallar, ör. üretim sunucusunun destek grubu, izlemesi ve korunması — _Planlandı_
 - [ ] **F1-19** Zaman içinde sorgu: CI'ın geçmiş bir andaki hâli ve değişiklik zaman çizelgesi — _Planlandı_
 - [ ] **F1-20** Ölçek ve yük testi: 40.000 sunucu + 100.000 ağ cihazı hacmiyle alım, uzlaştırma ve arama — _Planlandı_
+- [ ] **F1-21** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — kimlik çözümlemesi ve uzlaştırmadan geçer — _Devam ediyor_
+  - Not: 26.11.2026 (ADR-0026, U6.1, göç 0022): arayüzden CI oluşturma tamam — istek ingest.manual_create'e, uzlaştırıcı kimlik çözümlemesinden geçirir (kesin eşleşme açılmaz, belirsiz eşleşme veya aynı ad gerekçeli karar ister), açılan CI'ın kimlik anahtarları dizine girer, keşif sonradan bağlanır. Sırada: U6.2 elle ilişki, U6.3 CSV.
 
 **Çıkış kriterleri**
 

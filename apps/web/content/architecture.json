@@ -283,6 +283,29 @@
         "Saklama süresi (EVREN_ARCHIVE_RETENTION_DAYS)"
       ]
     },
+    "manual_input": {
+      "label": "Elle girdi",
+      "sub": [
+        "CI, ilişki, CSV →",
+        "Manual kaynağı"
+      ],
+      "kind": "human",
+      "kind_label": "İnsan kararı / arayüz",
+      "chapter": "sources",
+      "phase": "F1",
+      "text": "İnsanın girdiği CI, ilişki ve CSV satırları istek olarak kaydedilir; uzlaştırıcı onları Manual kaynak kaydı olarak keşifle aynı akıl katmanından geçirir. CI oluşturma kimlik çözümlemesinden geçer — aynı kimlikte CI varsa açılmaz, benzer CI varsa gerekçeli karar istenir — ve açılan CI'ın kimlik anahtarları dizine girer, böylece keşif onu sonradan tanır (ADR-0026). Elle düzenleme ve ayırma da aynı yoldadır (ADR-0011, ADR-0012).",
+      "tech": [
+        "ingest.manual_create",
+        "ingest.manual_edit",
+        "ingest.split_request",
+        "Evren arayüzü · Yeni CI, Düzenle, Ayır"
+      ],
+      "security": [
+        "Golden record'a API değil uzlaştırıcı yazar",
+        "create/write izni, alan hassasiyeti",
+        "Zorlama gerekçeli ve denetim izinde"
+      ]
+    },
     "change_filter": {
       "label": "Değişim süzgeci",
       "sub": [

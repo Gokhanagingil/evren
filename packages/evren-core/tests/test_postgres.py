@@ -243,6 +243,14 @@ def test_segregation_of_duties_enforced():
         ("evren_app_api", "UPDATE ref.sn_change_request SET state = 'closed' WHERE false"),
         ("evren_auditor_ro", "UPDATE insight.config_change SET verdict = 'authorized' WHERE false"),
         ("evren_app_connector", "SELECT count(*) FROM ref.sn_change_request"),
+        # 0022 (ADR-0026): elle oluşturma isteğini API yalnızca istek sütunlarıyla yazar; sonucu uzlaştırıcı yazar
+        ("evren_app_api", "UPDATE ingest.manual_create SET status = 'created' WHERE false"),
+        ("evren_app_api", "INSERT INTO ingest.manual_create (sys_class_name, attributes, requested_by, status) "
+                          "VALUES ('cmdb_ci_server', '{\"name\": \"x\"}', 'x', 'created')"),
+        ("evren_app_reconciler", "UPDATE ingest.manual_create SET requested_by = 'x' WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM ingest.manual_create WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM ingest.manual_create"),
+        ("evren_app_connector", "SELECT count(*) FROM ingest.manual_create"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
         ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),

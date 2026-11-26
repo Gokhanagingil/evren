@@ -497,3 +497,98 @@ def test_unauthorized_change_review_with_keyboard(page, base_url):
         with psycopg.connect(autocommit=True) as conn:
             conn.execute("DELETE FROM insight.config_change WHERE anomaly_sys_id = %s", (anomaly,))
             conn.execute("DELETE FROM insight.anomaly WHERE sys_id = %s", (anomaly,))
+
+
+def test_create_ci_with_identity_check_using_keyboard(page, base_url):
+    """U6.1 (ADR-0026): "Yeni CI" penceresi; uzlaştırıcı kimlik çözümlemesinden geçirir. Yeni CI açılır ve panelde
+    görünür; aynı seriyle ikinci istek açılmaz (var olan CI gösterilir); aynı adlı sanal makine için gerekçeli karar."""
+    import uuid as _uuid
+
+    from scenarios import apply_pending_creates
+
+    tag = _uuid.uuid4().hex[:8]
+    stop = threading.Event()
+
+    def worker():  # üretimde sürekli çalışan uzlaştırıcı
+        while not stop.is_set():
+            apply_pending_creates()
+            stop.wait(0.3)
+
+    t = threading.Thread(target=worker, daemon=True)
+    t.start()
+    try:
+        page.goto(base_url + "/#/ci")
+        page.wait_for_selector("#ciCount")
+        page.locator("#ciCreate").focus()
+        page.keyboard.press("Enter")
+        expect(page.locator("#createClass")).to_be_focused()
+        expect(page.locator("#createClass")).to_have_value("cmdb_ci_linux_server")
+        page.wait_for_selector("#edit-name")
+        page.fill("#edit-name", f"web-elle-{tag}")
+        page.fill("#edit-serial_number", f"WEBELLE{tag.upper()}")
+        shot(page, "web_api_create_dialog")
+        page.locator("#edit-name").press("Enter")  # örtük form gönderimi
+        expect(page.locator("#toast")).to_contain_text(f"CI açıldı: web-elle-{tag}")
+        expect(page.locator("#detailTitle")).to_have_text(f"web-elle-{tag}")
+        expect(page.locator("#ciLinks")).to_contain_text("Manual")
+        created = page.evaluate("location.hash").split("/")[-1]
+
+        # aynı seri: yeni CI açılmaz, var olan gösterilir
+        page.keyboard.press("Escape")
+        page.locator("#ciCreate").click()
+        page.wait_for_selector("#edit-name")
+        page.fill("#edit-name", f"baska-{tag}")
+        page.fill("#edit-serial_number", f"WEBELLE{tag.upper()}")
+        page.click("#createSave")
+        result = page.locator("#createResult")
+        expect(result).to_contain_text("Bu CI zaten var.")
+        expect(result).to_contain_text(f"web-elle-{tag}")
+        result.locator("a").click()
+        expect(page.locator(".dialog")).to_have_count(0)
+        expect(page.locator("#detailTitle")).to_have_text(f"web-elle-{tag}")
+        assert page.evaluate("location.hash").endswith(created)
+
+        # sanal makine (ad kuralı yok): aynı ad karar ister; gerekçesiz zorlanamaz, gerekçeyle açılır
+        for attempt in range(2):
+            page.keyboard.press("Escape")
+            page.locator("#ciCreate").click()
+            page.select_option("#createClass", "cmdb_ci_vm_instance")
+            page.wait_for_selector("#edit-name")
+            page.fill("#edit-name", f"vm-web-{tag}")
+            page.click("#createSave")
+            if attempt == 0:
+                expect(page.locator("#toast")).to_contain_text(f"CI açıldı: vm-web-{tag}")
+        expect(page.locator("#createResult")).to_contain_text("Karar gerekiyor. Benzer CI'lar var")
+        expect(page.locator("#createCandidates")).to_contain_text(f"vm-web-{tag}")
+        expect(page.locator("#createReason")).to_be_focused()
+        page.keyboard.press("Enter")
+        expect(page.locator("#createReason")).to_have_attribute("aria-invalid", "true")
+        page.fill("#createReason", "Aynı adlı ikinci sanal makine (farklı küme)")
+        expect(page.locator("#createReason")).not_to_have_attribute("aria-invalid", "true")
+        shot(page, "web_api_create_decision")
+        page.keyboard.press("Enter")
+        expect(page.locator("#toast")).to_contain_text(f"CI açıldı: vm-web-{tag}")
+        import psycopg
+
+        with psycopg.connect(autocommit=True) as conn:
+            rows = conn.execute("""SELECT status, force_new, note FROM ingest.manual_create
+                                    WHERE attributes->>'name' = %s ORDER BY requested_at""",
+                                (f"vm-web-{tag}",)).fetchall()
+        assert rows == [("created", False, None), ("needs_decision", False, None),
+                        ("created", True, "Aynı adlı ikinci sanal makine (farklı küme)")]
+    finally:
+        stop.set()
+        t.join(timeout=5)
+
+
+def test_create_dialog_mobile_has_no_horizontal_overflow(browser, base_url):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    pg = context.new_page()
+    pg.goto(base_url + "/#/ci")
+    pg.wait_for_selector("#ciCount")
+    pg.locator("#ciCreate").click()
+    pg.wait_for_selector("#edit-name")
+    pg.wait_for_timeout(150)
+    assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+    assert pg.evaluate("document.querySelector('.dialog').scrollWidth - document.querySelector('.dialog').clientWidth") <= 1
+    context.close()

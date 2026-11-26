@@ -125,6 +125,14 @@
 <text x="1064.0" y="563.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Şifreli parçalar, saklama</text>
 <text x="1064.0" y="579.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">süresi, yeniden işleme</text>
 </g>
+<g class="node" id="n-manual_input" data-node="manual_input" data-chapter="sources" tabindex="0" role="button" aria-label="Elle girdi: CI, ilişki, CSV → Manual kaynağı">
+<rect x="50.0" y="519.0" width="180.0" height="79.0" rx="10" fill="#fff6e6" stroke="#b07a1f" stroke-width="1.6"/>
+<rect x="190.0" y="528.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
+<text x="205.0" y="541.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="64.0" y="545.0" fill="#5c3f0c" font-size="15" font-weight="700" text-anchor="start">Elle girdi</text>
+<text x="64.0" y="563.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">CI, ilişki, CSV →</text>
+<text x="64.0" y="579.0" fill="#7a5a24" font-size="12" font-weight="400" text-anchor="start">Manual kaynağı</text>
+</g>
 </g>
 <g id="ch-sense" data-chapter="sense">
 <rect x="26" y="640.0" width="1228" height="352.0" rx="14" fill="#ffffff" stroke="#c6d4dd"/>

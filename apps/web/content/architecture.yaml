@@ -27,6 +27,7 @@ chapters:
       - {id: ingest_gateway, kind: security, col: 1, row: 2, span: 2, label: Alım geçidi, sub: ["mTLS · şema doğrulama ·", "kaynak başına yetki"]}
       - {id: kafka, kind: store, col: 3, row: 2, span: 2, label: Olay omurgası (Kafka), sub: ["ingest.record · ingest.run", "yeniden oynatılabilir"]}
       - {id: raw_archive, kind: store, col: 5, row: 2, label: Ham yük arşivi, sub: ["Şifreli parçalar, saklama", "süresi, yeniden işleme"]}
+      - {id: manual_input, kind: human, col: 0, row: 2, label: Elle girdi, sub: ["CI, ilişki, CSV →", "Manual kaynağı"]}
     edges:
       - {from: src_vcenter, to: connectors}
       - {from: src_bmc, to: connectors}
@@ -195,6 +196,11 @@ details:
     text: Kaynaklar ile işleyiciler birbirinden bağımsızlaşır. Kayıtlar yeniden oynatılabilir; bir kural değişikliğinden sonra geçmiş yeniden işlenebilir.
     tech: [Apache Kafka (KRaft), Konu başına ACL, "deploy/kafka/topics.txt (otomatik konu açma kapalı)"]
     security: [SASL/mTLS, Konu bazlı yetki]
+  manual_input:
+    phase: F1
+    text: İnsanın girdiği CI, ilişki ve CSV satırları istek olarak kaydedilir; uzlaştırıcı onları Manual kaynak kaydı olarak keşifle aynı akıl katmanından geçirir. CI oluşturma kimlik çözümlemesinden geçer — aynı kimlikte CI varsa açılmaz, benzer CI varsa gerekçeli karar istenir — ve açılan CI'ın kimlik anahtarları dizine girer, böylece keşif onu sonradan tanır (ADR-0026). Elle düzenleme ve ayırma da aynı yoldadır (ADR-0011, ADR-0012).
+    tech: [ingest.manual_create, ingest.manual_edit, ingest.split_request, "Evren arayüzü · Yeni CI, Düzenle, Ayır"]
+    security: [Golden record'a API değil uzlaştırıcı yazar, "create/write izni, alan hassasiyeti", Zorlama gerekçeli ve denetim izinde]
   raw_archive:
     phase: F1
     text: Bağlayıcının çektiği ham nesneler çalıştırıcı tarafında şifreli parça dosyalarına yazılır; kayıtlar raw_ref ile arşive bağlanır. Eşleme düzeltilince kaynağa gitmeden arşivden yeniden işlenir (yeni çalışma, geçit ve uzlaştırıcıdan geçer). Saklama süresi dolanlar günde bir kez silinir.

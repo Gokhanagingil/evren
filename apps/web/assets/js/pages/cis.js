@@ -4,6 +4,7 @@ import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/d
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
 import { OUTCOME, ROLE_TR, backend, ciDetail, ciFacets, ciHistory, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
 import { openEditDialog } from './ci-edit.js';
+import { openCreateDialog } from './ci-create.js';
 
 // KISITLI güvenlik duruşu (ADR-0023): API yalnızca Güvenlik okuyucu/Denetçi rolüne döndürür; her gösterim denetim izinde.
 const POSTURE_TONE = { None: 'good', Informational: 'good', Low: 'good', Medium: 'warn', High: 'bad' };
@@ -91,7 +92,7 @@ const EDIT_RESULT = { applied: 'uygulandı', cleared: 'elle değer kaldırıldı
 const shown = (a) => (a.type === 'glide_date_time' ? formatDateTime(a.value) : a.display);
 
 export async function renderCis(view, param) {
-  const { mode } = await backend();
+  const { mode, me } = await backend();
   const facets = await ciFacets();
   const roleOf = Object.fromEntries(facets.sources.map((x) => [x.name, x.role]));
   const state = { q: '', cls: '', src: '', scope: '' };
@@ -101,10 +102,14 @@ export async function renderCis(view, param) {
   let selected = null;
   let seq = 0;
 
+  // Elle CI oluşturma (U6.1): yalnızca API modunda ve CI oluşturma izni olana
+  const canCreate = mode === 'api' && me?.can?.create_ci;
   setHeader({
     title: 'Konfigürasyon Öğeleri',
     sub: 'Golden record. Her öznitelik, rolüne göre yetkili kaynaktan gelir; ezilen değerler ve kural gerekçesi CI panelinde görünür.',
     crumbs: [['Konfigürasyon Öğeleri']],
+    actions: canCreate ? [h('button', { class: 'btn', type: 'button', id: 'ciCreate',
+      onclick: () => openCreateDialog(async (ciId) => { await load(); await open(ciId); }) }, 'Yeni CI…')] : [],
   });
 
   const search = h('input', { type: 'search', class: 'searchbar', id: 'ciSearch', placeholder: 'Ad, FQDN, IP, işletim sistemi', 'aria-label': 'CI ara' });
