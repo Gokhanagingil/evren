@@ -36,7 +36,8 @@ Bağlayıcı CMDB'ye yazmaz; eşleme dosyasıyla ürettiği `IngestRecord`'ları
 1. **Kimlik verilir:** `python tools/connector_credential.py issue --name zabbix-dc1 --data-source Zabbix --by <kişi>`. Belirteç yalnızca bir kez gösterilir ve kurum sır kasasına konur. Belirteç tek bir veri kaynağına bağlıdır: Zabbix belirteci vCenter adına yazamaz (403, denetim izinde). Emekli kaynağa kimlik verilmez, emekli kaynak gönderim yapamaz.
 2. **Her toplama bir çalışmadır:** açılır (`snapshot` = tam liste, `delta` = yalnızca değişenler), en fazla 500 kayıtlık toplu gönderimlerle doldurulur, bildirilen farklı nesne sayısıyla kapanır. Uzlaştırıcı tüm kayıtları işleyince çalışma kapanır. Kayıtlar eksik kalırsa çalışma eksik kapanır ve devre kesici eskime ile silmeyi durdurur.
 3. **Hata durumunda:** Kafka'ya ulaşılamazsa (503) aynı toplu gönderim yeniden denenir; tekrar zararsızdır. Hız sınırında (429) `Retry-After` kadar beklenir. Reddedilen toplu gönderimde (400) hata ayrıntısı hangi kaydın hangi alanının neden reddedildiğini söyler.
-4. **Kimlik yönetimi:** `list` kimlikleri, son kullanım zamanını ve durumu (etkin, süresi doldu, iptal) gösterir. `revoke` kimliği hemen geçersiz kılar. Arayüzden yönetim U5'te gelecek.
+4. **İlişkiler tam listeyle gelir:** tam (`snapshot`) çalışmada bir kayıt ilişkilerini her seferinde eksiksiz listelemelidir. Kayıt geldiği hâlde bir ilişkiyi artık listelemiyorsa, devre kesici sağlıklıysa o ilişki kaynağın bildiriminden düşer; başka bildireni yoksa kalkar (ADR-0031). Delta çalışmasında eksik liste ilişki kaldırmaz.
+5. **Kimlik yönetimi:** `list` kimlikleri, son kullanım zamanını ve durumu (etkin, süresi doldu, iptal) gösterir. `revoke` kimliği hemen geçersiz kılar. Arayüzden yönetim U5'te gelecek.
 
 ## Bağlayıcı çalıştırıcı (U5, ADR-0020)
 

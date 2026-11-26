@@ -357,6 +357,23 @@ export async function ciHistory(id) {
   return (await api(`/api/v1/ci/${encodeURIComponent(id)}/history?limit=50`)).items;
 }
 
+/** Değişiklik zaman çizelgesi (U7.4, F1-19): anlar yeniden eskiye; ``before`` sonraki sayfanın imleci. */
+export function ciTimeline(id, before = null, limit = 60) {
+  const p = new URLSearchParams({ limit: String(limit) });
+  if (before) p.set('before', before);
+  return api(`/api/v1/ci/${encodeURIComponent(id)}/timeline?${p}`);
+}
+
+/** CI'ın geçmiş bir andaki hâli (ISO 8601 an, saat dilimiyle). */
+export const ciAsOf = (id, at) => api(`/api/v1/ci/${encodeURIComponent(id)}/as-of?${new URLSearchParams({ at })}`);
+
+/** İlişki haritası (ADR-0031): derinlik 1–3, isteğe bağlı geçmiş an. */
+export function ciGraph(id, { depth = 2, at = null } = {}) {
+  const p = new URLSearchParams({ depth: String(depth) });
+  if (at) p.set('at', at);
+  return api(`/api/v1/ci/${encodeURIComponent(id)}/graph?${p}`);
+}
+
 export async function ciFacets() {
   if (!(await isApi())) {
     const d = await demo();

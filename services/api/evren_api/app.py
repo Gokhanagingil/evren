@@ -25,7 +25,24 @@ from .editing import EditPolicy
 from .entra import Entra
 from .errors import install_handlers
 from .present import Presenter
-from .routers import attestation, auth, ci, connectors, impact, insight, manual, platform, queue, refs, reports, schema, search, staleness
+from .routers import (
+    attestation,
+    auth,
+    ci,
+    connectors,
+    graph,
+    impact,
+    insight,
+    manual,
+    platform,
+    queue,
+    refs,
+    reports,
+    schema,
+    search,
+    staleness,
+    timeline,
+)
 from .rules_view import build_rules_view
 from .security import SessionCodec
 
@@ -161,7 +178,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
 
     for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, search.router,
               connectors.router, insight.router, manual.router, attestation.router, staleness.router, impact.router,
-              auth.router):
+              timeline.router, graph.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

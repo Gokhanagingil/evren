@@ -512,9 +512,10 @@
       "kind_label": "Veri deposu",
       "chapter": "store",
       "phase": "F0",
-      "text": "CI ilişkileri ServiceNow'daki cmdb_rel_ci ve cmdb_rel_type yapısıyla aynıdır. Etki analizi ve bağımlılık haritası buradan beslenir. Hangi sınıfın hangi tiple hangi sınıfa bağlanabileceği izinli ilişki kurallarıyla denetlenir; kurallar alt sınıflara kalıtılır, ters yön ayrıca tanınır (ADR-0019).",
+      "text": "CI ilişkileri ServiceNow'daki cmdb_rel_ci ve cmdb_rel_type yapısıyla aynıdır. Etki analizi ve ilişki haritası buradan beslenir. Hangi sınıfın hangi tiple hangi sınıfa bağlanabileceği izinli ilişki kurallarıyla denetlenir; kurallar alt sınıflara kalıtılır, ters yön ayrıca tanınır (ADR-0019). Her ilişkiyi bildiren kaynak kaydı ayrıca tutulur; tam ve sağlıklı bir çalışmada kaynak kaydı geldiği hâlde listelenmeyen ilişkinin bildirimi düşer, bildireni kalmayan ilişki kalkar (elle giriş de bir bildirimdir). Açılma ve kalkma iki ucun değişim geçmişine yazılır (ADR-0031).",
       "tech": [
         "cmdb.cmdb_rel_ci",
+        "cmdb.cmdb_rel_ci_source",
         "cmdb.cmdb_rel_type",
         "meta.cmdb_rel_rule",
         "metadata/relationship_rules.yaml"
@@ -544,15 +545,17 @@
       "label": "Kaynak bilgisi",
       "sub": [
         "Öznitelik → kaynak,",
-        "zaman, gerekçe"
+        "geçmiş bir an"
       ],
       "kind": "store",
       "kind_label": "Veri deposu",
       "chapter": "store",
       "phase": "F1",
-      "text": "Arayüzdeki \"bu değer nereden geldi?\" sorusunun cevabı burada. Kazanan kaynak, gözlem zamanı, uygulanan kural ve ezilen değerler saklanır.",
+      "text": "Arayüzdeki \"bu değer nereden geldi?\" sorusunun cevabı burada. Kazanan kaynak, gözlem zamanı, uygulanan kural ve ezilen değerler saklanır. CI'ın geçmiş bir andaki hâli (öznitelikler ve ilişkiler) ikinci bir kopya tutulmadan değişim geçmişi bugünden geri sarılarak çıkarılır; zaman çizelgesi aynı çalışmanın değişikliklerini tek an olarak gösterir (ADR-0031).",
       "tech": [
-        "cmdb.ci_reconciliation_state"
+        "cmdb.ci_reconciliation_state",
+        "audit.ci_change",
+        "evren_core/timeline.py"
       ],
       "security": []
     },

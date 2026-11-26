@@ -117,6 +117,22 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/ci/{sys_id}/impact?depth=6` (1–10): `upstream` (bu CI düşerse etkilenenler) ve `downstream` (bağımlılıkları). Her biri `nodes` (sys_id, ad, sınıf, düzey, ilişki tipi, `phrase` (bağımlı ucun Türkçe fiili), `via`/`via_name` (aracı CI), `service`, `production`, `retired`), `services`, `hidden` (okuma izni olmayan CI sayısı; adları sızmaz), `truncated` (500 düğüm sınırı). `summary`: etkilenen hizmet ve üretimdeki hizmet sayısı.
 - Yön `metadata/relationship_types.yaml` → `impact` (`parent` | `child` | `none`); yürüyüş döngüsüzdür.
 
+### İlişki haritası ve zaman içinde sorgu (ADR-0031)
+
+- `GET /api/v1/ci/{sys_id}/as-of?at=<ISO 8601, saat dilimiyle>`: CI'ın o andaki hâli. Yanıtta şunlar bulunur:
+  - `existed`, `created_on`, o andaki `class`;
+  - `attributes` (`then`, `now`, `changed`) ve `changed_count`;
+  - `relations` (`then`, `added_since`, `removed_since`; her biri `phrase`, `direction`, `other`, `other_name`);
+  - `hidden_relations`.
+
+  Saat dilimi yoksa 422 `saat_dilimi_yok`; gelecek an 422 `gelecek_zaman`; o andan bu yana 20 000'den fazla değişiklik varsa 422 `cok_eski_an`.
+- `GET /api/v1/ci/{sys_id}/timeline?limit=200&before=<imleç>`: değişiklikler yeniden eskiye, anlara toplanmış. Aynı çalışmanın (`run_id`) veya aynı elle isteğin değişiklikleri tek andır. Her an şunları taşır: `at`, `source`, `actor`, `reason`/`reason_label`, `changes` (`label`, `old`, `new`) ve `relations` (`action`: added/removed, `phrase`, `other_name`, `no_effect`, `ended`). `next_cursor` bir anı ikiye bölmez.
+- `GET /api/v1/ci/{sys_id}/graph?depth=2&at=` (derinlik 1–3, en çok 120 düğüm): CI'ın çevresi.
+  - `nodes`: `level` (bağımlılar negatif/üstte, bağımlılıklar pozitif/altta, etkisiz bağlantılar aynı düzeyde), `depth`, `center`, `service`, `production`, `retired`.
+  - `edges`: `parent_phrase`, `child_phrase`, `impact`, `dependent`, `sources` (bildiren kaynaklar).
+  - Okunamayan sınıftaki CI haritaya girmez ve üzerinden genişlenmez; yalnızca `hidden` sayısı döner. `at` verilirse ilişkiler o ana geri sarılır, adlar bugünkü hâliyledir.
+- CI ayrıntısındaki `relations[].sources`: ilişkiyi bugün bildiren kaynaklar. `source` ilk bildireni gösterir.
+
 ### Bağımlı CI (ADR-0029)
 
 - Alım zarfında isteğe bağlı `parent: {"source_key": "…", "data_source": null}`: bağımlı sınıfın kaydı ana kaydını bildirir (ör. NNMi arayüzü → düğüm). Eşleme dosyasında `parent: {source_key: {from: …}}`. Bağımlı olmayan sınıfta yok sayılmaz ama kullanılmaz.

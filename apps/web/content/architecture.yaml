@@ -72,7 +72,7 @@ chapters:
       - {id: cmdb_ci, kind: store, col: 0, row: 0, span: 2, label: "cmdb_ci · golden record", sub: ["Çekirdek kolonlar + JSONB sınıf alanları", "PostgreSQL · sys_id korunur"]}
       - {id: cmdb_rel_ci, kind: store, col: 2, row: 0, label: cmdb_rel_ci, sub: ["İlişkiler, bağımlılık", "haritası"]}
       - {id: dictionary, kind: store, col: 3, row: 0, label: Metadata sözlüğü, sub: ["sys_db_object,", "sys_dictionary, sys_choice"]}
-      - {id: provenance, kind: store, col: 4, row: 0, label: Kaynak bilgisi, sub: ["Öznitelik → kaynak,", "zaman, gerekçe"]}
+      - {id: provenance, kind: store, col: 4, row: 0, label: Kaynak bilgisi, sub: ["Öznitelik → kaynak,", "geçmiş bir an"]}
       - {id: audit_trail, kind: security, col: 5, row: 0, label: Denetim izi, sub: ["Salt ekleme,", "aylık bölümler"]}
       - {id: sn_views, kind: store, col: 0, row: 1, label: "sn.* görünümler", sub: ["sn.cmdb_ci_server", "gibi sorgulanır"]}
       - {id: search_index, kind: store, col: 1, row: 1, label: Arama dizini, sub: ["OpenSearch · CI", "seçici, bulanık arama"]}
@@ -258,8 +258,8 @@ details:
     security: [Fiziksel silme yok, Yaşam döngüsü durumu]
   cmdb_rel_ci:
     phase: F0
-    text: CI ilişkileri ServiceNow'daki cmdb_rel_ci ve cmdb_rel_type yapısıyla aynıdır. Etki analizi ve bağımlılık haritası buradan beslenir. Hangi sınıfın hangi tiple hangi sınıfa bağlanabileceği izinli ilişki kurallarıyla denetlenir; kurallar alt sınıflara kalıtılır, ters yön ayrıca tanınır (ADR-0019).
-    tech: [cmdb.cmdb_rel_ci, cmdb.cmdb_rel_type, meta.cmdb_rel_rule, metadata/relationship_rules.yaml]
+    text: CI ilişkileri ServiceNow'daki cmdb_rel_ci ve cmdb_rel_type yapısıyla aynıdır. Etki analizi ve ilişki haritası buradan beslenir. Hangi sınıfın hangi tiple hangi sınıfa bağlanabileceği izinli ilişki kurallarıyla denetlenir; kurallar alt sınıflara kalıtılır, ters yön ayrıca tanınır (ADR-0019). Her ilişkiyi bildiren kaynak kaydı ayrıca tutulur; tam ve sağlıklı bir çalışmada kaynak kaydı geldiği hâlde listelenmeyen ilişkinin bildirimi düşer, bildireni kalmayan ilişki kalkar (elle giriş de bir bildirimdir). Açılma ve kalkma iki ucun değişim geçmişine yazılır (ADR-0031).
+    tech: [cmdb.cmdb_rel_ci, cmdb.cmdb_rel_ci_source, cmdb.cmdb_rel_type, meta.cmdb_rel_rule, metadata/relationship_rules.yaml]
     security: []
   dictionary:
     phase: F0
@@ -268,8 +268,8 @@ details:
     security: [Değişiklik yalnızca onaylı şema setiyle]
   provenance:
     phase: F1
-    text: Arayüzdeki "bu değer nereden geldi?" sorusunun cevabı burada. Kazanan kaynak, gözlem zamanı, uygulanan kural ve ezilen değerler saklanır.
-    tech: [cmdb.ci_reconciliation_state]
+    text: Arayüzdeki "bu değer nereden geldi?" sorusunun cevabı burada. Kazanan kaynak, gözlem zamanı, uygulanan kural ve ezilen değerler saklanır. CI'ın geçmiş bir andaki hâli (öznitelikler ve ilişkiler) ikinci bir kopya tutulmadan değişim geçmişi bugünden geri sarılarak çıkarılır; zaman çizelgesi aynı çalışmanın değişikliklerini tek an olarak gösterir (ADR-0031).
+    tech: [cmdb.ci_reconciliation_state, audit.ci_change, evren_core/timeline.py]
     security: []
   audit_trail:
     phase: F0

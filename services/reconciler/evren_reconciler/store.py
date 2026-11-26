@@ -213,7 +213,12 @@ class ReconcilerStore:
             else:
                 verdict = evaluate_run(records, baseline, changed_count=changed, error_count=error_count,
                                        completed=completed, mode=mode)
-            notes = "; ".join(n for n in (f"yeni kayıt: {new}" if new else None, note) if n) or None
+            self._resolve_relations(cur, run_id, data_source)
+            # Bildirilmeyen ilişkinin kaldırılması yıkıcı işlemdir: yalnızca tam çalışma ve devre kesici OK (kural 4)
+            ended = (self._end_unreported_relations(cur, run_id, data_source)
+                     if verdict.allows_destructive and mode == "snapshot" else 0)
+            notes = "; ".join(n for n in (f"yeni kayıt: {new}" if new else None,
+                                          f"biten ilişki: {ended}" if ended else None, note) if n) or None
             cur.execute(
                 """UPDATE ingest.source_run SET finished_at = %s, completed = %s, record_count = %s, changed_count = %s,
                           new_count = %s, error_count = %s, breaker_state = %s, breaker_reasons = %s, baseline = %s,
@@ -221,7 +226,6 @@ class ReconcilerStore:
                     WHERE run_id = %s""",
                 (finished_at or self.clock(), completed, records, changed, new, error_count, verdict.state.value,
                  list(verdict.reasons), verdict.baseline, notes, run_id))
-            self._resolve_relations(cur, run_id, data_source)
             if verdict.allows_destructive and mode == "snapshot":
                 # Görülmeyen kayıtlar yalnızca işaretlenir; değerleri eskime kuralı karar verene kadar korunur.
                 cur.execute(
@@ -1041,25 +1045,89 @@ class ReconcilerStore:
         self._write_relations(cur, data_source, sql.SQL("sr.source_key = %s"), source_key)
 
     def _write_relations(self, cur: psycopg.Cursor[Any], data_source: str, where: sql.Composable, value: Any) -> None:
+        """Kaynak kayıtlarının ilişkilerini yazar ve her ilişkiye bildireni işler (ADR-0031).
+
+        Yeni açılan ilişki iki ucun değişim geçmişine ``relation`` kaydı olarak düşer (zaman içinde sorgu, F1-19)."""
         cur.execute(sql.SQL(
-            """SELECT sr.source_key, sr.relations, l.ci_sys_id, sr.last_seen
+            """SELECT sr.source_key, sr.relations, l.ci_sys_id, sr.last_seen, sr.last_run
                  FROM ingest.source_record sr
                  JOIN ingest.identity_link l ON l.data_source = sr.data_source AND l.source_key = sr.source_key AND l.active
                 WHERE sr.data_source = %s AND {} AND jsonb_array_length(sr.relations) > 0""").format(where),
             (data_source, value))
-        for _key, relations, ci, seen in cur.fetchall():
+        for key, relations, ci, seen, run in cur.fetchall():
             for rel in relations:
                 target = PostgresLinkStore(cur).get(rel.get("target_data_source") or data_source,
                                                     rel["target_source_key"])
                 if not target or target == ci:
                     continue
                 parent, child = (ci, target) if rel["direction"] == "parent" else (target, ci)
+                # xmax = 0: satır bu komutla eklendi (çakışmada güncellenen satırda xmax dolu)
                 cur.execute(
                     """INSERT INTO cmdb.cmdb_rel_ci (parent, child, type, discovery_source, first_discovered,
                                                     last_discovered)
                        SELECT %s, %s, t.sys_id, %s, %s, %s FROM cmdb.cmdb_rel_type t WHERE t.name = %s
-                       ON CONFLICT (parent, child, type) DO UPDATE SET last_discovered = EXCLUDED.last_discovered""",
+                       ON CONFLICT (parent, child, type) DO UPDATE
+                         SET last_discovered = GREATEST(cmdb_rel_ci.last_discovered, EXCLUDED.last_discovered)
+                       RETURNING sys_id, (xmax = 0)""",
                     (parent, child, data_source, seen, seen, rel["type"]))
+                row = cur.fetchone()
+                if row is None:
+                    continue  # bilinmeyen ilişki tipi
+                rel_id, inserted = row
+                cur.execute(
+                    """INSERT INTO cmdb.cmdb_rel_ci_source (rel_sys_id, data_source, source_key, first_reported,
+                                                           last_reported, last_run)
+                       VALUES (%s, %s, %s, %s, %s, %s)
+                       ON CONFLICT (rel_sys_id, data_source, source_key) DO UPDATE
+                         SET last_reported = GREATEST(cmdb_rel_ci_source.last_reported, EXCLUDED.last_reported),
+                             last_run = EXCLUDED.last_run""",
+                    (rel_id, data_source, key, seen, seen, run))
+                if inserted:
+                    self._relation_event(cur, rel["type"], parent, child, data_source, added=True,
+                                         correlation={"run_id": str(run) if run else None})
+
+    def _relation_event(self, cur: psycopg.Cursor[Any], rel_type: str, parent: str, child: str, data_source: str,
+                        *, added: bool, correlation: dict[str, Any], reason: str = "reconciliation") -> None:
+        """İlişki açılması veya kalkması: iki ucun değişim geçmişine ``relation`` kaydı ve CI olayı."""
+        value = {"type": rel_type, "parent": parent, "child": child}
+        old, new = (None, value) if added else (value, None)
+        cur.execute("SELECT sys_id, sys_class_name FROM cmdb.cmdb_ci WHERE sys_id = ANY(%s::bpchar[])",
+                    ([parent, child],))
+        for end, cls in cur.fetchall():
+            cur.execute(
+                """INSERT INTO audit.ci_change (ci_sys_id, sys_class_name, attribute, old_value, new_value, data_source,
+                                               actor, reason, correlation)
+                   VALUES (%s, %s, 'relation', %s, %s, %s, %s, %s, %s)""",
+                (end, cls, Jsonb(old), Jsonb(new), data_source, self.actor, reason, Jsonb(correlation)))
+            self._outbox(cur, end, "cmdb.ci.changed.v1", {
+                "sys_id": end, "class": cls, "run_id": correlation.get("run_id"),
+                "changes": [{"attribute": "relation", "old": old, "new": new, "source": data_source}]})
+
+    def _end_unreported_relations(self, cur: psycopg.Cursor[Any], run_id: UUID, data_source: str) -> int:
+        """Kaynağın artık bildirmediği ilişkileri bitirir (ADR-0031). Yalnızca tam ve sağlıklı çalışmada çağrılır.
+
+        Bildirim yalnızca kaynak kaydı bu çalışmada geldiği hâlde ilişkiyi listelemiyorsa düşer: görülmeyen kaydın
+        ilişkileri, CI'ın eskime kararı gibi, kayıt dönene veya CI emekliye ayrılana kadar korunur. Başka bir kaynağın
+        ya da elle girişin bildirdiği ilişki kalır. Göç öncesi bildirimsiz ilişkilere dokunulmaz."""
+        cur.execute(
+            """DELETE FROM cmdb.cmdb_rel_ci_source p
+                USING ingest.source_record sr
+                WHERE p.data_source = %(ds)s AND sr.data_source = p.data_source AND sr.source_key = p.source_key
+                  AND sr.last_run = %(run)s AND p.last_run IS DISTINCT FROM %(run)s
+            RETURNING p.rel_sys_id""", {"ds": data_source, "run": run_id})
+        dropped = sorted({r[0] for r in cur.fetchall()})
+        if not dropped:
+            return 0
+        cur.execute(
+            """DELETE FROM cmdb.cmdb_rel_ci r USING cmdb.cmdb_rel_type t
+                WHERE t.sys_id = r.type AND r.sys_id = ANY(%s::bpchar[])
+                  AND NOT EXISTS (SELECT 1 FROM cmdb.cmdb_rel_ci_source p WHERE p.rel_sys_id = r.sys_id)
+            RETURNING t.name, r.parent, r.child""", (dropped,))
+        ended = cur.fetchall()
+        for rel_type, parent, child in ended:
+            self._relation_event(cur, rel_type, parent, child, data_source, added=False,
+                                 correlation={"run_id": str(run_id), "ended": "not_reported"})
+        return len(ended)
 
     # ------------------------------------------------------------------ insan istekleri: ortak döngü
     def _drain(self, kind: str, fetch_sql: str, handle: Callable[[dict[str, Any]], ApplyResult],
@@ -1299,8 +1367,9 @@ class ReconcilerStore:
         * İlişki CI'ın ``Manual`` kaynak kaydının ilişki listesinde durur (hedef CI sys_id'siyle); ``cmdb_rel_ci``'a
           ``Manual`` kaynağıyla yazılır. İzinli ilişki kuralı (ADR-0019) elle girişte zorunludur: ters yön veya kuralsız
           ilişki reddedilir.
-        * Kaldırma yalnızca elle girilmiş ilişkiye uygulanır; satır yalnızca ``Manual`` kaynaklıysa silinir (keşfin
-          bildirdiği ilişki kaynağından kalkar).
+        * Elle giriş ilişkinin ``Manual`` bildirimidir (ADR-0031). Kaldırma yalnızca elle girilmiş ilişkiye uygulanır:
+          ``Manual`` bildirimi kalkar, başka bir kaynak bildirmiyorsa satır da silinir (keşfin bildirdiği ilişki
+          kaynağından kalkar).
         * İki uçta da değişim geçmişine ``relation`` kaydı (neden ``manual``, kişi isteyen) ve CI olayı yazılır."""
         def handle(req: dict[str, Any]) -> ApplyResult:
             ci, target, rel_type, direction = req["ci_sys_id"], req["target_sys_id"], req["type"], req["direction"]
@@ -1340,9 +1409,23 @@ class ReconcilerStore:
                     cur.execute(
                         """INSERT INTO cmdb.cmdb_rel_ci (parent, child, type, discovery_source, first_discovered,
                                                         last_discovered)
-                           VALUES (%s, %s, %s, 'Manual', %s, %s) ON CONFLICT (parent, child, type) DO NOTHING""",
+                           VALUES (%s, %s, %s, 'Manual', %s, %s) ON CONFLICT (parent, child, type) DO NOTHING
+                           RETURNING sys_id""",
                         (parent, child, type_row[0], self.clock(), self.clock()))
-                    note = ("İlişki eklendi." if cur.rowcount else
+                    row = cur.fetchone()
+                    changed = row is not None
+                    if row is None:
+                        cur.execute("SELECT sys_id FROM cmdb.cmdb_rel_ci WHERE parent = %s AND child = %s AND type = %s",
+                                    (parent, child, type_row[0]))
+                        row = cur.fetchone()
+                    # Elle giriş de bir bildirimdir (ADR-0031): keşif bu ilişkiyi bırakınca ilişki kalkmaz
+                    cur.execute(
+                        """INSERT INTO cmdb.cmdb_rel_ci_source (rel_sys_id, data_source, source_key, first_reported,
+                                                               last_reported)
+                           VALUES (%s, 'Manual', %s, %s, %s) ON CONFLICT (rel_sys_id, data_source, source_key)
+                           DO UPDATE SET last_reported = EXCLUDED.last_reported""",
+                        (row[0], holder, self.clock(), self.clock()))
+                    note = ("İlişki eklendi." if changed else
                             "İlişki zaten vardı (başka bir kaynaktan); elle kayıt da eklendi.")
                     old, new = None, {"type": rel_type, "parent": parent, "child": child}
                 else:
@@ -1351,9 +1434,19 @@ class ReconcilerStore:
                         self._finish_relation(cur, req, "rejected", note)
                         return ApplyResult("relation_rejected", ci, [], note)
                     relations = [r for r in relations if r not in same]
-                    cur.execute("""DELETE FROM cmdb.cmdb_rel_ci WHERE parent = %s AND child = %s AND type = %s
-                                     AND discovery_source = 'Manual'""", (parent, child, type_row[0]))
-                    note = ("İlişki kaldırıldı." if cur.rowcount else
+                    changed = False
+                    cur.execute("SELECT sys_id FROM cmdb.cmdb_rel_ci WHERE parent = %s AND child = %s AND type = %s",
+                                (parent, child, type_row[0]))
+                    row = cur.fetchone()
+                    if row is not None:
+                        cur.execute("DELETE FROM cmdb.cmdb_rel_ci_source WHERE rel_sys_id = %s AND data_source = 'Manual'",
+                                    (row[0],))
+                        # Başka bir kaynak hâlâ bildiriyorsa satır kalır
+                        cur.execute("""DELETE FROM cmdb.cmdb_rel_ci r WHERE r.sys_id = %s AND NOT EXISTS
+                                         (SELECT 1 FROM cmdb.cmdb_rel_ci_source p WHERE p.rel_sys_id = r.sys_id)""",
+                                    (row[0],))
+                        changed = bool(cur.rowcount)
+                    note = ("İlişki kaldırıldı." if changed else
                             "Elle kayıt kaldırıldı; ilişkiyi başka bir kaynak da bildirdiği için satır kalır.")
                     old, new = {"type": rel_type, "parent": parent, "child": child}, None
                 actor = self.actor
@@ -1369,7 +1462,8 @@ class ReconcilerStore:
                                                            data_source, actor, reason, correlation)
                                VALUES (%s, %s, 'relation', %s, %s, 'Manual', %s, 'manual', %s)""",
                             (end, classes[end], Jsonb(old), Jsonb(new), self.actor,
-                             Jsonb({"request": req["sys_id"]})))
+                             # effect none: satır değişmedi (başka kaynak da bildiriyor); zaman içinde sorgu atlar
+                             Jsonb({"request": req["sys_id"], **({} if changed else {"effect": "none"})})))
                         self._outbox(cur, end, "cmdb.ci.changed.v1", {
                             "sys_id": end, "class": classes[end], "run_id": None,
                             "changes": [{"attribute": "relation", "old": old, "new": new, "source": "Manual"}]})

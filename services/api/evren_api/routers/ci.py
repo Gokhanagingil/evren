@@ -212,18 +212,25 @@ def get_ci(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                    "applied_at": done.isoformat() if done else None, "side": side, "ci_sys_id": src_ci}
                   for i, st, ds, key, by, at, res, note, done, side, src_ci in cur.fetchall()]
         cur.execute(
-            """SELECT t.name, 'parent', r.child, c.name, r.discovery_source FROM cmdb.cmdb_rel_ci r
+            """SELECT t.name, 'parent', r.child, c.name, r.discovery_source,
+                      ARRAY(SELECT DISTINCT p.data_source FROM cmdb.cmdb_rel_ci_source p WHERE p.rel_sys_id = r.sys_id
+                             ORDER BY 1)
+                 FROM cmdb.cmdb_rel_ci r
                  JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type JOIN cmdb.cmdb_ci c ON c.sys_id = r.child
                 WHERE r.parent = %s
                UNION ALL
-               SELECT t.name, 'child', r.parent, c.name, r.discovery_source FROM cmdb.cmdb_rel_ci r
+               SELECT t.name, 'child', r.parent, c.name, r.discovery_source,
+                      ARRAY(SELECT DISTINCT p.data_source FROM cmdb.cmdb_rel_ci_source p WHERE p.rel_sys_id = r.sys_id
+                             ORDER BY 1)
+                 FROM cmdb.cmdb_rel_ci r
                  JOIN cmdb.cmdb_rel_type t ON t.sys_id = r.type JOIN cmdb.cmdb_ci c ON c.sys_id = r.parent
                 WHERE r.child = %s""", (sys_id, sys_id))
         rel_rows = cur.fetchall()
         manual_rels = manual_relation_keys(ctx.conn, sys_id)
+        # source: ilk bildiren (cmdb_rel_ci.discovery_source); sources: bugün bildirenler (ADR-0031)
         relations = [{"type": t, "direction": d, "target": tid, "target_name": tn or "(adsız)", "source": src,
-                      "manual": (t, d, tid) in manual_rels}
-                     for t, d, tid, tn, src in rel_rows]
+                      "sources": list(srcs or [src]), "manual": (t, d, tid) in manual_rels}
+                     for t, d, tid, tn, src, srcs in rel_rows]
         cur.execute(
             """SELECT r.sys_id, r.action, r.type, CASE WHEN r.ci_sys_id = %s THEN r.direction
                         WHEN r.direction = 'parent' THEN 'child' ELSE 'parent' END,

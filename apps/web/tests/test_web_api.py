@@ -11,6 +11,7 @@ import socket
 import sys
 import threading
 import time
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -871,3 +872,100 @@ def test_impact_section_shows_affected_services_and_dependencies(page, base_url)
     up.get_by_role("link", name=re.compile("^etki-uygulama-")).click()
     expect(page.locator("#ciImpactDown")).to_contain_text("etki-srv-")
     assert "null" not in page.locator("#ciImpact").inner_text()
+
+
+def _local_input(page, when):
+    """Tarayıcının yerel saatiyle datetime-local değeri (saniye hassasiyeti)."""
+    return page.evaluate("""(iso) => { const d = new Date(iso); const p = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T`
+        + `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }""", when.isoformat())
+
+
+def test_relation_map_levels_keyboard_recenter_and_past_moment(page, base_url):
+    """U7.4 (ADR-0031): bağımlılık altta, bağımlı üstte; düğüm klavyeyle seçilir (ilişkiler ve bildiren kaynak);
+    "Merkeze al" haritayı taşır; geçmiş an o andaki ilişkileri çizer."""
+    from scenarios import make_history_ci
+
+    ids = make_history_ci(gap=1.1)
+    page.goto(base_url + f"/#/iliski-haritasi/{ids['web']}")
+    nodes = page.locator("#graphScroll .gnode")
+    expect(nodes).to_have_count(3)  # web, db, cache (lb elle kaldırıldı)
+    expect(page.locator(f'.gnode.center[data-id="{ids["web"]}"]')).to_have_count(1)
+    expect(page.locator("#graphSummary")).to_contain_text("3 CI, 2 ilişki")
+    web_box = page.locator(f'.gnode[data-id="{ids["web"]}"]').bounding_box()
+    db_box = page.locator(f'.gnode[data-id="{ids["db"]}"]').bounding_box()
+    assert db_box["y"] > web_box["y"]  # bağımlılık altta
+    # Klavye: düğüme odaklan, Enter ile seç; sağda ilişkileri ve bildiren kaynak
+    page.locator(f'.gnode[data-id="{ids["db"]}"]').focus()
+    page.keyboard.press("Enter")
+    detail = page.locator("#graphDetail")
+    expect(detail).to_contain_text("gecmis-")
+    expect(page.locator("#graphNodeRels")).to_contain_text("Kullanılır")
+    expect(page.locator("#graphNodeRels")).to_contain_text("Bildiren: BMC")
+    assert "null" not in page.locator("main").inner_text()
+    shot(page, "web_api_relation_map")
+    # Merkeze al: db merkezde, web (db'ye bağımlı) üstte
+    page.locator("#graphRecenter").focus()
+    page.keyboard.press("Enter")
+    expect(page.locator(f'.gnode.center[data-id="{ids["db"]}"]')).to_have_count(1)
+    web_box = page.locator(f'.gnode[data-id="{ids["web"]}"]').bounding_box()
+    db_box = page.locator(f'.gnode[data-id="{ids["db"]}"]').bounding_box()
+    assert web_box["y"] < db_box["y"]
+    # Geçmiş an: web'in o andaki çevresinde lb vardı, cache yoktu
+    page.goto(base_url + f"/#/iliski-haritasi/{ids['web']}")
+    expect(nodes).to_have_count(3)
+    page.fill("#graphAt", _local_input(page, ids["between"]))
+    page.locator("#graphAt").press("Enter")
+    expect(page.locator(f'.gnode[data-id="{ids["lb"]}"]')).to_have_count(1)
+    expect(page.locator(f'.gnode[data-id="{ids["cache"]}"]')).to_have_count(0)
+    expect(page.locator("#graphSummary")).to_contain_text("anındaki ilişkiler")
+    page.click("#graphAtNow")
+    expect(page.locator(f'.gnode[data-id="{ids["cache"]}"]')).to_have_count(1)
+    # Metin alternatifi
+    page.locator("#graphList summary").click()
+    expect(page.locator("#graphEdgeList")).to_contain_text("Bağımlı")
+
+
+def test_relation_map_search_and_mobile_without_horizontal_overflow(browser, base_url):
+    from scenarios import make_history_ci
+
+    ids = make_history_ci()
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    pg = context.new_page()
+    pg.goto(base_url + "/#/iliski-haritasi")
+    expect(pg.locator("#graphEmpty")).to_be_visible()
+    pg.fill("#graphSearch", "gecmis-")
+    pg.locator("#graphResults a").first.wait_for()
+    pg.goto(base_url + f"/#/iliski-haritasi/{ids['web']}")
+    expect(pg.locator("#graphScroll .gnode")).to_have_count(3)
+    pg.wait_for_timeout(150)
+    assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+    context.close()
+
+
+def test_ci_panel_past_moment_and_timeline(page, base_url):
+    """F1-19: CI panelinde seçilen andaki öznitelik ve ilişki farkı; zaman çizelgesi anlara ayrılmış; oluşmadan önceki
+    an açıkça söylenir."""
+    from scenarios import make_history_ci
+
+    ids = make_history_ci(gap=1.1)
+    page.goto(base_url + f"/#/ci/{ids['web']}")
+    expect(page.locator("#ciMap")).to_have_attribute("href", f"#/iliski-haritasi/{ids['web']}")
+    timeline = page.locator("#ciHistory")
+    expect(timeline).to_contain_text("İlişki kalktı: Bağımlı →")
+    expect(timeline).to_contain_text("Elle düzenleme · gecmis-testi")
+    expect(timeline).to_contain_text("İşletim sistemi: RHEL 8 → RHEL 9")
+    page.fill("#ciAsOfAt", _local_input(page, ids["between"]))
+    page.locator("#ciAsOfAt").press("Enter")
+    expect(page.locator("#ciAsOfChanged")).to_contain_text("İşletim sistemi")
+    expect(page.locator("#ciAsOfChanged")).to_contain_text("RHEL 8")
+    expect(page.locator("#ciAsOfChanged")).to_contain_text("Bugün: RHEL 9")
+    expect(page.locator("#ciAsOfRemoved")).to_contain_text("-lb")
+    expect(page.locator("#ciAsOfAdded")).to_contain_text("-cache")
+    expect(page.locator("#ciAsOfMap")).to_have_attribute("href", re.compile(rf"#/iliski-haritasi/{ids['web']}@"))
+    assert "null" not in page.locator("#detailContent").inner_text()
+    shot(page, "web_api_ci_as_of")
+    # Oluşmadan önce
+    page.fill("#ciAsOfAt", _local_input(page, ids["between"] - timedelta(days=30)))
+    page.click("#ciAsOfShow")
+    expect(page.locator("#ciAsOfNone")).to_contain_text("henüz yoktu")

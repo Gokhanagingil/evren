@@ -292,6 +292,12 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "DELETE FROM ingest.dependent_key WHERE false"),
         ("evren_readonly", "SELECT count(*) FROM ingest.dependent_key"),
         ("evren_app_connector", "SELECT count(*) FROM ingest.dependent_key"),
+        # 0028 (ADR-0031): ilişki bildirimlerini yalnızca uzlaştırıcı yazar; bağlayıcı ve salt okur göremez
+        ("evren_app_api", "INSERT INTO cmdb.cmdb_rel_ci_source (rel_sys_id, data_source, source_key) "
+                          "SELECT sys_id, 'Manual', 'x' FROM cmdb.cmdb_rel_ci WHERE false"),
+        ("evren_app_api", "DELETE FROM cmdb.cmdb_rel_ci_source WHERE false"),
+        ("evren_app_connector", "SELECT count(*) FROM cmdb.cmdb_rel_ci_source"),
+        ("evren_readonly", "SELECT count(*) FROM cmdb.cmdb_rel_ci_source"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
         ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
@@ -356,6 +362,10 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_auditor_ro", "SELECT action, note FROM ingest.retirement_request"),
         ("evren_app_api", "SELECT parent_ci_sys_id, signature, value FROM ingest.dependent_key"),
         ("evren_app_reconciler", "UPDATE ingest.source_record SET parent = NULL WHERE false"),
+        ("evren_app_reconciler", "DELETE FROM cmdb.cmdb_rel_ci_source WHERE false"),
+        ("evren_app_reconciler", "UPDATE cmdb.cmdb_rel_ci_source SET last_run = NULL WHERE false"),
+        ("evren_app_api", "SELECT data_source, source_key, last_reported FROM cmdb.cmdb_rel_ci_source"),
+        ("evren_auditor_ro", "SELECT data_source, source_key FROM cmdb.cmdb_rel_ci_source"),
     ],
 )
 def test_allowed_paths_work(role, statement):

@@ -27,7 +27,9 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | **I**nformation disclosure | Güvenlik duruşu verisinin sızması | Ayrı kısıtlı tablo; alan hassasiyeti (`sensitivity`); rol bazlı okuma; okuma denetimi | `ci_security_posture`, IAM |
 | I | Hata mesajlarında iç ayrıntı | Standart hata gövdesi; yığın izi yalnızca sunucu logunda | api |
 | I | Yapay zekâ modeline hassas veri gitmesi | Onaylı/kurum içi model; veri sınıflandırması; asgari bağlam | docs/11 |
-| **D**enial of service | Büyük sorgu veya derin etki analizi | Koşul ve IN sınırı, sayfalama, sorgu zaman aşımı, derinlik sınırı, hız sınırı | api, mcp |
+| I | Geçmiş bir andaki değerin veya ilişki haritasının yetkisiz kişiye gösterilmesi | Geçmiş de bugünkü okuma izni ve alan duyarlılığıyla süzülür; okunamayan sınıftaki karşı CI'ın adı dönmez, haritada üzerinden genişlenmez (ADR-0031) | api `timeline.py`, `graph.py` |
+| **D**enial of service | Büyük sorgu veya derin etki analizi | Koşul ve IN sınırı, sayfalama, sorgu zaman aşımı, derinlik sınırı, hız sınırı; geçmiş an sorgusu 20 000 değişiklikte durur, harita 3 adım ve 120 düğümle sınırlı | api, mcp |
+| T | Kaynağın ilişkiyi bırakmasının veya kısmi çalışmanın ilişkileri silmesi | İlişki yalnızca tam ve devre kesicisi OK çalışmada, kaynak kaydı geldiği hâlde listelemiyorsa kalkar; başka bildireni varsa kalmaz; kalkma değişim geçmişinde (ADR-0031) | reconciler |
 | D | Kaynak taşması | Alım geçidinde boyut ve hız sınırı; Kafka geri basıncı | ingest-gateway |
 | **E**levation of privilege | Kendine rol verme, çatışan roller | `granted_by <> principal`; SoD tetikleyicisi; rol değişikliği denetimi | `iam.*` |
 | E | Makine hesabıyla insan işlemi | Makine rolleri (`machine=true`) yönetim işlemlerine kapalı | IAM |

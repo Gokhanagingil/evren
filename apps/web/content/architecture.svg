@@ -260,13 +260,13 @@
 <text x="664.0" y="1165.0" fill="#4a5684" font-size="11" font-weight="400" text-anchor="start">sys_db_object,</text>
 <text x="664.0" y="1181.0" fill="#4a5684" font-size="11" font-weight="400" text-anchor="start">sys_dictionary, sys_choice</text>
 </g>
-<g class="node" id="n-provenance" data-node="provenance" data-chapter="store" tabindex="0" role="button" aria-label="Kaynak bilgisi: Öznitelik → kaynak, zaman, gerekçe">
+<g class="node" id="n-provenance" data-node="provenance" data-chapter="store" tabindex="0" role="button" aria-label="Kaynak bilgisi: Öznitelik → kaynak, geçmiş bir an">
 <rect x="850.0" y="1102.0" width="180.0" height="98.0" rx="10" fill="#f0f3fb" stroke="#4a5fa8" stroke-width="1.6"/>
 <rect x="990.0" y="1111.0" width="30" height="18" rx="9" fill="#3f7f5f"/>
 <text x="1005.0" y="1124.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
 <text x="864.0" y="1128.0" fill="#26346b" font-size="15" font-weight="700" text-anchor="start">Kaynak bilgisi</text>
 <text x="864.0" y="1146.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Öznitelik → kaynak,</text>
-<text x="864.0" y="1162.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">zaman, gerekçe</text>
+<text x="864.0" y="1162.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">geçmiş bir an</text>
 </g>
 <g class="node" id="n-audit_trail" data-node="audit_trail" data-chapter="store" tabindex="0" role="button" aria-label="Denetim izi: Salt ekleme, aylık bölümler">
 <rect x="1050.0" y="1102.0" width="180.0" height="98.0" rx="10" fill="#fbeeee" stroke="#a33a3a" stroke-width="1.6"/>

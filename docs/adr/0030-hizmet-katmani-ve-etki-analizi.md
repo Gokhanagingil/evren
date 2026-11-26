@@ -46,7 +46,7 @@ Kurumda iş uygulamaları ve hizmetler keşifle bulunmaz; insanlar tutar ve bug�
 
 - "Sunucu düşerse hangi hizmet etkilenir" sorusu ServiceNow'daki hizmet haritası ile keşfin altyapısı birleştirilerek yanıtlanır.
 - Hizmet katmanının doğruluğu ServiceNow'daki bakıma bağlıdır. Evren bunu sahiplik onayıyla izler (ADR-0027); hizmetler onay kapsamındadır.
-- Delta çalışmasında ilişkiler de yalnızca güncellenenlerden gelir. ServiceNow'da silinen ilişki tam çalışmada kalkar.
+- Delta çalışmasında ilişkiler de yalnızca güncellenenlerden gelir. ServiceNow'da silinen ilişki tam çalışmada kalkar. *Düzeltme (U7.4): bu karar alındığında kaynaktan gelen ilişkiyi kaldıran kod yoktu; ilişki yaşam döngüsü ADR-0031 ile eklendi (tam ve sağlıklı çalışmada, kaynak kaydı geldiği hâlde ilişki listelenmiyorsa).*
 - Etki yönü ServiceNow'un "Dependency Views" yorumuyla aynı değildir; kurum farklı yorumluyorsa değiştirmek yalnızca metadata işidir.
 
 ## Alternatifler

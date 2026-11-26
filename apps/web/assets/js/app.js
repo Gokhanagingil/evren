@@ -9,6 +9,7 @@ import { renderCis } from './pages/cis.js';
 import { renderControls } from './pages/controls.js';
 import { renderAttestation } from './pages/attestation.js';
 import { renderStaleness } from './pages/staleness.js';
+import { renderGraph } from './pages/graph.js';
 import { renderShadow } from './pages/shadow.js';
 import { renderSchema } from './pages/schema.js';
 import { renderModel } from './pages/model.js';
@@ -25,6 +26,8 @@ const ROUTES = {
     help: 'Otomatik birleştirilmeyen kaynak kayıtları. Bir kayda tıklayın: kaynak kaydı ve adaylar yan yana, her kanıt ağırlığıyla açıklanır. Kararlar geri alınabilir.' },
   ci: { title: 'Konfigürasyon Öğeleri', icon: 'server', render: renderCis,
     help: 'Golden record. Bir CI açıldığında her özniteliğin hangi kaynaktan, hangi kuralla geldiği ve hangi değerlerin ezildiği görünür.' },
+  'iliski-haritasi': { title: 'İlişki Haritası', icon: 'graph', render: renderGraph,
+    help: 'Bir CI\'ın çevresi: bu CI\'a bağımlı olanlar üstte, bağımlılıkları altta, fiziksel bağlantılar aynı düzeyde kesikli. Bir düğüme tıklayın veya Tab ile gelip Enter\'a basın: ilişkileri ve bildiren kaynaklar sağda görünür; "Merkeze al" haritayı o CI\'a taşır. "An" ile geçmiş bir tarihteki ilişkiler gösterilir.' },
   'veri-modeli': { title: 'Veri Modeli', icon: 'tree', render: renderModel,
     help: 'ServiceNow uyumlu sınıf ağacı. Bir sınıfa tıklayın veya Tab ile gelip Enter\'a basın: alanları (kalıtılanlar dahil), kimlik kuralı, izinli ilişkiler ve SQL görünümü açılır. Değişiklik yalnızca değişiklik setiyle yapılır.' },
   'sahiplik-onayi': { title: 'Sahiplik Onayı', icon: 'check', render: renderAttestation,
@@ -51,7 +54,7 @@ const ROUTES = {
 
 const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk'] },
-  { group: 'CMDB', items: ['ci', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
+  { group: 'CMDB', items: ['ci', 'iliski-haritasi', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];

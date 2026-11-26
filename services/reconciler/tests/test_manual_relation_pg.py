@@ -117,6 +117,10 @@ def test_discovered_relation_is_not_removed_manually(as_reconciler, metadata):
     as_owner(as_reconciler, """INSERT INTO cmdb.cmdb_rel_ci (parent, child, type, discovery_source)
                                SELECT %s, %s, sys_id, 'BMC' FROM cmdb.cmdb_rel_type WHERE name = %s""",
              app, srv, RUNS_ON)
+    # Keşfin bildirdiği ilişkinin bildirimi (ADR-0031): elle kaldırma bu satırı silmez
+    as_owner(as_reconciler, """INSERT INTO cmdb.cmdb_rel_ci_source (rel_sys_id, data_source, source_key)
+                               SELECT sys_id, 'BMC', %s FROM cmdb.cmdb_rel_ci WHERE parent = %s AND child = %s""",
+             f"bmc-{tag}", app, srv)
     rid = relate(as_reconciler, app, srv, action="remove")
     store.apply_manual_relations()
     st, note = status(as_reconciler, rid)

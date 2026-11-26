@@ -234,3 +234,55 @@ def make_service_chain() -> dict[str, str]:
                                      observed_at=now, attributes=attrs, relations=rels))
         store.finish_run(run)
     return ids
+
+
+def make_history_ci(gap: float = 0.0) -> dict:
+    """Geçmişi olan CI (U7.4, F1-19, ADR-0031), gerçek uzlaştırıcıyla iki an:
+
+    * önce: web (RHEL 8) —Depends on→ db (BMC bildirir) ve —Depends on→ lb (elle girilmiş);
+    * ``between`` anı;
+    * sonra: web RHEL 9'a geçer, BMC web —Depends on→ cache bildirir, elle girilmiş lb ilişkisi kaldırılır.
+
+    ``gap``: ``between`` anının iki yanında saniye cinsinden boşluk (tarayıcıdaki saniye hassasiyetli seçim için).
+    Döner: ad → sys_id ve ``between`` (datetime)."""
+    import time
+
+    from evren_core.envelope import RelationRef
+    md = load_metadata(REPO / "metadata")
+    tag = uuid.uuid4().hex[:6].upper()
+    dep = "Depends on::Used by"
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("SET ROLE evren_app_reconciler")
+        store = ReconcilerStore(conn, md)
+
+        def run(os_name: str, deps: list[str]) -> dict[str, str]:
+            rid = store.start_run(uuid.uuid4(), "BMC")
+            out = {}
+            for k in ("web", "db", "lb", "cache"):
+                attrs = {"name": f"gecmis-{tag.lower()}-{k}", "serial_number": f"HST{tag}{k.upper()}"}
+                rels = []
+                if k == "web":
+                    attrs["os"] = os_name
+                    rels = [RelationRef(type=dep, direction="parent", target_source_key=f"hist-{tag}-{d}") for d in deps]
+                out[k] = store.apply(IngestRecord(data_source="BMC", run_id=rid, source_key=f"hist-{tag}-{k}",
+                                                  class_hint="cmdb_ci_linux_server", observed_at=datetime.now(UTC),
+                                                  attributes=attrs, relations=rels)).ci_sys_id
+            store.finish_run(rid)
+            return out
+
+        def manual(action: str, ci: str, target: str) -> None:
+            conn.execute("RESET ROLE")
+            conn.execute("""INSERT INTO ingest.manual_relation (ci_sys_id, target_sys_id, type, direction, action,
+                                                                requested_by)
+                            VALUES (%s, %s, %s, 'parent', %s, 'gecmis-testi')""", (ci, target, dep, action))
+            conn.execute("SET ROLE evren_app_reconciler")
+            store.apply_manual_relations()
+
+        ids = run("RHEL 8", ["db"])
+        manual("add", ids["web"], ids["lb"])
+        time.sleep(gap)
+        between = conn.execute("SELECT clock_timestamp()").fetchone()[0]
+        time.sleep(gap)
+        run("RHEL 9", ["db", "cache"])
+        manual("remove", ids["web"], ids["lb"])
+    return {**ids, "between": between}

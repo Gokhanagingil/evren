@@ -509,3 +509,39 @@ label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: v
 #ciImpact .mini li.depth-2 { margin-left: 14px; }
 #ciImpact .mini li.depth-3 { margin-left: 28px; }
 #ciImpact .mini li.depth-4 { margin-left: 42px; }
+/* İlişki haritası (U7.4, ADR-0031): bağımlılar üstte, bağımlılıklar altta; satır içi stil yok */
+.graph-scroll { background: #f7f8fa; border: 1px solid var(--stroke); max-height: calc(100vh - 260px); min-height: 220px; }
+.graph-svg { display: block; margin: 0 auto; max-width: none; }
+.graph-loading { padding: 18px; margin: 0; }
+.gnode { cursor: pointer; }
+.gnode rect:first-of-type { fill: var(--surface); stroke: var(--stroke2); stroke-width: 1.5; }
+.gnode.service rect:first-of-type { fill: var(--violet-soft); stroke: var(--violet); }
+.gnode.center rect:first-of-type { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 2.5; }
+.gnode.retired { opacity: .55; }
+.gnode.retired rect:first-of-type { stroke-dasharray: 4 3; }
+.gnode:hover rect:first-of-type { stroke-width: 2.5; }
+.gnode:focus { outline: none; }
+.gnode:focus-visible rect:first-of-type, .gnode.selected rect:first-of-type { stroke: var(--accent); stroke-width: 3.5; }
+.gnode .gname { font-size: 13px; font-weight: 650; fill: var(--text); }
+.gnode .gclass { font-size: 11.5px; fill: var(--muted); }
+.gnode .gprod { fill: var(--good); stroke: none; }
+.gedge { fill: none; stroke: #7d8696; stroke-width: 1.6; }
+.gedge.phys { stroke-dasharray: 5 4; stroke: #a8afbb; }
+.graph-arrowhead { fill: #7d8696; }
+.legend .lg-dep { background: #7d8696; height: 3px; width: 18px; border-radius: 2px; vertical-align: 3px; }
+.legend .lg-phys { border-top: 2px dashed #a8afbb; height: 0; width: 18px; border-radius: 0; vertical-align: 3px; }
+.legend .lg-service { background: var(--violet-soft); border: 1px solid var(--violet); }
+.legend .lg-center { background: var(--accent-soft); border: 1px solid var(--accent); }
+.legend .lg-retired { background: var(--surface); border: 1px dashed var(--muted); }
+#graphResults { margin: 0 0 8px; }
+#graphResults:empty { display: none; }
+.field-inline { font-size: 13px; color: var(--text2); font-weight: 600; }
+.map-toolbar input[type="datetime-local"] { min-height: 34px; border: 1px solid var(--stroke2); border-radius: 8px; padding: 0 8px; font: inherit; font-size: 13px; }
+/* Zaman çizelgesi ve geçmiş an (F1-19) */
+#ciHistory .moment { padding: 8px 0; border-bottom: 1px solid #eef0f2; }
+#ciHistory .moment:last-child { border-bottom: 0; }
+#ciHistory .moment-head { font-size: 12px; color: var(--muted); margin-bottom: 3px; }
+#ciHistory .moment ul { margin: 0; padding-left: 16px; }
+.asof-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.asof-form input[type="datetime-local"] { min-height: 32px; border: 1px solid var(--stroke2); border-radius: 8px; padding: 0 8px; font: inherit; font-size: 13px; }
+#ciAsOf .then { color: var(--muted); text-decoration: line-through; }

@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 19/55 adım tamamlandı
+**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 20/58 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -14,7 +14,7 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 6/10 adım tamamlandı
+**İzlek ilerlemesi:** 7/10 adım tamamlandı
 
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
@@ -22,7 +22,7 @@
 - [x] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Tamamlandı_ (ilgili: F0-17, F0-07, F1-11)
 - [x] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Tamamlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
 - [x] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Tamamlandı_ (ilgili: F1-21, F1-17)
-- [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Devam ediyor_ (ilgili: F1-06, F1-07, F1-19)
+- [x] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Tamamlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-20)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09)
@@ -125,7 +125,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 7/21 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 8/23 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -164,10 +164,13 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [x] **F1-17** Sahiplik ve sertifikasyon: CI sahibinin periyodik onayı, sahipsiz CI raporu
   - Not: 26.11.2026 (ADR-0027, U6.4, göç 0025): metadata/attestation.yaml (üretim 180 gün, diğer 365 gün; alt sınıflara kalıtılır, emekli CI kapsam dışı); attest izni (CI sahibi rolü) + oturumun sys_user eşlemesi (Entra'da yalnızca entra_oid) + owned_by/managed_by; ingest.attestation_request → uzlaştırıcı yeniden denetler, Manual kaydına yazar (neden attestation); ret neden+gerekçe ister ve Veri sorumlusuna anomali açar, sonraki onay kapatır; süre dolumu ve sahip değişikliği Not Yet Reviewed yapar; Sahiplik Onayı sayfası (Bende/toplu onay, Onay bekleyen, Reddedilen, Sahipsiz), CI panelinde bölüm; GRC kontrolü CMDB-06. Entra kullanıcılarının entra_oid eşitlemesi U8.
 - [ ] **F1-18** Uyum denetimi (beklenen–gerçek): metadata ile tanımlı kurallar, ör. üretim sunucusunun destek grubu, izlemesi ve korunması — _Planlandı_
-- [ ] **F1-19** Zaman içinde sorgu: CI'ın geçmiş bir andaki hâli ve değişiklik zaman çizelgesi — _Planlandı_
+- [x] **F1-19** Zaman içinde sorgu: CI'ın geçmiş bir andaki hâli ve değişiklik zaman çizelgesi
+  - Not: 26.11.2026 (ADR-0031, U7.4, göç 0028): CI'ın geçmiş bir andaki öznitelikleri ve ilişkileri değişim geçmişi bugünden geri sarılarak çıkarılır (evren_core/timeline.py; ikinci kopya tutulmaz); bugünle farkı, sonradan açılan/kalkan ilişkiler; CI o anda yoksa açıkça söylenir. Zaman çizelgesi aynı çalışmanın veya elle isteğin değişikliklerini tek an olarak gösterir. Bunun için ilişki yaşam döngüsü eklendi: ilişkiyi bildiren kaynak kaydı tutulur (cmdb_rel_ci_source), tam ve sağlıklı çalışmada bildirilmeyen ilişki kalkar, açılma/kalkma değişim geçmişindedir. İlişki haritası seçilen ana göre çizilir.
 - [ ] **F1-20** Ölçek ve yük testi: 40.000 sunucu + 100.000 ağ cihazı hacmiyle alım, uzlaştırma ve arama — _Planlandı_
 - [x] **F1-21** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — kimlik çözümlemesi ve uzlaştırmadan geçer
   - Not: 26.11.2026 (ADR-0026, U6.1, göç 0022): arayüzden CI oluşturma tamam — istek ingest.manual_create'e, uzlaştırıcı kimlik çözümlemesinden geçirir (kesin eşleşme açılmaz, belirsiz eşleşme veya aynı ad gerekçeli karar ister), açılan CI'ın kimlik anahtarları dizine girer, keşif sonradan bağlanır. U6.2 elle ilişki tamam (göç 0023): izinli ilişki kuralı zorunlu, ilişki CI'ın Manual kaydında ve cmdb_rel_ci'da Manual kaynağıyla, yalnızca elle girilmiş ilişki kaldırılır, iki uçta değişim geçmişi. U6.3 CSV ile toplu içe aktarma tamam (göç 0024): önizleme yazmaz, onay dosyayı yeniden doğrular, geçerli satırlar toplu iş altında oluşturma isteği olur ve sırayla kimlik çözümlemesinden geçer; güncelleme yok, formül enjeksiyonu reddedilir, satır sonuçları izlenir.
+- [ ] **F1-22** Değişiklik setiyle ilişki tipi ve izinli ilişki kuralı yönetimi (etki yönü dahil; taslak → onay → yayın) — _Planlandı_
+- [ ] **F1-23** Bağımlı CI kapsamının genişletilmesi: keşif kaynağının yazılım ve dosya sistemi verisi, Kubernetes bileşenleri; ana CI ayrılınca bağımlıların taşınması — _Planlandı_
 
 **Çıkış kriterleri**
 
@@ -185,7 +188,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 
 ## F2 · Evren ana kaynak, ServiceNow replika
 
-_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/9 adım
+_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/10 adım
 
 Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.
 
@@ -201,6 +204,7 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 - [ ] **F2-08** GRC Platformu (tedarik) entegrasyonu: CMDB modülünün Evren'den beslenmesi ve CMDB tabanlı otomatik kontroller — _Planlandı_
   - Sizden gereken: GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması
 - [ ] **F2-09** Yedekleme, felaket kurtarma ve yüksek erişilebilirlik: PostgreSQL PITR, Kafka/OpenSearch çoğaltma, geri yükleme tatbikatı — _Planlandı_
+- [ ] **F2-10** Değişim geçmişi saklama ve bölüm yönetimi: aylık bölümlerin otomatik açılması, saklama süresi kararı (denetim ve KVKK), eski bölümlerin arşivlenmesi; zaman içinde sorgunun ufku — _Planlandı_
 
 **Çıkış kriterleri**
 

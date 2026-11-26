@@ -14,9 +14,9 @@ Her madde için bugünkü durum ve plan bağı verilir. Yüzdeler `apps/web/cont
 | A2 | **CSDM katmanları**: iş yeteneği, iş uygulaması, iş süreci, iş/teknik hizmet ve sunumları, uygulama hizmeti, dinamik CI grubu, bilgi nesnesi | Altyapıyı iş hizmetine bağlayan omurga. Etki analizi ve GRC kontrolleri buna dayanır | Yetenek, uygulama, süreç, bilgi nesnesi, hizmet ve sunumlar, dinamik grup var (U4.1) | U4, F0-17 |
 | A3 | **Sahiplik ve yönetişim öznitelikleri**: sahip, yöneten, destek/onay grubu, ortam, iş kritikliği, maliyet merkezi, sertifikasyon durumu | "Bu CI kimin?" sorusunun cevabı. Keşif araçları bunları ezemez (kural 5) | Sahip, gruplar, maliyet merkezi, onay alanları var (U4.3); onay akışı U6'da | U6, F1-17 |
 | A4 | **Yaşam döngüsü standardı**: CSDM aşama ve aşama durumu; operasyonel ve kurulum durumu eşlemesi | Emekliye ayırma, eskime ve raporların ortak dili | CSDM 5'e göre düzeltildi: 10 aşama, 13 belgelenmiş durum, eski alan eşlemesi; tutarlılık denetimi U7'de | U7 |
-| A5 | **İlişki modeli**: ilişki tipleri ve izinli sınıf çiftleri | ServiceNow yalnız önerir; Evren zorlarsa "sunucu, uygulamada çalışır" gibi ters ilişki oluşmaz (daha iyisi) | 15 tip, 36 kalıtımlı kural, ters yön tespiti (U4.1); yazımda zorlama U7'de | U4 (tanım), U7 (zorlama) |
+| A5 | **İlişki modeli**: ilişki tipleri ve izinli sınıf çiftleri | ServiceNow yalnız önerir; Evren zorlarsa "sunucu, uygulamada çalışır" gibi ters ilişki oluşmaz (daha iyisi) | 16 tip (etki yönüyle), 38 kalıtımlı kural, ters yön tespiti (U4.1); elle girişte zorunlu (U6.2); kaynak ilişkilerinde kuralsız ilişki atılmaz, uyum denetiminde raporlanacak (F1-18); değişiklik setiyle yönetim F1-22 | U4 ✓, U6 ✓, F1-18, F1-22 |
 | A6 | **Referans verileri**: kişi, grup, konum, şirket, departman, ürün modeli kataloğu, maliyet merkezi | Sahiplik ve model bilgisi bunlarsız serbest metne döner | 7 referans tablosu (maliyet merkezi dahil); ServiceNow'dan yükleme yok | F0-08, U10 |
-| A7 | **Sınıf başına kimlik kuralları** (IRE) ve bağımlı CI kuralları | Mükerrerin kökü. Her sınıfın kimliği farklıdır (seri, UUID, hesap kimliği…) | Donanım, VM, uygulama, adaptör var | U4, U7, F1-07 |
+| A7 | **Sınıf başına kimlik kuralları** (IRE) ve bağımlı CI kuralları | Mükerrerin kökü. Her sınıfın kimliği farklıdır (seri, UUID, hesap kimliği…) | Donanım, VM, küme, bulut, CSDM; bağımlı CI ana CI bağlamında (ağ adaptörü uçtan uca, ADR-0029); yazılım ve dosya sistemi F1-23 | U4 ✓, U7 ✓, F1-23 |
 | A8 | **Sınıf ağacı ve alan gezgini**, yönetişimli şema evrimi (değişiklik setleri) | Model görünür ve denetimli olmalı | Değişiklik setleri ve Veri Modeli sayfası var (U4.4) | — |
 
 ## B. Akıl katmanı — anlamlandırma (var olan çekirdek + U6–U8)
@@ -26,9 +26,9 @@ Her madde için bugünkü durum ve plan bağı verilir. Yüzdeler `apps/web/cont
 | B1 | Normalizasyon, kimlik çözümleme, çelişki denetimi, eşleştirme kuyruğu, geri alınabilir birleştirme | %80–95 | U7 (bağımlı CI), U10 (kalibrasyon) |
 | B2 | Rol tabanlı uzlaştırma, veri tazeleme, öznitelik başına kaynak bilgisi | %75–90 | U7 |
 | B3 | Devre kesici (kısmi, eksik, terk edilmiş ve delta çalışma) | %90 | U7 |
-| B4 | **Eskime ve emekliye ayırma işletimi** (devre kesici onayıyla) | %15 | U7, F1-06 |
-| B5 | **Elle girdi**: CI oluşturma, ilişki, CSV; hepsi uzlaştırmadan geçer | %45 | U6 |
-| B6 | **Sahiplik sertifikasyonu**: CI sahibinin periyodik onayı ("bu CI hâlâ benim ve doğru") | yok | U6, F1-17 |
+| B4 | **Eskime ve emekliye ayırma işletimi** (devre kesici onayıyla) | Var (U7.1, ADR-0028); kaynağın bıraktığı ilişkinin kalkması (U7.4, ADR-0031) | U7 ✓, F1-06 ✓ |
+| B5 | **Elle girdi**: CI oluşturma, ilişki, CSV; hepsi uzlaştırmadan geçer | Var (U6, ADR-0026) | U6 ✓ |
+| B6 | **Sahiplik sertifikasyonu**: CI sahibinin periyodik onayı ("bu CI hâlâ benim ve doğru") | Var (U6.4, ADR-0027) | U6 ✓, F1-17 ✓ |
 | B7 | **Uyum denetimi (beklenen–gerçek)**: ör. "üretimdeki her sunucunun destek grubu, izlemesi ve uç nokta koruması olmalı" | Kapsam kartları kısmen | U8, F1-18 |
 | B8 | Yetkisiz değişiklik (onaylı Change penceresi dışı) | %10 | U5, F1-04 |
 | B9 | Kalite ve sağlık ölçümü (model ve veri oturduktan sonra) | %50 | U8, F1-09 |
@@ -48,10 +48,10 @@ Her madde için bugünkü durum ve plan bağı verilir. Yüzdeler `apps/web/cont
 
 | # | Yetenek | Bugün | Plan |
 | --- | --- | --- | --- |
-| D1 | CI 360°: öznitelik, kaynak, geçmiş, ilişkiler, sahiplik | kısmen | U7 |
-| D2 | **Hizmet haritası ve etki analizi** (CSDM üzerinden yukarıdan aşağıya) | yok | U7 |
-| D3 | **Zaman içinde sorgu**: "bu CI 3 ay önce nasıldı?", değişiklik zaman çizelgesi (daha iyisi) | Geçmiş var, as-of sorgu yok | U7, F1-19 |
-| D4 | Arama (var), raporlama ve dışa aktarma | %75 | U7 |
+| D1 | CI 360°: öznitelik, kaynak, geçmiş, ilişkiler, sahiplik | Var: öznitelik ve kaynağı, zaman çizelgesi, geçmiş bir an, ilişkiler (bildirenle), etki, bağımlı CI, sahiplik onayı, eskime (U6–U7) | U7 ✓ |
+| D2 | **Hizmet haritası ve etki analizi** (CSDM üzerinden yukarıdan aşağıya) | Var (U7.3–U7.4, ADR-0030/0031): ServiceNow hizmet katmanı, etki analizi, ilişki haritası; değişiklik kaydına bağlanması U9 | U7 ✓, U9 |
+| D3 | **Zaman içinde sorgu**: "bu CI 3 ay önce nasıldı?", değişiklik zaman çizelgesi (daha iyisi) | Var (U7.4, ADR-0031): geçmiş bir andaki öznitelik ve ilişkiler, anlara ayrılmış zaman çizelgesi, an seçimli ilişki haritası; saklama ufku F2-10 | F1-19 ✓, F2-10 |
+| D4 | Arama (var), raporlama ve dışa aktarma | Arama var (ADR-0018); raporlama ve dışa aktarma yok | U8, F1-20 |
 | D5 | API: yerel REST (var), ServiceNow uyumlu Table/IRE, olay/webhook, MCP | %0–50 | U9, F2 |
 | D6 | GRC Platformu beslemesi | %15 | F2-08 |
 
@@ -79,7 +79,7 @@ Her madde için bugünkü durum ve plan bağı verilir. Yüzdeler `apps/web/cont
 1. **U4 — Model:** A1–A8. Bağlayıcıların yazacağı sınıflar, CSDM omurgası, yaşam döngüsü dili, ilişki kuralları ve bunları gösteren sınıf gezgini.
 2. **U5 — Akış:** C1–C5. Gerçek kaynak istemcileri, kayıtlı örneklerle; ham yük arşivi.
 3. **U6 — Elle girdi ve sahiplik:** B5, B6.
-4. **U7 — İlişkiler ve yaşam döngüsü:** B4, A5'in zorlanması, A7 bağımlı CI, D1–D4.
+4. **U7 — İlişkiler ve yaşam döngüsü:** B4, A5'in zorlanması, A7 bağımlı CI, D1–D3. *Tamamlandı (26.11.2026); A5 kaynak ilişkilerinde raporlama olarak F1-18'e, D4 raporlama U8'e taşındı.*
 5. **U8 — Yönetim, uyum, gözlemlenebilirlik ve ölçek:** B7, B9, F1–F4.
 6. **U9 — ServiceNow replika ve MCP:** E2, D5.
 7. **U10 — Canlı kabul:** dış girdilerle; F5.

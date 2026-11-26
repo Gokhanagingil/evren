@@ -166,3 +166,26 @@ Her ilişki tipinin hangi ucunun diğerine bağımlı olduğu `metadata/relation
 Etki analizi bu yönle iki tarafa yürür. **Yukarı** yürüyüş, CI düşerse etkilenenleri bulur: uygulama hizmeti, iş uygulaması, iş hizmeti. **Aşağı** yürüyüş, CI'ın bağımlılıklarını bulur.
 
 Yürüyüş döngüye girmez ve derinlikle sınırlıdır. Okuma izni olmayan CI'ın adı gösterilmez, ama yürüyüş onun üzerinden devam eder. Hizmet katmanı ServiceNow'dan gelir; sunucu ve ağ cihazı keşiften gelir; ikisi golden record'da birleşir.
+
+## 9. İlişki yaşam döngüsü ve zaman içinde sorgu (ADR-0031)
+
+**Bildiren tutulur.** `cmdb.cmdb_rel_ci_source` her ilişkiyi bildiren kaynak kaydını saklar. Aynı ilişkiyi iki kaynak ya da iki uç bildirebilir; elle giriş de `Manual` kaynağının bildirimidir. CI panelinde ve ilişki haritasında "Bildiren: BMC, vCenter" olarak görünür.
+
+**Bildirilmeyen ilişki kalkar.** Bu yıkıcı bir işlemdir ve şu koşulların hepsini ister:
+
+- Çalışma tam (`snapshot`), tamamlanmış ve devre kesicisi `OK` olmalı.
+- Kaynak kaydı bu çalışmada gelmiş ama ilişkiyi artık listelemiyor olmalı. Ancak o zaman o kaydın bildirimi düşer.
+- Delta çalışması hiçbir bildirimi düşürmez; ilişki listesi eksik olabilir.
+- Görülmeyen kaydın ilişkileri korunur; kararı CI'ın eskimesi verir.
+
+Bildireni kalmayan ilişki `cmdb_rel_ci`'dan silinir; CI'lar silinmez. Çalışma notunda "biten ilişki: N" görünür.
+
+**Geçmiş.** İlişkinin açılması ve kalkması iki ucun değişim geçmişine `relation` kaydı olarak yazılır. Satırı değiştirmeyen elle işlem `effect: none` ile işaretlenir.
+
+**Bir andaki hâl** ikinci bir kopya tutulmadan, bugünkü hâlden geri sarılarak bulunur (`evren_core/timeline.py`):
+
+- Öznitelik: o andan sonraki ilk değişikliğin eski değeri; sonra değişmediyse bugünkü değer.
+- İlişki: o andan önce açılmış bugünkü ilişkiler; o andan sonraki ilişki olayları geri sarılır.
+- CI o anda yoksa bu açıkça söylenir.
+- Türetilen zaman damgaları (`first_discovered`, `last_discovered`) değişim geçmişine yazılmadığı için geçmiş anda gösterilmez.
+

@@ -1,8 +1,9 @@
 // Konfigürasyon öğeleri: arama ve filtreli liste (API'de sunucu tarafı, imleçli); CI 360° paneli
-// ("bu değer nereden geldi?"), API modunda değişim geçmişi.
+// ("bu değer nereden geldi?"), API modunda zaman çizelgesi, geçmiş bir an ve ilişki haritası bağlantısı (U7.4).
 import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
-import { OUTCOME, ROLE_TR, attest, backend, ciDetail, ciFacets, ciHistory, ciImpact, ciSearch, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
+import { OUTCOME, ROLE_TR, attest, backend, ciAsOf, ciDetail, ciFacets, ciImpact, ciSearch, ciTimeline, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
+import { fromLocalInput, toLocalInput } from './graph.js';
 import { STATE_TONE, openRejectDialog, waitForRequests } from './attestation.js';
 import { STAGE_TONE, observationList, openDecisionDialog, sendDecision } from './staleness.js';
 import { openEditDialog } from './ci-edit.js';
@@ -301,6 +302,96 @@ export async function renderCis(view, param) {
       .filter(Boolean);
   }
 
+  // Zaman çizelgesi (U7.4, F1-19): aynı çalışmanın veya elle isteğin değişiklikleri tek an; "Daha eski" ile sayfalanır
+  function momentItem(m) {
+    const who = m.reason === 'reconciliation' ? '' : ` · ${m.actor}`;
+    return h('li', { class: 'moment', tabindex: '-1' },
+      h('div', { class: 'moment-head' }, `${formatDateTime(m.at)} · ${m.source || 'Evren'} · ${m.reason_label}${who}`),
+      h('ul', {},
+        m.changes.map((x) => h('li', {}, h('strong', {}, x.label), `: ${x.old} → ${x.new}`)),
+        m.relations.map((r) => h('li', {}, r.action === 'added' ? 'İlişki açıldı: ' : 'İlişki kalktı: ', `${r.phrase} → `,
+          r.other ? h('a', { href: `#/ci/${r.other}` }, r.other_name) : r.other_name,
+          r.no_effect ? h('span', { class: 'cell-sub' }, 'Elle kayıt; ilişkiyi başka bir kaynak da bildirdiği için satır değişmedi') : null,
+          r.ended === 'not_reported' ? h('span', { class: 'cell-sub' }, 'Kaynak bu ilişkiyi artık bildirmiyor') : null))));
+  }
+
+  function loadTimeline(id, box, before = null) {
+    return ciTimeline(id, before).then((doc) => {
+      if (!box.isConnected) return;
+      if (!before) clear(box);
+      box.querySelector('#ciHistoryMore')?.remove();
+      let list = box.querySelector('ul.timeline');
+      if (!list) { list = h('ul', { class: 'mini timeline', 'aria-label': 'Değişiklikler, yeniden eskiye' }); box.append(list); }
+      const items = doc.moments.map(momentItem);
+      list.append(...items);
+      if (!list.children.length) box.append(h('p', { class: 'muted small' }, 'Kayıt yok.'));
+      if (doc.next_cursor) {
+        box.append(h('button', { class: 'btn ghost small', type: 'button', id: 'ciHistoryMore',
+          onclick: () => loadTimeline(id, box, doc.next_cursor) }, 'Daha eski değişiklikler'));
+      }
+      if (before && items.length) items[0].focus({ preventScroll: false });
+    }).catch(() => { if (box.isConnected) box.append(h('p', { class: 'muted small' }, 'Zaman çizelgesi yüklenemedi.')); });
+  }
+
+  // Geçmiş bir an (F1-19): öznitelikler ve ilişkiler o ana geri sarılır; bugünle farkı
+  const relList = (items, id) => h('ul', { class: 'mini', id }, items.map((x) => h('li', {}, `${x.phrase} `,
+    h('a', { href: `#/ci/${x.other}` }, x.other_name), h('span', { class: 'cell-sub' }, x.other_class_label))));
+
+  function asOfView(c, d) {
+    if (!d.existed) {
+      return [h('p', { class: 'notice', role: 'note', id: 'ciAsOfNone' },
+        `Bu CI ${formatDateTime(d.at)} anında henüz yoktu (oluşturulma: ${formatDateTime(d.created_on)}).`)];
+    }
+    const changed = d.attributes.filter((a) => a.changed);
+    const r = d.relations;
+    return [
+      h('p', { class: 'small', id: 'ciAsOfSummary' }, h('strong', {}, `${formatDateTime(d.at)} anında: `),
+        changed.length ? `${changed.length} öznitelik bugünkünden farklıydı` : 'öznitelikler bugünkü gibiydi',
+        `; ${r.then.length} ilişkisi vardı.`, d.class !== c.class ? ` Sınıfı ${d.class_label} idi.` : ''),
+      changed.length ? h('ul', { class: 'mini', id: 'ciAsOfChanged', 'aria-label': 'O anda farklı olan öznitelikler' },
+        changed.map((a) => h('li', {}, h('strong', {}, a.label), ': ', a.then, h('span', { class: 'cell-sub' }, `Bugün: ${a.now}`)))) : null,
+      r.removed_since.length ? h('p', { class: 'small' }, h('strong', {}, 'O anda vardı, bugün yok')) : null,
+      r.removed_since.length ? relList(r.removed_since, 'ciAsOfRemoved') : null,
+      r.added_since.length ? h('p', { class: 'small' }, h('strong', {}, 'Sonradan açılan ilişkiler')) : null,
+      r.added_since.length ? relList(r.added_since, 'ciAsOfAdded') : null,
+      d.hidden_relations ? h('p', { class: 'muted small' }, `Okuma izniniz olmayan ${d.hidden_relations} ilişki gösterilmiyor.`) : null,
+    ].filter(Boolean);
+  }
+
+  function asOfSection(c) {
+    const box = h('div', { id: 'ciAsOf', 'aria-live': 'polite' });
+    const input = h('input', { type: 'datetime-local', id: 'ciAsOfAt', step: '1', 'aria-label': 'Geçmiş an', max: toLocalInput(new Date()),
+      value: toLocalInput(new Date(Date.now() - 7 * 864e5)) });
+    const map = h('a', { class: 'btn ghost small', id: 'ciAsOfMap', href: `#/iliski-haritasi/${c.sys_id}` }, 'O andaki ilişki haritası');
+    const sync = () => {
+      const iso = fromLocalInput(input.value);
+      map.setAttribute('href', `#/iliski-haritasi/${c.sys_id}${iso ? `@${iso}` : ''}`);
+    };
+    const show = async () => {
+      if (!input.value) {
+        input.setAttribute('aria-invalid', 'true');
+        toast('Bir an seçin.');
+        input.focus();
+        return;
+      }
+      input.removeAttribute('aria-invalid');
+      clear(box).append(h('p', { class: 'muted small' }, 'Yükleniyor…'));
+      try {
+        const d = await ciAsOf(c.sys_id, fromLocalInput(input.value));
+        if (box.isConnected) clear(box).append(...asOfView(c, d));
+      } catch (err) {
+        clear(box).append(h('p', { class: 'muted small' }, `Yüklenemedi: ${err.message}`));
+      }
+    };
+    input.addEventListener('input', sync);
+    input.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') { ev.preventDefault(); show(); } });
+    sync();
+    return section('Geçmiş bir an', h('p', { class: 'muted small' },
+      'Seçtiğiniz andaki öznitelikler ve ilişkiler, değişim geçmişi bugünden geriye sarılarak gösterilir.'),
+    h('div', { class: 'asof-form' }, input,
+      h('button', { class: 'btn secondary small', type: 'button', id: 'ciAsOfShow', onclick: show }, 'O andaki hâli'), map), box);
+  }
+
   // Bağımlı CI kimliği (U7.2, ADR-0029): ana CI'a bağlı CI'lar (ağ adaptörü, uygulama…) ve bağımlının ana CI'ı
   function dependentSection(c) {
     const deps = c.dependents || [];
@@ -447,8 +538,10 @@ export async function renderCis(view, param) {
       kicker: `Konfigürasyon öğesi · ${c.class_label}`, title: c.name, opener,
       onClose: () => { openSeq += 1; selected = null; history.replaceState(null, '', '#/ci'); table?.refreshSelection(); },
       body: [
-        mode === 'api' && c.can_edit ? h('div', { class: 'panel-actions' }, h('button', { class: 'btn secondary small', type: 'button', id: 'ciEdit',
-          onclick: (ev) => openEditDialog(c, ev.currentTarget, () => open(c.sys_id, opener)) }, 'Düzenle…')) : null,
+        mode === 'api' ? h('div', { class: 'panel-actions' },
+          c.can_edit ? h('button', { class: 'btn secondary small', type: 'button', id: 'ciEdit',
+            onclick: (ev) => openEditDialog(c, ev.currentTarget, () => open(c.sys_id, opener)) }, 'Düzenle…') : null,
+          h('a', { class: 'btn ghost small', id: 'ciMap', href: `#/iliski-haritasi/${c.sys_id}` }, 'İlişki haritası')) : null,
         h('div', { class: 'pills' }, pill(c.class_label, 'neutral'), c.used_for ? pill(c.used_for_label || c.used_for, c.used_for === 'Production' ? 'good' : 'neutral') : null,
           c.operational_status ? pill(c.operational_status, 'info') : null),
         h('div', { class: 'stat-strip', 'aria-label': 'Kaynak kapsamı' }, cov.map(([label, ok]) => h('div', { class: `stat ${ok ? 'good' : c.server || label === 'Keşif' ? 'bad' : ''}` },
@@ -469,7 +562,8 @@ export async function renderCis(view, param) {
             ? h('p', { class: 'muted small' }, 'Yanlış birleştirilmiş bir kaynak kaydını "Ayır" ile bu CI\'dan ayırabilirsiniz.') : null),
         c.edits?.length ? section('Elle düzenlemeler', h('ul', { class: 'mini', id: 'ciEdits' }, c.edits.map((e) => editItem(c, e)))) : null,
         c.splits?.length ? section('Ayırma geçmişi', h('ul', { class: 'mini', id: 'ciSplits' }, c.splits.map(splitItem))) : null,
-        mode === 'api' ? section('Değişim geçmişi', historyBox) : null,
+        mode === 'api' ? asOfSection(c) : null,
+        mode === 'api' ? section('Zaman çizelgesi', historyBox) : null,
         section('Kimlik', kv([['sys_id', h('span', { class: 'mono' }, c.sys_id)], ['Sınıf (sys_class_name)', h('span', { class: 'mono' }, c.class)],
           ['Destek grubu', c.support_group], ['Sahip', c.owned_by || h('span', { class: 'pill warn' }, 'Atanmamış')]])),
       ],
@@ -479,14 +573,7 @@ export async function renderCis(view, param) {
       // Etki ve değişim geçmişi arka planda yüklenir: panel hemen kullanılabilir, açılış bunları beklemez
       ciImpact(id).then((doc) => { if (impactBox.isConnected) clear(impactBox).append(...impactView(doc)); })
         .catch(() => clear(impactBox).append(h('p', { class: 'muted small' }, 'Etki analizi yüklenemedi.')));
-      ciHistory(id).then((items) => {
-        if (!historyBox.isConnected) return;
-        clear(historyBox).append(items.length
-          ? h('ul', { class: 'mini' }, items.slice(0, 20).map((x) => h('li', {},
-              h('strong', {}, x.attribute), `: ${x.old ?? '—'} → ${x.new ?? '—'}`,
-              h('span', { class: 'cell-sub' }, `${formatDateTime(x.changed_at)} · ${x.source || '—'} · ${x.reason}`))))
-          : h('p', { class: 'muted small' }, 'Kayıt yok.'));
-      }).catch(() => clear(historyBox).append(h('p', { class: 'muted small' }, 'Değişim geçmişi yüklenemedi.')));
+      loadTimeline(id, historyBox);
     }
   }
 
