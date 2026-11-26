@@ -1,0 +1,74 @@
+# İzinli ilişki kuralları (ADR-0019) — hangi sınıf, hangi ilişki tipiyle, hangi sınıfa bağlanabilir.
+#
+# ServiceNow bunları yalnızca önerir (cmdb_rel_type_suggest); Evren aynı listeyi zorlayabilir. Böylece
+# "sunucu, uygulamanın üzerinde çalışır" gibi ters ilişki ya da anlamsız sınıf çifti golden record'a girmez.
+#
+# Biçim: parent --type--> child. Tip "ebeveyn tanımlayıcı::çocuk tanımlayıcı" biçimindedir ve ebeveyn
+# tanımlayıcı ebeveynin ağzından okunur: "uygulama Runs on sunucu", "sunucu Virtualized by VM örneği".
+# Kural alt sınıflara kalıtılır: cmdb_ci_appl → cmdb_ci_computer kuralı Tomcat → Linux sunucu için de geçerlidir.
+#
+# enforcement:
+#   off     → denetlenmez
+#   warn    → izinsiz ilişki yazılır ama işaretlenir (kalite bulgusu)   ← U4: tanım, U7: işletim
+#   enforce → izinsiz ilişki reddedilir, kaynak kaydı eşleştirme kuyruğuna gider
+#
+# Kesin liste kurum örneğinin cmdb_rel_type_suggest tablosu ve CSDM belgesiyle karşılaştırılmalıdır (verify).
+version: 1
+enforcement: warn
+rules:
+  # --- Genel --------------------------------------------------------------
+  - {parent: cmdb_ci, type: "Depends on::Used by", child: cmdb_ci,
+     description: "Genel bağımlılık: hizmetten altyapıya her düzeyde (CSDM)"}
+
+  # --- Hesaplama ve sanallaştırma ----------------------------------------
+  - {parent: cmdb_ci_appl, type: "Runs on::Runs", child: cmdb_ci_computer, description: "Yazılım bilgisayarda çalışır"}
+  - {parent: cmdb_ci_appl, type: "Runs on::Runs", child: cmdb_ci_cluster, verify: true, description: "Kümelenmiş yazılım"}
+  - {parent: cmdb_ci_appl, type: "Runs on::Runs", child: cmdb_ci_oslv_container, verify: true}
+  - {parent: cmdb_ci_appl, type: "Sends data to::Receives data from", child: cmdb_ci_appl, description: "Entegrasyon"}
+  - {parent: cmdb_ci_computer, type: "Virtualized by::Virtualizes", child: cmdb_ci_vm_instance,
+     description: "Misafir işletim sistemi sunucusu ↔ VM örneği (vCenter, bulut)"}
+  - {parent: cmdb_ci_vm_instance, type: "Registered on::Has registered", child: cmdb_ci_server, verify: true,
+     description: "VM örneği hipervizöre kayıtlı"}
+  - {parent: cmdb_ci_vm_instance, type: "Hosted on::Hosts", child: cmdb_ci_logical_datacenter, verify: true,
+     description: "Bulut VM'i bölgede barınır"}
+  - {parent: cmdb_ci_computer, type: "Cluster of::Cluster", child: cmdb_ci_cluster}
+  - {parent: cmdb_ci_cluster, type: "Members::Member of", child: cmdb_ci_cluster_node, verify: true}
+  - {parent: cmdb_ci_cluster_node, type: "Hosted on::Hosts", child: cmdb_ci_computer, verify: true}
+  - {parent: cmdb_ci_vcenter, type: "Contains::Contained by", child: cmdb_ci_vcenter_datacenter, verify: true}
+  - {parent: cmdb_ci_vcenter_datacenter, type: "Contains::Contained by", child: cmdb_ci_vcenter_cluster, verify: true}
+  - {parent: cmdb_ci_vcenter_cluster, type: "Members::Member of", child: cmdb_ci_esx_server, verify: true}
+
+  # --- Veri merkezi, ağ ve depolama --------------------------------------
+  - {parent: cmdb_ci_rack, type: "Contains::Contained by", child: cmdb_ci_hardware, verify: true}
+  - {parent: cmdb_ci_hardware, type: "Connects to::Connected by", child: cmdb_ci_netgear, description: "Fiziksel bağlantı"}
+  - {parent: cmdb_ci_netgear, type: "IP Connection::IP Connection", child: cmdb_ci_netgear}
+  - {parent: cmdb_ci_vlan, type: "Contains::Contained by", child: cmdb_ci_ip_network, verify: true}
+  - {parent: cmdb_ci_ip_network, type: "Contains::Contained by", child: cmdb_ci_ip_address, verify: true}
+  - {parent: cmdb_ci_computer, type: "Uses::Used by", child: cmdb_ci_storage_volume, verify: true,
+     description: "Sunucu SAN/NAS birimini kullanır"}
+  - {parent: cmdb_ci_db_instance, type: "Contains::Contained by", child: cmdb_ci_database, verify: true}
+
+  # --- Konteyner ve Kubernetes -------------------------------------------
+  - {parent: cmdb_ci_kubernetes_cluster, type: "Contains::Contained by", child: cmdb_ci_kubernetes_component, verify: true}
+  - {parent: cmdb_ci_kubernetes_namespace, type: "Contains::Contained by", child: cmdb_ci_kubernetes_component, verify: true}
+  - {parent: cmdb_ci_kubernetes_cluster, type: "Hosted on::Hosts", child: cmdb_ci_logical_datacenter, verify: true}
+  - {parent: cmdb_ci_kubernetes_node, type: "Hosted on::Hosts", child: cmdb_ci_computer, verify: true}
+  - {parent: cmdb_ci_kubernetes_pod, type: "Runs on::Runs", child: cmdb_ci_kubernetes_node, verify: true}
+  - {parent: cmdb_ci_kubernetes_pod, type: "Contains::Contained by", child: cmdb_ci_oslv_container, verify: true}
+  - {parent: cmdb_ci_oslv_container, type: "Runs on::Runs", child: cmdb_ci_computer, verify: true}
+
+  # --- Bulut --------------------------------------------------------------
+  - {parent: cmdb_ci_logical_datacenter, type: "Hosted on::Hosts", child: cmdb_ci_cloud_service_account, verify: true,
+     description: "Bölge, bulut hesabında/aboneliğinde"}
+
+  # --- CSDM ---------------------------------------------------------------
+  - {parent: cmdb_ci_business_capability, type: "Provided by::Provides", child: cmdb_ci_business_app, verify: true}
+  - {parent: cmdb_ci_business_capability, type: "Contains::Contained by", child: cmdb_ci_business_capability, verify: true,
+     description: "Yetenek hiyerarşisi"}
+  - {parent: cmdb_ci_business_process, type: "Uses::Used by", child: cmdb_ci_business_app, verify: true}
+  - {parent: cmdb_ci_business_app, type: "Consumes::Consumed by", child: cmdb_ci_service_auto, verify: true,
+     description: "İş uygulaması → uygulama servisi (CSDM)"}
+  - {parent: cmdb_ci_business_app, type: "Uses::Used by", child: cmdb_ci_information_object, verify: true}
+  - {parent: cmdb_ci_business_app, type: "Sends data to::Receives data from", child: cmdb_ci_business_app, verify: true}
+  - {parent: service_offering, type: "Contains::Contained by", child: cmdb_ci_query_based_service, verify: true,
+     description: "Teknik servis sunumu → dinamik CI grubu"}

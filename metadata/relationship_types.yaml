@@ -16,3 +16,4 @@ relationship_types:
   - {name: "Owns::Owned by", label_tr: "Sahibidir::Sahiplenilir"}
   - {name: "Sends data to::Receives data from", label_tr: "Veri gönderir::Veri alır"}
   - {name: "Registered on::Has registered", label_tr: "Kayıtlı::Kayıtlı barındırır", verify: true}
+  - {name: "Provided by::Provides", label_tr: "Sağlanır::Sağlar", verify: true}

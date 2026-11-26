@@ -2556,12 +2556,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000015",
      "target_name": "ank-bi-03 (Raporlama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000015",
-     "target_name": "ank-bi-03 (Raporlama)"
     }
    ],
    "links": [
@@ -2921,12 +2915,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e0000000000000000000000000001a",
-     "target_name": "ank-db-04 (Veritabanı)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e0000000000000000000000000001a",
      "target_name": "ank-db-04 (Veritabanı)"
     }
@@ -3623,12 +3611,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000007",
      "target_name": "ank-log-01 (Log toplama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000007",
-     "target_name": "ank-log-01 (Log toplama)"
     }
    ],
    "links": [
@@ -3988,12 +3970,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e00000000000000000000000000011",
-     "target_name": "ank-web-03 (Web ön yüz)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e00000000000000000000000000011",
      "target_name": "ank-web-03 (Web ön yüz)"
     }
@@ -4373,12 +4349,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000005",
      "target_name": "ist-bi-01 (Raporlama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000005",
-     "target_name": "ist-bi-01 (Raporlama)"
     }
    ],
    "links": [
@@ -4739,12 +4709,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e0000000000000000000000000000e",
-     "target_name": "ist-bi-02 (Raporlama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e0000000000000000000000000000e",
      "target_name": "ist-bi-02 (Raporlama)"
     }
@@ -5114,12 +5078,6 @@
      "direction": "parent",
      "target": "e7e0000000000000000000000000001f",
      "target_name": "ist-bi-04 (Raporlama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e0000000000000000000000000001f",
-     "target_name": "ist-bi-04 (Raporlama)"
     }
    ],
    "links": [
@@ -5480,12 +5438,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e00000000000000000000000000001",
-     "target_name": "ist-db-01 (Veritabanı)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e00000000000000000000000000001",
      "target_name": "ist-db-01 (Veritabanı)"
     }
@@ -6362,12 +6314,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000010",
      "target_name": "ist-db-03 (Veritabanı)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000010",
-     "target_name": "ist-db-03 (Veritabanı)"
     }
    ],
    "links": [
@@ -6729,12 +6675,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e00000000000000000000000000008",
-     "target_name": "ist-erp-02 (ERP uygulama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e00000000000000000000000000008",
      "target_name": "ist-erp-02 (ERP uygulama)"
     }
@@ -7460,12 +7400,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000019",
      "target_name": "ist-erp-04 (ERP uygulama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000019",
-     "target_name": "ist-erp-04 (ERP uygulama)"
     }
    ],
    "links": [
@@ -7826,12 +7760,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e0000000000000000000000000000f",
-     "target_name": "ist-log-02 (Log toplama)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e0000000000000000000000000000f",
      "target_name": "ist-log-02 (Log toplama)"
     }
@@ -8818,12 +8746,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000002",
      "target_name": "ist-web-01 (Web ön yüz)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000002",
-     "target_name": "ist-web-01 (Web ön yüz)"
     }
    ],
    "links": [
@@ -9537,12 +9459,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e0000000000000000000000000001b",
-     "target_name": "ist-web-04 (Web ön yüz)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e0000000000000000000000000001b",
      "target_name": "ist-web-04 (Web ön yüz)"
     }
@@ -16426,12 +16342,6 @@
      "direction": "parent",
      "target": "e7e0000000000000000000000000001e",
      "target_name": "ank-crm-04 (Müşteri ilişkileri)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e0000000000000000000000000001e",
-     "target_name": "ank-crm-04 (Müşteri ilişkileri)"
     }
    ],
    "links": [
@@ -16826,12 +16736,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e0000000000000000000000000000a",
-     "target_name": "ank-dc-02 (Etki alanı denetleyicisi)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e0000000000000000000000000000a",
      "target_name": "ank-dc-02 (Etki alanı denetleyicisi)"
     }
@@ -17594,12 +17498,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000004",
      "target_name": "ank-muh-01 (Muhasebe)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000004",
-     "target_name": "ank-muh-01 (Muhasebe)"
     }
    ],
    "links": [
@@ -17983,12 +17881,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e0000000000000000000000000000d",
-     "target_name": "ist-crm-02 (Müşteri ilişkileri)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e0000000000000000000000000000d",
      "target_name": "ist-crm-02 (Müşteri ilişkileri)"
     }
@@ -18377,12 +18269,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e00000000000000000000000000014",
-     "target_name": "ist-crm-03 (Müşteri ilişkileri)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e00000000000000000000000000014",
      "target_name": "ist-crm-03 (Müşteri ilişkileri)"
     }
@@ -18788,12 +18674,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000003",
      "target_name": "ist-dc-01 (Etki alanı denetleyicisi)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000003",
-     "target_name": "ist-dc-01 (Etki alanı denetleyicisi)"
     }
    ],
    "links": [
@@ -19190,12 +19070,6 @@
      "direction": "parent",
      "target": "e7e0000000000000000000000000001c",
      "target_name": "ist-dc-04 (Etki alanı denetleyicisi)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e0000000000000000000000000001c",
-     "target_name": "ist-dc-04 (Etki alanı denetleyicisi)"
     }
    ],
    "links": [
@@ -19581,12 +19455,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000006",
      "target_name": "ist-file-01 (Dosya sunucusu)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000006",
-     "target_name": "ist-file-01 (Dosya sunucusu)"
     }
    ],
    "links": [
@@ -19955,12 +19823,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e00000000000000000000000000016",
-     "target_name": "ist-file-03 (Dosya sunucusu)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e00000000000000000000000000016",
      "target_name": "ist-file-03 (Dosya sunucusu)"
     }
@@ -20349,12 +20211,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e00000000000000000000000000020",
-     "target_name": "ist-file-04 (Dosya sunucusu)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e00000000000000000000000000020",
      "target_name": "ist-file-04 (Dosya sunucusu)"
     }
@@ -21062,12 +20918,6 @@
      "direction": "parent",
      "target": "e7e00000000000000000000000000013",
      "target_name": "ist-muh-03 (Muhasebe)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
-     "target": "e7e00000000000000000000000000013",
-     "target_name": "ist-muh-03 (Muhasebe)"
     }
    ],
    "links": [
@@ -21462,12 +21312,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e0000000000000000000000000001d",
-     "target_name": "ist-muh-04 (Muhasebe)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e0000000000000000000000000001d",
      "target_name": "ist-muh-04 (Muhasebe)"
     }
@@ -22156,12 +22000,6 @@
     {
      "type": "Virtualized by::Virtualizes",
      "direction": "parent",
-     "target": "e7e00000000000000000000000000012",
-     "target_name": "ist-dc-03 (Etki alanı denetleyicisi)"
-    },
-    {
-     "type": "Virtualized by::Virtualizes",
-     "direction": "child",
      "target": "e7e00000000000000000000000000012",
      "target_name": "ist-dc-03 (Etki alanı denetleyicisi)"
     }

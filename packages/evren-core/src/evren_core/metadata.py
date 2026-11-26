@@ -3,7 +3,8 @@
 ``metadata/*.yaml`` dosyaları tek doğruluk kaynağıdır. Bu modül:
 
 * dosyaları yükler ve tutarlılığını doğrular (``validate``),
-* ``meta.*``, ``cmdb.cmdb_rel_type``, ``ingest.data_source`` için idempotent tohum SQL'i,
+* ``meta.*`` (sözlük, seçim listeleri, izinli ilişki kuralları), ``cmdb.cmdb_rel_type``, ``ingest.data_source``
+  için idempotent tohum SQL'i,
 * ServiceNow tablo adlarıyla sorgulanabilen ``sn.<sınıf>`` görünümlerini,
 * sık sorgulanan JSONB alanları için ifade indekslerini üretir (``generate_seed_sql``).
 """
@@ -21,6 +22,7 @@ import yaml
 
 from .classes import ClassHierarchy
 from .identity.rules import ATTRIBUTE_KEY_TYPES
+from .relations import ENFORCEMENT_MODES, RelationRules
 from .sources import SourceRegistry, SourceRegistryError
 
 __all__ = [
@@ -33,6 +35,7 @@ __all__ = [
     "metadata_field_resolver",
     "sys_id_for",
     "validate",
+    "verification_backlog",
 ]
 
 #: cmdb.cmdb_ci fiziksel kolonları (DDL ile birebir; testler doğrular).
@@ -82,6 +85,8 @@ class Metadata:
     reconciliation: dict[str, Any]
     source_roles: list[dict[str, Any]] = field(default_factory=list)
     health: dict[str, Any] = field(default_factory=dict)
+    #: İzinli ilişki kuralları (ADR-0019): ``{"enforcement": ..., "rules": [...]}``
+    relationship_rules: dict[str, Any] = field(default_factory=dict)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -91,6 +96,17 @@ class Metadata:
     def sources(self) -> SourceRegistry:
         """Kaynak rolleri ve veri kaynakları (ADR-0009)."""
         return SourceRegistry.from_metadata({"source_roles": self.source_roles, "data_sources": self.data_sources})
+
+    @property
+    def relations(self) -> RelationRules:
+        """İzinli ilişki kuralları; sınıf hiyerarşisiyle kalıtılır (ADR-0019)."""
+        return RelationRules.from_metadata(self.relationship_rules or {}, self.hierarchy)
+
+    def choice_list(self, table: str, element: str) -> dict[str, Any] | None:
+        for ch in self.choices:
+            if ch["table"] == table and ch["element"] == element:
+                return ch
+        return None
 
     @property
     def class_map(self) -> dict[str, dict[str, Any]]:
@@ -140,6 +156,7 @@ def _load_base(d: Path) -> Metadata:
         identification=_read(d / "identification_rules.yaml").get("rules", []),
         reconciliation=_read(d / "reconciliation_rules.yaml"),
         health=_read(d / "health_rules.yaml") if (d / "health_rules.yaml").exists() else {},
+        relationship_rules=_read(d / "relationship_rules.yaml") if (d / "relationship_rules.yaml").exists() else {},
     )
 
 
@@ -229,6 +246,28 @@ def validate(md: Metadata) -> ValidationReport:
             r.errors.append(f"{key}: tekrarlanan seçim değeri")
         if fdef.get("type") == "integer" and not all(v.lstrip("-").isdigit() for v in values):
             r.errors.append(f"{key}: integer alan için sayısal olmayan seçim değeri")
+    for ch in md.choices:
+        key = (ch["table"], ch["element"])
+        dep = ch.get("depends_on")
+        if dep:
+            parent = md.choice_list(ch["table"], dep)
+            if parent is None:
+                r.errors.append(f"{key}: bağımlı olduğu alanın seçim listesi yok: {dep}")
+                continue
+            allowed = {str(v["value"]) for v in parent["values"]}
+            for v in ch["values"]:
+                if str(v.get("dependent_value", "")) not in allowed:
+                    r.errors.append(f"{key}={v['value']}: dependent_value {dep} listesinde değil: "
+                                    f"{v.get('dependent_value')}")
+        elif any("dependent_value" in v for v in ch["values"]):
+            r.errors.append(f"{key}: dependent_value kullanılıyor ama depends_on tanımsız")
+        for v in ch["values"]:
+            for element, legacy in (v.get("legacy") or {}).items():
+                target = md.choice_list(ch["table"], element)
+                if target is None:
+                    r.errors.append(f"{key}={v['value']}: eski alan eşlemesi seçim listesi olmayan alana: {element}")
+                elif str(legacy) not in {str(x["value"]) for x in target["values"]}:
+                    r.errors.append(f"{key}={v['value']}: {element} için tanımsız değer: {legacy}")
     for c in md.classes:
         for f in c.get("fields") or []:
             if f.get("choice") and (c["name"], f["name"]) not in choice_keys:
@@ -241,6 +280,24 @@ def validate(md: Metadata) -> ValidationReport:
     for t in rel_names:
         if not re.fullmatch(r"[^:]+::[^:]+", t):
             r.errors.append(f"İlişki tipi 'ebeveyn::çocuk' biçiminde olmalı: {t}")
+
+    # İzinli ilişki kuralları (ADR-0019)
+    rr = md.relationship_rules or {}
+    if rr.get("enforcement", "warn") not in ENFORCEMENT_MODES:
+        r.errors.append(f"ilişki kuralları: geçersiz zorlama kipi {rr.get('enforcement')} "
+                        f"(izinli: {', '.join(ENFORCEMENT_MODES)})")
+    seen_rules: set[tuple[str, str, str]] = set()
+    for rule in rr.get("rules") or []:
+        triple = (str(rule.get("parent")), str(rule.get("type")), str(rule.get("child")))
+        where = f"ilişki kuralı[{triple[0]} --{triple[1]}--> {triple[2]}]"
+        if triple in seen_rules:
+            r.errors.append(f"{where}: tekrarlanan kural")
+        seen_rules.add(triple)
+        for side in (triple[0], triple[2]):
+            if side not in known:
+                r.errors.append(f"{where}: sınıf tanımsız: {side}")
+        if triple[1] not in rel_names:
+            r.errors.append(f"{where}: ilişki tipi tanımsız")
 
     # Kaynak rolleri ve veri kaynakları (ADR-0009)
     sources = [s["name"] for s in md.data_sources]
@@ -339,6 +396,25 @@ def validate(md: Metadata) -> ValidationReport:
         if s["absent_candidate_after_days"] <= s["stale_after_days"]:
             r.errors.append(f"{s['applies_to']}: absent_candidate_after_days > stale_after_days olmalı")
     return r
+
+
+def verification_backlog(md: Metadata) -> dict[str, list[str]]:
+    """ServiceNow örneğinden doğrulanacak öğeler (``verify: true``), türe göre (F0-07).
+
+    Kurum örneği salt okunur dışa aktarıldığında (``tools/sn_metadata_export.py``) bu liste kapanır.
+    """
+    out: dict[str, list[str]] = {"classes": [], "fields": [], "choices": [], "relationship_types": [],
+                                 "relationship_rules": [], "identification": []}
+    for c in md.classes:
+        if c.get("verify"):
+            out["classes"].append(c["name"])
+        out["fields"] += [f"{c['name']}.{f['name']}" for f in c.get("fields") or [] if f.get("verify")]
+    out["choices"] = [f"{ch['table']}.{ch['element']}" for ch in md.choices if ch.get("verify")]
+    out["relationship_types"] = [t["name"] for t in md.relationship_types if t.get("verify")]
+    out["relationship_rules"] = [f"{r['parent']} --{r['type']}--> {r['child']}"
+                                 for r in (md.relationship_rules or {}).get("rules") or [] if r.get("verify")]
+    out["identification"] = [i["applies_to"] for i in md.identification if i.get("verify")]
+    return out
 
 
 # ---------------------------------------------------------------------------
@@ -445,12 +521,14 @@ def generate_seed_sql(md: Metadata) -> str:
     out.append("\n-- Seçim listeleri (sys_choice)")
     for ch in md.choices:
         for seq, v in enumerate(ch["values"]):
+            dep = v.get("dependent_value")
             out.append(
-                "INSERT INTO meta.sys_choice (sys_id, name, element, value, label, label_tr, sequence) VALUES ("
-                f"{_q(sys_id_for('sys_choice', ch['table'], ch['element'], str(v['value'])))}, {_q(ch['table'])}, "
-                f"{_q(ch['element'])}, {_q(str(v['value']))}, {_q(v['label'])}, {_q(v['label_tr'])}, {seq * 10}) "
+                "INSERT INTO meta.sys_choice (sys_id, name, element, value, label, label_tr, sequence, dependent_value) "
+                f"VALUES ({_q(sys_id_for('sys_choice', ch['table'], ch['element'], str(v['value'])))}, "
+                f"{_q(ch['table'])}, {_q(ch['element'])}, {_q(str(v['value']))}, {_q(v['label'])}, "
+                f"{_q(v['label_tr'])}, {seq * 10}, {_q(None if dep is None else str(dep))}) "
                 "ON CONFLICT (name, element, value) DO UPDATE SET label = EXCLUDED.label, label_tr = EXCLUDED.label_tr, "
-                "sequence = EXCLUDED.sequence;"
+                "sequence = EXCLUDED.sequence, dependent_value = EXCLUDED.dependent_value;"
             )
 
     out.append("\n-- İlişki tipleri")
@@ -460,6 +538,16 @@ def generate_seed_sql(md: Metadata) -> str:
             "INSERT INTO cmdb.cmdb_rel_type (sys_id, name, parent_descriptor, child_descriptor, label_tr) VALUES ("
             f"{_q(sys_id_for('cmdb_rel_type', t['name']))}, {_q(t['name'])}, {_q(parent)}, {_q(child)}, {_q(t.get('label_tr'))}) "
             "ON CONFLICT (name) DO UPDATE SET label_tr = EXCLUDED.label_tr;"
+        )
+
+    out.append("\n-- İzinli ilişki kuralları (ADR-0019)")
+    out.append("DELETE FROM meta.cmdb_rel_rule;")
+    for rule in (md.relationship_rules or {}).get("rules") or []:
+        out.append(
+            "INSERT INTO meta.cmdb_rel_rule (sys_id, parent_class, rel_type, child_class, description, "
+            "verify_against_sn) VALUES ("
+            f"{_q(sys_id_for('cmdb_rel_rule', rule['parent'], rule['type'], rule['child']))}, {_q(rule['parent'])}, "
+            f"{_q(rule['type'])}, {_q(rule['child'])}, {_q(rule.get('description'))}, {_q(bool(rule.get('verify')))});"
         )
 
     out.append("\n-- Tanımlama kuralları")

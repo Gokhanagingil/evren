@@ -12,7 +12,7 @@ import argparse
 import sys
 
 from _bootstrap import REPO_ROOT
-from evren_core.metadata import generate_seed_sql, load_metadata, validate
+from evren_core.metadata import generate_seed_sql, load_metadata, validate, verification_backlog
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -30,11 +30,12 @@ def main(argv: list[str] | None = None) -> int:
         print(f"HATA: {e}", file=sys.stderr)
     if not report.ok:
         return 1
-    verify = sum(1 for c in md.classes if c.get("verify")) + sum(
-        1 for c in md.classes for f in c.get("fields") or [] if f.get("verify"))
+    backlog = verification_backlog(md)
+    rules = (md.relationship_rules or {}).get("rules") or []
     print(f"Metadata geçerli: {len(md.classes)} sınıf, {sum(len(c.get('fields') or []) for c in md.classes)} alan, "
-          f"{len(md.relationship_types)} ilişki tipi, {len(md.data_sources)} veri kaynağı; "
-          f"ServiceNow'dan doğrulanacak {verify} öğe.", file=sys.stderr)
+          f"{len(md.choices)} seçim listesi, {len(md.relationship_types)} ilişki tipi, {len(rules)} ilişki kuralı, "
+          f"{len(md.data_sources)} veri kaynağı; ServiceNow'dan doğrulanacak "
+          f"{sum(len(v) for v in backlog.values())} öğe.", file=sys.stderr)
     if args.sql:
         sql = generate_seed_sql(md)
         if args.sql == "-":

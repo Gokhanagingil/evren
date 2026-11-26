@@ -186,6 +186,11 @@ def test_segregation_of_duties_enforced():
         ("evren_app_indexer", "SELECT count(*) FROM cmdb.ci_security_posture"),
         ("evren_app_indexer", "INSERT INTO events.outbox (aggregate_type, aggregate_id, event_type, payload) "
                               "VALUES ('x', 'x', 'x', '{}')"),
+        # 0014 (U4): izinli ilişki kuralları yalnızca metadata tohumuyla yazılır
+        ("evren_app_api", "INSERT INTO meta.cmdb_rel_rule (parent_class, rel_type, child_class) "
+                          "VALUES ('cmdb_ci', 'Runs on::Runs', 'cmdb_ci')"),
+        ("evren_app_reconciler", "DELETE FROM meta.cmdb_rel_rule"),
+        ("evren_app_api", "UPDATE meta.sys_choice SET dependent_value = 'x'"),
     ],
 )
 def test_least_privilege_boundaries(role, statement):
@@ -212,6 +217,9 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_auditor_ro", "SELECT name, token_hint, last_used_at FROM ingest.connector_credential"),
         ("evren_app_indexer", "SELECT count(*) FROM cmdb.cmdb_ci"),
         ("evren_app_indexer", "SELECT ci_sys_id, data_source FROM ingest.identity_link WHERE active LIMIT 1"),
+        ("evren_readonly", "SELECT count(*) FROM meta.cmdb_rel_rule"),
+        ("evren_app_api", "SELECT parent_class, rel_type, child_class FROM meta.cmdb_rel_rule LIMIT 1"),
+        ("evren_app_mcp", "SELECT value, dependent_value FROM meta.sys_choice LIMIT 1"),
     ],
 )
 def test_allowed_paths_work(role, statement):
@@ -245,3 +253,16 @@ def test_product_swap_lifecycle_constraints():
     with pytest.raises(SqlError, match="check constraint"):
         psql("INSERT INTO ingest.data_source (name, label_tr, kind, role, role_rank, lifecycle) "
              "VALUES ('Hatali', 'x', 'discovery', 'Discovery', 5, 'paused')")
+
+
+def test_data_model_seeded_with_rules_and_dependent_choices(metadata):
+    """U4 (ADR-0019): sınıf kütüphanesi, bağımlı yaşam döngüsü değerleri ve izinli ilişki kuralları tohumlanır."""
+    assert int(psql("SELECT count(*) FROM meta.sys_db_object WHERE is_cmdb_class")) == len(metadata.classes)
+    assert int(psql("SELECT count(*) FROM meta.cmdb_rel_rule")) == len(metadata.relationship_rules["rules"])
+    assert psql("SELECT dependent_value FROM meta.sys_choice WHERE name = 'cmdb_ci' "
+                "AND element = 'life_cycle_stage_status' AND value = 'In Use'") == "Operational"
+    # sn görünümü yeni sınıflarda da ServiceNow adıyla sorgulanır
+    assert psql("SELECT count(*) FROM sn.cmdb_ci_kubernetes_pod") == "0"
+    with pytest.raises(SqlError, match="foreign key"):  # tanımsız sınıfa kural yazılamaz
+        psql("INSERT INTO meta.cmdb_rel_rule (parent_class, rel_type, child_class) "
+             "VALUES ('cmdb_ci_yok', 'Runs on::Runs', 'cmdb_ci')")

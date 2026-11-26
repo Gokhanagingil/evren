@@ -60,11 +60,16 @@ class ClassHierarchy:
         return {c for c in self.parents if name in self.ancestors(c)}
 
     def family(self, name: str) -> str | None:
+        """Kimlik ailesi: tanımlı aile köklerinden biri; yoksa cmdb_ci'ın doğrudan alt dalı.
+
+        Böylece aileler listesine eklenmemiş bir dalın (ör. ``cmdb_ci_kubernetes_component``,
+        ``cmdb_ci_ip_network``) CI'ları ortak bir "ailesiz" havuzda birbirinin adayı olmaz.
+        """
         chain = self.ancestors(name)
         for fam in self.families:
             if fam in chain:
                 return fam
-        return None
+        return chain[-2] if len(chain) >= 2 else None
 
     def compatible(self, a: str, b: str) -> bool:
         """Biri diğerinin atasıysa uyumludur (``cmdb_ci_server`` ↔ ``cmdb_ci_linux_server``).

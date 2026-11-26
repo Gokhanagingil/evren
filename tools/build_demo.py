@@ -497,11 +497,13 @@ def assemble(p: Pipeline, md, refs: dict[str, str], hosts: list[Host]) -> dict[s
     for c in cis:
         for rel in c["relations"]:
             rel["target_name"] = name_of.get(rel["target"], rel["target"])
-    for c in cis:
-        for rel in list(c["relations"]):
-            other = next(x for x in cis if x["sys_id"] == rel["target"])
-            other["relations"].append({"type": rel["type"], "direction": "child", "target": c["sys_id"],
-                                       "target_name": c["name"]})
+    # Yalnızca kaynaktan gelen ilişkiler çevrilir; döngü içinde eklenen ters kayıt yeniden çevrilmez
+    by_id = {c["sys_id"]: c for c in cis}
+    originals = [(c, rel) for c in cis for rel in c["relations"]]
+    for c, rel in originals:
+        by_id[rel["target"]]["relations"].append({
+            "type": rel["type"], "direction": "child" if rel["direction"] == "parent" else "parent",
+            "target": c["sys_id"], "target_name": c["name"]})
     cis.sort(key=lambda c: (c["class_label"], c["name"]))
 
     # Eşleştirme kuyruğu

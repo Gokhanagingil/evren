@@ -19,7 +19,7 @@
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Tamamlandı_ (ilgili: F1-08)
-- [ ] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Planlandı_ (ilgili: F0-17, F0-07, F1-11)
+- [ ] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Devam ediyor_ (ilgili: F0-17, F0-07, F1-11)
 - [ ] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
 - [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_ (ilgili: F1-17)
 - [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07, F1-19)
@@ -30,7 +30,7 @@
 
 ## Sıradaki adımlar (fazlara göre)
 
-1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_  
+1. **F0-07** ServiceNow metadata dışa aktarımı; işaretli öğelerin (sınıf, alan, seçim listesi, ilişki tipi/kuralı) doğrulanması — _Planlandı_  
    Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
 1. **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_  
    Sizden gereken: Entra ID uygulama kaydı (kiracı ve istemci kimliği), rol grupları, MFA kimlik doğrulama bağlamı
@@ -40,7 +40,7 @@
    Sizden gereken: vCenter ve Zabbix salt okunur servis hesapları; ağ erişimi
 1. **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_  
    Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
-1. **F0-17** CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları — _Planlandı_
+1. **F0-17** CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları — _Devam ediyor_
 
 ## Sizden gerekenler (karar ve erişim)
 
@@ -87,7 +87,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
   - Not: Demo verisi çekirdeğin gerçek hattından üretilir (tools/build_demo.py); kalıcı kararlar API ile (F0-09, F0-10).
 - [x] **F0-06** CI güvenlik kapıları: gitleaks, Trivy, bandit, pip-audit, SBOM
   - Not: 25.11.2026: hash'li kilitler (14 gün bekleme), imaj digest'i, gitleaks istisnası olumsuz testli; iki iş akışı yeşil.
-- [ ] **F0-07** ServiceNow metadata dışa aktarımı; işaretli 18 sınıf/alanın doğrulanması — _Planlandı_
+- [ ] **F0-07** ServiceNow metadata dışa aktarımı; işaretli öğelerin (sınıf, alan, seçim listesi, ilişki tipi/kuralı) doğrulanması — _Planlandı_
   - Sizden gereken: ServiceNow salt okunur servis hesabı: sys_db_object, sys_dictionary, sys_choice, cmdb_identifier okuma
 - [ ] **F0-09** API servisi, Entra ID oturumu ve Entra grup → rol eşlemesi — _Devam ediyor_
   - Not: Kod ve testler tamam (services/api, ADR-0010, ADR-0012): okuma uç noktaları, kalıcı kuyruk kararı, birleştirmeyi ayırma, elle düzenleme (Manual kaynak kaydı, alan başına sonuç), Entra OIDC + PKCE, rol eşlemesi, girişte SoD; arayüz API modunda çalışıyor. Canlı Entra kaydıyla kabul bekliyor. Makine hesapları ve ilişki düzenleme sırada.
@@ -104,8 +104,8 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [ ] **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_
   - Not: Rapor (kapsam, sınıf × rol, mükerrer adayları, değer farkları, gölge kaynak uyumu), arayüz sayfası ve değiştirilemez SHA-256 kanıt kaydı hazır (ADR-0014); sentetik veriyle test edildi. Gerçek ServiceNow verisiyle ilk rapor F0-08 yüklemesinden sonra; değerlendirme CMDB sahibinde.
   - Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
-- [ ] **F0-17** CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları — _Planlandı_
-  - Not: 26.11.2026 büyük resim incelemesinde planda karşılığı olmadığı görüldü; uçtan uca izlekte U4.
+- [ ] **F0-17** CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları — _Devam ediyor_
+  - Not: 26.11.2026 büyük resim incelemesinde planda karşılığı olmadığı görüldü; uçtan uca izlekte U4. U4.1 tamam (ADR-0019): sınıf kütüphanesi, CSDM katmanları, yaşam döngüsü değer listeleri, izinli ilişki kuralları.
 
 **Çıkış kriterleri**
 

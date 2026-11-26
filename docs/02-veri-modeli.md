@@ -6,9 +6,41 @@
 - `sys_id` (32 haneli küçük harf hex), `sys_class_name` ve `sys_*` sistem alanları.
 - Seçim değerleri (`operational_status`, `install_status`). ServiceNow'daki yazım hataları dahil alan adları korunur (`busines_criticality`).
 - Kalıtım: bir sınıfın alanları alt sınıflara geçer. Alt sınıf üst sınıfın alanını yeniden tanımlayamaz.
-- CSDM 5 sınıfları (iş uygulaması, servis örnekleri, servis sunumu) modele dahildir.
+- CSDM 5 sınıfları modele dahildir: iş yeteneği, iş uygulaması, iş süreci, bilgi nesnesi, iş/teknik servis ve sunumları, uygulama servisi, dinamik CI grubu.
 
 **ServiceNow kökenli CI'lar aynı sys_id'yi korur.** Böylece task tarafı taşındığında `task.cmdb_ci` referansları dönüşümsüz çözülür.
+
+## Sınıf kütüphanesi (ADR-0019)
+
+82 sınıf, ServiceNow temel adlarıyla. Tam liste `metadata/classes.yaml`; sürüme göre değişebilenler `verify: true`.
+
+| Dal | Sınıflar (örnek) | Kimlik ailesi |
+| --- | --- | --- |
+| Donanım | sunucu (Linux, Windows, UNIX, AIX, Solaris, ESXi, NAS), kişisel bilgisayar, yazıcı, kabin, ağ cihazı (switch, router, güvenlik duvarı, yük dengeleyici, kablosuz erişim noktası), depolama cihazı (disk, birim) | `cmdb_ci_hardware` |
+| Sanallaştırma | VM örneği, VMware VM, vCenter, veri merkezi, küme, datastore | `cmdb_ci_vm_object` |
+| Yazılım | uygulama, uygulama sunucusu (Tomcat, JBoss, WebLogic, WebSphere), web sunucusu (Apache, IIS, Nginx), veritabanı örneği (MSSQL, Oracle, MySQL, PostgreSQL, DB2) | `cmdb_ci_appl` |
+| Mantıksal ağ | IP ağı, VLAN, DNS adı, IP adresi, ağ adaptörü | her biri kendi dalı |
+| Küme ve konteyner | küme (Windows, Kubernetes), küme düğümü, konteyner (Docker), Kubernetes bileşenleri (ad alanı, düğüm, dağıtım, pod, servis) | `cmdb_ci_cluster`, `cmdb_ci_kubernetes_component`… |
+| Bulut | bulut hizmet hesabı, mantıksal veri merkezi (Azure, AWS bölgesi) | kendi dalı |
+| Diğer | dosya sistemi, veritabanı kataloğu | kendi dalı |
+| CSDM | iş yeteneği, iş süreci, bilgi nesnesi, iş uygulaması, servis ve sunumlar, uygulama servisi (haritalanmış, hesaplanan, etiket tabanlı), dinamik CI grubu | `cmdb_ci_service`, `cmdb_ci_business_app`… |
+
+Eşleştirme adayları aile içinde aranır. Aile listesinde olmayan bir dal, `cmdb_ci` altındaki ilk sınıfıyla kendi ailesini oluşturur. Böylece "prod" adlı bir Kubernetes ad alanı ile "prod" adlı bir IP ağı birbirinin adayı olmaz.
+
+## Yaşam döngüsü (CSDM 5)
+
+| Aşama | Durumlar | Eski alanlar (`operational_status` / `install_status`) |
+| --- | --- | --- |
+| Fikir | Taslak | Planlanan / — |
+| Tasarım | Planlanıyor | Planlanan / — |
+| Yapım | Yapılıyor | Planlanan / Kurulum bekliyor |
+| Devreye alma | Hazır | Hazır / Kurulu |
+| Operasyonel | Kullanımda, Bakımda, Emeklilik bekliyor | Çalışıyor·Onarımda / Kurulu·Bakımda |
+| Ömür sonu | Emekli, Kayıp, Çalıntı, İmha edildi | Emekli·Çalışmıyor / Emekli·Bulunamıyor·Çalıntı |
+
+- Durum aşamaya bağımlıdır (`sys_choice.dependent_value`); başka aşamanın durumu seçilemez.
+- Her durum, eski iki alanda taşınması gereken değeri bilir (`legacy`). ServiceNow replikası ve eski raporlar bu alanları okur. Evren tutarsızlığı bu eşlemeden denetler (U7).
+- ServiceNow'da bu iki alan referans tablosudur; replika değeri ilgili kaydın sys_id'sine çevirir.
 
 ## Fiziksel tasarım: hibrit şema
 
@@ -42,6 +74,18 @@
   - Misafir sunucu → `Virtualized by::Virtualizes` → VM örneği.
   - VM örneği → `Registered on::Has registered` → ESXi.
 - Etki analizi derinlik sınırlı özyinelemeli sorguyla yapılır. Büyük servis haritaları için önbellekli görünüm F1'de değerlendirilecek.
+
+### İzinli ilişki kuralları (ADR-0019)
+
+ServiceNow hangi sınıfın hangi sınıfa hangi tiple bağlanacağını yalnızca önerir. Evren bunu denetler: `metadata/relationship_rules.yaml` → `meta.cmdb_rel_rule`.
+
+- Kural `parent --type--> child` biçimindedir ve alt sınıflara kalıtılır. `cmdb_ci_appl Runs on cmdb_ci_computer` kuralı Tomcat → Linux sunucu ilişkisini de kapsar.
+- `cmdb_ci Depends on::Used by cmdb_ci` her düzeyde genel bağımlılıktır (CSDM).
+- Karar üç değerlidir:
+  - **izinli**;
+  - **yön ters**: "sunucu Runs on uygulama" yazılmış, tersi izinli;
+  - **izinsiz**.
+- Zorlama kipi `off`, `warn` veya `enforce` olabilir. Bugün `warn`; golden record'a yazımda uygulanması U7'dedir. Bağlayıcı eşlemeleri ve demo verisi bu kurallarla test edilir.
 
 ## Referans veriler
 

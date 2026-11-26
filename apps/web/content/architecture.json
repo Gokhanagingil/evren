@@ -452,10 +452,12 @@
       "kind_label": "Veri deposu",
       "chapter": "store",
       "phase": "F0",
-      "text": "CI ilişkileri ServiceNow'daki cmdb_rel_ci ve cmdb_rel_type yapısıyla aynıdır. Etki analizi ve bağımlılık haritası buradan beslenir.",
+      "text": "CI ilişkileri ServiceNow'daki cmdb_rel_ci ve cmdb_rel_type yapısıyla aynıdır. Etki analizi ve bağımlılık haritası buradan beslenir. Hangi sınıfın hangi tiple hangi sınıfa bağlanabileceği izinli ilişki kurallarıyla denetlenir; kurallar alt sınıflara kalıtılır, ters yön ayrıca tanınır (ADR-0019).",
       "tech": [
         "cmdb.cmdb_rel_ci",
-        "cmdb.cmdb_rel_type"
+        "cmdb.cmdb_rel_type",
+        "meta.cmdb_rel_rule",
+        "metadata/relationship_rules.yaml"
       ],
       "security": []
     },
@@ -469,7 +471,7 @@
       "kind_label": "Veri deposu",
       "chapter": "store",
       "phase": "F0",
-      "text": "Sınıf ve alan tanımları veri olarak tutulur; yeni tablo veya alan eklemek DDL gerektirmez. Kurumdaki ServiceNow örneğinden dışa aktarılarak doğrulanır.",
+      "text": "Sınıf ve alan tanımları veri olarak tutulur; yeni tablo veya alan eklemek DDL gerektirmez. 82 sınıflık ServiceNow uyumlu kütüphane (uç nokta, depolama, küme, Kubernetes, bulut, ara katman, CSDM) ve CSDM 5 yaşam döngüsü değer listeleri buradadır. Kurumdaki ServiceNow örneğinden dışa aktarılarak doğrulanır.",
       "tech": [
         "metadata/*.yaml",
         "tools/sn_metadata_export.py"

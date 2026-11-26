@@ -53,9 +53,11 @@ classes:
       - {name: install_date, type: glide_date_time, label_tr: Kurulum tarihi, storage: column}
       - {name: warranty_expiration, type: glide_date, label_tr: Garanti bitişi, storage: column}
       # CSDM 5 yaşam döngüsü alanları. ServiceNow'da life_cycle_stage /
-      # life_cycle_stage_status tablolarına referanstır; Evren'de ilk sürümde metin.
-      - {name: life_cycle_stage, type: string, max_length: 100, label_tr: Yaşam döngüsü aşaması, storage: column, verify: true}
-      - {name: life_cycle_stage_status, type: string, max_length: 100, label_tr: Aşama durumu, storage: column, verify: true}
+      # life_cycle_stage_status tablolarına referanstır; Evren'de değer listesidir (choices.yaml):
+      # aşama durumu aşamaya bağımlıdır (dependent_value) ve eski operational_status /
+      # install_status değerlerine eşlenir (ADR-0019).
+      - {name: life_cycle_stage, type: string, max_length: 100, choice: true, label_tr: Yaşam döngüsü aşaması, storage: column, verify: true}
+      - {name: life_cycle_stage_status, type: string, max_length: 100, choice: true, label_tr: Aşama durumu, storage: column, verify: true}
       - {name: comments, type: string, max_length: 4000, label_tr: Yorumlar, storage: column}
 
   # --- Donanım ------------------------------------------------------------
@@ -331,6 +333,359 @@ classes:
     label: Business Application
     label_tr: İş uygulaması
     extends: cmdb_ci
+    verify: true
+    fields:
+      - {name: it_application_owner, type: reference, reference: sys_user, label_tr: BT uygulama sahibi, verify: true}
+      - {name: application_type, type: string, max_length: 40, label_tr: Uygulama tipi, verify: true}
+      - {name: architecture_type, type: string, max_length: 40, label_tr: Mimari tipi, verify: true}
+      - {name: install_type, type: string, max_length: 40, label_tr: Kurulum tipi, verify: true}
+      - {name: user_base, type: string, max_length: 40, label_tr: Kullanıcı tabanı, verify: true}
+
+  # =======================================================================
+  # U4 sınıf kütüphanesi (ADR-0019). Bağlayıcıların yazacağı hedef sınıflar.
+  # ServiceNow temel adlarıyla; sürüme/eklentiye göre değişebilenler verify: true.
+  # =======================================================================
+
+  # --- Uç nokta ve çevre birimleri ----------------------------------------
+  - name: cmdb_ci_pc_hardware
+    label: Personal Computer
+    label_tr: Kişisel bilgisayar
+    extends: cmdb_ci_computer
+    fields: []
+
+  - name: cmdb_ci_printer
+    label: Printer
+    label_tr: Yazıcı
+    extends: cmdb_ci_hardware
+    fields: []
+
+  # --- Veri merkezi -------------------------------------------------------
+  - name: cmdb_ci_rack
+    label: Rack
+    label_tr: Kabin (rack)
+    extends: cmdb_ci_hardware
+    verify: true
+    fields:
+      - {name: rack_units, type: integer, label_tr: Birim (U) sayısı, verify: true}
+
+  # --- Depolama -----------------------------------------------------------
+  - name: cmdb_ci_storage_device
+    label: Storage Device
+    label_tr: Depolama cihazı
+    extends: cmdb_ci_hardware
+    fields:
+      - {name: computer, type: reference, reference: cmdb_ci_computer, label_tr: Bağlı bilgisayar, indexed: true, verify: true}
+      - {name: storage_type, type: string, max_length: 40, label_tr: Depolama tipi, verify: true}
+      - {name: size_bytes, type: integer, label_tr: Boyut (bayt), verify: true}
+
+  - name: cmdb_ci_disk
+    label: Disk
+    label_tr: Disk
+    extends: cmdb_ci_storage_device
+    fields: []
+
+  - name: cmdb_ci_storage_volume
+    label: Storage Volume
+    label_tr: Depolama birimi
+    extends: cmdb_ci_storage_device
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_storage_server
+    label: Storage Server
+    label_tr: Depolama sunucusu (NAS)
+    extends: cmdb_ci_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_file_system
+    label: File System
+    label_tr: Dosya sistemi
+    extends: cmdb_ci
+    fields:
+      - {name: computer, type: reference, reference: cmdb_ci_computer, label_tr: Bağlı bilgisayar, indexed: true, verify: true}
+      - {name: mount_point, type: string, max_length: 1000, label_tr: Bağlama noktası, verify: true}
+      - {name: file_system, type: string, max_length: 40, label_tr: Dosya sistemi tipi, verify: true}
+      - {name: capacity, type: integer, label_tr: Kapasite (MB), verify: true}
+      - {name: free_space, type: integer, label_tr: Boş alan (MB), verify: true}
+
+  # --- Mantıksal ağ -------------------------------------------------------
+  - name: cmdb_ci_ip_network
+    label: IP Network
+    label_tr: IP ağı
+    extends: cmdb_ci
+    fields:
+      - {name: subnet, type: string, max_length: 100, label_tr: Alt ağ (CIDR), verify: true}
+
+  - name: cmdb_ci_vlan
+    label: VLAN
+    label_tr: VLAN
+    extends: cmdb_ci
+    verify: true
+    fields:
+      - {name: vlan_id, type: string, max_length: 40, label_tr: VLAN numarası, verify: true}
+
+  - name: cmdb_ci_dns_name
+    label: DNS Name
+    label_tr: DNS adı
+    extends: cmdb_ci
+    verify: true
+    fields: []
+
+  # --- Küme ---------------------------------------------------------------
+  - name: cmdb_ci_cluster
+    label: Cluster
+    label_tr: Küme
+    extends: cmdb_ci
+    fields:
+      - {name: cluster_id, type: string, max_length: 255, label_tr: Küme kimliği, verify: true}
+      - {name: cluster_version, type: string, max_length: 100, label_tr: Küme sürümü, verify: true}
+      - {name: cluster_ip, type: string, max_length: 255, label_tr: Küme IP adresi, verify: true}
+
+  - name: cmdb_ci_cluster_node
+    label: Cluster Node
+    label_tr: Küme düğümü
+    extends: cmdb_ci
+    fields:
+      - {name: cluster, type: reference, reference: cmdb_ci_cluster, label_tr: Küme, indexed: true, verify: true}
+      - {name: server, type: reference, reference: cmdb_ci_computer, label_tr: Sunucu, verify: true}
+
+  - name: cmdb_ci_win_cluster
+    label: Windows Cluster
+    label_tr: Windows kümesi
+    extends: cmdb_ci_cluster
+    verify: true
+    fields: []
+
+  # --- Konteyner ve Kubernetes -------------------------------------------
+  - name: cmdb_ci_oslv_container
+    label: OS-level Virtualization Container
+    label_tr: Konteyner
+    extends: cmdb_ci
+    verify: true
+    fields:
+      - {name: image, type: string, max_length: 1000, label_tr: İmaj, verify: true}
+
+  - name: cmdb_ci_docker_container
+    label: Docker Container
+    label_tr: Docker konteyneri
+    extends: cmdb_ci_oslv_container
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_kubernetes_cluster
+    label: Kubernetes Cluster
+    label_tr: Kubernetes kümesi
+    extends: cmdb_ci_cluster
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_kubernetes_component
+    label: Kubernetes Component
+    label_tr: Kubernetes bileşeni
+    extends: cmdb_ci
+    verify: true
+    fields:
+      - {name: namespace, type: string, max_length: 255, label_tr: Ad alanı, verify: true}
+
+  - name: cmdb_ci_kubernetes_namespace
+    label: Kubernetes Namespace
+    label_tr: Kubernetes ad alanı
+    extends: cmdb_ci_kubernetes_component
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_kubernetes_node
+    label: Kubernetes Node
+    label_tr: Kubernetes düğümü
+    extends: cmdb_ci_kubernetes_component
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_kubernetes_deployment
+    label: Kubernetes Deployment
+    label_tr: Kubernetes dağıtımı
+    extends: cmdb_ci_kubernetes_component
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_kubernetes_pod
+    label: Kubernetes Pod
+    label_tr: Kubernetes pod
+    extends: cmdb_ci_kubernetes_component
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_kubernetes_service
+    label: Kubernetes Service
+    label_tr: Kubernetes servisi
+    extends: cmdb_ci_kubernetes_component
+    verify: true
+    fields: []
+
+  # --- Bulut --------------------------------------------------------------
+  - name: cmdb_ci_cloud_service_account
+    label: Cloud Service Account
+    label_tr: Bulut hizmet hesabı
+    extends: cmdb_ci
+    fields:
+      - {name: account_id, type: string, max_length: 255, label_tr: Hesap/abonelik kimliği, indexed: true}
+      - {name: datacenter_type, type: string, max_length: 80, label_tr: Veri merkezi tipi, verify: true}
+      - {name: is_master_account, type: boolean, label_tr: Ana hesap, verify: true}
+
+  - name: cmdb_ci_logical_datacenter
+    label: Logical Datacenter
+    label_tr: Mantıksal veri merkezi (bölge)
+    extends: cmdb_ci
+    fields:
+      - {name: region, type: string, max_length: 100, label_tr: Bölge, verify: true}
+
+  - name: cmdb_ci_azure_datacenter
+    label: Azure Datacenter
+    label_tr: Azure bölgesi
+    extends: cmdb_ci_logical_datacenter
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_aws_datacenter
+    label: AWS Datacenter
+    label_tr: AWS bölgesi
+    extends: cmdb_ci_logical_datacenter
+    verify: true
+    fields: []
+
+  # --- Ara katman yazılımı ------------------------------------------------
+  - name: cmdb_ci_app_server
+    label: Application Server
+    label_tr: Uygulama sunucusu yazılımı
+    extends: cmdb_ci_appl
+    fields: []
+
+  - name: cmdb_ci_app_server_tomcat
+    label: Tomcat
+    label_tr: Tomcat
+    extends: cmdb_ci_app_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_app_server_jboss
+    label: JBoss
+    label_tr: JBoss
+    extends: cmdb_ci_app_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_app_server_weblogic
+    label: WebLogic
+    label_tr: WebLogic
+    extends: cmdb_ci_app_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_app_server_websphere
+    label: WebSphere
+    label_tr: WebSphere
+    extends: cmdb_ci_app_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_web_server
+    label: Web Server
+    label_tr: Web sunucusu yazılımı
+    extends: cmdb_ci_appl
+    fields: []
+
+  - name: cmdb_ci_apache_web_server
+    label: Apache Web Server
+    label_tr: Apache web sunucusu
+    extends: cmdb_ci_web_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_microsoft_iis_web_server
+    label: Microsoft IIS Web Server
+    label_tr: IIS web sunucusu
+    extends: cmdb_ci_web_server
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_nginx_web_server
+    label: Nginx Web Server
+    label_tr: Nginx web sunucusu
+    extends: cmdb_ci_web_server
+    verify: true
+    fields: []
+
+  # --- Veritabanı ---------------------------------------------------------
+  - name: cmdb_ci_db_mysql_instance
+    label: MySQL Instance
+    label_tr: MySQL örneği
+    extends: cmdb_ci_db_instance
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_db_postgresql_instance
+    label: PostgreSQL Instance
+    label_tr: PostgreSQL örneği
+    extends: cmdb_ci_db_instance
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_db_db2_instance
+    label: DB2 Instance
+    label_tr: DB2 örneği
+    extends: cmdb_ci_db_instance
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_database
+    label: Database
+    label_tr: Veritabanı (katalog)
+    extends: cmdb_ci
+    verify: true
+    fields: []
+
+  # --- CSDM: iş katmanı ve dinamik gruplar --------------------------------
+  - name: cmdb_ci_business_capability
+    label: Business Capability
+    label_tr: İş yeteneği
+    extends: cmdb_ci
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_business_process
+    label: Business Process
+    label_tr: İş süreci
+    extends: cmdb_ci
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_information_object
+    label: Information Object
+    label_tr: Bilgi nesnesi
+    extends: cmdb_ci
+    verify: true
+    fields:
+      - {name: data_classification, type: string, max_length: 40, label_tr: Veri sınıflandırması, verify: true}
+
+  - name: cmdb_ci_query_based_service
+    label: Dynamic CI Group
+    label_tr: Dinamik CI grubu
+    extends: cmdb_ci_service
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_service_calculated
+    label: Calculated Application Service
+    label_tr: Hesaplanan uygulama servisi
+    extends: cmdb_ci_service_auto
+    verify: true
+    fields: []
+
+  - name: cmdb_ci_service_by_tags
+    label: Tag-Based Application Service
+    label_tr: Etiket tabanlı uygulama servisi
+    extends: cmdb_ci_service_auto
     verify: true
     fields: []
 
