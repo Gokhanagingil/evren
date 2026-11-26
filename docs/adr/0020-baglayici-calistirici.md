@@ -140,6 +140,18 @@ Simülatörle ve kayıtla yapılan sınamalar gerçek kaynak kabulü yerine geç
 - **Kısıtlı veri:** risk ve maruziyet alanları CI özniteliği olmaz (eşleme bunları almaz; testli). Yalnızca `cmdb.ci_security_posture`'a gider; o yol henüz yok (F1-02).
 - **Kayıt güvenliği:** form kodlu gövdelerdeki kimlik alanları (`client_secret`, `client_id`) parmak izinde maskelenir. Yanıttaki `access_token` / `refresh_token` / `id_token` kayda yer tutucuyla yazılır (testli).
 
+### 13. NNMi: WS-I SOAP ve güvenli XML ayrıştırma, ek bağımlılık yok (U5.2)
+
+- **Arayüz:** NNMi'nin belgelenmiş düğüm arayüzü WS-I SOAP'tır (`/NodeBeanService/NodeBean`, `getNodes`). Kimlik doğrulama Basic ile yapılır; "Web Services Client" rolü yeter. Genel bir REST düğüm API'si belgede bulunamadı.
+- **Sayfalama:** süzgeç `id GT SON` koşulu ile `maxObjects` kısıtıdır; boş sayfada biter. Süzgeç biçimi NNMi Developer Toolkit'teki "WS-I Filter Definition"a dayanır, ancak `maxObjects` ve sıralama belgeden doğrulanamadı (kurum sürümünde doğrulanacak, F1-03).
+  - Gelen kimlikler artan sırada değilse çalışma durur. Sıralama güvencesi yoksa anahtar sırası kayıt atlatabilir; sessiz eksik veri yerine görünür hata seçildi.
+- **XML ayrıştırma:** `evren_core/connectors/safe_xml.py` standart kütüphane expat üzerinedir.
+  - Reddedilenler: `<!DOCTYPE>`, varlık tanımı ve dış varlık başvurusu. Böylece varlık genişletme (billion laughs) ve XXE kapanır.
+  - Derinlik 64 ile, boyut HTTP katmanında 64 MB ile sınırlıdır.
+  - `defusedxml` aynı korumayı sağlar ama yeni bağımlılık olurdu; kullanılan yüzey küçük olduğu için eklenmedi. `xml.etree` doğrudan kullanılmaz.
+- **Kayıt/oynatma:** XML yanıtları ham saklanır (`.xml`). Kimlik doğrulama başlıktadır; gövde sır içermez.
+- **SOAP Fault:** metni kurum bilgisi içerebilir, iletiye yazılmaz.
+
 ## Sonuçlar
 
 - Yeni kaynak eklemek için üç iş gerekir: `sources/<kaynak>.py` (istemci ve mümkünse simülatör), `SOURCES` kaydı ve eşleme dosyası. Çalıştırıcı, geçit istemcisi ve güvenlik kuralları ortaktır.

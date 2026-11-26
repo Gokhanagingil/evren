@@ -114,6 +114,10 @@ python tools/connector_run.py --connector zabbix --replay build/zabbix-kayit --d
   - HSRP/VRRP sanal MAC'leri paylaşılır; zayıf olarak işaretlenir.
   - L3 switch'ler (`switchrouter`) switch sınıfında kalır.
   - API sürüme göre değişir (SOAP/REST); alan adları doğrulanmalı.
+- **İstemci (U5.2):** `evren_core/connectors/sources/nnmi.py`.
+  - Çağrı: WS-I SOAP `NodeBeanService.getNodes`; kimlik Basic (`EVREN_SOURCE_USER` + `EVREN_SOURCE_PASSWORD_FILE`, "Web Services Client" rolü).
+  - Sayfalama: `id GT SON` + `maxObjects`. Kimlikler artan sırada gelmezse çalışma durur.
+  - XML `safe_xml` ile ayrıştırılır (DTD/varlık reddi). Süzgeç biçimi kurum sürümünde doğrulanacak (F1-03).
 
 ## BMC Helix Discovery (F1) — Keşif rolü
 

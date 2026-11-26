@@ -16,8 +16,8 @@ Duman testi yalnızca 127.0.0.1'e bağlanır ve şunları doğrular: API hazır,
 canlı; API'den gönderilen bir elle düzenleme konteynerdeki uzlaştırıcı tarafından uygulanıyor (golden record
 değişiyor); Kafka konuları açılmış; OpenSearch kümesi en az sarı; olay omurgası uçtan uca çalışıyor (geçici bağlayıcı
 kimliği → alım geçidi → Kafka → tüketici → CI → outbox → Kafka CI olayı → kimlik iptali); bağlayıcı çalıştırıcı
-(ServiceNow ilk yüklemesi sys_id korunarak, Zabbix, vCenter, BMC ve Defender simülatörleri → eşleme → geçit →
-uzlaştırıcı → ilişkiler ve beş kaynaklı tek CI); arama (dizinleyici →
+(ServiceNow ilk yüklemesi sys_id korunarak, Zabbix, vCenter, BMC, Defender ve NNMi simülatörleri → eşleme → geçit →
+uzlaştırıcı → ilişkiler, beş kaynaklı sunucu ve üç kaynaklı ağ cihazı); arama (dizinleyici →
 OpenSearch → yetki süzgeçli API; Türkçe harf, yazım hatası, ayırıcısız yazım). Hiçbir sır yazdırılmaz.
 """
 from __future__ import annotations
@@ -276,8 +276,9 @@ def smoke_event_backbone() -> tuple[str, str]:
 
 SAMPLES = {"zabbix": "connectors/zabbix/samples", "vcenter": "connectors/vcenter/samples",
            "servicenow": "connectors/servicenow_cmdb/samples", "bmc_discovery": "connectors/bmc_discovery/samples",
-           "defender": "connectors/defender/samples"}
+           "defender": "connectors/defender/samples", "nnmi": "connectors/nnmi/samples"}
 SN_APP_SYS_ID = "5b1c2d3e4f5061728394a5b6c7d8e9f0"  # örnek ServiceNow kaydı (ist-app-02)
+SN_SWITCH_SYS_ID = "9f5061728394a5b6c7d8e9f0a1b2c3d4"  # örnek ServiceNow kaydı (IST-DC2-CORE-SW01)
 
 
 def _connector_run(connector: str, token: str, expected: int) -> dict[str, Any]:
@@ -331,6 +332,7 @@ def smoke_connector_run(token: str) -> None:
     vc_name, vc_token = _issue("vCenter")
     bmc_name, bmc_token = _issue("BMC")
     df_name, df_token = _issue("Defender")
+    nn_name, nn_token = _issue("NNMi")
     try:
         step("Bağlayıcı çalıştırıcı: ServiceNow simülatörü (Table API) → ilk yükleme, sys_id korunur")
         _connector_run("servicenow", sn_token, 5)
@@ -361,8 +363,14 @@ def smoke_connector_run(token: str) -> None:
         check({lk["data_source"] for lk in app.get("links") or []}
               >= {"ServiceNow", "Zabbix", "vCenter", "BMC", "Defender"},
               "akıl katmanı: beş kaynak ServiceNow'dan gelen CI'a bağlandı (seri, UUID, MAC; sys_id aynı)")
+
+        step("Bağlayıcı çalıştırıcı: NNMi simülatörü (SOAP getNodes, güvenli XML) → Ağ rolü")
+        _connector_run("nnmi", nn_token, 3)
+        _s, sw = http("GET", f"{API}/api/v1/ci/{SN_SWITCH_SYS_ID}")
+        check({lk["data_source"] for lk in sw.get("links") or []} >= {"ServiceNow", "Zabbix", "NNMi"},
+              f"ağ cihazı: ServiceNow, Zabbix ve NNMi tek CI'da (seri numarası; {SN_SWITCH_SYS_ID})")
     finally:
-        for name in (sn_name, vc_name, bmc_name, df_name):
+        for name in (sn_name, vc_name, bmc_name, df_name, nn_name):
             _revoke(name)
 
 

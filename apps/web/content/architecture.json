@@ -108,8 +108,10 @@
       "phase": "F1",
       "text": "Ağ cihazları, arayüzler ve L2 bağlantıları. Ağ cihazı sınıflarında ad, IP ve seri numarası için yetkili kaynaktır. L3 switch'ler ServiceNow'daki gibi switch sınıfında kalır.",
       "tech": [
-        "NNMi API",
-        "connectors/nnmi/mapping.yaml"
+        "WS-I SOAP NodeBeanService.getNodes",
+        "güvenli XML (expat, DTD/varlık reddi)",
+        "connectors/nnmi/mapping.yaml",
+        "connectors/sources/nnmi.py"
       ],
       "security": [
         "Salt okunur erişim"

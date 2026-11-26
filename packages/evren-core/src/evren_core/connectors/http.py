@@ -165,8 +165,12 @@ class ReplayTransport:
         responses: dict[str, tuple[int, Any]] = {}
         headers: dict[str, dict[str, str]] = {}
         for fp, v in index["responses"].items():
-            responses[fp] = (int(v.get("status", 200)), json.loads((d / v["file"]).read_text(encoding="utf-8")))
+            text = (d / v["file"]).read_text(encoding="utf-8")
+            # ham gövde (XML/SOAP): bayt olarak döner; JSON: çözülür
+            responses[fp] = (int(v.get("status", 200)), text.encode("utf-8") if v.get("raw") else json.loads(text))
             headers[fp] = {str(k).lower(): str(x) for k, x in (v.get("headers") or {}).items()}
+            if v.get("raw"):
+                headers[fp]["content-type"] = str(v.get("content_type") or "application/octet-stream")
         return cls(responses, options=dict(index.get("options") or {}), headers=headers)
 
     def send(self, method: str, url: str, headers: Mapping[str, str], body: bytes | None,
@@ -176,7 +180,10 @@ class ReplayTransport:
         if fp not in self.responses:
             raise HttpError(f"Kayıtlı yanıt yok: {fp}")
         status, payload = self.responses[fp]
-        data = b"" if payload is None else json.dumps(payload).encode("utf-8")
+        if isinstance(payload, bytes):
+            data = payload
+        else:
+            data = b"" if payload is None else json.dumps(payload).encode("utf-8")
         return HttpResponse(status, {"content-type": "application/json", **self.headers.get(fp, {})}, data)
 
 
@@ -196,14 +203,22 @@ class RecordingTransport:
              timeout: float) -> HttpResponse:
         resp = self.inner.send(method, url, headers, body, timeout)
         fp = request_fingerprint(method, url, body)
-        name = f"{len(self.index['responses']) + 1:03d}.json"
-        try:
-            payload = _mask(resp.json(), RESPONSE_SECRET_FIELDS, PLACEHOLDER)  # erişim belirteci diske yazılmaz
-        except HttpError:
-            payload = None  # JSON olmayan hata gövdesi kaydedilmez
+        n = len(self.index["responses"]) + 1
+        ctype = str(resp.headers.get("content-type", ""))
         self.dir.mkdir(parents=True, exist_ok=True)
-        (self.dir / name).write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
-        entry: dict[str, Any] = {"status": resp.status, "file": name}
+        entry: dict[str, Any] = {"status": resp.status}
+        if "xml" in ctype and resp.body:  # SOAP/XML yanıtı ham saklanır (sır içermez; kimlik başlıkta)
+            name = f"{n:03d}.xml"
+            (self.dir / name).write_text(resp.body.decode("utf-8", errors="replace"), encoding="utf-8")
+            entry |= {"raw": True, "content_type": ctype}
+        else:
+            name = f"{n:03d}.json"
+            try:
+                payload = _mask(resp.json(), RESPONSE_SECRET_FIELDS, PLACEHOLDER)  # erişim belirteci diske yazılmaz
+            except HttpError:
+                payload = None  # JSON olmayan hata gövdesi kaydedilmez
+            (self.dir / name).write_text(json.dumps(payload, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+        entry["file"] = name
         kept = {k: (PLACEHOLDER if k in SENSITIVE_RESPONSE_HEADERS else v)  # oturum kimliği diske yazılmaz
                 for k, v in resp.headers.items() if k in RECORDED_HEADERS and k != "content-type"}
         if kept:
@@ -245,13 +260,20 @@ class HttpClient:
         return "Basic " + base64.b64encode(f"{user}:{password}".encode()).decode("ascii")
 
     def request(self, method: str, path: str, payload: Any = None, *, params: Mapping[str, Any] | None = None,
-                ok: tuple[int, ...] = (200, 201, 202), form: Mapping[str, str] | None = None) -> HttpResponse:
+                ok: tuple[int, ...] = (200, 201, 202), form: Mapping[str, str] | None = None,
+                raw: bytes | None = None, content_type: str | None = None,
+                extra: Mapping[str, str] | None = None) -> HttpResponse:
+        """JSON (``payload``), form (``form``) veya ham gövde (``raw`` + ``content_type``, ör. SOAP) gönderir."""
         url = self.base_url + path
         if params:
             url += "?" + urllib.parse.urlencode({k: v for k, v in params.items() if v is not None})
-        headers = {"Accept": "application/json", **self.extra_headers}
-        if form is not None:
-            body: bytes | None = urllib.parse.urlencode(form).encode("ascii")
+        headers = {"Accept": "application/json", **self.extra_headers, **(extra or {})}
+        if raw is not None:
+            body: bytes | None = raw
+            headers["Content-Type"] = content_type or "application/octet-stream"
+            headers["Accept"] = content_type or "*/*"
+        elif form is not None:
+            body = urllib.parse.urlencode(form).encode("ascii")
             headers["Content-Type"] = "application/x-www-form-urlencoded"
         else:
             body = None if payload is None else json.dumps(payload, ensure_ascii=False, default=str).encode("utf-8")

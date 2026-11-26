@@ -13,6 +13,7 @@ from typing import Any, Literal
 from ..http import HttpClient, Transport
 from .bmc_discovery import BMCDiscoveryClient, BMCDiscoverySimulator
 from .defender import DEFAULT_SCOPE, DefenderClient, DefenderSimulator
+from .nnmi import NNMiClient, NNMiSimulator
 from .servicenow import ServiceNowClient, ServiceNowSimulator
 from .vcenter import VCenterClient, VCenterSimulator
 from .zabbix import ZabbixClient, ZabbixSimulator
@@ -60,4 +61,8 @@ SOURCES: dict[str, SourceSpec] = {
             client_secret=opts["oauth"]["client_secret"], scope=opts["oauth"].get("scope") or DEFAULT_SCOPE,
             page_size=int(opts.get("page_size", 1000))),
         simulator=DefenderSimulator.from_dir, options=("page_size",), default_url=DefenderSimulator.API),
+    "nnmi": SourceSpec(
+        key="nnmi", data_source="NNMi", auth="basic", mapping_dir="nnmi",
+        build=lambda http, opts: NNMiClient(http, page_size=int(opts.get("page_size", 500))),
+        simulator=NNMiSimulator.from_dir, options=("page_size",)),
 }
