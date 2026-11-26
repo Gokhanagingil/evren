@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 13/50 adım tamamlandı
+**Son güncelleme:** 26.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 13/54 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -21,9 +21,9 @@
 - [x] **U3** Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek) — _Tamamlandı_ (ilgili: F1-08)
 - [ ] **U4** CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur — _Planlandı_ (ilgili: F0-17, F0-07, F1-11)
 - [ ] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Planlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
-- [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_
-- [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07)
-- [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16)
+- [ ] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Planlandı_ (ilgili: F1-17)
+- [ ] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Planlandı_ (ilgili: F1-06, F1-07, F1-19)
+- [ ] **U8** Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu — _Planlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-20)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
@@ -124,7 +124,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 2/16 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 2/20 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -154,6 +154,10 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-14** Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla) — _Planlandı_
 - [ ] **F1-15** Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry) — _Planlandı_
 - [ ] **F1-16** Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı — _Planlandı_
+- [ ] **F1-17** Sahiplik ve sertifikasyon: CI sahibinin periyodik onayı, sahipsiz CI raporu — _Planlandı_
+- [ ] **F1-18** Uyum denetimi (beklenen–gerçek): metadata ile tanımlı kurallar, ör. üretim sunucusunun destek grubu, izlemesi ve korunması — _Planlandı_
+- [ ] **F1-19** Zaman içinde sorgu: CI'ın geçmiş bir andaki hâli ve değişiklik zaman çizelgesi — _Planlandı_
+- [ ] **F1-20** Ölçek ve yük testi: 40.000 sunucu + 100.000 ağ cihazı hacmiyle alım, uzlaştırma ve arama — _Planlandı_
 
 **Çıkış kriterleri**
 

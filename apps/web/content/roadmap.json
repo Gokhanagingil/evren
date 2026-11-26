@@ -26,9 +26,9 @@
       {"id": "U3", "title": "Arama: OpenSearch dizinleyici; arayüz araması ve CI listesi OpenSearch'ten (PostgreSQL yedek)", "status": "done", "refs": ["F1-08"], "note": "25.11.2026: dizinleyici (CI olayı → güncel CI → OpenSearch, sürümlü dizin + atomik takma ad, --reindex), Türkçe katlama/önek/ayırıcısız/bulanık sorgu, /api/v1/search (yetki sorguda ve yanıtta, PostgreSQL yedeği), Ctrl+K paleti; ek bağımlılık yok (ADR-0018). CI listesi sayfası hâlâ PostgreSQL'de."},
       {"id": "U4", "title": "CMDB veri modeli: ServiceNow uyumlu (ve daha iyisi) sınıf kütüphanesi ve CSDM katmanları, ilişki tipleri, yaşam döngüsü durumları; sınıf ağacı ve alan gezgini sayfası (değişiklik setleriyle bütünleşik) — bağlayıcıların yazacağı hedef sınıflar hazır olur", "status": "planned", "refs": ["F0-17", "F0-07", "F1-11"]},
       {"id": "U5", "title": "Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi", "status": "planned", "refs": ["F0-11", "F1-01", "F1-02", "F1-03", "F1-04", "F1-14"]},
-      {"id": "U6", "title": "Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer", "status": "planned", "refs": []},
-      {"id": "U7", "title": "Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası", "status": "planned", "refs": ["F1-06", "F1-07"]},
-      {"id": "U8", "title": "Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu", "status": "planned", "refs": ["F1-09", "F1-10", "F1-15", "F1-16"]},
+      {"id": "U6", "title": "Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer", "status": "planned", "refs": ["F1-17"]},
+      {"id": "U7", "title": "Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası", "status": "planned", "refs": ["F1-06", "F1-07", "F1-19"]},
+      {"id": "U8", "title": "Yönetim ekranları: sistem durumu (veritabanı, Kafka, OpenSearch, servisler), rol–yetki matrisi, denetim izi, sağlık panosu", "status": "planned", "refs": ["F1-09", "F1-10", "F1-15", "F1-16", "F1-18", "F1-20"]},
       {"id": "U9", "title": "ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle", "status": "planned", "refs": ["F2-01", "F2-02", "F2-03"]},
       {"id": "U10", "title": "Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri", "status": "planned", "refs": ["F0-07", "F0-08", "F0-09", "F2-09"], "needs": "Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)"}
     ]
@@ -91,7 +91,11 @@
         {"id": "F1-13", "title": "Ürün değişimi tatbikatı: ikinci bir keşif kaynağını gölge modda çalıştırıp kapsam ve değer farkını raporlama", "status": "done", "components": ["connectors", "reconcile", "analytics"], "note": "Sentetik tatbikat (tools/build_drill.py, Veri Kaynakları sayfası): BMC → Keşif-B gölge → etkin/devir → emekli; 9 denetim geçti, kural dosyaları değişmedi. Gerçek veritabanında rereconcile_source ile aynı geçişler testli. Bulgular: eşleme kapsamı farkı, adlandırma farkı. Gerçek ikinci ürün geldiğinde tatbikat onunla tekrarlanır."},
         {"id": "F1-14", "title": "Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla)", "status": "planned", "components": ["raw_archive"]},
         {"id": "F1-15", "title": "Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry)", "status": "planned", "components": []},
-        {"id": "F1-16", "title": "Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı", "status": "planned", "components": ["siem"]}
+        {"id": "F1-16", "title": "Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı", "status": "planned", "components": ["siem"]},
+        {"id": "F1-17", "title": "Sahiplik ve sertifikasyon: CI sahibinin periyodik onayı, sahipsiz CI raporu", "status": "planned", "components": ["match_queue"]},
+        {"id": "F1-18", "title": "Uyum denetimi (beklenen–gerçek): metadata ile tanımlı kurallar, ör. üretim sunucusunun destek grubu, izlemesi ve korunması", "status": "planned", "components": ["analytics"]},
+        {"id": "F1-19", "title": "Zaman içinde sorgu: CI'ın geçmiş bir andaki hâli ve değişiklik zaman çizelgesi", "status": "planned", "components": ["provenance"]},
+        {"id": "F1-20", "title": "Ölçek ve yük testi: 40.000 sunucu + 100.000 ağ cihazı hacmiyle alım, uzlaştırma ve arama", "status": "planned", "components": []}
       ],
       "exit_criteria": [
         {"text": "Beş kaynak üretimde; her biri için devre kesici taban çizgisi oluştu", "met": false},
