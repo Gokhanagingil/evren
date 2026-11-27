@@ -37,6 +37,7 @@ SERVICE_ROLES = {
     "evren_gateway_svc": "evren_app_ingest",
     "evren_indexer_svc": "evren_app_indexer",     # arama dizinleyicisi (U3): okur, yalnızca nabzını yazar
     "evren_connector_svc": "evren_app_connector",  # bağlayıcı çalıştırıcı (U5.3b): istek durumu, CMDB yetkisi yok
+    "evren_governance_svc": "evren_app_governance",  # görev çalışanı (U8.4): görev teslim alanları, CMDB yetkisi yok
     "evren_sync_svc": "evren_app_sync",
     "evren_mcp_svc": "evren_app_mcp",
 }

@@ -31,6 +31,7 @@ SERVICES = {
     "indexer": ("Arama dizinleyicisi", "Dizinlenen CI", "Başarısız toplu yazım"),
     "connector": ("Bağlayıcı çalıştırıcı", "Tamamlanan çalışma", "Başarısız çalışma"),
     "gateway": ("Alım geçidi", "Kabul edilen kayıt", "Kafka teslim hatası"),
+    "governance": ("Görev çalışanı (ServiceNow kanalı)", "Teslim edilen görev", "Teslim hatası"),
 }
 #: Kafka tüketici gecikmesi bu sayıyı aşarsa dikkat (kayıt)
 LAG_WARN = 10_000
@@ -131,6 +132,12 @@ def _service(kind: str, rows: list[dict[str, Any]], now: datetime) -> dict[str, 
     lag = sum(int(k.get("lag") or 0) for k in kafka if k.get("ok"))
     if kafka and any(k.get("ok") for k in kafka) and kind in ("ingest", "indexer"):
         items.append(("Kafka gecikmesi", f"{_num(lag)} kayıt"))
+    if kind == "governance" and live:
+        d = live[0]["details"]
+        items += [("Kanal", {"kapalı": "ServiceNow ayarı yok (görevler Evren'de bekler)",
+                             "simülatör": "simülatör (geliştirme)"}.get(d.get("channel"), "ServiceNow")),
+                  ("Teslim bekleyen", _num(int(d.get("pending") or 0))),
+                  ("Teslim edilemeyen", _num(int(d.get("failed") or 0)))]
     if kind == "requests":
         items.append(("Olay yayıncısı", "açık" if any(r["details"].get("outbox_publisher") for r in live) else
                       "kapalı (Kafka yapılandırılmamış)"))
@@ -140,6 +147,8 @@ def _service(kind: str, rows: list[dict[str, Any]], now: datetime) -> dict[str, 
             state, note = "warn", "DLQ'ya kayıt düştü: alım tüketicisinin işleyemediği kayıtlar DLQ konusunda bekliyor."
         if kafka and not all(k.get("ok") for k in kafka):
             state, note = "bad", "Kafka'ya ulaşılamıyor."
+        elif kind == "governance" and int(live[0]["details"].get("failed") or 0):
+            state, note = "warn", "ServiceNow'a teslim edilemeyen görev var: kanal ayarını ve bağlantıyı denetleyin."
         elif kind in ("ingest", "indexer") and lag > LAG_WARN:
             state, note = "warn", f"Tüketici gecikmesi yüksek ({_num(lag)} kayıt): örnek sayısını artırın."
         return _component(f"svc_{kind}", label, state, summary, items, note)

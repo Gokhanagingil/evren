@@ -39,7 +39,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ["docker", "compose", "-f", str(ROOT / "deploy" / "compose.dev.yaml")]
-LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "gateway", "indexer"]
+LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "gateway", "indexer", "governance"]
 API = "http://127.0.0.1:8088"
 GATEWAY = "http://127.0.0.1:8089"
 OPENSEARCH = "http://127.0.0.1:59200"
@@ -200,6 +200,7 @@ def smoke() -> int:
         name, sys_id = smoke_event_backbone()
         smoke_search(name, sys_id)
         smoke_system_status()
+        smoke_tasks()
     except SmokeError as exc:
         print(f"\nDuman testi BAŞARISIZ: {exc}", file=sys.stderr)
         return 1
@@ -487,7 +488,8 @@ def smoke_system_status() -> None:
     """Sistem durumu (U8.1, ADR-0032): gerçek yığında servis nabızları, Kafka (servislerin bildirdiği), OpenSearch ve
     göç defteri. Dev oturumunda Veri sorumlusu rolü var (platform okuma izni)."""
     step("Sistem durumu: servis nabızları, Kafka, OpenSearch, göç defteri")
-    must_ok = ("database", "migrations", "kafka", "svc_requests", "svc_ingest", "svc_indexer", "svc_gateway", "outbox")
+    must_ok = ("database", "migrations", "kafka", "svc_requests", "svc_ingest", "svc_indexer", "svc_gateway",
+               "svc_governance", "outbox")
     last: dict[str, str] = {}
 
     def ready() -> Any:
@@ -506,10 +508,44 @@ def smoke_system_status() -> None:
         for k, v in sorted(last.items()):
             print(f"  · {k}: {v}", file=sys.stderr)
         raise
-    check(True, f"veritabanı, göçler, Kafka ve beş servis çalışıyor ({by['kafka']['summary']})")
+    check(True, f"veritabanı, göçler, Kafka ve altı servis çalışıyor ({by['kafka']['summary']})")
     check(by["opensearch"]["state"] in ("ok", "warn"), f"OpenSearch: {by['opensearch']['summary']}")
     lag = next((i["value"] for i in by["svc_ingest"]["items"] if i["label"] == "Kafka gecikmesi"), "—")
     check(True, f"alım tüketicisi Kafka gecikmesini bildiriyor ({lag})")
+
+
+def smoke_tasks() -> None:
+    """Yönetişim görevi (U8.4, ADR-0035): API'den görev → görev çalışanı (gerçek konteyner, kendi rolü) → ServiceNow
+    simülatörü (standart görev tablosu) → karar Evren'de → ServiceNow kaydı kapatılır. Demo kişi ve grupları Evren
+    kaynaklı olduğu için kanal ayarına geçici bir varsayılan atama grubu verilir."""
+    step("Yönetişim görevi: API → görev çalışanı → ServiceNow (simülatör) → karar → kapatma")
+    status, groups = http("GET", f"{API}/api/v1/ref/sys_user_group?limit=5")
+    check(status == 200 and groups["items"], "atanacak grup bulundu")
+    status, ch = http("GET", f"{API}/api/v1/task-channels")
+    original = next(c for c in ch["channels"] if c["name"] == "servicenow")["settings"]
+    try:
+        status, _ = http("PATCH", f"{API}/api/v1/task-channels/servicenow",
+                         {"settings": {**original, "default_group": "d" * 32}, "reason": "Yığın duman testi: varsayılan grup"})
+        check(status == 200, "ServiceNow kanalına varsayılan atama grubu verildi")
+        status, task = http("POST", f"{API}/api/v1/tasks",
+                            {"title": "Duman testi görevi", "description": "Yığın duman testi",
+                             "assignee": {"mode": "group", "sys_id": groups["items"][0]["sys_id"]}, "due_days": 7,
+                             "idempotency_key": f"smoke-{uuid.uuid4().hex}"})
+        check(status == 201 and task["channel"] == "servicenow", f"görev açıldı ({task.get('number')})")
+        tid = task["sys_id"]
+        got = wait_for("görev çalışanı ServiceNow'a teslim etti",
+                       lambda: (d := http("GET", f"{API}/api/v1/tasks/{tid}")[1])["delivery_status"] == "delivered" and d,
+                       timeout=90, interval=3)
+        check(got["external_number"].startswith("SCTASK"), f"ServiceNow kaydı: {got['external_number']}")
+        status, _ = http("POST", f"{API}/api/v1/tasks/{tid}/complete", {"outcome": "confirmed", "note": ""})
+        check(status == 200, "karar Evren'de verildi")
+        wait_for("ServiceNow kaydı kararla kapatıldı",
+                 lambda: http("GET", f"{API}/api/v1/tasks/{tid}")[1]["delivery_status"] == "closed_sent",
+                 timeout=90, interval=3)
+        check(True, "ServiceNow kaydı kararla kapatıldı")
+    finally:
+        http("PATCH", f"{API}/api/v1/task-channels/servicenow",
+             {"settings": original, "reason": "Yığın duman testi: ayar geri alındı"})
 
 
 def smoke_search(name: str, sys_id: str) -> None:

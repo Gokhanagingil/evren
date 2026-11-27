@@ -434,3 +434,24 @@ export function iamGrant(body) {
 export function iamRevoke(body) {
   return api('/api/v1/iam/grants/revoke', { method: 'POST', body: JSON.stringify(body) });
 }
+
+// Yönetişim görevleri (U8.4, ADR-0035): yalnızca API modu
+export function tasksList({ view = 'mine', state = 'open', q = '' } = {}) {
+  const p = new URLSearchParams({ view, state });
+  if (q) p.set('q', q);
+  return api(`/api/v1/tasks?${p}`);
+}
+export const taskDetail = (id) => api(`/api/v1/tasks/${encodeURIComponent(id)}`);
+export function taskCreate(body) {
+  return api('/api/v1/tasks', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
+}
+export function taskComplete(id, outcome, note) {
+  return api(`/api/v1/tasks/${encodeURIComponent(id)}/complete`, { method: 'POST', body: JSON.stringify({ outcome, note }) });
+}
+export function taskCancel(id, reason) {
+  return api(`/api/v1/tasks/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
+}
+export const taskChannels = () => api('/api/v1/task-channels');
+export function taskChannelUpdate(name, body) {
+  return api(`/api/v1/task-channels/${encodeURIComponent(name)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}

@@ -141,6 +141,15 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/docs/{ad}`: `{"name", "title", "markdown", "base"}`. Ad `06-guvenlik`, `adr/0033-…` ya da `adr/README` biçimindedir; geçersiz ad `400 gecersiz_belge`, olmayan belge `404 bulunamadi`. Oturum gerekir.
 - Kullanım kılavuzu API'den gelmez: `apps/web/content/guide.json` statik içeriktir (`docs/kilavuz` → `tools/build_guide.py`).
 
+### Yönetişim görevleri (ADR-0035)
+
+- `GET /api/v1/tasks?view=mine|all|unassigned|attention&state=open|closed|all&q=`: `mine` herkese (kişiye ve grubuna atanan); diğerleri Konfigürasyon yöneticisi ve Denetçi. Öğe: `number`, `kind`, `title`, `ci`, `assignee` (kişi, grup, dayanak), `due_at`, `overdue`, `channel`, `delivery_status`, `external_number`, `external_closed`, `state`, `outcome`; `counts`.
+- `GET /api/v1/tasks/{sys_id}`: ayrıntı, `events`, `can_complete`, `can_cancel`, `outcomes`. Görme yetkisi yoksa 404.
+- `POST /api/v1/tasks` (`task_admin`, `idempotency_key`): `{title, description?, ci_sys_id?, assignee: {mode: auto|user|group, sys_id?}, due_days (1–365), channel?}` → 201 `{sys_id, number, basis, channel, message}`. `auto` CI ister (sahip → yöneten → destek grubu; yoksa `unassigned`).
+- `POST /api/v1/tasks/{sys_id}/complete`: `{outcome: confirmed|corrected|not_applicable|rejected, note}` (sorumlu, grubunun üyesi veya Konfigürasyon yöneticisi; `confirmed` dışında açıklama ≥ 10 karakter). `POST /api/v1/tasks/{sys_id}/cancel`: `{reason}` (yalnızca Konfigürasyon yöneticisi).
+- `GET /api/v1/task-channels`: kanallar (tür, yaşam döngüsü, varsayılan, ayar, açık ve teslim edilemeyen sayısı) ve görev çalışanının durumu. `PATCH /api/v1/task-channels/{name}`: `{is_default?, lifecycle?, settings?: {table, close_state, cancel_state, closed_states, default_group}, reason}`; ayar doğrulanır, denetim izine yazılır.
+- ServiceNow tarafı (görev çalışanı, Table API): `POST /api/now/table/<tablo>` yalnızca standart alanlarla, `GET …?sysparm_query=correlation_id=<görev>` (tekillik), `GET …/<sys_id>` (eşitleme), `PATCH …/<sys_id>` (`state`, `close_notes`).
+
 ### Kullanıcılar ve roller (ADR-0034)
 
 Okuma: Yetki yöneticisi (`iam_admin`) veya Denetçi (`audit_read`); yazma yalnızca Yetki yöneticisi. Yazma uç noktaları CSRF başlığı ister.

@@ -1,6 +1,6 @@
 # Yönetişim görevleri
 
-> Hazırlanıyor. Bu konu, özellik tamamlandığında yazılacak (plan F1-24 … F1-26).
+> Taslak. Tek seferlik görev, görevleri izleme ve görev kanalı hazır; zamanlanmış ve kurala bağlı görevler hazırlanıyor (plan F1-25, F1-26).
 
 Evren, verinin güncel kalması için sorumlulara görev açacak:
 

@@ -65,7 +65,7 @@ services:
     environment:
       EVREN_DATABASE_URL_FILE: /run/secrets/owner_dsn
     secrets: [owner_dsn, evren_api_svc, evren_worker_svc, evren_gateway_svc, evren_ingest_svc, evren_indexer_svc,
-              evren_connector_svc]
+              evren_connector_svc, evren_governance_svc]
     depends_on:
       postgres: {condition: service_healthy}
 
@@ -139,7 +139,7 @@ services:
       EVREN_PORT: "8088"
       EVREN_DEV_USER: gelistirici
       EVREN_DEV_NAME: Geliştirici
-      EVREN_DEV_ROLES: evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer,evren_security_reader
+      EVREN_DEV_ROLES: evren_reader,evren_match_reviewer,evren_cmdb_editor,evren_data_steward,evren_schema_designer,evren_security_reader,evren_config_manager
       EVREN_DATABASE_URL_FILE: /run/secrets/api_dsn
       EVREN_SESSION_KEY_FILE: /run/secrets/session_key
     secrets: [api_dsn, session_key]
@@ -191,6 +191,28 @@ services:
     depends_on:
       migrate: {condition: service_completed_successfully}
       kafka: {condition: service_healthy}
+
+  # Görev çalışanı (U8.4, ADR-0035): yönetişim görevlerini ServiceNow'a teslim eder, durumunu eşitler, Evren'de kapanınca
+  # kapatır. CMDB'ye yazamaz (evren_app_governance). Geliştirmede ServiceNow bellek içi simülatör; üretimde
+  # EVREN_SN_TASK_URL + EVREN_SN_TASK_USER/EVREN_SN_TASK_PASSWORD_FILE (veya EVREN_SN_TASK_TOKEN_FILE), sırlar dosyadan.
+  governance:
+    <<: *evren
+    command: ["governance"]
+    environment:
+      EVREN_DATABASE_URL_FILE: /run/secrets/governance_dsn
+      EVREN_SN_TASK_SIMULATE: "1"          # yalnızca geliştirme yığını
+      EVREN_PUBLIC_URL: http://127.0.0.1:8088
+      EVREN_WORKER_POLL_SECONDS: "5"
+      EVREN_WORKER_HEALTH_FILE: /tmp/governance.alive
+    secrets: [governance_dsn]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "governance"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
 
   # Arama dizinleyicisi: CI olayları (Kafka) → güncel CI (PostgreSQL, salt okunur) → OpenSearch
   indexer:
@@ -299,12 +321,14 @@ secrets:
   ingest_dsn: {file: ./secrets/ingest_dsn}
   indexer_dsn: {file: ./secrets/indexer_dsn}
   connector_dsn: {file: ./secrets/connector_dsn}
+  governance_dsn: {file: ./secrets/governance_dsn}
   evren_api_svc: {file: ./secrets/evren_api_svc}
   evren_worker_svc: {file: ./secrets/evren_worker_svc}
   evren_gateway_svc: {file: ./secrets/evren_gateway_svc}
   evren_ingest_svc: {file: ./secrets/evren_ingest_svc}
   evren_indexer_svc: {file: ./secrets/evren_indexer_svc}
   evren_connector_svc: {file: ./secrets/evren_connector_svc}
+  evren_governance_svc: {file: ./secrets/evren_governance_svc}
   session_key: {file: ./secrets/session_key}
 
 volumes:

@@ -96,6 +96,8 @@ jobs:
         run: python -m pytest -q services/indexer/tests
       - name: Bağlayıcı çalıştırıcı servisi (evren_app_connector rolüyle; gerçek alt süreç, sahte geçit)
         run: python -m pytest -q services/connector-runner/tests
+      - name: Görev çalışanı (evren_app_governance rolüyle; ServiceNow bellek içi simülatör)
+        run: python -m pytest -q services/governance/tests
       - name: Arayüz API modunda (gerçek uvicorn + PostgreSQL, Chromium)
         run: |
           python -m playwright install --with-deps chromium

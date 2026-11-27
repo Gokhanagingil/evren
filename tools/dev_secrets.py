@@ -19,7 +19,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DIR = ROOT / "deploy" / "secrets"
 SERVICES = {"api": "evren_api_svc", "worker": "evren_worker_svc", "gateway": "evren_gateway_svc",
-            "ingest": "evren_ingest_svc", "indexer": "evren_indexer_svc", "connector": "evren_connector_svc"}
+            "ingest": "evren_ingest_svc", "indexer": "evren_indexer_svc", "connector": "evren_connector_svc",
+            "governance": "evren_governance_svc"}
 
 
 def main(argv: list[str] | None = None) -> int:

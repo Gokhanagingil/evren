@@ -19,7 +19,7 @@ from evren_core.opensearch_client import OpenSearchError
 from .conftest import make_client
 
 COMPONENTS = {"api", "database", "migrations", "kafka", "opensearch", "svc_requests", "svc_ingest", "svc_indexer",
-              "svc_connector", "svc_gateway", "outbox", "queues", "sources"}
+              "svc_connector", "svc_gateway", "svc_governance", "outbox", "queues", "sources"}
 
 
 @pytest.fixture

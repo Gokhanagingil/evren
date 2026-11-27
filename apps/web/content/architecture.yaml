@@ -249,8 +249,8 @@ details:
   gov_tasks:
     phase: F1
     text: Evren veriyi güncel tutan işi de yönetir. Konfigürasyon yöneticisi yönetim panelinden zamanlanmış görev tanımlar (ör. uygulama sahiplerine veri güncelliği teyidi, erişim gözden geçirme). Veri kalitesi ve uyum kuralları da bulgu görevi açar (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev); bulgu kapanınca görev kapanır. Görev bir kanal üzerinden teslim edilir. Şimdilik ServiceNow (standart görev tablosu ve alanları, Table API), Evren'in kendi kanalı baştan hazır; kanal ileride Evren'e devredilir.
-    tech: [Görev kanalı soyutlaması, ServiceNow Table API, correlation_id]
-    security: [SN'de kural, ACL veya alan değişikliği yok, Görev kapanışı Evren'deki karara bağlı, Kanal kimliği yalnızca görev tablosuna yazar]
+    tech: [gov.task / gov.task_channel, "services/governance (görev çalışanı)", ServiceNow Table API, correlation_id]
+    security: [SN'de kural, ACL veya alan değişikliği yok, Görev kapanışı Evren'deki karara bağlı, Kanal kimliği yalnızca görev tablosuna yazar, "Görev çalışanı CMDB'ye yazamaz, karar veremez"]
   analytics:
     phase: F1
     text: Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0). F0'da gölge mod raporu mevcut CMDB'yi rol tabanlı karşılaştırır (kapsam, mükerrer, değer farkı) ve GRC için değiştirilemez kanıt üretir (ADR-0014).

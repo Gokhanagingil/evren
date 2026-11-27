@@ -653,3 +653,8 @@ label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: v
 #personRoles li .btn, #groupRoles li .btn { margin-top: 6px; }
 .matrix tbody th { text-transform: none; letter-spacing: 0; }
 .matrix .mx-tag { display: inline-block; margin-left: 6px; font-size: 10.5px; font-weight: 600; color: var(--warn); background: var(--warn-soft); border-radius: 999px; padding: 1px 6px; }
+
+/* Görevler (U8.4): kanal kartları */
+.mini-grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); }
+.channel-card h3 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 15px; }
+.channel-card .task-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }

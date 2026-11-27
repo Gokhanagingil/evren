@@ -53,7 +53,7 @@ Evren'in sorumlulara açtığı görevler (veri güncelliği teyidi, erişim gö
 
 - Görev **standart bir görev tablosuna, standart alanlarla** Table API ile yazılır: kısa açıklama, açıklama, atama grubu, atanan kişi, CI (`cmdb_ci`), son tarih, `correlation_id` (Evren görev kimliği; tekrar denemede ikinci görev açılmaz) ve `correlation_display`. ServiceNow'da iş kuralı, ACL veya alan değişikliği gerekmez (kural 11).
 - **Karar Evren'de verilir.** Görevde Evren'deki ilgili sayfanın adresi bulunur. Karar verilince Evren görevi kapatır. ServiceNow'da kararsız kapatılan görev Evren'de "kanalda kapatıldı, karar yok" olarak görünür ve görev izleme ekranına düşer.
-- Görevin durumu ServiceNow'dan geri okunur (değişiklik çekme ile aynı salt okunur desen); entegrasyon hesabı yalnızca seçilen görev tablosuna yazabilir.
+- Görevin durumu ServiceNow'dan geri okunur; entegrasyon hesabı yalnızca seçilen görev tablosuna yazabilir. Teslim, eşitleme ve kapatmayı ayrı görev çalışanı yapar (`services/governance`, ADR-0035); ServiceNow yazma kimliği yalnızca onda durur.
 - Kanal soyutlaması: aynı görev Evren'in kendi kanalında da tutulur. Kanal ServiceNow'dan Evren'e ürün değişimi deseniyle geçer (gölge → etkin → emekli, ADR-0009; plan F2-11).
 
 ## Ağ ve güvenlik

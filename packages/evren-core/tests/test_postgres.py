@@ -337,6 +337,20 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "INSERT INTO ref.sys_user (sys_id, user_name, source) VALUES (repeat('e', 32), 'x', "
                                  "'entra')"),
         ("evren_app_api", "UPDATE ref.sys_user_group SET name = 'x' WHERE false"),
+        # 0031 (ADR-0035): görev çalışanı karar veremez, CMDB'ye ve kanal ayarına yazamaz; API teslim alanlarına yazamaz,
+        # görev silemez; görevleri salt okur ve bağlayıcı göremez
+        ("evren_app_governance", "UPDATE gov.task SET state = 'done' WHERE false"),
+        ("evren_app_governance", "UPDATE gov.task SET outcome = 'confirmed' WHERE false"),
+        ("evren_app_governance", "UPDATE cmdb.cmdb_ci SET name = 'x' WHERE false"),
+        ("evren_app_governance", "UPDATE gov.task_channel SET is_default = true WHERE false"),
+        ("evren_app_governance", "SELECT count(*) FROM ingest.source_record"),
+        ("evren_app_api", "UPDATE gov.task SET external_ref = NULL WHERE false"),
+        ("evren_app_api", "UPDATE gov.task SET delivery_status = 'delivered' WHERE false"),
+        ("evren_app_api", "DELETE FROM gov.task WHERE false"),
+        ("evren_app_api", "UPDATE gov.task_event SET actor = 'x' WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM gov.task"),
+        ("evren_app_connector", "SELECT count(*) FROM gov.task"),
+        ("evren_app_ingest", "SELECT count(*) FROM gov.task"),
         # 0030 (ADR-0034): API kişi kaydında yalnızca izinli sütunlara yazar, silemez; eşleme Entra kimliğine yazamaz
         ("evren_app_api", "UPDATE ref.sys_user SET department = NULL WHERE false"),
         ("evren_app_api", "DELETE FROM ref.sys_user WHERE false"),

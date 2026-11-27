@@ -43,6 +43,7 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
 | Şema ve yetkiler | F1 | Sınıf ağacı, alan düzenleyici, değişiklik setleri; rol × kaynak × işlem matrisi |
 | Yönetim paneli | F1 ◐ | Görev odaklı tek merkez: CMDB kayıtları, veri modeli, kullanıcılar ve yetkiler, entegrasyonlar, veri kalitesi, işletim; "Size düşen işler"; kalıcı görev adresi `#/yonetim/<görev>` (U8.2; kullanıcı ve rol görevleri U8.3) |
 | Kullanım kılavuzu ve teknik belge | F1 ✓ | Katmanlı kılavuz (`#/kilavuz/<konu>`; konu arama, "Bu sayfada", önceki/sonraki); teknik belge ve ADR'ler uygulama içinde (`#/belge/<ad>`, oturumla) |
+| Görevler | F1 ◐ | Bana atanan görevler ve kararı; Konfigürasyon yöneticisi için tümü, atanmamış, dikkat, tek seferlik görev açma ve kanal ayarı (ADR-0035; zamanlanmış ve kurala bağlı görevler U8.5–U8.6) |
 | Kullanıcılar ve roller | F1 ✓ | Kişiler (arama, role göre süzme, sağ panelde roller, gruplar, yetki geçmişi), gruplar, rol–yetki matrisi (kalıtılan izinler soluk, birleşemeyen roller, rolü taşıyanlar), yetki geçmişi; rol ver/geri al gerekçeli, yetkili rol süreli, çatışma önceden uyarılır (ADR-0034) |
 | Sistem durumu | F1 ✓ | Veritabanı, göçler, Kafka, OpenSearch, servisler, olay yayını, kuyruklar, kaynak çalışmaları (ADR-0032) |
 

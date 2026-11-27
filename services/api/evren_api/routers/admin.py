@@ -99,6 +99,29 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             if n:
                 items.append(_item("grants", "Süresi 14 gün içinde dolacak rol ataması", n, "#/kullanicilar/suresi-yaklasan",
                                    "Süre dolunca rol kendiliğinden düşer; gerekiyorsa gerekçeyle yenileyin.", "info"))
+    if user_ := ctx.sys_user():
+        # Yönetişim görevleri (U8.4): kişiye veya grubuna atanan açık görevler; süresi geçenler önce
+        row = ctx.conn.execute(
+            """SELECT count(*), count(*) FILTER (WHERE due_at < now()) FROM gov.task
+                WHERE state = 'open' AND (assignee_user = %s OR assignee_group IN
+                      (SELECT "group" FROM ref.sys_user_grmember WHERE "user" = %s))""",
+            (user_["sys_id"], user_["sys_id"])).fetchone()
+        if row and row[0]:
+            late = f" ({row[1]} tanesinin süresi geçti)" if row[1] else ""
+            items.append(_item("tasks", "Size atanmış açık görev", row[0], "#/gorevler",
+                               f"Kararınızı Evren'de verin; ServiceNow'daki kaydı Evren kapatır.{late}",
+                               "bad" if row[1] else "warn"))
+    if ctx.grant("governance", "task_admin").allowed:
+        row = ctx.conn.execute(
+            """SELECT count(*) FILTER (WHERE delivery_status = 'failed' OR external_closed),
+                      count(*) FILTER (WHERE assignee_basis = 'unassigned')
+                 FROM gov.task WHERE state = 'open'""").fetchone()
+        if row[0]:
+            items.append(_item("task_attention", "Teslim edilemeyen veya ServiceNow'da kararsız kapatılan görev", row[0],
+                               "#/gorevler/dikkat", "Kanalı denetleyin veya sorumluyla görüşün.", "warn"))
+        if row[1]:
+            items.append(_item("task_unassigned", "Sorumlusu olmayan görev", row[1], "#/gorevler/atanmamis",
+                               "CI'ın sahibi, yöneteni ve destek grubu yok; görevi bir kişiye veya gruba atayın.", "info"))
     if ctx.grant("cmdb_ci", "attest").allowed and (user := ctx.sys_user()):
         from .attestation import summary as attestation_summary  # döngüsel içe aktarmayı önlemek için burada
         mine = attestation_summary(ctx).get("mine") or {}

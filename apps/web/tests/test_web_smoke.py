@@ -439,6 +439,8 @@ def test_guide_is_layered_searchable_and_works_in_demo_mode(page, base_url):
     page.goto(base_url + "/#/yonetim")
     playwright.expect(page.locator("#adminAttention")).to_contain_text("Demo modunda")
     playwright.expect(page.locator("#task-yeni-ci .task-locked")).to_contain_text("Canlı API ile çalışır")
+    page.goto(base_url + "/#/gorevler")  # U8.4: demo modunda açıklama
+    playwright.expect(page.locator("#view .notice")).to_contain_text("Görevler canlı API ile çalışır")
     page.goto(base_url + "/#/kullanicilar")  # U8.3: demo modunda açıklama
     playwright.expect(page.locator("#view .notice")).to_contain_text("canlı API ile çalışır")
 

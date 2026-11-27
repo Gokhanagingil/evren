@@ -1183,3 +1183,59 @@ def test_users_and_roles_page_grants_revokes_and_explains_with_keyboard(page, ba
     finally:
         with psycopg.connect(autocommit=True) as conn:
             conn.execute("DELETE FROM iam.principal_role WHERE principal_id = 'arayuz-testi'")
+
+
+def test_tasks_page_opens_decides_and_shows_channels(page, base_url, browser):
+    """U8.4 (ADR-0035): Konfigürasyon yöneticisi tek seferlik görev açar (CI seçilir, sorumlu CI'ın sahibi), sorumlu
+    kararı gerekçeyle verir; kanallar sekmesi varsayılanı ve ServiceNow ayarını gösterir; mobilde taşma yok."""
+    import psycopg
+    from scenarios import make_owned_ci
+
+    _ci, ci_name, _ = make_owned_ci("arayuz-testi")
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("""INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, expires_at,
+                                                        justification)
+                        VALUES ('user', 'arayuz-testi', 'evren_config_manager', 'test-kurulum', now() + interval '1 hour',
+                                'Arayüz testi') ON CONFLICT DO NOTHING""")
+    try:
+        page.goto(base_url + "/#/gorevler/yeni")
+        expect(page.locator("#newTaskTitle")).to_be_focused()
+        page.keyboard.type("Uygulama verilerini teyit edin")
+        page.fill("#newTaskDesc", "Sahip ve destek grubu doğru mu?")
+        page.fill("#newTaskCi", ci_name)
+        page.locator("#newTaskCiResults .pick-item").first.click()
+        expect(page.locator("#newTaskCiChosen")).to_contain_text(ci_name)
+        shot(page, "web_api_tasks_new")
+        page.click("#newTaskSend")
+        expect(page.locator("#toast")).to_contain_text("açıldı (CI sahibi)")
+        expect(page.locator("#detailTitle")).to_have_text("Uygulama verilerini teyit edin")
+        expect(page.locator("#detailContent")).to_contain_text(ci_name)
+        expect(page.locator("#detailContent")).to_contain_text("Teslim bekliyor")
+        page.click("#taskDecide")
+        expect(page.locator("#taskOutcome")).to_be_focused()
+        page.select_option("#taskOutcome", "corrected")
+        page.click("#taskSend")
+        expect(page.locator("#taskNote")).to_have_attribute("aria-invalid", "true")
+        page.fill("#taskNote", "Destek grubu güncellendi")
+        shot(page, "web_api_tasks_decide")
+        page.click("#taskSend")
+        expect(page.locator("#toast")).to_contain_text("kapatıldı: Düzeltildi")
+        expect(page.locator("#detailContent")).to_contain_text("Destek grubu güncellendi")
+        expect(page.locator("#taskDecide")).to_have_count(0)
+        page.keyboard.press("Escape")
+        page.click("#tab-channels")
+        expect(page.locator("#channelList")).to_contain_text("ServiceNow")
+        expect(page.locator("#channelList")).to_contain_text("sc_task")
+        expect(page.locator("#channelList")).to_contain_text("Varsayılan")
+        shot(page, "web_api_tasks_channels")
+        context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+        pg = context.new_page()
+        for route, ready in (("#/gorevler/tumu", "#taskList table"), ("#/gorevler/kanallar", "#channelList")):
+            pg.goto(base_url + "/" + route)
+            pg.wait_for_selector(ready)
+            pg.wait_for_timeout(200)
+            assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, route
+        context.close()
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM iam.principal_role WHERE principal_id = 'arayuz-testi'")
