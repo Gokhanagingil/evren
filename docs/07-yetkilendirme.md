@@ -45,7 +45,7 @@ Bir izin şu boyutlardan oluşur:
 | Yetki yöneticisi | Şema onaylayıcı | Yetki ve şema kontrolü ayrı kişilerde |
 | Denetçi | Konfigürasyon yöneticisi | Denetçi denetlediği yönetişim sürecini yönetemez |
 
-Konfigürasyon yöneticisi yönetişim görevlerini tanımlar (`governance` kaynağında `task_admin`; U8.4–U8.6): görev açar ve iptal eder, bütün görevleri ve görev kanallarını yönetir. Herkes kendine ve grubuna atanan görevi görür ve kararını verir; Denetçi bütün görevleri salt okunur görür (ADR-0035). Rol–yetki matrisinin canlı hâli uygulamada "Yönetim → Kullanıcılar ve Roller → Roller ve yetkiler" sekmesindedir (ADR-0034).
+Konfigürasyon yöneticisi yönetişim görevlerini tanımlar (`governance` kaynağında `task_admin`; U8.4–U8.6): görev açar ve iptal eder, bütün görevleri ve görev kanallarını yönetir, zamanlanmış kampanya tanımlar ve yürütür (ADR-0036; durum değişikliği ve "şimdi çalıştır" gerekçe ister). Herkes kendine ve grubuna atanan görevi görür ve kararını verir; Denetçi bütün görevleri ve kampanyaları salt okunur görür (ADR-0035, ADR-0036). Rol–yetki matrisinin canlı hâli uygulamada "Yönetim → Kullanıcılar ve Roller → Roller ve yetkiler" sekmesindedir (ADR-0034).
 
 Ek kurallar:
 

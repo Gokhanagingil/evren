@@ -492,9 +492,9 @@
       "kind_label": "İnsan kararı / arayüz",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Evren veriyi güncel tutan işi de yönetir. Konfigürasyon yöneticisi yönetim panelinden zamanlanmış görev tanımlar (ör. uygulama sahiplerine veri güncelliği teyidi, erişim gözden geçirme). Veri kalitesi ve uyum kuralları da bulgu görevi açar (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev); bulgu kapanınca görev kapanır. Görev bir kanal üzerinden teslim edilir. Şimdilik ServiceNow (standart görev tablosu ve alanları, Table API), Evren'in kendi kanalı baştan hazır; kanal ileride Evren'e devredilir.",
+      "text": "Evren veriyi güncel tutan işi de yönetir. Konfigürasyon yöneticisi yönetim panelinden zamanlanmış kampanya tanımlar (ör. uygulama sahiplerine her çeyrek veri güncelliği teyidi, erişim gözden geçirme). Kapsam sınıf ve koşulla yazılır, önce önizlenir; görev çalışanı dönem gelince her CI'ın sorumlusuna bir görev açar, sahiplik onayı teyit görevini kapatır (ADR-0036). Veri kalitesi ve uyum kuralları da bulgu görevi açar (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev); bulgu kapanınca görev kapanır. Görev bir kanal üzerinden teslim edilir. Şimdilik ServiceNow (standart görev tablosu ve alanları, Table API), Evren'in kendi kanalı baştan hazır; kanal ileride Evren'e devredilir.",
       "tech": [
-        "gov.task / gov.task_channel",
+        "gov.task / gov.task_channel / gov.campaign",
         "services/governance (görev çalışanı)",
         "ServiceNow Table API",
         "correlation_id"

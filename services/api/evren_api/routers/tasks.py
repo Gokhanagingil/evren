@@ -84,6 +84,7 @@ def _item(r: tuple[Any, ...]) -> dict[str, Any]:
 def list_tasks(ctx: Ctx = Depends(context),
                view: Literal["mine", "all", "unassigned", "attention"] = "mine",
                state: Literal["open", "closed", "all"] = "open", q: str = Query("", max_length=120),
+               campaign: str | None = Query(None, pattern=r"^[0-9a-f]{32}$"),
                limit: int = Query(100, ge=1, le=500), offset: int = Query(0, ge=0)) -> dict[str, Any]:
     """Görevler. ``mine``: bana veya grubuma atanan; ``all``/``unassigned``/``attention`` Konfigürasyon yöneticisi ve
     Denetçi içindir (``attention``: teslim edilemeyen veya ServiceNow'da kararsız kapatılan)."""
@@ -105,6 +106,9 @@ def list_tasks(ctx: Ctx = Depends(context),
         conds.append("t.state = 'open'")
     elif state == "closed":
         conds.append("t.state <> 'open'")
+    if campaign:
+        conds.append("t.source = 'campaign' AND t.source_ref = %s")
+        params.append(campaign)
     if q.strip():
         like = "%" + q.strip().replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
         conds.append("(t.title ILIKE %s OR t.number ILIKE %s OR ci.name ILIKE %s)")

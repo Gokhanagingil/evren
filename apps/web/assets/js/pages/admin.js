@@ -106,8 +106,11 @@ function tasks(goCi) {
         desc: 'Uzlaştırma, tanımlama, veri tazeleme ve eskime kuralları.' },
     ] },
     { group: 'Yönetişim görevleri', desc: 'Sorumlulara zamanlanmış ve kurala bağlı görevler; şimdilik ServiceNow, ileride Evren üzerinden.', items: [
-      { id: 'zamanli-gorev', title: 'Zamanlanmış görev tanımla', icon: 'clock', guide: 'gorevler', soon: true,
+      { id: 'zamanli-gorev', title: 'Zamanlanmış görev tanımla', icon: 'clock', cap: 'task_admin', guide: 'gorevler',
+        href: '#/gorevler/kampanyalar/yeni',
         desc: 'Ör. uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.' },
+      { id: 'kampanyalar', title: 'Kampanyaları izle', icon: 'calendar', cap: 'task_admin', guide: 'gorevler',
+        href: '#/gorevler/kampanyalar', desc: 'Etkin, duraklatılmış ve taslak kampanyalar; çalışmalar ve açık görev sayıları.' },
       { id: 'kural-gorevi', title: 'Kuraldan görev aç', icon: 'sliders', guide: 'gorevler', soon: true,
         desc: 'Ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı bulununca sahibine görev.' },
       { id: 'gorev-ac', title: 'Tek seferlik görev aç', icon: 'check', cap: 'task_admin', guide: 'gorevler', href: '#/gorevler/yeni',

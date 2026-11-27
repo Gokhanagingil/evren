@@ -119,6 +119,12 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
         if row[0]:
             items.append(_item("task_attention", "Teslim edilemeyen veya ServiceNow'da kararsız kapatılan görev", row[0],
                                "#/gorevler/dikkat", "Kanalı denetleyin veya sorumluyla görüşün.", "warn"))
+        failed = ctx.conn.execute("""SELECT count(DISTINCT campaign) FROM gov.campaign_run
+                                      WHERE status = 'failed' AND started_at > now() - interval '7 days'""").fetchone()[0]
+        if failed:
+            items.append(_item("campaign_failed", "Son yedi günde çalışması başarısız olan kampanya", failed,
+                               "#/gorevler/kampanyalar", "Kapsam sınırı aşıldı veya koşul geçersiz; kampanyayı açıp nedenini okuyun.",
+                               "warn"))
         if row[1]:
             items.append(_item("task_unassigned", "Sorumlusu olmayan görev", row[1], "#/gorevler/atanmamis",
                                "CI'ın sahibi, yöneteni ve destek grubu yok; görevi bir kişiye veya gruba atayın.", "info"))

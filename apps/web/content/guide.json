@@ -83,9 +83,9 @@
   {
    "id": "gorevler",
    "title": "Yönetişim görevleri",
-   "summary": "Sorumlulara açılan görevler, kararı ve görev kanalı.",
-   "words": 75,
-   "markdown": "# Yönetişim görevleri\n\n> Taslak. Tek seferlik görev, görevleri izleme ve görev kanalı hazır; zamanlanmış ve kurala bağlı görevler hazırlanıyor (plan F1-25, F1-26).\n\nEvren, verinin güncel kalması için sorumlulara görev açacak:\n\n- **Zamanlanmış görevler:** örneğin uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.\n- **Kural görevleri:** örneğin hiçbir uygulama veya sunucuyla ilişkisi olmayan bir veritabanı bulunduğunda, veritabanının sahibine görev.\n\nGörevler şimdilik ServiceNow'da açılacak; ileride Evren'in kendi görev ekranından da yürütülebilecek. Tanımlar [yönetim panelinden](kilavuz:yonetim-paneli) yapılacak.\n"
+   "summary": "Sorumlulara açılan görevler, zamanlanmış kampanyalar, kararı ve görev kanalı.",
+   "words": 158,
+   "markdown": "# Yönetişim görevleri\n\n> Taslak. Tek seferlik görev, zamanlanmış kampanyalar, görevleri izleme ve görev kanalı hazır; kurala bağlı görevler hazırlanıyor (plan F1-26). Kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).\n\nEvren, verinin güncel kalması için sorumlulara görev açar:\n\n- **Zamanlanmış görevler (kampanyalar):** örneğin uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.\n- **Kural görevleri:** örneğin hiçbir uygulama veya sunucuyla ilişkisi olmayan bir veritabanı bulunduğunda, veritabanının sahibine görev.\n\nGörevler şimdilik ServiceNow'da açılır; ileride Evren'in kendi görev ekranından da yürütülebilir. Tanımlar [yönetim panelinden](kilavuz:yonetim-paneli) yapılır.\n\n## Zamanlanmış kampanyalar\n\nKonfigürasyon yöneticisi **Görevler → Kampanyalar** sekmesinden kampanya tanımlar: ne istenecek, hangi CI'lar için, ne sıklıkla ve kaç günde. Kapsamdaki her CI için sorumlusuna (sahip → yöneten → destek grubu) bir görev açılır; aynı CI için açık görev varsa yenisi açılmaz.\n\n### Koşul örnekleri\n\n| Ne istiyorsunuz? | Sınıf | Koşul |\n|---|---|---|\n| Üretimdeki bütün uygulamalar | Uygulama | `used_for=Production` |\n| Çalışır durumdaki sunucular | Sunucu | `operational_status=1` |\n| Adı \"ist-\" ile başlayan CI'lar | Konfigürasyon Öğesi | `nameSTARTSWITHist-` |\n\n## Teknik ayrıntı\n\n- [Yönetişim görevleri ve kanallar](belge:adr/0035-yonetisim-gorevleri-ve-kanallar)\n- [Zamanlanmış yönetişim kampanyaları](belge:adr/0036-zamanlanmis-yonetisim-kampanyalari)\n"
   },
   {
    "id": "sozluk",

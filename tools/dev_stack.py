@@ -201,6 +201,7 @@ def smoke() -> int:
         smoke_search(name, sys_id)
         smoke_system_status()
         smoke_tasks()
+        smoke_campaign()
     except SmokeError as exc:
         print(f"\nDuman testi BAŞARISIZ: {exc}", file=sys.stderr)
         return 1
@@ -546,6 +547,34 @@ def smoke_tasks() -> None:
     finally:
         http("PATCH", f"{API}/api/v1/task-channels/servicenow",
              {"settings": original, "reason": "Yığın duman testi: ayar geri alındı"})
+
+
+def smoke_campaign() -> None:
+    """Zamanlanmış kampanya (U8.5, ADR-0036): API'den kampanya (önizleme → etkin) → "şimdi çalıştır" → görev çalışanı
+    (gerçek konteyner) kapsamdaki her CI'a bir görev açar; ikinci çalışma aynı CI'a yeni görev açmaz → emekliye ayır."""
+    step("Kampanya: önizleme → etkinleştir → şimdi çalıştır → görev çalışanı görevleri açar")
+    scope = {"scope_class": "cmdb_ci_server", "scope_query": "nameSTARTSWITHist-"}
+    status, preview = http("POST", f"{API}/api/v1/campaigns/preview", scope)
+    check(status == 200 and preview["valid"] and preview["in_scope"] > 0, f"önizleme: {preview.get('in_scope')} CI kapsamda")
+    status, camp = http("POST", f"{API}/api/v1/campaigns",
+                        {"name": f"Duman testi {uuid.uuid4().hex[:6]}", "kind": "attestation",
+                         "title": "Sunucu verilerini teyit edin", "frequency": "quarterly", "due_days": 7, "channel": "evren",
+                         "activate": True, "idempotency_key": f"smoke-{uuid.uuid4().hex}", **scope})
+    check(status == 201 and camp["state"] == "active", "kampanya etkin")
+    cid = camp["sys_id"]
+    try:
+        for n in (1, 2):
+            status, _ = http("POST", f"{API}/api/v1/campaigns/{cid}/run", {"reason": "Yığın duman testi çalışması"})
+            check(status == 202, f"{n}. çalışma istendi")
+            run = wait_for(f"{n}. çalışma bitti",
+                           lambda: (r := http("GET", f"{API}/api/v1/campaigns/{cid}")[1]["runs"][0])["status"] in ("done", "failed")
+                           and r, timeout=90, interval=3)
+            check(run["status"] == "done", f"{n}. çalışma: {run['in_scope']} kapsamda, {run['created']} görev açıldı")
+        check(run["created"] == 0 and run["already_open"] == preview["in_scope"], "ikinci çalışma aynı CI'a görev açmadı")
+        status, tasks = http("GET", f"{API}/api/v1/tasks?view=all&campaign={cid}")
+        check(status == 200 and len(tasks["items"]) == preview["in_scope"], "kampanyanın görevleri listelendi")
+    finally:
+        http("PATCH", f"{API}/api/v1/campaigns/{cid}", {"state": "retired", "reason": "Yığın duman testi bitti"})
 
 
 def smoke_search(name: str, sys_id: str) -> None:

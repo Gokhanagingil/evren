@@ -141,7 +141,7 @@ packages/evren-core/      Saf alan mantığı + testler
   attestation.py          sahiplik onayı: politika (metadata/attestation.yaml), durum türetme, kapsam SQL'i (ADR-0027)
   staleness.py            eskime: kural seçimi (staleness), gözlemci kaynaklarla karar, emeklilik değerleri (ADR-0028)
   governance.py           yönetişim görevleri: sorumlu seçimi, kanal ayarı, ServiceNow görev kanalı (yalnızca standart
-                          alanlar) ve simülatörü (ADR-0035)
+                          alanlar) ve simülatörü (ADR-0035); kampanya kapsamı ve sonraki çalışma (ADR-0036)
   timeline.py             zaman içinde sorgu: geçmiş bir andaki öznitelik ve ilişkiler, zaman çizelgesi anları (ADR-0031)
   model_view.py           Veri Modeli sayfasının görünümü (API ve model.json aynı kaynaktan)
   schedule.py             5 alanlı cron zamanlaması (çalıştırıcı servisi, metadata doğrulaması; ADR-0021)
@@ -150,10 +150,10 @@ packages/evren-core/      Saf alan mantığı + testler
 connectors/<kaynak>/      kaynak başına eşleme dosyaları; samples/ sentetik örnek veri (simülatör)
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
-db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri (tools/migrate.py uygular)
+db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri · 0032 kampanyalar (tools/migrate.py uygular)
 services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), indexer (arama),
                           connector-runner (şimdi çalıştır + zamanlama; kaynak sırları yalnızca burada, ADR-0021),
-                          governance (görev çalışanı: ServiceNow'a görev teslimi, eşitleme, kapatma; ADR-0035), sn-sync, mcp
+                          governance (görev çalışanı: kampanya çalıştırma, ServiceNow'a görev teslimi, eşitleme, kapatma; ADR-0035, ADR-0036), sn-sync, mcp
 deploy/                   tek imaj (Dockerfile, evren.py giriş noktası), compose geliştirme yığını, Kafka konuları, connectors.dev.yaml
 docs/                     mimari belgeler, ADR'ler; kilavuz/ kullanım kılavuzu (kilavuz.yaml + konu başına Markdown, ADR-0033)
 tools/                    yükleyici, harita/büyük resim/plan/demo üreticileri, SN dışa aktarım, geliştirme sunucusu

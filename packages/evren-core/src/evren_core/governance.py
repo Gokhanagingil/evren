@@ -273,3 +273,56 @@ class ServiceNowTaskSimulator:
                 row["active"] = "false"
             return self._json(200, {"result": row})
         return self._json(400, {"error": {"message": "Invalid request"}})
+
+
+# ---------------------------------------------------------------------------------------------- kampanyalar (U8.5)
+#: Kampanya türleri (görev türüyle aynı ad)
+CAMPAIGN_KINDS = {"attestation": "Veri güncelliği teyidi", "access_review": "Erişim gözden geçirme",
+                  "checklist": "Kontrol listesi"}
+#: Panelde seçilen sıklıklar (5 alanlı cron; ayın ilk günü 09:00, kampanya saat dilimi). Özel cron da verilebilir.
+FREQUENCIES = {
+    "monthly": ("Her ay", "0 9 1 * *"),
+    "quarterly": ("Her çeyrek", "0 9 1 1,4,7,10 *"),
+    "semiannual": ("Altı ayda bir", "0 9 1 1,7 *"),
+    "annual": ("Her yıl", "0 9 1 1 *"),
+}
+#: Emekli CI kampanya kapsamına girmez (sahiplik onayıyla aynı kural)
+NOT_RETIRED_SQL = "(coalesce(c.life_cycle_stage, '') <> 'End of Life' AND coalesce(c.install_status, 0) <> 7)"
+
+
+def next_run(schedule: str, tz: str, after: datetime) -> datetime:
+    """Zamanlamanın ``after``'dan sonraki ilk anı (UTC). Geçersiz ifade veya hiç gelmeyen an ``ValueError``."""
+    from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+    from .schedule import CronError, CronSchedule
+
+    try:
+        cron = CronSchedule.parse(schedule)
+        zone = ZoneInfo(tz)
+    except (CronError, ZoneInfoNotFoundError, ValueError) as exc:
+        raise ValueError(f"Zamanlama geçersiz: {exc}") from None
+    nxt = cron.next_after(after.astimezone(zone))
+    if nxt is None:
+        raise ValueError("Zamanlama hiçbir zaman çalışmaz")
+    return nxt.astimezone(UTC)
+
+
+def campaign_scope(md: Any, scope_class: str, scope_query: str) -> tuple[str, list[Any]]:
+    """Kampanya kapsamı → güvenli SQL koşulu (``c`` = cmdb.cmdb_ci). Sınıf ve alt sınıfları, encoded query koşulu
+    (alan adları yalnızca metadata sözlüğünden; değerler parametre), emekli CI hariç. Hatalı koşul ``ValueError``."""
+    from .encoded_query import QueryError, compile_sql, parse
+    from .metadata import metadata_field_resolver
+
+    if scope_class not in md.hierarchy:
+        raise ValueError(f"Bilinmeyen sınıf: {scope_class}")
+    classes = sorted(md.hierarchy.descendants(scope_class) | {scope_class})
+    where, params = ["c.sys_class_name = ANY(%s)", NOT_RETIRED_SQL], [classes]
+    if scope_query.strip():
+        try:
+            sql, qparams, _order = compile_sql(parse(scope_query), metadata_field_resolver(md, scope_class, "c"),
+                                               lambda name: md.hierarchy.descendants(name))
+        except QueryError as exc:
+            raise ValueError(f"Koşul geçersiz: {exc}") from None
+        where.append(f"({sql})")
+        params += qparams
+    return " AND ".join(where), params

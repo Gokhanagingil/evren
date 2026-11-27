@@ -436,9 +436,10 @@ export function iamRevoke(body) {
 }
 
 // Yönetişim görevleri (U8.4, ADR-0035): yalnızca API modu
-export function tasksList({ view = 'mine', state = 'open', q = '' } = {}) {
+export function tasksList({ view = 'mine', state = 'open', q = '', campaign = null } = {}) {
   const p = new URLSearchParams({ view, state });
   if (q) p.set('q', q);
+  if (campaign) p.set('campaign', campaign);
   return api(`/api/v1/tasks?${p}`);
 }
 export const taskDetail = (id) => api(`/api/v1/tasks/${encodeURIComponent(id)}`);
@@ -452,6 +453,21 @@ export function taskCancel(id, reason) {
   return api(`/api/v1/tasks/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
 }
 export const taskChannels = () => api('/api/v1/task-channels');
+// Zamanlanmış kampanyalar (U8.5, ADR-0036)
+export const campaignsList = () => api('/api/v1/campaigns');
+export const campaignDetail = (id) => api(`/api/v1/campaigns/${encodeURIComponent(id)}`);
+export function campaignPreview(body) {
+  return api('/api/v1/campaigns/preview', { method: 'POST', body: JSON.stringify(body) });
+}
+export function campaignCreate(body) {
+  return api('/api/v1/campaigns', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
+}
+export function campaignUpdate(id, body) {
+  return api(`/api/v1/campaigns/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+export function campaignRun(id, reason) {
+  return api(`/api/v1/campaigns/${encodeURIComponent(id)}/run`, { method: 'POST', body: JSON.stringify({ reason }) });
+}
 export function taskChannelUpdate(name, body) {
   return api(`/api/v1/task-channels/${encodeURIComponent(name)}`, { method: 'PATCH', body: JSON.stringify(body) });
 }

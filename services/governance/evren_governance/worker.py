@@ -18,6 +18,7 @@ import logging
 import threading
 import time
 from collections.abc import Callable
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -26,7 +27,19 @@ from psycopg import sql
 from psycopg.types.json import Jsonb
 
 from evren_core.connectors.http import HttpClient, HttpError, Transport, UrllibTransport
-from evren_core.governance import OUTCOMES, ChannelSettings, ServiceNowTaskChannel, ServiceNowTaskSimulator, TaskForChannel
+from evren_core.governance import (
+    CAMPAIGN_KINDS,
+    OUTCOMES,
+    ChannelSettings,
+    Party,
+    ServiceNowTaskChannel,
+    ServiceNowTaskSimulator,
+    TaskForChannel,
+    campaign_scope,
+    next_run,
+    pick_assignee,
+)
+from evren_core.metadata import Metadata, load_metadata
 
 from .config import GovernanceConfig
 
@@ -35,12 +48,17 @@ __all__ = ["CHANNEL", "GovernanceWorker"]
 log = logging.getLogger("evren.governance")
 CHANNEL = "evren_task"
 ACTOR = "evren:gorev-calisani"
+CAMPAIGN_ACTOR = "evren:kampanya"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+#: Son tarihe bu kadar gün kala bir kez hatırlatma olayı yazılır (Size düşen işler ve ServiceNow'da zaten görünür)
+REMIND_DAYS = 3
 
 
 class GovernanceWorker:
     def __init__(self, config: GovernanceConfig, *, transport: Transport | None = None,
-                 connect: Callable[[], psycopg.Connection[Any]] | None = None) -> None:
+                 connect: Callable[[], psycopg.Connection[Any]] | None = None, metadata: Metadata | None = None) -> None:
         self.config = config
+        self._md = metadata
         self.stop = threading.Event()
         self.started_at = time.time()
         self.processed = 0
@@ -97,7 +115,10 @@ class GovernanceWorker:
     # ------------------------------------------------------------------ tur
     def cycle(self, conn: psycopg.Connection[Any]) -> dict[str, int]:
         self._last_cycle = time.monotonic()
-        totals = {"delivered": 0, "kept": 0, "failed": 0, "synced": 0, "external_closed": 0, "closed": 0}
+        totals = {"delivered": 0, "kept": 0, "failed": 0, "synced": 0, "external_closed": 0, "closed": 0,
+                  "campaign_tasks": 0, "reminded": 0, "overdue": 0}
+        self.campaigns(conn, totals)
+        self.due_events(conn, totals)
         sn = self._sn_settings(conn)
         if sn is not None and self.sn_ready:
             ch = self.channel(sn)
@@ -201,6 +222,115 @@ class GovernanceWorker:
                          (rec.state, sys_id))
             self._event(conn, sys_id, "closed_sent", {"number": rec.number, "state": rec.state})
             totals["closed"] += 1
+
+    # ------------------------------------------------------------------ kampanyalar (U8.5, ADR-0036)
+    @property
+    def metadata(self) -> Metadata:
+        if self._md is None:
+            self._md = load_metadata(REPO_ROOT / "metadata")
+        return self._md
+
+    def campaigns(self, conn: psycopg.Connection[Any], totals: dict[str, int]) -> None:
+        """Zamanı gelen etkin kampanyalar ve "şimdi çalıştır" istekleri."""
+        due = conn.execute("""SELECT sys_id FROM gov.campaign WHERE state = 'active' AND next_run_at <= now()
+                               ORDER BY next_run_at LIMIT 5""").fetchall()
+        for (cid,) in due:
+            with conn.transaction():
+                row = conn.execute("""SELECT schedule, schedule_tz FROM gov.campaign
+                                       WHERE sys_id = %s AND state = 'active' AND next_run_at <= now()
+                                       FOR UPDATE SKIP LOCKED""", (cid,)).fetchone()
+                if row is None:
+                    continue
+                try:
+                    nxt = next_run(row[0], row[1], datetime.now(UTC))
+                except ValueError:
+                    nxt = None  # geçersiz zamanlama: kampanya bir kez çalışır, API zaten doğrular
+                conn.execute("UPDATE gov.campaign SET next_run_at = %s, last_run_at = now() WHERE sys_id = %s",
+                             (nxt or datetime.now(UTC) + timedelta(days=36500), cid))  # geçersiz zamanlama: bir kez
+                run = conn.execute("INSERT INTO gov.campaign_run (campaign, trigger) VALUES (%s, 'schedule') RETURNING id",
+                                   (cid,)).fetchone()[0]
+            totals["campaign_tasks"] += self.run_campaign(conn, cid, run)
+        requested = conn.execute("""SELECT id, campaign FROM gov.campaign_run WHERE status = 'requested'
+                                     ORDER BY id LIMIT 5""").fetchall()
+        for run, cid in requested:
+            claimed = conn.execute("UPDATE gov.campaign_run SET status = 'running', started_at = now() "
+                                   "WHERE id = %s AND status = 'requested' RETURNING id", (run,)).fetchone()
+            if claimed:
+                conn.execute("UPDATE gov.campaign SET last_run_at = now() WHERE sys_id = %s", (cid,))
+                totals["campaign_tasks"] += self.run_campaign(conn, cid, run)
+
+    def run_campaign(self, conn: psycopg.Connection[Any], cid: str, run: int) -> int:
+        """Kapsamdaki her CI için sorumlusuna görev; aynı CI için açık görev varsa yenisi açılmaz."""
+        c = conn.execute("""SELECT name, kind, title, instructions, scope_class, scope_query, due_days, channel, max_tasks
+                              FROM gov.campaign WHERE sys_id = %s""", (cid,)).fetchone()
+        name, kind, title, instructions, scope_class, scope_query, due_days, channel, max_tasks = c
+
+        def finish(status: str, note: str | None, **counts: int) -> None:
+            conn.execute("""UPDATE gov.campaign_run SET status = %s, note = %s, finished_at = now(), in_scope = %s,
+                                   created = %s, already_open = %s, unassigned = %s WHERE id = %s""",
+                         (status, note, counts.get("in_scope"), counts.get("created"), counts.get("already_open"),
+                          counts.get("unassigned"), run))
+
+        try:
+            where, params = campaign_scope(self.metadata, scope_class, scope_query)
+        except ValueError as exc:
+            finish("failed", str(exc)[:300])
+            return 0
+        total = conn.execute(f"SELECT count(*) FROM cmdb.cmdb_ci c WHERE {where}", params).fetchone()[0]  # noqa: S608 - koşul sözlükten derlendi, değerler parametre
+        if total > max_tasks:
+            finish("failed", f"Kapsamda {total} CI var; kampanya sınırı {max_tasks}. Kapsamı daraltın veya sınırı artırın.",
+                   in_scope=total)
+            return 0
+        cis = conn.execute(f"SELECT c.sys_id, c.name, c.owned_by, c.managed_by, c.support_group FROM cmdb.cmdb_ci c "  # noqa: S608 - aynı
+                           f"WHERE {where} ORDER BY c.name", params).fetchall()
+        users = {r[0]: Party(*r) for r in conn.execute(
+            "SELECT sys_id, active, source FROM ref.sys_user WHERE sys_id = ANY(%s)",
+            ([x for ci in cis for x in (ci[2], ci[3]) if x],)).fetchall()}
+        groups = {r[0]: Party(*r) for r in conn.execute(
+            "SELECT sys_id, active, source FROM ref.sys_user_group WHERE sys_id = ANY(%s)",
+            ([ci[4] for ci in cis if ci[4]],)).fetchall()}
+        ch = conn.execute("SELECT name, kind FROM gov.task_channel WHERE lifecycle = 'active' AND "
+                          "(name = %s OR (%s::text IS NULL AND is_default))", (channel, channel)).fetchone()
+        if ch is None:
+            finish("failed", "Etkin görev kanalı yok.", in_scope=total)
+            return 0
+        due = datetime.now(UTC) + timedelta(days=due_days)
+        created = already = unassigned = 0
+        for ci, ci_name, owned, managed, group in cis:
+            who = pick_assignee(owned_by=users.get(owned), managed_by=users.get(managed), support_group=groups.get(group))
+            row = conn.execute(
+                """INSERT INTO gov.task (kind, title, description, ci_sys_id, assignee_user, assignee_group,
+                                         assignee_basis, due_at, source, source_ref, dedup_key, channel, delivery_status,
+                                         created_by)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'campaign', %s, %s, %s, %s, %s)
+                   ON CONFLICT (dedup_key) WHERE state = 'open' AND dedup_key IS NOT NULL DO NOTHING
+                   RETURNING sys_id""",
+                (kind, f"{title} — {ci_name}"[:160], instructions, ci, who.user, who.group, who.basis, due, cid,
+                 f"campaign:{cid}:{ci}", ch[0], "not_needed" if ch[1] == "evren" else "pending",
+                 CAMPAIGN_ACTOR)).fetchone()
+            if row is None:
+                already += 1
+                continue
+            created += 1
+            unassigned += who.basis == "unassigned"
+            self._event(conn, row[0], "created", {"campaign": name, "run": run, "basis": who.basis})
+        finish("done", None, in_scope=total, created=created, already_open=already, unassigned=unassigned)
+        log.info("kampanya %s (%s): kapsam=%d açılan=%d açıkta=%d atanmamış=%d", name, CAMPAIGN_KINDS.get(kind, kind),
+                 total, created, already, unassigned)
+        return created
+
+    def due_events(self, conn: psycopg.Connection[Any], totals: dict[str, int]) -> None:
+        """Son tarihi yaklaşan göreve bir kez "hatırlatma", geçene bir kez "süresi geçti" olayı."""
+        for action, cond in (("reminded", "t.due_at > now() AND t.due_at <= now() + make_interval(days => %s)"),
+                             ("overdue", "t.due_at <= now() AND %s::int IS NOT NULL")):
+            rows = conn.execute(
+                f"""SELECT t.sys_id, t.due_at FROM gov.task t
+                     WHERE t.state = 'open' AND {cond}
+                       AND NOT EXISTS (SELECT 1 FROM gov.task_event e WHERE e.task = t.sys_id AND e.action = %s)
+                     LIMIT %s""", (REMIND_DAYS, action, self.config.batch)).fetchall()  # noqa: S608 - sabit koşullar
+            for sys_id, due_at in rows:
+                self._event(conn, sys_id, action, {"due_at": due_at.isoformat()})
+                totals[action] += 1
 
     def heartbeat(self, conn: psycopg.Connection[Any], *, stopped: bool = False, failed_now: bool = False) -> None:
         row = conn.execute("""SELECT count(*) FILTER (WHERE delivery_status = 'pending'),

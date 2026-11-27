@@ -7,11 +7,12 @@ import {
   backend, ciSearch, refSearch, taskCancel, taskChannels, taskChannelUpdate, taskComplete, taskCreate, taskDetail,
   tasksList,
 } from '../lib/data.js';
+import { campaignsTab } from './campaigns.js';
 
 const SYSID = /^[0-9a-f]{32}$/;
 const VIEWS = [['mine', 'Bana atanan'], ['all', 'Tümü'], ['unassigned', 'Atanmamış'], ['attention', 'Dikkat'],
-  ['channels', 'Kanallar']];
-const PARAM = { atanmamis: 'unassigned', dikkat: 'attention', tumu: 'all', kanallar: 'channels' };
+  ['campaigns', 'Kampanyalar'], ['channels', 'Kanallar']];
+const PARAM = { atanmamis: 'unassigned', dikkat: 'attention', tumu: 'all', kanallar: 'channels', kampanyalar: 'campaigns' };
 const SLUG = Object.fromEntries(Object.entries(PARAM).map(([k, v]) => [v, k]));
 const DELIVERY_TONE = { delivered: 'good', closed_sent: 'neutral', not_needed: 'neutral', pending: 'warn',
   failed: 'bad', kept_in_evren: 'warn' };
@@ -20,7 +21,8 @@ const EVENT_TR = {
   created: 'Açıldı', delivered: 'ServiceNow\'da açıldı', delivery_failed: 'ServiceNow\'a teslim edilemedi',
   kept_in_evren: 'Evren\'de tutuldu (ServiceNow\'da karşılık yok)', synced: 'Eşitlendi',
   external_closed: 'ServiceNow\'da karar verilmeden kapatıldı', completed: 'Karar verildi', cancelled: 'İptal edildi',
-  closed_sent: 'ServiceNow kaydı kapatıldı', reassigned: 'Yeniden atandı',
+  closed_sent: 'ServiceNow kaydı kapatıldı', reassigned: 'Yeniden atandı', reminded: 'Hatırlatıldı (son tarih yaklaşıyor)',
+  overdue: 'Süresi geçti',
 };
 
 function stateCell(t) {
@@ -162,7 +164,7 @@ export async function openNewTaskDialog(onDone) {
   dialog({
     title: 'Tek seferlik görev aç',
     body: [
-      h('p', { class: 'muted small' }, 'Zamanlanmış görevler (her çeyrek veri teyidi gibi) ve kurala bağlı görevler sonraki adımda gelecek. Kararı sorumlu Evren\'de verir.'),
+      h('p', { class: 'muted small' }, 'Düzenli görevler (her çeyrek veri teyidi gibi) için ', h('a', { href: '#/gorevler/kampanyalar/yeni', onclick: closeOverlay }, 'kampanya tanımlayın'), '. Kararı sorumlu Evren\'de verir.'),
       h('label', { class: 'field', for: 'newTaskTitle' }, 'Başlık'), title,
       h('label', { class: 'field', for: 'newTaskDesc' }, 'Açıklama'), desc,
       h('label', { class: 'field', for: 'newTaskCi' }, 'CI'), ciInput, ciList, ciChosen,
@@ -236,11 +238,13 @@ export async function renderTasks(view, param) {
   let active = 'mine';
   let state = 'open';
   let q = '';
+  let campaign = null;  // { sys_id } — kampanyanın görevleri
+  let camp = null;
   let selected = null;
   let reload = async () => {};
 
   function renderTabs(counts) {
-    const items = VIEWS.filter(([id]) => id === 'mine' || readAll).map(([id, label]) => ({ id, label, count: id === 'channels' ? undefined : counts[id] }));
+    const items = VIEWS.filter(([id]) => id === 'mine' || readAll).map(([id, label]) => ({ id, label, count: counts[id] }));
     clear(tabBox).append(tabs(items, active, (id) => {
       history.replaceState(null, '', id === 'mine' ? '#/gorevler' : `#/gorevler/${SLUG[id]}`);
       show(id);
@@ -252,9 +256,12 @@ export async function renderTasks(view, param) {
     const stateSel = h('select', { id: 'taskState', 'aria-label': 'Durum' },
       [['open', 'Açık görevler'], ['closed', 'Kapananlar'], ['all', 'Hepsi']].map(([v, l]) => h('option', { value: v, selected: v === state }, l)));
     const list = h('div', { id: 'taskList' });
-    clear(body).append(h('div', { class: 'toolbar' }, search, stateSel), list);
+    const scoped = campaign ? h('p', { class: 'notice', id: 'taskCampaignScope' }, 'Yalnızca bir kampanyanın görevleri gösteriliyor. ',
+      h('a', { href: `#/gorevler/kampanyalar/${campaign}` }, 'Kampanyayı aç'), ' · ',
+      h('a', { href: '#/gorevler/tumu' }, 'Bütün görevler')) : null;
+    clear(body).append(scoped, h('div', { class: 'toolbar' }, search, stateSel), list);
     async function load() {
-      const res = first || await tasksList({ view: active, state, q });
+      const res = first || await tasksList({ view: active, state, q, campaign });
       first = null;
       renderTabs(res.counts);
       clear(list).append(dataTable({
@@ -298,11 +305,14 @@ export async function renderTasks(view, param) {
         t.delivery_status === 'failed' ? h('p', { class: 'notice bad' }, `ServiceNow'a teslim edilemedi: ${t.delivery_note || 'bilinmeyen hata'}. Görev çalışanı yeniden deneyecek.`) : null,
         t.delivery_status === 'kept_in_evren' ? h('p', { class: 'notice' }, t.delivery_note) : null,
         t.description ? section('Ne yapılacak', h('p', { class: 'small' }, t.description)) : null,
+        t.kind === 'attestation' && t.state === 'open' && t.can_complete ? h('p', { class: 'notice', id: 'taskAttest' },
+          'Kayıt doğruysa ', h('a', { href: '#/sahiplik-onayi' }, 'Sahiplik Onayı'), ' sayfasında onaylayın; görev kendiliğinden kapanır. Düzeltme gerekiyorsa CI\'ı düzenleyip kararı burada verin.') : null,
         section('Görev', kv([
           ['CI', t.ci ? h('a', { href: `#/ci/${t.ci.sys_id}` }, t.ci.name) : '—'],
           ['Sorumlu', assigneeText(t.assignee)],
           ['Son tarih', formatDateTime(t.due_at)],
           ['Kanal', `${t.channel_tr} · ${t.delivery_tr}${t.external_number ? ` · ${t.external_number}` : ''}`],
+          t.source === 'campaign' && t.source_ref ? ['Kampanya', readAll ? h('a', { href: `#/gorevler/kampanyalar/${t.source_ref}` }, 'Kampanyayı aç') : 'Zamanlanmış kampanya'] : null,
           ['Açan', t.created_by], ['Açılış', formatDateTime(t.created_at)],
         ])),
         t.state !== 'open' ? section('Karar', kv([['Karar', t.outcome_tr], ['Açıklama', t.outcome_note || '—'], ['Veren', t.closed_by], ['Zaman', formatDateTime(t.closed_at)]])) : null,
@@ -347,15 +357,40 @@ export async function renderTasks(view, param) {
     reload = channelsTab;
   }
 
-  async function show(id) {
+  async function campaignsView() {
+    camp = await campaignsTab(body, {
+      onRoute: (p) => { if (location.hash !== `#/gorevler/${p}`) history.replaceState(null, '', `#/gorevler/${p}`); },
+      onChange: () => {},
+    });
+    renderTabs({});
+    reload = async () => {};
+  }
+
+  async function show(id, opts = {}) {
     active = id;
+    campaign = opts.campaign || null;
+    camp = null;
     if (id === 'channels') { await channelsTab(); return; }
+    if (id === 'campaigns') { await campaignsView(); return; }
     await listTab();
   }
 
   async function update(p) {
+    const parts = (p || '').split('/');
+    if (parts[0] === 'kampanyalar' && readAll) {
+      if (!camp) await show('campaigns');
+      if (parts[1] === 'yeni') { closeDetail({ silent: true }); camp.create(); return; }
+      if (SYSID.test(parts[1] || '')) { await camp.open(parts[1]); return; }
+      closeDetail({ silent: true });
+      return;
+    }
+    if (parts[0] === 'kampanya' && readAll && SYSID.test(parts[1] || '')) {
+      closeDetail({ silent: true });
+      await show('all', { campaign: parts[1] });
+      return;
+    }
     if (p && SYSID.test(p)) {
-      if (!document.getElementById('taskList') && !document.getElementById('channelList')) await show(active);
+      if (!document.getElementById('taskList')) await show(active === 'campaigns' || active === 'channels' ? 'mine' : active);
       await openTask(p);
       return;
     }

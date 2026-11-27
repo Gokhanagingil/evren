@@ -150,6 +150,18 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/task-channels`: kanallar (tür, yaşam döngüsü, varsayılan, ayar, açık ve teslim edilemeyen sayısı) ve görev çalışanının durumu. `PATCH /api/v1/task-channels/{name}`: `{is_default?, lifecycle?, settings?: {table, close_state, cancel_state, closed_states, default_group}, reason}`; ayar doğrulanır, denetim izine yazılır.
 - ServiceNow tarafı (görev çalışanı, Table API): `POST /api/now/table/<tablo>` yalnızca standart alanlarla, `GET …?sysparm_query=correlation_id=<görev>` (tekillik), `GET …/<sys_id>` (eşitleme), `PATCH …/<sys_id>` (`state`, `close_notes`).
 
+### Zamanlanmış kampanyalar (ADR-0036)
+
+Okuma: Konfigürasyon yöneticisi (`task_admin`) veya Denetçi (`audit_read`); yazma yalnızca Konfigürasyon yöneticisi. Yazma uç noktaları CSRF başlığı ister.
+
+- `POST /api/v1/campaigns/preview`: `{scope_class, scope_query?, campaign?}` → `{valid, in_scope, by_basis: {owned_by, managed_by, support_group, unassigned}, people, groups, already_open, sample}`. Geçersiz koşul 200 `{valid: false, problem}`.
+- `GET /api/v1/campaigns`: kampanyalar (tür, kapsam, sıklık, `next_run_at`, açık/süresi geçen/kapanan görev sayısı, durum), `kinds`, `frequencies`, `classes` (kapsam seçimi için sınıf ağacı), `can_admin`.
+- `GET /api/v1/campaigns/{sys_id}`: ayrıntı, son 20 çalışma (`trigger`, `status`, `in_scope`, `created`, `already_open`, `unassigned`, `note`), izinli geçişler (`transitions`).
+- `POST /api/v1/campaigns` (`idempotency_key`): `{name, kind: attestation|access_review|checklist, title, instructions?, scope_class, scope_query?, frequency: monthly|quarterly|semiannual|annual | schedule (cron), due_days (1–180), channel?, max_tasks (1–20 000), activate}` → 201 `{sys_id, state, next_run_at, message}`. Hatalar: `kampanya_gecersiz`, `siklik_gerekli`, `kanal_yok` (422), `ad_var` (409).
+- `PATCH /api/v1/campaigns/{sys_id}`: düzenleme (yalnızca taslak veya duraklatılmış; aksi 409 `duzenlenemez`) ve/veya `{state: active|paused|retired, reason (≥ 10)}`; izinsiz geçiş 409 `gecis_yok`.
+- `POST /api/v1/campaigns/{sys_id}/run`: `{reason (≥ 10)}` → 202 `{run}`; yalnızca etkin kampanya (409 `etkin_degil`), bekleyen çalışma varken 409 `calisiyor`. Görev çalışanı bir sonraki turunda yürütür.
+- `GET /api/v1/tasks?campaign=<sys_id>`: kampanyanın görevleri.
+
 ### Kullanıcılar ve roller (ADR-0034)
 
 Okuma: Yetki yöneticisi (`iam_admin`) veya Denetçi (`audit_read`); yazma yalnızca Yetki yöneticisi. Yazma uç noktaları CSRF başlığı ister.

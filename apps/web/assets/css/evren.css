@@ -170,6 +170,7 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 .pill.warn { color: var(--warn); background: var(--warn-soft); } .pill.neutral { color: #4b5563; background: #f0f1f3; }
 .pill.purple { color: var(--violet); background: var(--violet-soft); } .pill.ink { color: #fff; background: var(--ink); }
 .pills { display: flex; flex-wrap: wrap; gap: 6px; }
+#detailContent > .pills { margin-bottom: 14px; }
 .src { display: inline-flex; align-items: center; font-size: 11.5px; font-weight: 600; border-radius: 6px; padding: 1px 7px; background: #f0f1f3; color: var(--text2); white-space: nowrap; }
 .src.r-Discovery { background: #e8eefc; color: #23439a; } .src.r-Virtualization { background: #e9f6f1; color: #0b6b4a; }
 .src.r-Network { background: #f1edfc; color: #5536b0; } .src.r-Monitoring { background: #fff4e0; color: #7a4600; }

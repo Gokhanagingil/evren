@@ -18,7 +18,8 @@ from zoneinfo import ZoneInfo
 import pytest
 
 REPO = Path(__file__).resolve().parents[3]
-for p in (REPO / "packages/evren-core/src", REPO / "services/api", REPO / "services/reconciler", REPO / "services/api/tests"):
+for p in (REPO / "packages/evren-core/src", REPO / "services/api", REPO / "services/reconciler", REPO / "services/api/tests",
+          REPO / "services/governance"):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 
@@ -1015,8 +1016,9 @@ def test_admin_panel_guides_tasks_by_permission_and_deep_links(page, base_url):
     expect(page.locator("#task-sema-onay .task-locked")).to_contain_text("Şema onaylayıcı rolü gerekir")
     expect(page.locator("#task-kullanici .task-locked")).to_contain_text("Yetki yöneticisi rolü gerekir")
     expect(page.locator("#task-denetim")).to_contain_text("Hazırlanıyor")
-    # Planlanan yönetişim görevleri panelde görünür (F1-24 … F1-26)
-    expect(page.locator("#task-zamanli-gorev")).to_contain_text("Hazırlanıyor")
+    # Yönetişim görevleri: kampanya Konfigürasyon yöneticisi ister (F1-25); kural görevi hazırlanıyor (F1-26)
+    expect(page.locator("#task-zamanli-gorev .task-locked")).to_contain_text("rolü gerekir")
+    expect(page.locator("#task-kural-gorevi")).to_contain_text("Hazırlanıyor")
     # Arama: "alan" yazınca ilgili görevler kalır; Enter ilk göreve odaklar
     page.fill("#adminSearch", "alan")
     expect(page.locator("#task-alan")).to_be_visible()
@@ -1235,6 +1237,105 @@ def test_tasks_page_opens_decides_and_shows_channels(page, base_url, browser):
             pg.wait_for_selector(ready)
             pg.wait_for_timeout(200)
             assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, route
+        context.close()
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM iam.principal_role WHERE principal_id = 'arayuz-testi'")
+
+
+def test_campaign_defined_previewed_activated_run_and_tasks_listed(page, base_url, browser):
+    """U8.5 (ADR-0036): Konfigürasyon yöneticisi panelden kampanya tanımlar; geçersiz koşul alanda gösterilir,
+    önizleme kapsamı ve sorumluları sayar; etkinleştirir, gerekçeyle "şimdi çalıştır" ister; görev çalışanı turunda
+    her CI'a bir görev açılır; kampanyanın görevleri listelenir; duraklatılan kampanya düzenlenebilir; mobilde
+    taşma yok."""
+    import uuid
+
+    import psycopg
+    from scenarios import make_owned_ci
+
+    from evren_core.governance import ServiceNowTaskSimulator
+    from evren_governance.config import GovernanceConfig
+    from evren_governance.worker import GovernanceWorker
+
+    tag = f"kmpui{uuid.uuid4().hex[:5]}"
+    cis = [make_owned_ci(owner)[0] for owner in ("kampanya-sahibi", "kampanya-sahibi", None)]
+    with psycopg.connect(autocommit=True) as conn:
+        for i, ci in enumerate(cis):
+            conn.execute("UPDATE cmdb.cmdb_ci SET name = %s WHERE sys_id = %s", (f"{tag}-{i}", ci))
+        conn.execute("""INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, expires_at,
+                                                        justification)
+                        VALUES ('user', 'arayuz-testi', 'evren_config_manager', 'test-kurulum', now() + interval '1 hour',
+                                'Arayüz testi') ON CONFLICT DO NOTHING""")
+    try:
+        page.goto(base_url + "/#/gorevler/kampanyalar/yeni")
+        expect(page.locator("#campKind")).to_be_focused()
+        expect(page.locator("#campKindHelp")).to_contain_text("sahiplik onayı")
+        page.fill("#campName", f"Çeyrek teyidi {tag}")
+        page.fill("#campTitle", "Uygulama verilerini teyit edin")
+        page.fill("#campInstr", "Sahip, destek grubu ve ortam doğru mu?")
+        page.select_option("#campClass", "cmdb_ci_server")
+        page.fill("#campQuery", "olmayan_alan=1")
+        page.click("#campPreviewBtn")
+        expect(page.locator("#campQuery")).to_have_attribute("aria-invalid", "true")
+        expect(page.locator("#campError [role=alert]")).to_be_visible()
+        page.fill("#campQuery", f"nameSTARTSWITH{tag}")
+        page.locator("#campQuery").press("Enter")
+        expect(page.locator("#campPreview")).to_contain_text("3 CI kapsamda")
+        expect(page.locator("#campPreview")).to_contain_text("1 kişiye")
+        expect(page.locator("#campSample li")).to_have_count(3)
+        shot(page, "web_api_campaign_new")
+        page.click("#campActivate")
+        expect(page.locator("#toast")).to_contain_text("Kampanya etkin")
+        expect(page.locator("#detailTitle")).to_have_text(f"Çeyrek teyidi {tag}")
+        expect(page.locator("#detailContent")).to_contain_text("Her çeyrek")
+        cid = page.url.rsplit("/", 1)[-1]
+        assert re.fullmatch(r"[0-9a-f]{32}", cid), page.url
+        page.click("#campRunNow")
+        expect(page.locator("#campWhy")).to_be_focused()
+        page.fill("#campWhy", "kısa")
+        page.click("#campWhySend")
+        expect(page.locator("#campWhy")).to_have_attribute("aria-invalid", "true")
+        page.fill("#campWhy", "Denetim öncesi erken başlatma")
+        page.locator("#campWhy").press("Enter")
+        expect(page.locator("#toast")).to_contain_text("Çalışma istendi")
+        expect(page.locator("#campRuns")).to_contain_text("İstendi")
+        # Görev çalışanı bir tur döner (ServiceNow simülatörüyle)
+        cfg = GovernanceConfig(conninfo="", public_url="https://evren.ornek.test",
+                               worker_id=f"arayuz-gov-{tag}", sync_minutes=1)
+        worker = GovernanceWorker(cfg, transport=ServiceNowTaskSimulator(), connect=lambda: psycopg.connect())
+        with worker.open() as conn:
+            worker.cycle(conn)
+        page.reload()
+        expect(page.locator("#campRuns")).to_contain_text("3 kapsamda, 3 görev açıldı")
+        page.wait_for_timeout(400)  # panel kayarak açılır
+        shot(page, "web_api_campaign_detail")
+        page.click("#campTasks")
+        expect(page.locator("#taskCampaignScope")).to_be_visible()
+        expect(page.locator("#taskList tbody tr")).to_have_count(3)
+        expect(page.locator("#taskList")).to_contain_text(f"Uygulama verilerini teyit edin — {tag}-0")
+        expect(page.locator("#taskList")).to_contain_text("Atanmamış")
+        page.locator("#taskList tbody tr").first.click()
+        expect(page.locator("#detailContent")).to_contain_text("Kampanyayı aç")
+        page.keyboard.press("Escape")
+        # Duraklat → düzenlenebilir
+        page.goto(base_url + f"/#/gorevler/kampanyalar/{cid}")
+        page.click("[data-transition=paused]")
+        page.fill("#campWhy", "Dönem sonu dondurma süresi")
+        page.click("#campWhySend")
+        expect(page.locator("#toast")).to_contain_text("duraklatıldı")
+        expect(page.locator("#campEdit")).to_be_visible()
+        expect(page.locator("#campRunNow")).to_have_count(0)
+        page.click("#campEdit")
+        expect(page.locator("#campName")).to_be_focused()
+        page.keyboard.press("Escape")
+        page.keyboard.press("Escape")
+        expect(page.locator("#campaignList")).to_contain_text("Duraklatıldı")
+        context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+        pg = context.new_page()
+        pg.goto(base_url + "/#/gorevler/kampanyalar")
+        pg.wait_for_selector("#campaignList table")
+        pg.wait_for_timeout(200)
+        assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
         context.close()
     finally:
         with psycopg.connect(autocommit=True) as conn:

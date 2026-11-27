@@ -351,6 +351,18 @@ def test_segregation_of_duties_enforced():
         ("evren_readonly", "SELECT count(*) FROM gov.task"),
         ("evren_app_connector", "SELECT count(*) FROM gov.task"),
         ("evren_app_ingest", "SELECT count(*) FROM gov.task"),
+        # 0032 (ADR-0036): görev çalışanı kampanya tanımını ve durumunu değiştiremez; API çalışma sonucunu yazamaz,
+        # kampanya silemez; kampanyaları salt okur ve bağlayıcı göremez
+        ("evren_app_governance", "UPDATE gov.campaign SET state = 'active' WHERE false"),
+        ("evren_app_governance", "UPDATE gov.campaign SET scope_query = '' WHERE false"),
+        ("evren_app_governance", "DELETE FROM gov.campaign_run WHERE false"),
+        ("evren_app_api", "UPDATE gov.campaign_run SET status = 'done' WHERE false"),
+        ("evren_app_api", "UPDATE gov.campaign SET created_by = 'x' WHERE false"),
+        ("evren_app_api", "DELETE FROM gov.campaign WHERE false"),
+        ("evren_app_api", "INSERT INTO gov.campaign_run (campaign, trigger, status, created) "
+                          "SELECT sys_id, 'manual', 'done', 5 FROM gov.campaign WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM gov.campaign"),
+        ("evren_app_connector", "SELECT count(*) FROM gov.campaign_run"),
         # 0030 (ADR-0034): API kişi kaydında yalnızca izinli sütunlara yazar, silemez; eşleme Entra kimliğine yazamaz
         ("evren_app_api", "UPDATE ref.sys_user SET department = NULL WHERE false"),
         ("evren_app_api", "DELETE FROM ref.sys_user WHERE false"),
