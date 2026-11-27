@@ -304,11 +304,13 @@ def build() -> str:
     roles = [("role", "src_discovery", "Keşif"), ("role", "src_virtualization", "Sanallaştırma"),
              ("role", "src_network", "Ağ keşfi"), ("role", "src_monitoring", "İzleme"),
              ("role", "src_endpoint", "Uç nokta güvenliği"), ("role_sn", "src_itsm", "ITSM / mevcut CMDB"),
-             ("role_sn", "src_change", "Değişiklik kayıtları"), ("new", "src_new", "+ Yeni rol veya ürün")]
+             ("role_sn", "src_change", "Değişiklik kayıtları"), ("human", "manual_input", "Elle girdi (Manual)"),
+             ("new", "src_new", "+ Yeni rol veya ürün")]
     r_items = [(k, item(c, lbl)) for k, c, lbl in roles]
     bw1 = (w1 - 24 - 12) / 2
     rh1 = uniform(bw1, [i for _, i in r_items])
-    col1_h = head + 4 * rh1 + 3 * 10 + 14
+    rows1 = (len(r_items) + 1) // 2
+    col1_h = head + rows1 * rh1 + (rows1 - 1) * 10 + 14
 
     # 2 alım ------------------------------------------------------------------
     steps = [("engine", "connector_runtime", "Bağlayıcı"), ("engine", "mapping", "YAML eşleme"),
@@ -323,7 +325,7 @@ def build() -> str:
             (2, 0): ("engine", "identity", "Kimlik çözümleme"), (0, 1): ("security", "breaker", "Devre kesici"),
             (1, 1): ("human", "match_queue", "Eşleştirme kuyruğu"), (2, 1): ("engine", "reconcile", "Uzlaştırma"),
             (0, 2): ("engine", "quality", "Kalite ve kapsam"), (1, 2): ("human", "ai_suggest", "Yapay zekâ önerisi"),
-            (2, 2): ("engine", "unauthorized", "Yetkisiz değişiklik"), (0, 3): ("human", "manual_input", "Elle girdi"),
+            (2, 2): ("engine", "unauthorized", "Yetkisiz değişiklik"), (0, 3): ("human", "gov_tasks", "Yönetişim görevleri"),
             (1, 3): ("engine", "dependent_ci", "Bağımlı CI kimliği"), (2, 3): ("engine", "lifecycle", "Eskime, emeklilik")}
     g_items = {pos: (k, item(c, lbl)) for pos, (k, c, lbl) in grid.items()}
     gcol = 24

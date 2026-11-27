@@ -27,12 +27,13 @@ Proje sahibinin beklentisi şuydu:
 
 ### 1. Yönetim paneli görev odaklıdır (`#/yonetim`)
 
-Panel sayfa listesi değil, **görev listesidir**: "Yeni CI ekle", "Sınıfa alan ekle", "Bağlayıcıya kimlik ver" gibi. Görevler işin konusuna göre altı grupta toplanır:
+Panel sayfa listesi değil, **görev listesidir**: "Yeni CI ekle", "Sınıfa alan ekle", "Bağlayıcıya kimlik ver" gibi. Görevler işin konusuna göre gruplanır:
 
 - CMDB kayıtları
 - Veri modeli
 - Kullanıcılar ve yetkiler
 - Entegrasyonlar
+- Yönetişim görevleri (27.11.2026'da eklendi; zamanlanmış ve kurala bağlı görevler, plan F1-24 … F1-26)
 - Veri kalitesi
 - İşletim
 
@@ -61,7 +62,7 @@ Yetkiler `/api/v1/me` → `can` alanından okunur. Bu ADR ile `can` alanına şu
 
 Arayüzdeki kilit yalnızca yönlendirmedir. Asıl denetim API'de ve veritabanı rollerindedir; bunlar değişmedi.
 
-Henüz hazır olmayan görevler "Hazırlanıyor" etiketiyle durur: kullanıcı ekleme, rol–yetki matrisi, denetim izi, sağlık panosu. Yol haritasındaki adımları U8.3 ile U8.6 arasındadır. Bu sayede panel, ürünün tamamlandığında neye benzeyeceğini dürüstçe gösterir.
+Henüz hazır olmayan görevler "Hazırlanıyor" etiketiyle durur: kullanıcı ekleme, rol–yetki matrisi, yönetişim görevleri (zamanlanmış görev, kuraldan görev, görev izleme, görev kanalı), denetim izi, sağlık panosu. Yol haritasındaki adımları U8.3 ile U8.8 arasındadır. Bu sayede panel, ürünün tamamlandığında neye benzeyeceğini dürüstçe gösterir.
 
 ### 3. "Size düşen işler" tek uç noktadan gelir
 
@@ -86,6 +87,7 @@ Uç nokta salt okunurdur. Yeni tablo ya da izin gerektirmez, var olan izinli gö
 - **Kaynak:** `docs/kilavuz/kilavuz.yaml` ve konu başına bir Markdown dosyası.
 - **Üretim:** `python tools/build_guide.py` şu dosyayı üretir: `apps/web/content/guide.json`.
 - **Uygulama içi adres:** "Kullanım Kılavuzu" sayfası (`#/kilavuz/<konu>`).
+- **İçerik zamanlaması (proje sahibi kararı, 27.11.2026):** altyapı şimdi kurulur; içeriğin son hâli, ekranlar değişebileceği için en sonda yazılır (plan F1-27). O zamana kadar `kilavuz.yaml` → `draft: true` ile her konunun başında "Taslak" notu görünür; yeni ekran için yalnızca konu iskeleti ve sayfa bağı eklenir.
 - **Başlangıç sayfası** en fazla 260 sözcüktür. Evren'in ne olduğunu, üç temel kavramı ve "ne yapmak istiyorsunuz?" yönlendirmesini verir.
 - **Konu sayfaları** en fazla 900 sözcüktür. Her konunun yanında "Teknik ayrıntı" bağlantıları vardır.
 - **Üretici denetimleri.** Üretici aşağıdaki durumlardan biri varsa reddeder; CI'da `--check` ile sınanır:
@@ -124,7 +126,7 @@ Bağlantılar şöyle işlenir:
 
 - Yeni gelen bir kullanıcı tek sayfadan işleri bulur, yapamadığı işin nedenini görür ve bir tıkla nasıl yapılacağını okur.
 - Kılavuz kodla birlikte gözden geçirilir ve sürümlenir. Bağlantı ve uzunluk kuralları CI'da denetlendiği için kılavuz dağılmaz.
-- Görevler eklendikçe panel büyür: U8.3 kullanıcılar ve roller, U8.4 sihirbazlar, U8.5 denetim izi, U8.6 sağlık panosu. "Hazırlanıyor" kartları adım tamamlandıkça açılır.
+- Görevler eklendikçe panel büyür: U8.3 kullanıcılar ve roller, U8.4–U8.6 yönetişim görevleri ve sağlık panosu, U8.7 sihirbazlar, U8.8 denetim izi. "Hazırlanıyor" kartları adım tamamlandıkça açılır.
 - Kılavuz şimdilik yalnızca Türkçedir. Ekran görüntüsü ve video içermez; bunlar hedef ortam ve gerçek veriyle hazırlanmalıdır (U10).
 - Teknik belgelerdeki dış bağlantılar tıklanmaz. Bu bilinçli bir seçimdir: kurum içi, internete kapalı kurulumda çalışmayacak bağlantı verilmez.
 

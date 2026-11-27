@@ -53,6 +53,7 @@ chapters:
       - {id: unauthorized, kind: engine, col: 4, row: 1, label: Yetkisiz değişiklik, sub: ["Sapma ↔ onaylı Change", "penceresi"]}
       - {id: analytics, kind: store, col: 5, row: 1, label: Trend ve anomali, sub: ["OpenSearch RCF,", "sağlık metrikleri"]}
       - {id: dependent_ids, kind: engine, col: 0, row: 1, span: 2, label: Bağımlı CI kimliği, sub: ["Uygulama, adaptör: üst CI", "bağlamında tanımlanır"]}
+      - {id: gov_tasks, kind: human, col: 4, row: 2, span: 2, label: Yönetişim görevleri, sub: ["Zamanlanmış kampanya + bulgu kuralı", "→ sorumluya görev (ServiceNow / Evren)"]}
     edges:
       - {from: change_filter, to: normalize}
       - {from: normalize, to: identity}
@@ -63,6 +64,8 @@ chapters:
       - {from: breaker, to: unauthorized, style: dashed}
       - {from: reconcile, to: analytics}
       - {from: dependent_ids, to: match_queue, style: dashed}
+      - {from: analytics, to: gov_tasks}
+      - {from: unauthorized, to: gov_tasks, style: dashed}
 
   - id: store
     number: "03"
@@ -243,6 +246,11 @@ details:
     text: Keşfin kendi kaydında gördüğü izlenen öznitelik değişikliği (RAM, CPU, işletim sistemi, seri, firmware) değişiklik aralığına değen yetkili ve onaylı bir değişiklik kaydı yoksa yetkisiz değişiklik anomalisi açılır (ADR-0025). Karar gecikmelidir (geç kaydedilen acil değişiklik); sonradan gelen onaylı kayıt anomaliyi kanıtıyla kapatır. Devre kesici çalışmayı açtıysa karar verilmez. Veri sorumlusu "incelendi" veya gerekçeli "yanlış alarm" der; GRC kontrolü CMDB-05'e kanıt gider.
     tech: [metadata/change_control.yaml, insight.config_change, ref.sn_change_request, ref.sn_task_ci, insight.anomaly]
     security: [Kurallar rol sözlüğüyle (ürün kodu eşlemede), Devre kesici açıkken bastırma, Karar anomaly_review izniyle ve denetim izinde]
+  gov_tasks:
+    phase: F1
+    text: Evren veriyi güncel tutan işi de yönetir. Konfigürasyon yöneticisi yönetim panelinden zamanlanmış görev tanımlar (ör. uygulama sahiplerine veri güncelliği teyidi, erişim gözden geçirme). Veri kalitesi ve uyum kuralları da bulgu görevi açar (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev); bulgu kapanınca görev kapanır. Görev bir kanal üzerinden teslim edilir. Şimdilik ServiceNow (standart görev tablosu ve alanları, Table API), Evren'in kendi kanalı baştan hazır; kanal ileride Evren'e devredilir.
+    tech: [Görev kanalı soyutlaması, ServiceNow Table API, correlation_id]
+    security: [SN'de kural, ACL veya alan değişikliği yok, Görev kapanışı Evren'deki karara bağlı, Kanal kimliği yalnızca görev tablosuna yazar]
   analytics:
     phase: F1
     text: Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0). F0'da gölge mod raporu mevcut CMDB'yi rol tabanlı karşılaştırır (kapsam, mükerrer, değer farkı) ve GRC için değiştirilemez kanıt üretir (ADR-0014).

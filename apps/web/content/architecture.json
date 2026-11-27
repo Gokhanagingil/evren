@@ -2,7 +2,7 @@
   "title": "Evren CMDB",
   "heading": "Konfigürasyon evreni — kaynaktan karara",
   "width": 1280,
-  "height": 2498,
+  "height": 2617,
   "generated_from": "apps/web/content/architecture.yaml",
   "chapters": [
     {
@@ -19,14 +19,14 @@
       "title": "Anlamlandırma — ara katman",
       "lead": "Milyonlarca gözlem değişmeyenler elenerek süzülür. Kimlik çözülür, öznitelikler kurallarla uzlaştırılır, şüpheli olan insana sorulur.",
       "y": 640,
-      "height": 352
+      "height": 471
     },
     {
       "id": "store",
       "number": "03",
       "title": "Kayıt sistemi",
       "lead": "ServiceNow veri deseniyle aynı yüzey, daha güçlü bir motor. Her değerin kaynağı ve gerekçesi saklanır.",
-      "y": 1010,
+      "y": 1129,
       "height": 352
     },
     {
@@ -34,7 +34,7 @@
       "number": "04",
       "title": "Tüketim ve entegrasyon",
       "lead": "Tek API, iki dil — yerel REST ve ServiceNow uyumlu uç noktalar. Yapay zekâ ajanları kurumun kendi MCP katmanından bağlanır.",
-      "y": 1380,
+      "y": 1499,
       "height": 352
     },
     {
@@ -42,7 +42,7 @@
       "number": "05",
       "title": "ServiceNow ile geçiş deseni",
       "lead": "Evren ana kaynaktır, ServiceNow CMDB replikadır. Task kayıtları SN'deki CI'ları göstermeye devam eder; business rule değişmez.",
-      "y": 1750,
+      "y": 1869,
       "height": 352
     },
     {
@@ -50,7 +50,7 @@
       "number": "06",
       "title": "Güvenlik ve yönetişim",
       "lead": "Varsayılan reddet, en az yetki, her değişiklik iz bırakır. Yapay zekâ önerir, insan karar verir.",
-      "y": 2120,
+      "y": 2239,
       "height": 352
     }
   ],
@@ -481,6 +481,29 @@
         "identification_rules.yaml · independent false"
       ],
       "security": []
+    },
+    "gov_tasks": {
+      "label": "Yönetişim görevleri",
+      "sub": [
+        "Zamanlanmış kampanya + bulgu kuralı",
+        "→ sorumluya görev (ServiceNow / Evren)"
+      ],
+      "kind": "human",
+      "kind_label": "İnsan kararı / arayüz",
+      "chapter": "sense",
+      "phase": "F1",
+      "text": "Evren veriyi güncel tutan işi de yönetir. Konfigürasyon yöneticisi yönetim panelinden zamanlanmış görev tanımlar (ör. uygulama sahiplerine veri güncelliği teyidi, erişim gözden geçirme). Veri kalitesi ve uyum kuralları da bulgu görevi açar (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev); bulgu kapanınca görev kapanır. Görev bir kanal üzerinden teslim edilir. Şimdilik ServiceNow (standart görev tablosu ve alanları, Table API), Evren'in kendi kanalı baştan hazır; kanal ileride Evren'e devredilir.",
+      "tech": [
+        "Görev kanalı soyutlaması",
+        "ServiceNow Table API",
+        "correlation_id"
+      ],
+      "security": [
+        "SN'de kural",
+        "ACL veya alan değişikliği yok",
+        "Görev kapanışı Evren'deki karara bağlı",
+        "Kanal kimliği yalnızca görev tablosuna yazar"
+      ]
     },
     "cmdb_ci": {
       "label": "cmdb_ci · golden record",

@@ -100,6 +100,16 @@ function tasks(goCi) {
       { id: 'kurallar', title: 'Kuralları incele', icon: 'sliders', guide: 'entegrasyonlar', href: '#/kurallar',
         desc: 'Uzlaştırma, tanımlama, veri tazeleme ve eskime kuralları.' },
     ] },
+    { group: 'Yönetişim görevleri', desc: 'Sorumlulara zamanlanmış ve kurala bağlı görevler; şimdilik ServiceNow, ileride Evren üzerinden.', items: [
+      { id: 'zamanli-gorev', title: 'Zamanlanmış görev tanımla', icon: 'clock', guide: 'gorevler', soon: true,
+        desc: 'Ör. uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.' },
+      { id: 'kural-gorevi', title: 'Kuraldan görev aç', icon: 'sliders', guide: 'gorevler', soon: true,
+        desc: 'Ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı bulununca sahibine görev.' },
+      { id: 'gorev-izle', title: 'Açık görevleri izle', icon: 'inbox', guide: 'gorevler', soon: true,
+        desc: 'Kime ne zaman hangi görev gitti, süresi geçenler, tamamlananlar.' },
+      { id: 'gorev-kanali', title: 'Görev kanalını yönet', icon: 'plug', guide: 'gorevler', soon: true,
+        desc: 'Görevlerin ServiceNow\'da mı Evren\'de mi açılacağı; hedef tablo ve atama grubu.' },
+    ] },
     { group: 'Veri kalitesi', desc: 'Kayıtların güncel ve doğru kalması.', items: [
       { id: 'sahiplik', title: 'Sahiplik onaylarını yönet', icon: 'check', guide: 'yasam-dongusu', href: '#/sahiplik-onayi',
         desc: 'Sorumlu olduğunuz CI\'ları onaylayın; sahipsiz ve reddedilenleri izleyin.' },

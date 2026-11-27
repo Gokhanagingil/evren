@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 20/58 adım tamamlandı
+**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 20/63 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -23,9 +23,9 @@
 - [x] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Tamamlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
 - [x] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Tamamlandı_ (ilgili: F1-21, F1-17)
 - [x] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Tamamlandı_ (ilgili: F1-06, F1-07, F1-19)
-- [ ] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu, sistem durumu, kullanıcılar ve roller, sınıf/alan ve entegrasyon sihirbazları, denetim izi, sağlık panosu — _Devam ediyor_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-20)
+- [ ] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu altyapısı, sistem durumu, kullanıcılar ve roller, yönetişim görevleri (ServiceNow ve Evren kanalı; zamanlanmış kampanyalar, kural tabanlı bulgu görevleri), sağlık panosu, sihirbazlar, denetim izi — _Devam ediyor_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-24, F1-25, F1-26)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
-- [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09)
+- [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09, F1-27)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
 
 ## Sıradaki adımlar (fazlara göre)
@@ -55,6 +55,8 @@
 | F1-03 | NNMi web servis kullanıcısı ve NNMi sürümü | Devam ediyor |
 | F1-04 | ServiceNow change_request ve task_ci okuma izni | Devam ediyor |
 | F1-10 | Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı | Planlandı |
+| F1-24 | ServiceNow'da görevin açılacağı tablo ve atama grubu kararı; o tabloya yazma izni olan entegrasyon hesabı (canlı kabul U10) | Planlandı |
+| F1-25 | Konfigürasyon yöneticisi rolünün sahibi ve kampanya takvimi (süreç sahipleri) | Planlandı |
 | F2-01 | ServiceNow tarafında Evren veri kaynağı için platform ekibi onayı | Planlandı |
 | F2-04 | ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi | Planlandı |
 | F2-08 | GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması | Planlandı |
@@ -125,7 +127,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 8/23 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 8/27 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -171,6 +173,13 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: 26.11.2026 (ADR-0026, U6.1, göç 0022): arayüzden CI oluşturma tamam — istek ingest.manual_create'e, uzlaştırıcı kimlik çözümlemesinden geçirir (kesin eşleşme açılmaz, belirsiz eşleşme veya aynı ad gerekçeli karar ister), açılan CI'ın kimlik anahtarları dizine girer, keşif sonradan bağlanır. U6.2 elle ilişki tamam (göç 0023): izinli ilişki kuralı zorunlu, ilişki CI'ın Manual kaydında ve cmdb_rel_ci'da Manual kaynağıyla, yalnızca elle girilmiş ilişki kaldırılır, iki uçta değişim geçmişi. U6.3 CSV ile toplu içe aktarma tamam (göç 0024): önizleme yazmaz, onay dosyayı yeniden doğrular, geçerli satırlar toplu iş altında oluşturma isteği olur ve sırayla kimlik çözümlemesinden geçer; güncelleme yok, formül enjeksiyonu reddedilir, satır sonuçları izlenir.
 - [ ] **F1-22** Değişiklik setiyle ilişki tipi ve izinli ilişki kuralı yönetimi (etki yönü dahil; taslak → onay → yayın) — _Planlandı_
 - [ ] **F1-23** Bağımlı CI kapsamının genişletilmesi: keşif kaynağının yazılım ve dosya sistemi verisi, Kubernetes bileşenleri; ana CI ayrılınca bağımlıların taşınması — _Planlandı_
+- [ ] **F1-24** Yönetişim görevi altyapısı: görev modeli, sorumluya atama (CI sahibi, yöneten, destek grubu), son tarih, hatırlatma ve tırmanma; kanal soyutlaması: Evren içi kanal ve ServiceNow kanalı (standart görev tablosuna Table API ile açma, correlation_id ile tekillik, durum eşitleme; SN'de kural, ACL veya alan değişikliği yok) — _Planlandı_
+  - Sizden gereken: ServiceNow'da görevin açılacağı tablo ve atama grubu kararı; o tabloya yazma izni olan entegrasyon hesabı (canlı kabul U10)
+- [ ] **F1-25** Zamanlanmış yönetişim kampanyaları yönetim panelinden: veri güncelliği teyidi (sahiplik onayına bağlı), erişim gözden geçirme, serbest kontrol listesi; kapsam (sınıf ve koşul), sıklık, sorumlu alanı, önizleme (kaç görev, kime), etkinleştirme; sonuç ve kanıt (GRC Platformu'na) — _Planlandı_
+  - Sizden gereken: Konfigürasyon yöneticisi rolünün sahibi ve kampanya takvimi (süreç sahipleri)
+- [ ] **F1-26** Kural tabanlı bulgu görevleri: veri kalitesi ve uyum kuralları (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı, sahipsiz üretim CI'ı) bulgu üretir, bulgu sorumlusuna görev açar; bulgu sürerken mükerrer görev açılmaz, bulgu kapanınca görev kapanır; kural tanımı panelden — _Planlandı_
+- [ ] **F1-27** Kullanım kılavuzu içeriğinin son hâli: ürün oturduktan sonra her konunun ekranlarla doğrulanması, ekran görüntüleri (hedef ortamla), taslak notunun kaldırılması — _Planlandı_
+  - Not: 27.11.2026 proje sahibi kararı: altyapı U8.2'de hazır (ADR-0033); içerik ekranlar değişebileceği için en sonda yazılır.
 
 **Çıkış kriterleri**
 
@@ -188,7 +197,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 
 ## F2 · Evren ana kaynak, ServiceNow replika
 
-_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/10 adım
+_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/11 adım
 
 Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.
 
@@ -205,6 +214,7 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
   - Sizden gereken: GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması
 - [ ] **F2-09** Yedekleme, felaket kurtarma ve yüksek erişilebilirlik: PostgreSQL PITR, Kafka/OpenSearch çoğaltma, geri yükleme tatbikatı — _Planlandı_
 - [ ] **F2-10** Değişim geçmişi saklama ve bölüm yönetimi: aylık bölümlerin otomatik açılması, saklama süresi kararı (denetim ve KVKK), eski bölümlerin arşivlenmesi; zaman içinde sorgunun ufku — _Planlandı_
+- [ ] **F2-11** Görev kanalının ServiceNow'dan Evren'e devri: Evren görev ekranı (Görevlerim), e-posta ve Teams bildirimi, kanal başına gölge → etkin → emekli (ADR-0009 deseni); açık görevlerin taşınması — _Planlandı_
 
 **Çıkış kriterleri**
 

@@ -1010,10 +1010,12 @@ def test_admin_panel_guides_tasks_by_permission_and_deep_links(page, base_url):
     görev başlatma (Yeni CI penceresi), "Nasıl yapılır?" kılavuza götürür."""
     page.goto(base_url + "/#/yonetim")
     expect(page.locator("#adminAttention h2")).to_have_text("Size düşen işler")
-    expect(page.locator(".task-group")).to_have_count(6)
+    expect(page.locator(".task-group")).to_have_count(7)
     # Bu oturumda Şema onaylayıcı yok: görev açılmaz, hangi rolün gerektiğini söyler
     expect(page.locator("#task-sema-onay .task-locked")).to_contain_text("Şema onaylayıcı rolü gerekir")
     expect(page.locator("#task-kullanici")).to_contain_text("Hazırlanıyor")
+    # Planlanan yönetişim görevleri panelde görünür (F1-24 … F1-26)
+    expect(page.locator("#task-zamanli-gorev")).to_contain_text("Hazırlanıyor")
     # Arama: "alan" yazınca ilgili görevler kalır; Enter ilk göreve odaklar
     page.fill("#adminSearch", "alan")
     expect(page.locator("#task-alan")).to_be_visible()

@@ -47,6 +47,15 @@ Kaçındığımız değişiklik tam olarak budur.
 - **Hangi alan nerede yönetilir:** uzlaştırma kuralları belirler. Sahiplik ve destek grubu başlangıçta ServiceNow'da kalabilir ("ServiceNow" kaynağı). Evren arayüzü olgunlaşınca Manual kaynağına geçer.
 - **Çift yönetimi önlemek:** bir alanın ana kaynağı Evren'e geçtiğinde, SN formunda o alan salt okunur yapılabilir. Bu bir UI policy veya sözlük ayarıdır, business rule değildir. Proje sahibinin onayıyla yapılır.
 
+## Yönetişim görevleri ServiceNow'da (plan F1-24, kanal ileride Evren'e)
+
+Evren'in sorumlulara açtığı görevler (veri güncelliği teyidi, erişim gözden geçirme, ilişkisiz veritabanı gibi bulgular) geçiş döneminde ServiceNow'da açılır; insanlar görevi alıştıkları yerde görür.
+
+- Görev **standart bir görev tablosuna, standart alanlarla** Table API ile yazılır: kısa açıklama, açıklama, atama grubu, atanan kişi, CI (`cmdb_ci`), son tarih, `correlation_id` (Evren görev kimliği; tekrar denemede ikinci görev açılmaz) ve `correlation_display`. ServiceNow'da iş kuralı, ACL veya alan değişikliği gerekmez (kural 11).
+- **Karar Evren'de verilir.** Görevde Evren'deki ilgili sayfanın adresi bulunur. Karar verilince Evren görevi kapatır. ServiceNow'da kararsız kapatılan görev Evren'de "kanalda kapatıldı, karar yok" olarak görünür ve görev izleme ekranına düşer.
+- Görevin durumu ServiceNow'dan geri okunur (değişiklik çekme ile aynı salt okunur desen); entegrasyon hesabı yalnızca seçilen görev tablosuna yazabilir.
+- Kanal soyutlaması: aynı görev Evren'in kendi kanalında da tutulur. Kanal ServiceNow'dan Evren'e ürün değişimi deseniyle geçer (gölge → etkin → emekli, ADR-0009; plan F2-11).
+
 ## Ağ ve güvenlik
 
 - **Evren → ServiceNow:** giden HTTPS ve OAuth. Ayrı entegrasyon kullanıcısı, en az yetki.

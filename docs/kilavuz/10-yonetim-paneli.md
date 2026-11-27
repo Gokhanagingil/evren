@@ -8,6 +8,10 @@
 - **Görevler:** CMDB kayıtları, veri modeli, kullanıcılar, entegrasyonlar, veri kalitesi ve işletim başlıklarında.
 - **Arama:** "alan", "kullanıcı", "kaynak" gibi bir kelime yazarak görevi bulun.
 
+## Hazırlanan görevler
+
+"Hazırlanıyor" etiketli görevler bir sonraki adımlarda açılacak; örneğin [yönetişim görevleri](kilavuz:gorevler).
+
 ## Yetkiniz olmayan görevler
 
 Görev gri görünür ve hangi rolün gerektiği yazar. Rol için yetki yöneticinize başvurun ([roller](kilavuz:kullanicilar)).

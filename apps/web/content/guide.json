@@ -77,8 +77,15 @@
    "id": "yonetim-paneli",
    "title": "Yönetim panelini kullanmak",
    "summary": "Bütün yönetim işlerinin tek yerden başlatılması.",
-   "words": 112,
-   "markdown": "# Yönetim panelini kullanmak\n\n[Yönetim Paneli](#/yonetim) bütün yönetim işlerinin başlangıç noktasıdır. Ne yapmak istediğinizi seçersiniz, Evren ilgili ekranı açar ve adım adım yönlendirir.\n\n## Panelde neler var?\n\n- **Size düşen işler:** sizin karar vermeniz gereken bekleyen işler (kuyruk, onay bekleyen değişiklik, süresi dolan onay). Tıklayınca ilgili yere gider.\n- **Görevler:** CMDB kayıtları, veri modeli, kullanıcılar, entegrasyonlar, veri kalitesi ve işletim başlıklarında.\n- **Arama:** \"alan\", \"kullanıcı\", \"kaynak\" gibi bir kelime yazarak görevi bulun.\n\n## Yetkiniz olmayan görevler\n\nGörev gri görünür ve hangi rolün gerektiği yazar. Rol için yetki yöneticinize başvurun ([roller](kilavuz:kullanicilar)).\n\n## Her ekranda yardım\n\nSağ üstteki **?** düğmesi o ekranın kısa açıklamasını ve kılavuzdaki ilgili konuyu açar.\n\n## Teknik ayrıntı\n\nPanelin ve kılavuzun nasıl tasarlandığı: [yönetim paneli kararı (ADR-0033)](belge:adr/0033-yonetim-paneli-ve-katmanli-kilavuz).\n"
+   "words": 124,
+   "markdown": "# Yönetim panelini kullanmak\n\n[Yönetim Paneli](#/yonetim) bütün yönetim işlerinin başlangıç noktasıdır. Ne yapmak istediğinizi seçersiniz, Evren ilgili ekranı açar ve adım adım yönlendirir.\n\n## Panelde neler var?\n\n- **Size düşen işler:** sizin karar vermeniz gereken bekleyen işler (kuyruk, onay bekleyen değişiklik, süresi dolan onay). Tıklayınca ilgili yere gider.\n- **Görevler:** CMDB kayıtları, veri modeli, kullanıcılar, entegrasyonlar, veri kalitesi ve işletim başlıklarında.\n- **Arama:** \"alan\", \"kullanıcı\", \"kaynak\" gibi bir kelime yazarak görevi bulun.\n\n## Hazırlanan görevler\n\n\"Hazırlanıyor\" etiketli görevler bir sonraki adımlarda açılacak; örneğin [yönetişim görevleri](kilavuz:gorevler).\n\n## Yetkiniz olmayan görevler\n\nGörev gri görünür ve hangi rolün gerektiği yazar. Rol için yetki yöneticinize başvurun ([roller](kilavuz:kullanicilar)).\n\n## Her ekranda yardım\n\nSağ üstteki **?** düğmesi o ekranın kısa açıklamasını ve kılavuzdaki ilgili konuyu açar.\n\n## Teknik ayrıntı\n\nPanelin ve kılavuzun nasıl tasarlandığı: [yönetim paneli kararı (ADR-0033)](belge:adr/0033-yonetim-paneli-ve-katmanli-kilavuz).\n"
+  },
+  {
+   "id": "gorevler",
+   "title": "Yönetişim görevleri",
+   "summary": "Sorumlulara zamanlanmış ve kurala bağlı görevler (hazırlanıyor).",
+   "words": 66,
+   "markdown": "# Yönetişim görevleri\n\n> Hazırlanıyor. Bu konu, özellik tamamlandığında yazılacak (plan F1-24 … F1-26).\n\nEvren, verinin güncel kalması için sorumlulara görev açacak:\n\n- **Zamanlanmış görevler:** örneğin uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.\n- **Kural görevleri:** örneğin hiçbir uygulama veya sunucuyla ilişkisi olmayan bir veritabanı bulunduğunda, veritabanının sahibine görev.\n\nGörevler şimdilik ServiceNow'da açılacak; ileride Evren'in kendi görev ekranından da yürütülebilecek. Tanımlar [yönetim panelinden](kilavuz:yonetim-paneli) yapılacak.\n"
   },
   {
    "id": "sozluk",
