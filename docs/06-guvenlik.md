@@ -29,6 +29,8 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | I | Yapay zekâ modeline hassas veri gitmesi | Onaylı/kurum içi model; veri sınıflandırması; asgari bağlam | docs/11 |
 | I | Sistem durumunun (sürüm, bağlantı sayısı, kuyruk, servis adları) her kullanıcıya açılması | Yalnızca `platform` okuma izni (Platform operatörü, Veri sorumlusu, Denetçi); yanıtta sır ve bağlantı bilgisi yok; API olay içeriğini (`payload`) okuyamaz, yalnızca kimlik ve zaman sütunlarını (ADR-0032) | api `system.py`, göç 0029 |
 | I | Geçmiş bir andaki değerin veya ilişki haritasının yetkisiz kişiye gösterilmesi | Geçmiş de bugünkü okuma izni ve alan duyarlılığıyla süzülür; okunamayan sınıftaki karşı CI'ın adı dönmez, haritada üzerinden genişlenmez (ADR-0031) | api `timeline.py`, `graph.py` |
+| I | Teknik belgelerin (mimari, tehdit modeli) oturumsuz okunması veya belge adıyla dizin dışına çıkılması (`../`, mutlak yol) | Belge uç noktası oturum ister; ad izinli biçimde (`adr/` öneki, harf, rakam, nokta, tire; `..` yasak) ve `docs/` altında çözülür, değilse 400/404; içerik Markdown olarak döner, arayüz HTML dizgesi üretmeden DOM'a çevirir, dış adresler tıklanmaz (ADR-0033) | api `admin.py`, `lib/markdown.js` |
+| I | "Size düşen işler" listesinin kişinin yetkisi olmayan işleri (ör. yetkisiz değişiklik, bağlayıcı kimliği) sayıyla da olsa göstermesi | Her satır kişinin ilgili izni varsa sayılır; bağlayıcı kimlikleri belirteç özeti içermeyen görünümden okunur; arayüzdeki görev kilidi yalnızca yönlendirmedir, asıl denetim API'de ve veritabanı rollerinde (ADR-0033) | api `admin.py` |
 | **D**enial of service | Büyük sorgu veya derin etki analizi | Koşul ve IN sınırı, sayfalama, sorgu zaman aşımı, derinlik sınırı, hız sınırı; geçmiş an sorgusu 20 000 değişiklikte durur, harita 3 adım ve 120 düğümle sınırlı | api, mcp |
 | T | Kaynağın ilişkiyi bırakmasının veya kısmi çalışmanın ilişkileri silmesi | İlişki yalnızca tam ve devre kesicisi OK çalışmada, kaynak kaydı geldiği hâlde listelemiyorsa kalkar; başka bildireni varsa kalmaz; kalkma değişim geçmişinde (ADR-0031) | reconciler |
 | D | Kaynak taşması | Alım geçidinde boyut ve hız sınırı; Kafka geri basıncı | ingest-gateway |
@@ -133,7 +135,7 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
   - SoD.
   - Kendine yetki verememe.
 - `evren_core.web.SECURITY_HEADERS`: CSP (`default-src 'none'`, inline yok), `X-Frame-Options DENY`, `nosniff`, `no-referrer`, COOP/COEP/CORP. Tarayıcı testinde CSP ihlali olursa test başarısız olur.
-- Arayüzde `innerHTML`/`eval` yasağı birim testinde ve güvenlik iş akışında denetlenir.
+- Arayüzde `innerHTML`/`eval` yasağı birim testinde ve güvenlik iş akışında denetlenir. Kılavuz ve teknik belgeler için Markdown işleyici (`lib/markdown.js`) HTML dizgesi üretmez; tarayıcı testi `<script>`, `<img onerror>` ve `javascript:` bağlantısı içeren metnin düz metin kaldığını sınar (ADR-0033).
 - `.github/workflows/security.yml`: gitleaks (geçmiş dahil), pip-audit, bandit (yüksek eşik), Trivy (dosya sistemi + yanlış yapılandırma + sır), CycloneDX SBOM. Sürümler SHA-256 ile doğrulanır.
   - `.gitleaks.toml` istisnası yalnızca genel anahtar kuralı ve sentetik `source_key` değerleriyle sınırlıdır; iş akışındaki olumsuz test, istisnanın gerçek bir belirteci gizlemediğini her çalıştırmada doğrular (yol bazlı istisna bu nedenle reddedildi).
   - Bağımlılıklar hash'li ve 14 günlük tedarik zinciri bekleme süresiyle kilitlenir (ADR-0005).

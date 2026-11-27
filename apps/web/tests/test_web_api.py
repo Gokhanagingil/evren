@@ -556,9 +556,12 @@ def test_create_ci_with_identity_check_using_keyboard(page, base_url):
         for attempt in range(2):
             page.keyboard.press("Escape")
             page.locator("#ciCreate").click()
-            page.select_option("#createClass", "cmdb_ci_vm_instance")
-            page.wait_for_selector("#edit-name")
+            page.wait_for_selector('#createFields[data-class="cmdb_ci_linux_server"]')
             page.fill("#edit-name", f"vm-web-{tag}")
+            page.select_option("#createClass", "cmdb_ci_vm_instance")
+            # Form yeni sınıfa göre yeniden çizilir; yazılmış ad korunur (yarış yok: data-class çizimden sonra konur)
+            page.wait_for_selector('#createFields[data-class="cmdb_ci_vm_instance"]')
+            expect(page.locator("#edit-name")).to_have_value(f"vm-web-{tag}")
             page.click("#createSave")
             if attempt == 0:
                 expect(page.locator("#toast")).to_contain_text(f"CI açıldı: vm-web-{tag}")
@@ -999,4 +1002,75 @@ def test_system_status_mobile_has_no_horizontal_overflow(browser, base_url):
     expect(pg.locator("#sys-database")).to_be_visible()
     pg.wait_for_timeout(150)
     assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+    context.close()
+
+
+def test_admin_panel_guides_tasks_by_permission_and_deep_links(page, base_url):
+    """U8.2 (ADR-0033): yönetim paneli; size düşen işler, görev arama, yetkisiz görevde gereken rol, derin bağlantıyla
+    görev başlatma (Yeni CI penceresi), "Nasıl yapılır?" kılavuza götürür."""
+    page.goto(base_url + "/#/yonetim")
+    expect(page.locator("#adminAttention h2")).to_have_text("Size düşen işler")
+    expect(page.locator(".task-group")).to_have_count(6)
+    # Bu oturumda Şema onaylayıcı yok: görev açılmaz, hangi rolün gerektiğini söyler
+    expect(page.locator("#task-sema-onay .task-locked")).to_contain_text("Şema onaylayıcı rolü gerekir")
+    expect(page.locator("#task-kullanici")).to_contain_text("Hazırlanıyor")
+    # Arama: "alan" yazınca ilgili görevler kalır; Enter ilk göreve odaklar
+    page.fill("#adminSearch", "alan")
+    expect(page.locator("#task-alan")).to_be_visible()
+    expect(page.locator("#task-csv")).to_be_hidden()
+    page.locator("#adminSearch").press("Enter")
+    expect(page.locator("#task-alan-go")).to_be_focused()
+    page.fill("#adminSearch", "olmayan-bir-sey")
+    expect(page.locator("#adminEmpty")).to_be_visible()
+    page.fill("#adminSearch", "")
+    assert "null" not in page.locator("main").inner_text()
+    shot(page, "web_api_admin_panel")
+    # Derin bağlantı: görev penceresi açılır
+    page.goto(base_url + "/#/yonetim/yeni-ci")
+    expect(page.locator(".dialog h2")).to_have_text("Yeni CI")
+    page.keyboard.press("Escape")
+    expect(page.locator(".overlay")).to_have_count(0)
+    # İlişki ekle: önce CI seçici, sonra ilişki penceresi
+    page.goto(base_url + "/#/yonetim")
+    page.click("#task-iliski-go")
+    page.fill("#pickCiSearch", "ist-db")
+    page.locator("#pickCiResults .pick-item").first.click()
+    expect(page.locator(".dialog h2")).to_contain_text("İlişki ekle ·")
+    page.keyboard.press("Escape")
+    # Nasıl yapılır → kılavuz konusu
+    page.locator("#task-alan .task-help").click()
+    expect(page.locator("#guideArticle")).to_contain_text("değişiklik seti")
+    expect(page.locator("#pageTitle")).to_have_text("Sınıf ve alan eklemek")
+    shot(page, "web_api_guide_topic")
+
+
+def test_help_button_opens_the_screens_guide_topic_and_guide_reaches_technical_docs(page, base_url):
+    """Her ekranın "?" yardımı kılavuzdaki konusuna bağlanır; kılavuzdan teknik belge uygulama içinde açılır."""
+    page.goto(base_url + "/#/ci")
+    page.wait_for_selector("#ciCount")
+    page.click("#helpOpen")
+    link = page.locator("#helpGuideLink")
+    expect(link).to_have_text("Kılavuzda aç: CI bulmak ve incelemek")
+    link.click()
+    expect(page.locator(".overlay")).to_have_count(0)
+    expect(page.locator("#pageTitle")).to_have_text("CI bulmak ve incelemek")
+    # Teknik ayrıntı bağlantısı → oturumlu belge
+    page.locator("#guideArticle a[href='#/belge/03-kimlik-ve-uzlastirma']").click()
+    expect(page.locator("#docArticle")).to_contain_text("uzlaştırma")
+    expect(page.locator("#docArticle table").first).to_be_visible()  # belgedeki tablolar işlenir
+    assert "undefined" not in page.locator("main").inner_text()  # belge "null" sözcüğünü kendisi içerir
+    shot(page, "web_api_technical_doc")
+    page.goto(base_url + "/#/belge/adr/README")
+    expect(page.locator("#docArticle a[href^='#/belge/adr/0031']")).to_have_count(1)  # ADR'ler arası göreli bağlantı
+
+
+def test_admin_panel_and_guide_have_no_horizontal_overflow_on_mobile(browser, base_url):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    pg = context.new_page()
+    for path, ready in (("/#/yonetim", "#task-yeni-ci"), ("/#/kilavuz", "#guideArticle h2"),
+                        ("/#/kilavuz/kullanicilar", "#guideArticle table")):
+        pg.goto(base_url + path)
+        expect(pg.locator(ready).first).to_be_visible()
+        pg.wait_for_timeout(150)
+        assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, path
     context.close()

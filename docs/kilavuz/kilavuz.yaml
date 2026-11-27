@@ -1,0 +1,42 @@
+# Evren kullanım kılavuzu (U8.2, ADR-0033). Tek kaynak bu klasördür; uygulamadaki Kılavuz sayfası
+# tools/build_guide.py ile üretilen apps/web/content/guide.json'dan beslenir (CI --check ile denetler).
+#
+# Katmanlar: giriş sayfası kısa ve geneldir (kelime sınırı testlidir); ayrıntı konu sayfalarında; teknik belgeler
+# yalnızca bağlantıyla (belge:...). Bağlantı biçimleri: kilavuz:<konu>, belge:<docs altındaki dosya, .md'siz>,
+# #/<arayüz yolu>, https://...
+#
+# routes: o konunun anlattığı arayüz sayfaları; sayfadaki "?" yardımı bu konuya bağlanır.
+title: Evren kullanım kılavuzu
+# Proje sahibinin kararı (27.11.2026): altyapı şimdi, içeriğin son hâli en sonda (ürün oturduktan sonra; plan F1-27).
+# Taslakken her konunun başında "Taslak" notu görünür. Yeni ekran eklendikçe yalnızca konu iskeleti ve routes eklenir.
+draft: true
+start: baslarken
+start_word_limit: 260
+topic_word_limit: 900
+topics:
+  - {id: baslarken, file: 00-baslarken.md, title: "Evren'e başlarken",
+     summary: "Evren nedir ve nereden başlanır.", routes: [genel-bakis]}
+  - {id: ci-bulma, file: 01-ci-bulma.md, title: "CI bulmak ve incelemek",
+     summary: "Arama, CI paneli, bir değerin nereden geldiği, ilişki haritası ve geçmiş bir an.", routes: [ci, iliski-haritasi]}
+  - {id: ci-ekleme, file: 02-ci-ekleme.md, title: "CI eklemek ve düzeltmek",
+     summary: "Tek kayıt eklemek, CSV ile toplu içe aktarmak, düzenlemek ve ilişki kurmak."}
+  - {id: eslestirme, file: 03-eslestirme.md, title: "Eşleştirme kararları",
+     summary: "Evren iki kaydın aynı şey olup olmadığından emin olmadığında ne yapılır.", routes: [kuyruk]}
+  - {id: yasam-dongusu, file: 04-yasam-dongusu.md, title: "Sahiplik onayı ve eskime",
+     summary: "Kayıtların güncel kalması; onay, emekliye ayırma ve koruma kararları.", routes: [sahiplik-onayi, eskime]}
+  - {id: veri-modeli, file: 05-veri-modeli.md, title: "Sınıf ve alan eklemek",
+     summary: "Veri modelini değiştirmek; taslak, onay ve yayın.", routes: [veri-modeli, sema]}
+  - {id: entegrasyonlar, file: 06-entegrasyonlar.md, title: "Veri kaynakları ve entegrasyonlar",
+     summary: "Kaynak bağlamak, bağlayıcı kimliği, çalıştırma, gölge mod ve kurallar.", routes: [kaynaklar, kurallar]}
+  - {id: kullanicilar, file: 07-kullanicilar.md, title: "Kullanıcılar, roller ve yetkiler",
+     summary: "Hangi rol ne yapar, yetki nasıl verilir, görevler ayrılığı."}
+  - {id: isletim, file: 08-isletim.md, title: "Sistemin sağlığını izlemek",
+     summary: "Sistem durumu sayfasını okumak ve sorun gidermek.", routes: [sistem-durumu]}
+  - {id: raporlar, file: 09-raporlar.md, title: "Raporlar ve kontroller",
+     summary: "Gölge mod raporu, GRC kontrolleri ve yetkisiz değişiklikler.", routes: [golge-mod, kontroller]}
+  - {id: yonetim-paneli, file: 10-yonetim-paneli.md, title: "Yönetim panelini kullanmak",
+     summary: "Bütün yönetim işlerinin tek yerden başlatılması.", routes: [yonetim]}
+  - {id: sozluk, file: 11-sozluk.md, title: "Kavramlar sözlüğü",
+     summary: "Evren'de geçen terimlerin kısa açıklamaları."}
+  - {id: teknik, file: 12-teknik.md, title: "Teknik belgeler",
+     summary: "Mimari, güvenlik, API ve kararlar (ADR) için ayrıntılı belgeler.", routes: [buyuk-resim, mimari, yol-haritasi]}

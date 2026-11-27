@@ -357,6 +357,25 @@ export async function ciHistory(id) {
   return (await api(`/api/v1/ci/${encodeURIComponent(id)}/history?limit=50`)).items;
 }
 
+/** Yönetim paneli (U8.2, ADR-0033): kişiye düşen bekleyen işler (yalnızca yetkisi olanlar). */
+export async function adminAttention() {
+  if (!(await isApi())) return null;
+  return (await api('/api/v1/admin/attention')).items;
+}
+
+/** Kullanım kılavuzu (docs/kilavuz → content/guide.json; tools/build_guide.py). */
+export const guide = () => loadJSON('/content/guide.json');
+
+/** Teknik belgeler (oturum ister; demo modunda yok). */
+export async function docsList() {
+  if (!(await isApi())) return null;
+  return api('/api/v1/docs');
+}
+export async function docGet(name) {
+  if (!(await isApi())) return null;
+  return api(`/api/v1/docs/${name.split('/').map(encodeURIComponent).join('/')}`);
+}
+
 /** Sistem durumu (U8.1, ADR-0032): yalnızca platform okuma izniyle. */
 export const systemStatus = () => api('/api/v1/system/status');
 

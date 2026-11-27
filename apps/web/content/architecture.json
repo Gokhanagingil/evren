@@ -708,14 +708,17 @@
       "kind_label": "İnsan kararı / arayüz",
       "chapter": "consume",
       "phase": "F0",
-      "text": "Türkçe arayüz, GRC Platformu ile aynı görsel dil. Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.",
+      "text": "Türkçe arayüz, GRC Platformu ile aynı görsel dil. Yönetim işleri görev odaklı tek panelden yapılır; yetkisi olmayan iş gerektirdiği rolle görünür, kişiye düşen işler panelin başındadır. Katmanlı kullanım kılavuzu ve teknik belgeler uygulama içindedir (ADR-0033). Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.",
       "tech": [
         "Web Components",
-        "ES modülleri"
+        "ES modülleri",
+        "docs/kilavuz → guide.json"
       ],
       "security": [
         "CSP: script-src 'self'",
-        "innerHTML ile veri yazılmaz"
+        "innerHTML ile veri yazılmaz",
+        "Markdown HTML dizgesi üretmeden DOM'a",
+        "Teknik belgeler yalnızca oturumla"
       ]
     },
     "rest_api": {

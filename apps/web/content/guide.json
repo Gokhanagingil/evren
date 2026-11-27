@@ -1,0 +1,118 @@
+{
+ "title": "Evren kullanım kılavuzu",
+ "start": "baslarken",
+ "draft": true,
+ "topics": [
+  {
+   "id": "baslarken",
+   "title": "Evren'e başlarken",
+   "summary": "Evren nedir ve nereden başlanır.",
+   "words": 140,
+   "markdown": "# Evren'e başlarken\n\nEvren, kurumun altyapısını tek ve güvenilir bir kayıtta toplar. Keşif, sanallaştırma, ağ, izleme ve güvenlik araçlarından gelen bilgiyi birleştirir ve her bilginin nereden geldiğini gösterir.\n\n## Ne yapmak istiyorsunuz?\n\n- [Bir sunucuyu veya uygulamayı bulmak](kilavuz:ci-bulma)\n- [Yeni bir kayıt eklemek ya da düzeltmek](kilavuz:ci-ekleme)\n- [Evren'in sorduğu eşleştirme sorularını yanıtlamak](kilavuz:eslestirme)\n- [Sorumlu olduğunuz kayıtları onaylamak](kilavuz:yasam-dongusu)\n- [Veri modeline sınıf veya alan eklemek](kilavuz:veri-modeli)\n- [Yeni bir veri kaynağı bağlamak](kilavuz:entegrasyonlar)\n- [Kullanıcılara yetki vermek](kilavuz:kullanicilar)\n- [Sistemin sağlığını izlemek](kilavuz:isletim)\n- [Raporları ve kontrolleri izlemek](kilavuz:raporlar)\n\nYönetim işlerinin hepsi tek yerden başlar: [Yönetim Paneli](#/yonetim) ([nasıl kullanılır?](kilavuz:yonetim-paneli)).\n\n## Üç şeyi bilmek yeter\n\n1. **Her bilginin bir kaynağı vardır.** Bir kaydın değerini açtığınızda hangi araçtan ve hangi kuralla geldiğini görürsünüz.\n2. **Evren emin olmadığında sorar.** İki kaydın aynı sunucu olup olmadığından emin değilse karar size kalır.\n3. **Hiçbir şey kaybolmaz.** Kayıtlar silinmez, her değişiklik geçmişte durur ve geri alınabilir.\n\nKavramlar için [sözlük](kilavuz:sozluk), ayrıntılı bilgi için [teknik belgeler](kilavuz:teknik).\n"
+  },
+  {
+   "id": "ci-bulma",
+   "title": "CI bulmak ve incelemek",
+   "summary": "Arama, CI paneli, bir değerin nereden geldiği, ilişki haritası ve geçmiş bir an.",
+   "words": 207,
+   "markdown": "# CI bulmak ve incelemek\n\nCI (konfigürasyon öğesi), Evren'de kaydı tutulan her şeydir: sunucu, sanal makine, ağ cihazı, uygulama, hizmet.\n\n## Hızlıca\n\n1. Üst çubuktaki arama kutusuna (Ctrl+K) adın, IP adresinin veya FQDN'in bir parçasını yazın.\n2. Sonuçlardan birini seçin; sağda CI paneli açılır.\n3. Panelde bir özniteliğe tıklayın: değeri hangi kaynağın verdiğini ve hangi kuralın seçtiğini görürsünüz.\n\nDaha ayrıntılı süzmek için [Konfigürasyon Öğeleri](#/ci) sayfasında sınıf, kaynak ve kapsama göre süzün. Kapsam süzgeçleri hazır sorular sunar: izlenmeyen sunucular, korunmayan sunucular, ServiceNow'da kaydı olmayanlar.\n\n## CI panelinde neler var?\n\n- **Öznitelikler ve kaynakları:** her değerin kaynağı. Turuncu nokta, kaynakların farklı değer bildirdiği anlamına gelir.\n- **Etki:** bu CI düşerse hangi hizmetlerin etkileneceği.\n- **İlişkiler:** bağlı olduğu ve ona bağlı olan CI'lar, bunları hangi kaynağın bildirdiği.\n- **Sahiplik onayı ve Eskime:** kaydın güncel olup olmadığı.\n- **Geçmiş bir an:** CI'ın seçtiğiniz tarihteki hâli ve bugünle farkı.\n- **Zaman çizelgesi:** ne zaman, hangi kaynaktan, neyin değiştiği.\n\n## İlişki haritası\n\nPaneldeki **İlişki haritası** bağlantısı CI'ın çevresini çizer: ona bağımlı olanlar üstte, bağımlılıkları altta. Bir kutuyu seçip **Merkeze al** ile haritayı o CI'a taşıyabilir, **An** ile geçmiş bir tarihteki ilişkileri görebilirsiniz.\n\n> **İpucu:** Bir sunucunun bakımı planlanıyorsa önce Etki bölümüne bakın; etkilenen üretim hizmetleri orada sayılır.\n\n## Teknik ayrıntı\n\n- [Kimlik çözümleme ve uzlaştırma](belge:03-kimlik-ve-uzlastirma)\n- [Veri modeli](belge:02-veri-modeli)\n- [İlişki yaşam döngüsü ve zaman içinde sorgu (karar kaydı)](belge:adr/0031-iliski-yasam-dongusu-ve-zaman-icinde-sorgu)\n"
+  },
+  {
+   "id": "ci-ekleme",
+   "title": "CI eklemek ve düzeltmek",
+   "summary": "Tek kayıt eklemek, CSV ile toplu içe aktarmak, düzenlemek ve ilişki kurmak.",
+   "words": 218,
+   "markdown": "# CI eklemek ve düzeltmek\n\nKayıtların çoğu kaynaklardan kendiliğinden gelir. Elle giriş, keşfin göremediği şeyler ve düzeltmeler içindir. Elle girilen her bilgi de aynı kurallardan geçer.\n\n## Tek bir CI eklemek\n\n1. [Yönetim Paneli](#/yonetim/yeni-ci)'nde **Yeni CI ekle**'yi ya da CI sayfasında **Yeni CI…** düğmesini seçin.\n2. Sınıfı (ör. Linux sunucu) ve bildiğiniz alanları girin. Seri numarası veya FQDN gibi kimlik alanları eşleşme için önemlidir.\n3. **Oluştur**'a basın. Evren önce bu kaydın zaten var olup olmadığına bakar.\n\nEvren benzer bir kayıt bulursa sorar: aynı şey ise var olana bağlayın, değilse gerekçe yazıp yeni CI açın.\n\n## CSV ile toplu içe aktarmak\n\n1. **CSV içe aktar…** ile dosyayı seçin ve **Önizle**'ye basın. Önizleme hiçbir şey yazmaz.\n2. Satır satır sonucu inceleyin: açılacak, var olanla eşleşen, karar gereken.\n3. **İçe aktar** ile onaylayın. Karar gereken satırlar tek tek açılır.\n\n## Bir değeri düzeltmek\n\nCI panelinde **Düzenle…** ile değiştirin. Elle girilen değer de bir kaynak gibi uzlaştırılır: yönetişim alanlarında (sahip, destek grubu) elle giriş önceliklidir. Keşfin gördüğü teknik alanlarda ise keşif önceliklidir.\n\n## İlişki eklemek\n\nCI panelinde **İlişki ekle…** ile hedef CI'ı ve ilişki tipini seçin. İzin verilmeyen ilişkiler (ör. sunucunun uygulama üzerinde çalışması) reddedilir ve nedeni yazılır.\n\n> **Neden hemen görünmüyor?** İstekleri uzlaştırıcı uygular; genellikle birkaç saniye sürer. Uzlaştırıcı çalışmıyorsa istek kaybolmaz, sırada bekler.\n\n## Teknik ayrıntı\n\n- [Elle girdi (karar kaydı)](belge:adr/0026-elle-girdi)\n- [Kimlik çözümleme ve uzlaştırma](belge:03-kimlik-ve-uzlastirma)\n"
+  },
+  {
+   "id": "eslestirme",
+   "title": "Eşleştirme kararları",
+   "summary": "Evren iki kaydın aynı şey olup olmadığından emin olmadığında ne yapılır.",
+   "words": 122,
+   "markdown": "# Eşleştirme kararları\n\nEvren gelen bir kaydı mevcut bir CI ile eşleştirmekten emin değilse kendisi karar vermez, [Eşleştirme Kuyruğu](#/kuyruk)'na koyar. Örneğin ad aynıdır ama seri numarası farklıdır.\n\n## Hızlıca\n\n1. Kuyrukta bir kayda tıklayın. Kaynak kaydı ve adaylar yan yana açılır; her kanıtın ağırlığı yazar.\n2. Karar verin:\n   - **Adayla birleştir:** ikisi aynı şey.\n   - **Ret: yeni CI aç:** ikisi farklı şeyler.\n   - **Kaynakta düzeltilsin:** kaynak hatalı bilgi gönderiyor.\n   - **Ertele:** şimdilik karar verilemiyor.\n3. Karar uzlaştırıcı tarafından uygulanır.\n\n## Yanlış karar verdiyseniz\n\n**Karar verilenler** sekmesinde **Kararı geri al** kullanılabilir. Uygulanmış yanlış bir birleştirme ise CI panelindeki **Ayır…** ile geri alınır; kaynak kaydı ayrı bir CI'a taşınır.\n\n> **İpucu:** Ad tek başına kanıt değildir. Seri numarası, UUID veya işletim sistemi çelişiyorsa birleştirmeyin.\n\n## Teknik ayrıntı\n\n- [Kimlik çözümleme](belge:03-kimlik-ve-uzlastirma)\n- [Birleştirmeyi ayırma (karar kaydı)](belge:adr/0011-birlestirmeyi-ayirma)\n"
+  },
+  {
+   "id": "yasam-dongusu",
+   "title": "Sahiplik onayı ve eskime",
+   "summary": "Kayıtların güncel kalması; onay, emekliye ayırma ve koruma kararları.",
+   "words": 137,
+   "markdown": "# Sahiplik onayı ve eskime\n\nBir kaydın doğru kalması için iki düzenli iş vardır: sahibinin kaydı onaylaması ve artık görülmeyen kayıtların emekliye ayrılması.\n\n## Sahiplik onayı\n\nSahibi veya yöneticisi olduğunuz CI'lar belirli aralıklarla onay ister (üretimdekiler 180 günde, diğerleri 365 günde bir).\n\n1. [Sahiplik Onayı](#/sahiplik-onayi) sayfasında **Bende** görünümünü açın.\n2. Doğru olanları işaretleyip **Seçilenleri onayla** deyin.\n3. Size ait değilse veya bilgi yanlışsa **Reddet…** ile neden yazın; Veri sorumlusu ele alır.\n\n## Eskime\n\nKeşif, sanallaştırma, ağ, izleme ve güvenlik araçlarının hiçbiri bir CI'ı uzun süredir görmüyorsa Evren onu önce **eskimiş**, sonra **emekliye ayırma adayı** olarak işaretler. Kaynakların son çalışmaları sağlıklı değilse öneri ilerlemez.\n\n1. [Eskime](#/eskime) sayfasında adaylara bakın.\n2. **Emekliye ayır…** ya da bilerek kapalıysa **Koru…** seçin; gerekçe zorunludur.\n\nEmekliye ayrılan CI silinmez. Yeniden görülürse işaretlenir ve geri alınabilir.\n\n## Teknik ayrıntı\n\n- [Sahiplik onayı (karar kaydı)](belge:adr/0027-sahiplik-onayi)\n- [Eskime işletimi (karar kaydı)](belge:adr/0028-eskime-isletimi)\n"
+  },
+  {
+   "id": "veri-modeli",
+   "title": "Sınıf ve alan eklemek",
+   "summary": "Veri modelini değiştirmek; taslak, onay ve yayın.",
+   "words": 163,
+   "markdown": "# Sınıf ve alan eklemek\n\nVeri modeli (sınıflar, alanlar, seçim listeleri) ServiceNow ile uyumludur. Değişiklik doğrudan yapılmaz; **değişiklik seti** ile hazırlanır, başka bir kişi onaylar, sonra yayımlanır.\n\n## Hızlıca\n\n1. [Yönetim Paneli](#/yonetim)'nde **Yeni sınıf ekle** veya **Sınıfa alan ekle**'yi seçin. Veri Modeli sayfasında bir sınıfın içinden **Bu sınıfa alan ekle** de kullanılabilir.\n2. İşlemleri doldurun ve **Taslak olarak kaydet**'e basın.\n3. **Onaya gönder**. Evren değişikliği doğrular ve etkisini (kaç CI'ı etkilediğini) gösterir. Şema onaylayıcı **Onayla** veya **Reddet** der. Hazırlayan kişi kendi setini onaylayamaz.\n4. Onaylanan set **Yayınla** ile yayımlanır. Yayın, sürüm kontrolüne eklenecek bir değişiklik dosyası üretir; dağıtımda uygulanır.\n\n## Ne değiştirilebilir?\n\nYeni sınıf, alan ve seçim değeri; alanın değiştirilmesi veya kullanımdan kaldırılması; yeni veri kaynağı ve veri kaynağının yaşam döngüsü (gölge, etkin, devir, emekli). İlişki tipleri bugün yalnızca geliştirme ekibince eklenir.\n\n> **Neden bu kadar adım?** Veri modeli bütün kayıtları etkiler. Dört göz ilkesi ve dosya ile yayın, hatalı bir değişikliğin üretime sessizce girmesini önler.\n\n## Teknik ayrıntı\n\n- [Veri modeli](belge:02-veri-modeli)\n- [Değişiklik setleri (karar kaydı)](belge:adr/0015-degisiklik-setleri-git-ile-yayin)\n"
+  },
+  {
+   "id": "entegrasyonlar",
+   "title": "Veri kaynakları ve entegrasyonlar",
+   "summary": "Kaynak bağlamak, bağlayıcı kimliği, çalıştırma, gölge mod ve kurallar.",
+   "words": 166,
+   "markdown": "# Veri kaynakları ve entegrasyonlar\n\nEvren'e veri bağlayıcılarla gelir. Her kaynak bir **rolü** doldurur (keşif, sanallaştırma, ağ, izleme, güvenlik, ITSM). Kurallar ürüne değil role bağlıdır: araç değişse de kurallar değişmez.\n\n## Bir kaynağı çalıştırmak\n\n1. [Veri Kaynakları](#/kaynaklar) sayfasında kaynağı seçin.\n2. **Şimdi çalıştır** ile tam liste veya yalnızca değişenler için çalışma başlatın. Zamanlanmış çalışmalar da burada görünür.\n\n## Bağlayıcıya kimlik vermek\n\nBağlayıcı Evren'e yalnızca kendi kaynağı adına yazabilen bir belirteçle bağlanır.\n\n1. Kaynağın panelinde **Kimlik ver** deyin.\n2. Belirteç bir kez gösterilir. Kurum sır kasasına koyun ve **Sır kasasına koydum, kapat** deyin.\n3. Gerektiğinde **İptal et** ile hemen geçersiz kılın.\n\n## Yeni bir kaynak bağlamak\n\nYeni kaynak, veri modeli gibi değişiklik setiyle eklenir: [Yönetim Paneli](#/yonetim)'nde **Yeni veri kaynağı ekle**. Yeni ürün önce **gölge** modda çalışır; verisi raporlanır ama kayıtlara yazılmaz. Sonuç tatmin edici olunca **etkin** yapılır.\n\n> **Devre kesici:** Bir çalışma eksik kalırsa veya kayıt sayısı birden düşerse Evren o çalışmada hiçbir şeyi emekliye ayırmaz ve hiçbir ilişkiyi kaldırmaz.\n\n## Teknik ayrıntı\n\n- [Kaynaklar](belge:04-kaynaklar)\n- [Kaynak rolleri (karar kaydı)](belge:adr/0009-kaynak-rolleri-urun-bagimsizligi)\n- [API ve entegrasyon sözleşmesi](belge:08-api-ve-entegrasyon)\n"
+  },
+  {
+   "id": "kullanicilar",
+   "title": "Kullanıcılar, roller ve yetkiler",
+   "summary": "Hangi rol ne yapar, yetki nasıl verilir, görevler ayrılığı.",
+   "words": 145,
+   "markdown": "# Kullanıcılar, roller ve yetkiler\n\nEvren'e kurum hesabınızla (Entra ID) girersiniz. Ne yapabileceğinizi rolleriniz belirler. Rol verilmemiş bir kullanıcı hiçbir şey göremez.\n\n## Roller ne yapar?\n\n| Rol | Ne yapar |\n| --- | --- |\n| Okuyucu | CI'ları ve ilişkileri okur. |\n| CI sahibi | Sorumlu olduğu CI'ları düzenli aralıklarla onaylar. |\n| Konfigürasyon analisti | CI ekler, düzeltir, ilişki kurar. |\n| Eşleştirme analisti | Eşleştirme kuyruğunu karara bağlar. |\n| Veri sorumlusu | Kaynakları ve kuralları yönetir, eskime kararlarını verir. |\n| Şema tasarımcısı / onaylayıcı | Veri modeli değişikliğini hazırlar / onaylar. |\n| Platform operatörü | Sistem durumunu izler. |\n| Denetçi | Her şeyi ve denetim izini salt okunur görür. |\n| Yetki yöneticisi | Rol atar. |\n\n## Yetki nasıl verilir?\n\nRoller bugün Entra uygulama rolleri ve grup atamalarıyla verilir. Yönetim Paneli'nden kullanıcı ekleme ve rol verme ekranı hazırlanıyor; geldiğinde bu sayfa güncellenecek.\n\n## Görevler ayrılığı\n\nBazı roller aynı kişide birleşemez: şema değişikliğini hazırlayan onaylayamaz, denetçi denetlediği veriyi değiştiremez, kimse kendine rol veremez. Bu kurallar veritabanında zorlanır.\n\n## Teknik ayrıntı\n\n- [Yetkilendirme ve rol matrisi](belge:07-yetkilendirme)\n- [Güvenlik](belge:06-guvenlik)\n"
+  },
+  {
+   "id": "isletim",
+   "title": "Sistemin sağlığını izlemek",
+   "summary": "Sistem durumu sayfasını okumak ve sorun gidermek.",
+   "words": 124,
+   "markdown": "# Sistemin sağlığını izlemek\n\n[Sistem Durumu](#/sistem-durumu) sayfası Evren'in bütün parçalarını tek ekranda gösterir. Platform operatörü, Veri sorumlusu ve Denetçi görür.\n\n## Durumları okumak\n\n- **Çalışıyor:** sorun yok.\n- **Dikkat:** çalışıyor ama ilgilenilmesi gereken bir şey var; kutudaki not ne yapılacağını söyler.\n- **Sorun var:** bir parça çalışmıyor veya veri akmıyor.\n- **Bu kurulumda yok:** o parça bu ortamda kurulu değil veya hiç başlatılmadı.\n\n## Sık görülen durumlar\n\n- **Uzlaştırıcı yanıt vermiyor:** elle yapılan değişiklikler ve kuyruk kararları uygulanmaz, sırada bekler. Servisi yeniden başlatın.\n- **Kafka'ya ulaşılamıyor:** kaynaklardan veri alınamaz. Ağ ve Kafka kümesini denetleyin.\n- **Dizin geride:** arama eski sonuç gösterebilir. Dizinleyiciyi denetleyin; gerekirse tam yeniden dizinleme yapın.\n- **Devre kesici açık:** bir kaynağın son çalışması eksik veya şüpheli. O çalışmada yıkıcı işlem yapılmadı; [kaynağı](#/kaynaklar) inceleyin.\n\n## Teknik ayrıntı\n\n- [Operasyon ve ölçek](belge:12-operasyon-ve-olcek)\n- [Sistem durumu (karar kaydı)](belge:adr/0032-sistem-durumu)\n"
+  },
+  {
+   "id": "raporlar",
+   "title": "Raporlar ve kontroller",
+   "summary": "Gölge mod raporu, GRC kontrolleri ve yetkisiz değişiklikler.",
+   "words": 88,
+   "markdown": "# Raporlar ve kontroller\n\n## Gölge mod raporu\n\n[Gölge Mod Raporu](#/golge-mod), mevcut CMDB (ServiceNow) ile Evren'in gözlemlerini karşılaştırır: keşfin görmediği kayıtlar, CMDB'de olmayan keşif kayıtları, olası mükerrerler. Rapor değiştirilemez kanıt olarak kaydedilebilir.\n\n## GRC kontrolleri\n\n[GRC Kontrolleri](#/kontroller) GRC Platformu'na giden CMDB kontrollerinin sonucudur. Bir kaynağın verisi eksik toplandıysa sonuç \"kesin değil\" olur; bu bilerek böyledir.\n\n## Yetkisiz değişiklikler\n\nOnaylı bir değişiklik kaydı olmadan yapılan değişiklikler CI listesinde **Yetkisiz değişiklik** kapsamında görünür. Veri sorumlusu inceleyip kapatır veya **Yanlış alarm…** olarak işaretler.\n\n## Teknik ayrıntı\n\n- [Gölge mod raporu (karar kaydı)](belge:adr/0014-golge-mod-raporu-ve-kanit)\n- [Yetkisiz değişiklik tespiti (karar kaydı)](belge:adr/0025-yetkisiz-degisiklik-tespiti)\n"
+  },
+  {
+   "id": "yonetim-paneli",
+   "title": "Yönetim panelini kullanmak",
+   "summary": "Bütün yönetim işlerinin tek yerden başlatılması.",
+   "words": 112,
+   "markdown": "# Yönetim panelini kullanmak\n\n[Yönetim Paneli](#/yonetim) bütün yönetim işlerinin başlangıç noktasıdır. Ne yapmak istediğinizi seçersiniz, Evren ilgili ekranı açar ve adım adım yönlendirir.\n\n## Panelde neler var?\n\n- **Size düşen işler:** sizin karar vermeniz gereken bekleyen işler (kuyruk, onay bekleyen değişiklik, süresi dolan onay). Tıklayınca ilgili yere gider.\n- **Görevler:** CMDB kayıtları, veri modeli, kullanıcılar, entegrasyonlar, veri kalitesi ve işletim başlıklarında.\n- **Arama:** \"alan\", \"kullanıcı\", \"kaynak\" gibi bir kelime yazarak görevi bulun.\n\n## Yetkiniz olmayan görevler\n\nGörev gri görünür ve hangi rolün gerektiği yazar. Rol için yetki yöneticinize başvurun ([roller](kilavuz:kullanicilar)).\n\n## Her ekranda yardım\n\nSağ üstteki **?** düğmesi o ekranın kısa açıklamasını ve kılavuzdaki ilgili konuyu açar.\n\n## Teknik ayrıntı\n\nPanelin ve kılavuzun nasıl tasarlandığı: [yönetim paneli kararı (ADR-0033)](belge:adr/0033-yonetim-paneli-ve-katmanli-kilavuz).\n"
+  },
+  {
+   "id": "sozluk",
+   "title": "Kavramlar sözlüğü",
+   "summary": "Evren'de geçen terimlerin kısa açıklamaları.",
+   "words": 176,
+   "markdown": "# Kavramlar sözlüğü\n\n- **CI (konfigürasyon öğesi):** Evren'de kaydı tutulan her şey: sunucu, sanal makine, ağ cihazı, uygulama, hizmet.\n- **Golden record:** bir CI'ın bütün kaynaklardan birleştirilmiş tek ve güvenilir kaydı.\n- **Kaynak:** Evren'e veri gönderen araç (ör. vCenter, Zabbix).\n- **Kaynak rolü:** kaynağın gördüğü işin türü: keşif, sanallaştırma, ağ, izleme, uç nokta güvenliği, ITSM.\n- **Bağlayıcı:** kaynaktan veriyi çekip Evren'e gönderen küçük program. Kayıtlara kendisi yazmaz.\n- **Kimlik çözümleme:** gelen kaydın hangi CI olduğuna karar verilmesi (seri numarası, UUID, FQDN gibi kanıtlarla).\n- **Uzlaştırma:** kaynaklar farklı değer bildirdiğinde hangisinin geçerli olacağının kurallarla seçilmesi.\n- **Uzlaştırıcı:** kayıtlara yazan tek servis. Elle yapılan değişiklikler de ondan geçer.\n- **Eşleştirme kuyruğu:** Evren'in emin olmadığı ve insan kararı beklediği eşleşmeler.\n- **Devre kesici:** eksik veya şüpheli bir çalışmada yıkıcı işlemleri (emekliye ayırma, ilişki kaldırma) durduran koruma.\n- **Gölge mod:** yeni bir kaynağın kayıtlara yazmadan, yalnızca karşılaştırma için çalışması.\n- **Değişiklik seti:** veri modeli değişikliklerinin taslak, onay ve yayın adımlarından geçen paketi.\n- **Eskime:** bir CI'ın uzun süredir hiçbir gözlemci kaynak tarafından görülmemesi.\n- **Sahiplik onayı:** CI sorumlusunun kaydı düzenli aralıklarla doğrulaması.\n- **İlişki:** iki CI arasındaki bağ (ör. uygulama sunucuda çalışır). Etki analizi bunlardan çıkar.\n"
+  },
+  {
+   "id": "teknik",
+   "title": "Teknik belgeler",
+   "summary": "Mimari, güvenlik, API ve kararlar (ADR) için ayrıntılı belgeler.",
+   "words": 83,
+   "markdown": "# Teknik belgeler\n\nBu belgeler mimari, güvenlik ve entegrasyon ayrıntılarını anlatır. Günlük kullanım için gerekmez.\n\n## Mimari ve veri\n\n- [Mimari](belge:01-mimari) · [Veri modeli](belge:02-veri-modeli) · [Kimlik çözümleme ve uzlaştırma](belge:03-kimlik-ve-uzlastirma)\n- [Kaynaklar](belge:04-kaynaklar) · [ServiceNow geçişi](belge:05-servicenow-gecisi) · [CMDB yetenek kataloğu](belge:13-cmdb-evreni)\n\n## Güvenlik ve yetki\n\n- [Güvenlik ve tehdit modeli](belge:06-guvenlik) · [Yetkilendirme](belge:07-yetkilendirme) · [Yapay zekâ ilkeleri](belge:11-yapay-zeka)\n\n## Entegrasyon ve işletim\n\n- [API ve entegrasyon](belge:08-api-ve-entegrasyon) · [MCP sözleşmesi](belge:09-mcp-sozlesmesi) · [Operasyon ve ölçek](belge:12-operasyon-ve-olcek) · [Arayüz ilkeleri](belge:10-arayuz-ilkeleri)\n\n## Kararlar\n\nHer kalıcı karar bir karar kaydında (ADR) yazılıdır: [karar kayıtları listesi](belge:adr/README).\n\nUygulama içinde: [Büyük Resim](#/buyuk-resim), [Mimari Harita](#/mimari), [Yol Haritası](#/yol-haritasi).\n"
+  }
+ ],
+ "route_topics": {
+  "genel-bakis": "baslarken",
+  "ci": "ci-bulma",
+  "iliski-haritasi": "ci-bulma",
+  "kuyruk": "eslestirme",
+  "sahiplik-onayi": "yasam-dongusu",
+  "eskime": "yasam-dongusu",
+  "veri-modeli": "veri-modeli",
+  "sema": "veri-modeli",
+  "kaynaklar": "entegrasyonlar",
+  "kurallar": "entegrasyonlar",
+  "sistem-durumu": "isletim",
+  "golge-mod": "raporlar",
+  "kontroller": "raporlar",
+  "yonetim": "yonetim-paneli",
+  "buyuk-resim": "teknik",
+  "mimari": "teknik",
+  "yol-haritasi": "teknik"
+ },
+ "source": "docs/kilavuz"
+}

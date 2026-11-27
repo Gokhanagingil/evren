@@ -1,7 +1,7 @@
 // Evren arayüzü — derlemesiz ES modülleri, hash tabanlı yönlendirme. Kabuk GRC Platformu (tedarik) düzenindedir.
 import { h, append, clear, errorBox, fold } from './lib/dom.js';
 import { icon } from './lib/icons.js';
-import { backend, globalSearch, overview, queueCounts, queueView, sourcesView } from './lib/data.js';
+import { backend, globalSearch, guide, overview, queueCounts, queueView, sourcesView } from './lib/data.js';
 import { closeDetail, closeOverlay, dialog, isDetailOpen, isOverlayOpen, palette, setHeader } from './lib/shell.js';
 import { renderOverview } from './pages/overview.js';
 import { renderQueue } from './pages/queue.js';
@@ -11,6 +11,8 @@ import { renderAttestation } from './pages/attestation.js';
 import { renderStaleness } from './pages/staleness.js';
 import { renderGraph } from './pages/graph.js';
 import { renderSystem } from './pages/system.js';
+import { renderAdmin } from './pages/admin.js';
+import { renderDoc, renderGuide } from './pages/guide.js';
 import { renderShadow } from './pages/shadow.js';
 import { renderSchema } from './pages/schema.js';
 import { renderModel } from './pages/model.js';
@@ -45,6 +47,12 @@ const ROUTES = {
     help: 'Sınıf, alan, seçim listesi ve veri kaynağı yaşam döngüsü değişiklikleri taslak → onay → yayın akışıyla yapılır. Hazırlayan onaylayamaz. Yayınlanan set metadata/changes/ altına değişiklik dosyası olarak PR ile eklenir.' },
   kurallar: { title: 'Kurallar', icon: 'sliders', render: renderRules,
     help: 'Uzlaştırma (rol önceliği), tanımlama (IRE), veri tazeleme ve eskime kuralları. Kaynak: metadata/*.yaml.' },
+  yonetim: { title: 'Yönetim Paneli', icon: 'gear', render: renderAdmin,
+    help: 'Bütün yönetim işlerinin başlangıç noktası. Bir görev seçin: Evren ilgili pencereyi veya sayfayı açar. Yetkiniz olmayan görev gri görünür ve hangi rolün gerektiğini söyler. "Size düşen işler" sizin karar vermeniz gereken bekleyen işlerdir.' },
+  kilavuz: { title: 'Kullanım Kılavuzu', icon: 'book', render: renderGuide,
+    help: 'Önce genel bilgi, ayrıntı konu sayfalarında, teknik belgeler bağlantıyla. Soldaki aramayla konu bulun; her sayfanın sonunda önceki ve sonraki konuya geçin.' },
+  belge: { title: 'Teknik Belge', icon: 'book', render: renderDoc,
+    help: 'Mimari, güvenlik, API ve karar kayıtları. Oturum açılmış canlı kurulumda uygulama içinde açılır.' },
   'sistem-durumu': { title: 'Sistem Durumu', icon: 'heart', render: renderSystem,
     help: 'Veritabanı, göçler, Kafka, OpenSearch, servis nabızları (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi), olay yayını, istek kuyrukları ve kaynak çalışmaları. "Bu kurulumda yok": servis veya bileşen bu ortamda çalışmıyor. Yalnızca Platform operatörü, Veri sorumlusu ve Denetçi görür.' },
   'buyuk-resim': { title: 'Büyük Resim', icon: 'orbit', render: renderBigPicture,
@@ -56,10 +64,10 @@ const ROUTES = {
 };
 
 const NAV = [
-  { group: 'Genel', items: ['genel-bakis', 'kuyruk'] },
+  { group: 'Genel', items: ['genel-bakis', 'kuyruk', 'kilavuz'] },
   { group: 'CMDB', items: ['ci', 'iliski-haritasi', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
-  { group: 'Yönetim', items: ['sistem-durumu'] },
+  { group: 'Yönetim', items: ['yonetim', 'sistem-durumu'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];
 const SOON = [['CMDB sağlığı', 'F1'], ['Rol–yetki matrisi', 'F1'], ['ServiceNow eşitleme', 'F2']];
@@ -164,13 +172,21 @@ async function searchItems(query = '') {
   return items;
 }
 
-function openHelp() {
+async function openHelp() {
   const { route } = parseHash();
   const r = ROUTES[route];
+  // Ekranın kılavuzdaki konusu (docs/kilavuz/kilavuz.yaml → routes); yoksa kılavuz başlangıcı
+  const g = await guide().catch(() => null);
+  const topicId = g?.route_topics?.[route];
+  const topic = topicId && g.topics.find((x) => x.id === topicId);
+  const guideLink = h('p', { class: 'help-guide' }, icon('book'), ' ', topic
+    ? h('a', { href: `#/kilavuz/${topic.id}`, id: 'helpGuideLink', onclick: () => closeOverlay() }, `Kılavuzda aç: ${topic.title}`)
+    : h('a', { href: '#/kilavuz', id: 'helpGuideLink', onclick: () => closeOverlay() }, 'Kullanım kılavuzunu aç'));
   dialog({
     title: `${r.title} · yardım`,
     body: [
       h('p', {}, r.help),
+      guideLink,
       h('p', {}, 'Klavye: Ctrl+K hızlı arama · ? bu yardım · Esc paneli veya pencereyi kapatır · Tab ile satırlara gelip Enter ile açın.'),
       h('p', { class: 'muted' }, document.body.dataset.mode === 'api'
         ? 'Veriler Evren API\'sinden gelir; yazma işlemleri yetkinize göre açılır.'

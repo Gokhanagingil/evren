@@ -315,9 +315,9 @@ details:
     security: [Yalnızca platform okuma izni (Platform operatörü, Veri sorumlusu, Denetçi), Olay içeriği API'ye kapalı]
   web_ui:
     phase: F0
-    text: Türkçe arayüz, GRC Platformu ile aynı görsel dil. Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.
-    tech: [Web Components, ES modülleri]
-    security: ["CSP: script-src 'self'", innerHTML ile veri yazılmaz]
+    text: Türkçe arayüz, GRC Platformu ile aynı görsel dil. Yönetim işleri görev odaklı tek panelden yapılır; yetkisi olmayan iş gerektirdiği rolle görünür, kişiye düşen işler panelin başındadır. Katmanlı kullanım kılavuzu ve teknik belgeler uygulama içindedir (ADR-0033). Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.
+    tech: [Web Components, ES modülleri, "docs/kilavuz → guide.json"]
+    security: ["CSP: script-src 'self'", innerHTML ile veri yazılmaz, "Markdown HTML dizgesi üretmeden DOM'a", Teknik belgeler yalnızca oturumla]
   rest_api:
     phase: F0
     text: Yerel REST API. OpenAPI 3.1 ile belgelenir. Yeniden denemeler idempotency_key ile güvenlidir; kaynak bilgisi provenance ile taşınır. GRC Platformu ile aynı sözleşme ilkelerini kullanır. Golden record'a yazmaz; kuyruk kararlarını kaydeder, uzlaştırıcı uygular (ADR-0010).

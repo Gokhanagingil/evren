@@ -89,6 +89,7 @@ python tools/build_big_picture.py
 python tools/build_plan.py          # roadmap.json → docs/PROJE-PLANI.md
 python tools/build_demo.py          # evren-core hattından sentetik demo.json
 python tools/build_model.py         # metadata'dan Veri Modeli sayfasının demo verisi (model.json)
+python tools/build_guide.py         # kullanım kılavuzu: docs/kilavuz → apps/web/content/guide.json (--check: sözcük sınırı, bağlantılar; ADR-0033)
 python tools/export_schemas.py
 
 # Arayüz (yerel, 127.0.0.1) ve tarayıcı duman testi
@@ -150,7 +151,7 @@ db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenl
 services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), indexer (arama),
                           connector-runner (şimdi çalıştır + zamanlama; kaynak sırları yalnızca burada, ADR-0021), sn-sync, mcp
 deploy/                   tek imaj (Dockerfile, evren.py giriş noktası), compose geliştirme yığını, Kafka konuları, connectors.dev.yaml
-docs/                     mimari belgeler, ADR'ler
+docs/                     mimari belgeler, ADR'ler; kilavuz/ kullanım kılavuzu (kilavuz.yaml + konu başına Markdown, ADR-0033)
 tools/                    yükleyici, harita/büyük resim/plan/demo üreticileri, SN dışa aktarım, geliştirme sunucusu
 ```
 

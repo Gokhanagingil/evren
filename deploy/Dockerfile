@@ -45,6 +45,7 @@ COPY services/connector-runner/evren_connector_runner services/connector-runner/
 COPY tools tools
 COPY metadata metadata
 COPY db/migrations db/migrations
+COPY docs docs
 COPY connectors connectors
 COPY schemas schemas
 COPY apps/web apps/web

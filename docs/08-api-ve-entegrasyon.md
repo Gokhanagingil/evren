@@ -130,6 +130,17 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
   - `outbox`, `queues`, `sources`.
 - Kafka'nın durumu onu kullanan servislerin nabzından okunur; API Kafka'ya bağlanmaz.
 
+### Yönetim paneli ve teknik belgeler (ADR-0033)
+
+- `GET /api/v1/admin/attention`: kişinin karar vermesi gereken bekleyen işler; yalnızca izni olduğu işler sayılır. Her öğe `id`, `label`, `count`, `href` (arayüz yolu), `hint` ve `tone` (`bad` | `warn` | `info`) taşır; önem ve sayı sırasıyla döner. Öğeler:
+  - `queue` (eşleştirme kuyruğu), `schema_review` (onay bekleyen, hazırlayan kendisi değil), `schema_publish`, `schema_draft` (kendi taslağı);
+  - `staleness` (emekliye ayırma adayı), `unauthorized` (yetkisiz değişiklik), `credentials` (14 gün içinde süresi dolacak bağlayıcı kimliği), `breaker` (devre kesicisi açık kaynak);
+  - `attestation` (kişinin onayını bekleyen CI), `system` (sistem durumu `warn` veya `bad`).
+- `/api/v1/me` → `can`: arayüz görev kartlarını bununla açar veya kilitler (`create_ci`, `relate`, `review_match`, `retire`, `schema_draft`, `schema_approve`, `connector_read`, `connector_admin`, `anomaly_review`, `iam_admin`, `audit_read`, `system` …). Asıl yetki denetimi her uç noktadadır.
+- `GET /api/v1/docs`: teknik belgeler (`docs`) ve ADR'ler (`adrs`), her biri `name` ve `title`.
+- `GET /api/v1/docs/{ad}`: `{"name", "title", "markdown", "base"}`. Ad `06-guvenlik`, `adr/0033-…` ya da `adr/README` biçimindedir; geçersiz ad `400 gecersiz_belge`, olmayan belge `404 bulunamadi`. Oturum gerekir.
+- Kullanım kılavuzu API'den gelmez: `apps/web/content/guide.json` statik içeriktir (`docs/kilavuz` → `tools/build_guide.py`).
+
 ### İlişki haritası ve zaman içinde sorgu (ADR-0031)
 
 - `GET /api/v1/ci/{sys_id}/as-of?at=<ISO 8601, saat dilimiyle>`: CI'ın o andaki hâli. Yanıtta şunlar bulunur:

@@ -61,15 +61,27 @@ export async function openCreateDialog(onCreated) {
       h('label', { class: 'field', for: `edit-${f.attribute}` }, required ? `${f.label} (zorunlu)` : f.label), el);
   }
 
+  let loading = 0;
   async function loadForm() {
     clear(result);
+    // Sınıf değişince yazılmış değerler yeni formda aynı alan varsa korunur (ör. ad, seri numarası); referanslar sınıfa göre
+    // yeniden yüklenir
+    const typed = new Map([...rows].filter(([, { f, el }]) => f.type !== 'reference' && el.value !== '')
+      .map(([name, { el }]) => [name, el.value]));
+    const want = cls.value;
+    const ticket = ++loading;
+    fieldsBox.setAttribute('aria-busy', 'true');
+    fieldsBox.removeAttribute('data-class');
     let form;
     try {
-      form = await createForm(cls.value);
+      form = await createForm(want);
     } catch (err) {
+      if (ticket !== loading) return;
+      fieldsBox.removeAttribute('aria-busy');
       clear(fieldsBox).append(h('div', { class: 'notice bad', role: 'alert' }, err.message));
       return;
     }
+    if (ticket !== loading) return;  // bu arada başka sınıf seçildi; geç gelen yanıt yeni formu ezmez
     rows = new Map();
     const byName = new Map(form.fields.map((f) => [f.attribute, f]));
     const identity = form.identity.filter((a) => a !== 'name').map((a) => byName.get(a)).filter(Boolean);
@@ -89,6 +101,14 @@ export async function openCreateDialog(onCreated) {
           h('fieldset', {}, h('legend', { class: 'sr-only' }, 'Diğer alanlar'), h('div', { class: 'edit-grid' }, others.map((f) => row(f))))) : null,
         // Birden çok alanlı formda Enter ile gönderim (örtük gönderim) için gizli gönder düğmesi
         h('button', { type: 'submit', class: 'sr-only', tabindex: '-1' }, 'Oluştur')));
+    for (const [name, value] of typed) {
+      const r = rows.get(name);
+      if (!r || r.f.type === 'reference') continue;
+      r.el.value = value;
+      if (r.el.tagName === 'SELECT' && r.el.selectedIndex < 0) r.el.value = '';  // yeni sınıfta bu seçenek yok
+    }
+    fieldsBox.removeAttribute('aria-busy');
+    fieldsBox.setAttribute('data-class', want);
   }
 
   function collect() {
@@ -144,6 +164,7 @@ export async function openCreateDialog(onCreated) {
   }
 
   async function submit(force, reasonText = '', fixed = null) {
+    if (fieldsBox.getAttribute('aria-busy') === 'true') return;  // yeni sınıfın formu yükleniyor; eski formun değerleri gönderilmez
     const attributes = fixed || collect();
     clear(result);
     if (!attributes.name) {

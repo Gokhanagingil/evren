@@ -417,3 +417,49 @@ def test_time_inputs_use_istanbul_time_whatever_the_browser_timezone(browser, ba
     assert out == ["2026-11-26T09:30:15", "2026-11-26T06:30:15.000Z", "2026-11-26T09:30", "2026-11-26T06:30:00.000Z",
                    None, "26.11.2026 09:30:15"]
     ctx.close()
+
+
+def test_guide_is_layered_searchable_and_works_in_demo_mode(page, base_url):
+    """U8.2 (ADR-0033): kılavuz başlangıcı kısa ve genel; konu arama, önceki/sonraki; demo modunda teknik belge açıklaması."""
+    page.goto(base_url + "/#/kilavuz")
+    playwright.expect(page.locator("#pageTitle")).to_have_text("Evren'e başlarken")
+    article = page.locator("#guideArticle")
+    playwright.expect(article.locator("h2").first).to_have_text("Ne yapmak istiyorsunuz?")
+    playwright.expect(page.locator("#guideDraft")).to_contain_text("Taslak")  # içeriğin son hâli en sonda yazılır
+    assert len(article.inner_text().split()) < 340  # ilk sayfa kısa (taslak notu dahil)
+    page.fill("#guideSearch", "devre kesici")
+    playwright.expect(page.locator("#guideTopics a").first).to_be_visible()
+    page.locator("#guideSearch").press("Enter")
+    playwright.expect(page.locator("#guideArticle")).to_contain_text("devre kesici", ignore_case=True)
+    page.goto(base_url + "/#/kilavuz/ci-bulma")
+    page.click("#guideNext")
+    playwright.expect(page.locator("#pageTitle")).to_have_text("CI eklemek ve düzeltmek")
+    page.goto(base_url + "/#/belge/06-guvenlik")
+    playwright.expect(page.locator("#docArticle .notice")).to_contain_text("canlı kurulumda")
+    page.goto(base_url + "/#/yonetim")
+    playwright.expect(page.locator("#adminAttention")).to_contain_text("Demo modunda")
+    playwright.expect(page.locator("#task-yeni-ci .task-locked")).to_contain_text("Canlı API ile çalışır")
+
+
+def test_markdown_renderer_never_creates_markup_from_text(page, base_url):
+    """Güvenli Markdown: HTML ve betik metin kalır, javascript: ve bilinmeyen hedefler bağlantı olmaz, dış adres
+    tıklanmaz metin olur; tablo, liste ve kod işlenir."""
+    page.goto(base_url + "/")
+    out = page.evaluate("""async () => {
+      const { renderMarkdown, resolveHref } = await import('/assets/js/lib/markdown.js');
+      const md = ['# Başlık', '<img src=x onerror="alert(1)"> ve <script>alert(2)</script>',
+        '[kötü](javascript:alert(1)) [dış](https://ornek.com/a) [konu](kilavuz:sozluk) [belge](adr/0031-x.md)',
+        '', '| A | B |', '| --- | --- |', '| **1** | `x<y>` |', '', '- bir', '  - iki', '', '```', '<b>kod</b>', '```'].join('\\n');
+      const r = renderMarkdown(md, { base: 'adr' });
+      const box = document.createElement('div'); box.append(...r.nodes);
+      return { title: r.title, imgs: box.querySelectorAll('img,script').length,
+        links: [...box.querySelectorAll('a')].map((a) => a.getAttribute('href')),
+        text: box.textContent, table: box.querySelectorAll('td').length, nested: box.querySelectorAll('li ul li').length,
+        code: box.querySelector('pre code').textContent,
+        rel: [resolveHref('../06-guvenlik.md', 'adr'), resolveHref('docs/02-veri-modeli.md#x'), resolveHref('../../etc/passwd')] };
+    }""")
+    assert out["title"] == "Başlık" and out["imgs"] == 0
+    assert out["links"] == ["#/kilavuz/sozluk", "#/belge/adr/0031-x"]
+    assert "<script>alert(2)</script>" in out["text"] and "(https://ornek.com/a)" in out["text"]
+    assert out["table"] == 2 and out["nested"] == 1 and out["code"] == "<b>kod</b>"
+    assert out["rel"] == ["#/belge/06-guvenlik", "#/belge/02-veri-modeli", None]

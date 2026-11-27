@@ -20,6 +20,11 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
 7. **Güvenlik görünmez değil, varsayılandır.**
    - Kısıtlı alanlar yetkisi olmayana hiç gönderilmez; arayüzde gizlemek yeterli sayılmaz.
    - Dış kaynak yüklenmez.
+8. **Yönetim görev dilinde, tek merkezden** (ADR-0033):
+   - Yönetim paneli sayfa adlarını değil işleri listeler ("Yeni CI ekle", "Sınıfa alan ekle"); her kartta tek eylem ve "Nasıl yapılır?" bağlantısı.
+   - Yapılamayan iş gizlenmez: hangi rolün gerektiği yazılır. Henüz hazır olmayan iş "Hazırlanıyor" diye görünür.
+   - Kişinin karar vermesi gereken işler ("Size düşen işler") panelin en üstündedir ve ilgili ekrana götürür.
+9. **Yardım katmanlıdır.** Kılavuzun ilk sayfası kısa ve yönlendiricidir (en fazla 260 sözcük); her konu tek bir işi anlatır (en fazla 900 sözcük) ve teknik ayrıntıya bağlantı verir. Her sayfanın yardım paneli (?) kılavuzun ilgili konusunu açar.
 
 ## Ekranlar ve yol haritasındaki yeri
 
@@ -36,6 +41,9 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
 | Yol Haritası | F0 ✓ | Fazlar, adımlar, "sizden gereken", çıkış kriterleri |
 | CMDB sağlığı | F1 | Tamlık, doğruluk (mükerrer, yetim, eski), uyum, kapsam; sınıf ve destek grubu kırılımı |
 | Şema ve yetkiler | F1 | Sınıf ağacı, alan düzenleyici, değişiklik setleri; rol × kaynak × işlem matrisi |
+| Yönetim paneli | F1 ◐ | Görev odaklı tek merkez: CMDB kayıtları, veri modeli, kullanıcılar ve yetkiler, entegrasyonlar, veri kalitesi, işletim; "Size düşen işler"; kalıcı görev adresi `#/yonetim/<görev>` (U8.2; kullanıcı ve rol görevleri U8.3) |
+| Kullanım kılavuzu ve teknik belge | F1 ✓ | Katmanlı kılavuz (`#/kilavuz/<konu>`; konu arama, "Bu sayfada", önceki/sonraki); teknik belge ve ADR'ler uygulama içinde (`#/belge/<ad>`, oturumla) |
+| Sistem durumu | F1 ✓ | Veritabanı, göçler, Kafka, OpenSearch, servisler, olay yayını, kuyruklar, kaynak çalışmaları (ADR-0032) |
 
 ◐: ekran önizlemede sentetik veriyle çalışır (`tools/build_demo.py`, evren-core hattından üretilir); kalıcı işlemler API (F0-09) ve uzlaştırıcı (F0-10) ile gelir.
 
@@ -55,6 +63,8 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
 - Her ekran için Playwright duman testi yazılır. Konsol hatası ve CSP ihlali testi başarısız kılar. Mobil (390 px) yatay taşma tüm ekranlarda denetlenir.
 
 ## İçerik kuralları
+
+- Kılavuz metni `docs/kilavuz/` altındadır ve kodla birlikte gözden geçirilir. Düğme ve sayfa adları arayüzdekiyle birebir aynı yazılır; bir etiket değişirse kılavuz da değişir.
 
 - Etiketler sade ve Türkçe: "Konfigürasyon öğesi", "Eşleştirme kuyruğu", "Kaynak", "Uzlaştırma".
 - ServiceNow terimleri parantez içinde ilk kullanımda verilir: "Tanımlama kuralı (IRE identification rule)".

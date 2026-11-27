@@ -12,6 +12,8 @@ secrets
 .env
 **/tests
 apps/web/tests
-docs
+# docs/ imaja girer: teknik belgeler uygulama içinde oturumlu API ile sunulur (ADR-0033); sır içermez
 *.md
 !README.md
+# Teknik belgeler ve kılavuz kaynağı imajda (ADR-0033)
+!docs/**
