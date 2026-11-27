@@ -130,6 +130,32 @@ def test_audit_trail_is_append_only():
             psql(stmt)
 
 
+def test_api_writes_only_people_it_created():
+    """0030 (ADR-0034): API rolü ServiceNow/Entra kaynaklı kişi açamaz, adını/durumunu değiştiremez; yalnızca Entra
+    nesne kimliğini bağlar. Rol olayı gerekçe ve geri alma nedeniyle denetim izine düşer."""
+    sid = "c0ffee" + "0" * 26
+    psql(f"DELETE FROM ref.sys_user WHERE sys_id = '{sid}'")
+    with pytest.raises(SqlError, match="kendi açtığı"):
+        psql(f"SET ROLE evren_app_api; INSERT INTO ref.sys_user (sys_id, user_name, source) "
+             f"VALUES ('{sid}', 'pg.sn.kisi', 'servicenow')")
+    psql(f"INSERT INTO ref.sys_user (sys_id, user_name, name, source) VALUES ('{sid}', 'pg.sn.kisi', 'SN Kişi', 'servicenow')")
+    with pytest.raises(SqlError, match="yalnızca Entra nesne kimliği"):
+        psql(f"SET ROLE evren_app_api; UPDATE ref.sys_user SET name = 'x' WHERE sys_id = '{sid}'")
+    psql(f"SET ROLE evren_app_api; UPDATE ref.sys_user SET entra_oid = '11111111-2222-4333-8444-555555555555' "
+         f"WHERE sys_id = '{sid}'")
+    psql(f"DELETE FROM ref.sys_user WHERE sys_id = '{sid}'")
+    psql("DELETE FROM iam.principal_role WHERE principal_id = 'pg-denetim'")
+    psql("BEGIN; SELECT set_config('evren.actor', 'test:yonetici', true); "
+         "INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, justification) "
+         "VALUES ('user', 'pg-denetim', 'evren_reader', 'yonetici', 'TALEP-1 okuma'); COMMIT")
+    psql("BEGIN; SELECT set_config('evren.actor', 'test:yonetici', true); SELECT set_config('evren.reason', 'Görev bitti', true); "
+         "DELETE FROM iam.principal_role WHERE principal_id = 'pg-denetim'; COMMIT")
+    rows = psql("SELECT action || '|' || principal || '|' || coalesce(detail->>'justification', '') || '|' || "
+                "coalesce(detail->>'reason', '') FROM audit.security_event WHERE resource = 'user:pg-denetim' "
+                "ORDER BY id DESC LIMIT 2").splitlines()
+    assert rows == ["role_delete|test:yonetici||Görev bitti", "role_insert|test:yonetici|TALEP-1 okuma|"]
+
+
 def test_segregation_of_duties_enforced():
     psql("DELETE FROM iam.principal_role WHERE principal_id = 'test-user-1'")
     psql("INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, justification) "
@@ -311,6 +337,15 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "INSERT INTO ref.sys_user (sys_id, user_name, source) VALUES (repeat('e', 32), 'x', "
                                  "'entra')"),
         ("evren_app_api", "UPDATE ref.sys_user_group SET name = 'x' WHERE false"),
+        # 0030 (ADR-0034): API kişi kaydında yalnızca izinli sütunlara yazar, silemez; eşleme Entra kimliğine yazamaz
+        ("evren_app_api", "UPDATE ref.sys_user SET department = NULL WHERE false"),
+        ("evren_app_api", "DELETE FROM ref.sys_user WHERE false"),
+        ("evren_app_api", "INSERT INTO ref.sys_user_grmember (\"group\", \"user\") SELECT sys_id, sys_id FROM ref.sys_user WHERE false"),
+        ("evren_app_api", "DELETE FROM ref.sys_user_group WHERE false"),
+        ("evren_app_reconciler", "UPDATE ref.sys_user SET entra_oid = NULL WHERE false"),
+        ("evren_app_reconciler", "UPDATE ref.sys_user_group SET entra_group_id = NULL WHERE false"),
+        ("evren_auditor_ro", "INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, justification) "
+                             "VALUES ('user', 'x', 'evren_reader', 'y', 'z')"),
         # ADR-0023: kısıtlı duruşu yalnızca uzlaştırıcı yazar; API yalnızca okur (hassasiyet denetimi API'de)
         ("evren_app_api", "UPDATE cmdb.ci_security_posture SET risk_score = 'High' WHERE false"),
         ("evren_app_api", "DELETE FROM cmdb.ci_security_posture WHERE false"),

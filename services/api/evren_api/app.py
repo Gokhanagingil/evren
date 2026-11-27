@@ -32,6 +32,7 @@ from .routers import (
     ci,
     connectors,
     graph,
+    iam,
     impact,
     insight,
     manual,
@@ -180,7 +181,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
 
     for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, search.router,
               connectors.router, insight.router, manual.router, attestation.router, staleness.router, impact.router,
-              timeline.router, graph.router, system.router, admin.router, auth.router):
+              timeline.router, graph.router, system.router, admin.router, iam.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

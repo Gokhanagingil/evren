@@ -43,7 +43,8 @@ def test_me_reports_roles_and_capabilities(client, reader):
                          "retire": False,  # eskime kararı: Veri sorumlusu (ADR-0028)
                          "system": False,  # sistem durumu: Platform operatörü (ADR-0032)
                          "relate": False, "schema_draft": False, "schema_approve": False, "connector_read": False,
-                         "connector_admin": False, "anomaly_review": False, "iam_admin": False, "audit_read": False}
+                         "connector_admin": False, "anomaly_review": False, "iam_admin": False, "audit_read": False,
+                         "iam_read": False, "task_admin": False}
     assert me["sys_user"] == {"mapped": False, "name": None}  # test kullanıcısının sys_user kaydı yok
     assert reader.get("/api/v1/me").json()["can"]["review_match"] is False
 

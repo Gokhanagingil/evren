@@ -91,6 +91,14 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             if n:
                 items.append(_item("breaker", "Devre kesicisi açık veri kaynağı", n, "#/kaynaklar",
                                    "Son çalışma eksik veya şüpheli; o çalışmada yıkıcı işlem yapılmadı.", "bad"))
+        if ctx.grant("iam", "iam_admin").allowed:
+            # Süresi yaklaşan rol atamaları (yetkili roller süreli verilir; ADR-0034)
+            cur.execute("""SELECT count(*) FROM iam.principal_role
+                            WHERE expires_at > now() AND expires_at < now() + interval '14 days'""")
+            n = cur.fetchone()[0]
+            if n:
+                items.append(_item("grants", "Süresi 14 gün içinde dolacak rol ataması", n, "#/kullanicilar/suresi-yaklasan",
+                                   "Süre dolunca rol kendiliğinden düşer; gerekiyorsa gerekçeyle yenileyin.", "info"))
     if ctx.grant("cmdb_ci", "attest").allowed and (user := ctx.sys_user()):
         from .attestation import summary as attestation_summary  # döngüsel içe aktarmayı önlemek için burada
         mine = attestation_summary(ctx).get("mine") or {}

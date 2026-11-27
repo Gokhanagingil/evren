@@ -439,6 +439,8 @@ def test_guide_is_layered_searchable_and_works_in_demo_mode(page, base_url):
     page.goto(base_url + "/#/yonetim")
     playwright.expect(page.locator("#adminAttention")).to_contain_text("Demo modunda")
     playwright.expect(page.locator("#task-yeni-ci .task-locked")).to_contain_text("Canlı API ile çalışır")
+    page.goto(base_url + "/#/kullanicilar")  # U8.3: demo modunda açıklama
+    playwright.expect(page.locator("#view .notice")).to_contain_text("canlı API ile çalışır")
 
 
 def test_markdown_renderer_never_creates_markup_from_text(page, base_url):

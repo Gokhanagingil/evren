@@ -1,7 +1,8 @@
 """Oturum: Entra ID girişi ve dönüşü, çıkış.
 
 Roller: Entra uygulama rolleri (``Evren.*`` → IAM rolü) + ``iam.principal_role`` içinde kullanıcıya (oid) veya
-gruba atanmış, süresi dolmamış roller. Grup üyeliği yoluyla oluşan görevler ayrılığı (SoD) çatışması oturumu
+gruba atanmış, süresi dolmamış roller. Çereze yalnızca uygulama rolleri ve rol verilmiş gruplar yazılır;
+veritabanındaki atamalar her istekte yeniden okunur (ADR-0034). Grup üyeliği yoluyla oluşan görevler ayrılığı (SoD) çatışması oturumu
 reddeder (docs/07: "uygulama katmanında denetlenir"). Her giriş kararı ``audit.security_event``'e yazılır.
 """
 from __future__ import annotations
@@ -75,7 +76,12 @@ def callback(request: Request) -> Response:
     if not roles:
         _security_event(request, who, "login", "deny", {"reason": "role_missing"})
         raise ApiError(403, "rol_yok", "Evren için atanmış bir rolünüz yok.")
-    principal = Principal(ident.oid, ident.name, frozenset(roles), "entra", ident.groups)
+    base = frozenset(ENTRA_ROLE_MAP[r] for r in ident.app_roles if r in ENTRA_ROLE_MAP)
+    with state.pool.connection() as conn:
+        granted = [g for (g,) in conn.execute(
+            "SELECT DISTINCT principal_id FROM iam.principal_role WHERE principal_type = 'group' AND principal_id = ANY(%s)",
+            (list(ident.groups),)).fetchall()]
+    principal = Principal(ident.oid, ident.name, frozenset(roles), "entra", tuple(granted), base)
     _security_event(request, who, "login", "allow", {"roles": sorted(roles)})
     resp = RedirectResponse("/", status_code=303)
     resp.set_cookie(state.settings.session_cookie, state.sessions.encode(principal), max_age=state.sessions.ttl,

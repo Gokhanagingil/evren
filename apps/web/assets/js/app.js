@@ -12,6 +12,7 @@ import { renderStaleness } from './pages/staleness.js';
 import { renderGraph } from './pages/graph.js';
 import { renderSystem } from './pages/system.js';
 import { renderAdmin } from './pages/admin.js';
+import { renderUsers } from './pages/users.js';
 import { renderDoc, renderGuide } from './pages/guide.js';
 import { renderShadow } from './pages/shadow.js';
 import { renderSchema } from './pages/schema.js';
@@ -49,6 +50,8 @@ const ROUTES = {
     help: 'Uzlaştırma (rol önceliği), tanımlama (IRE), veri tazeleme ve eskime kuralları. Kaynak: metadata/*.yaml.' },
   yonetim: { title: 'Yönetim Paneli', icon: 'gear', render: renderAdmin,
     help: 'Bütün yönetim işlerinin başlangıç noktası. Bir görev seçin: Evren ilgili pencereyi veya sayfayı açar. Yetkiniz olmayan görev gri görünür ve hangi rolün gerektiğini söyler. "Size düşen işler" sizin karar vermeniz gereken bekleyen işlerdir.' },
+  kullanicilar: { title: 'Kullanıcılar ve Roller', icon: 'key', render: renderUsers,
+    help: 'Kişiler, gruplar, rol–yetki matrisi ve yetki geçmişi. Bir kişiye tıklayın: rolleri, kimin ne zaman hangi gerekçeyle verdiği ve "Rol ver" / "Geri al". Yetkili roller süreli verilir; kimse kendine rol veremez; birleşemeyen roller (görevler ayrılığı) önceden uyarılır. Yetki yöneticisi yönetir, Denetçi görür.' },
   kilavuz: { title: 'Kullanım Kılavuzu', icon: 'book', render: renderGuide,
     help: 'Önce genel bilgi, ayrıntı konu sayfalarında, teknik belgeler bağlantıyla. Soldaki aramayla konu bulun; her sayfanın sonunda önceki ve sonraki konuya geçin.' },
   belge: { title: 'Teknik Belge', icon: 'book', render: renderDoc,
@@ -67,10 +70,10 @@ const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk', 'kilavuz'] },
   { group: 'CMDB', items: ['ci', 'iliski-haritasi', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
-  { group: 'Yönetim', items: ['yonetim', 'sistem-durumu'] },
+  { group: 'Yönetim', items: ['yonetim', 'kullanicilar', 'sistem-durumu'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];
-const SOON = [['CMDB sağlığı', 'F1'], ['Rol–yetki matrisi', 'F1'], ['ServiceNow eşitleme', 'F2']];
+const SOON = [['CMDB sağlığı', 'F1'], ['Yönetişim görevleri', 'F1'], ['ServiceNow eşitleme', 'F2']];
 
 function readClosed() {
   try { return new Set(JSON.parse(localStorage.getItem('evren.nav.closed') || '[]')); } catch { return new Set(); }

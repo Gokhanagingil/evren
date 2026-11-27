@@ -54,6 +54,9 @@ def me(ctx: Ctx = Depends(context)) -> dict[str, Any]:
                     "connector_admin": ctx.grant("data_source", "connector_admin").allowed,
                     "anomaly_review": ctx.grant("anomaly", "anomaly_review").allowed,
                     "iam_admin": ctx.grant("iam", "iam_admin").allowed,
+                    # Kullanıcılar ve roller (U8.3): Yetki yöneticisi yönetir, Denetçi görür
+                    "iam_read": ctx.grant("iam", "iam_admin").allowed or ctx.grant("audit", "audit_read").allowed,
+                    "task_admin": ctx.grant("governance", "task_admin").allowed,
                     "audit_read": ctx.grant("audit", "audit_read").allowed},
             "sys_user": (lambda u: {"mapped": u is not None, "name": u["name"] if u else None})(ctx.sys_user())}
 

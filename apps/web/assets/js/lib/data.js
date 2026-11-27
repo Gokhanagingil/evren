@@ -406,3 +406,31 @@ export async function ciFacets() {
   const [classes, src] = await Promise.all([api('/api/v1/meta/classes'), api('/api/v1/sources')]);
   return { classes, sources: src.sources };
 }
+
+// Kullanıcılar ve roller (U8.3, ADR-0034): yalnızca API modu
+export const iamRoles = () => api('/api/v1/iam/roles');
+export function iamPeople({ q = '', role = '', status = 'active', expiring = false, limit = 100, offset = 0 } = {}) {
+  const p = new URLSearchParams({ status, limit: String(limit), offset: String(offset) });
+  if (q) p.set('q', q);
+  if (role) p.set('role', role);
+  if (expiring) p.set('expiring', 'true');
+  return api(`/api/v1/iam/people?${p}`);
+}
+export const iamPerson = (id) => api(`/api/v1/iam/people/${encodeURIComponent(id)}`);
+export const iamGroups = (q = '') => api(`/api/v1/iam/groups?${new URLSearchParams(q ? { q } : {})}`);
+export const iamEvents = (limit = 200) => api(`/api/v1/iam/events?limit=${limit}`);
+export function iamCreatePerson(body) {
+  return api('/api/v1/iam/people', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
+}
+export function iamUpdatePerson(id, body) {
+  return api(`/api/v1/iam/people/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+export function iamBindGroup(id, body) {
+  return api(`/api/v1/iam/groups/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+export function iamGrant(body) {
+  return api('/api/v1/iam/grants', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
+}
+export function iamRevoke(body) {
+  return api('/api/v1/iam/grants/revoke', { method: 'POST', body: JSON.stringify(body) });
+}

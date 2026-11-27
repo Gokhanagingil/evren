@@ -141,6 +141,21 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/docs/{ad}`: `{"name", "title", "markdown", "base"}`. Ad `06-guvenlik`, `adr/0033-…` ya da `adr/README` biçimindedir; geçersiz ad `400 gecersiz_belge`, olmayan belge `404 bulunamadi`. Oturum gerekir.
 - Kullanım kılavuzu API'den gelmez: `apps/web/content/guide.json` statik içeriktir (`docs/kilavuz` → `tools/build_guide.py`).
 
+### Kullanıcılar ve roller (ADR-0034)
+
+Okuma: Yetki yöneticisi (`iam_admin`) veya Denetçi (`audit_read`); yazma yalnızca Yetki yöneticisi. Yazma uç noktaları CSRF başlığı ister.
+
+- `GET /api/v1/iam/roles`: rol–yetki matrisi. Her rol için `elevated`, `machine`, kalıtılan roller (`contains`), kalıtılanlar dahil izinler (`permissions`: `resource`, `operation`, Türkçe adları, `from`), birleşemediği roller (`sod`), atama sayıları (`holders`); `policy` (süre sınırları, en kısa gerekçe, kişi kimliği türü).
+- `GET /api/v1/iam/people?q=&role=&status=active|inactive|all&expiring=true&limit=&offset=`: kişiler ve rolleri (doğrudan ve grup yoluyla; süre, veren, gerekçe), `can_sign_in` (Entra kimliği var mı).
+- `GET /api/v1/iam/people/{sys_id}`: kişi, grupları, yetki geçmişi; `is_me`.
+- `POST /api/v1/iam/people` (`idempotency_key`): `{user_name, name, email?, entra_oid?}` → 201. Kişi Evren kaynaklı açılır; aynı kullanıcı adı veya Entra kimliği 409.
+- `PATCH /api/v1/iam/people/{sys_id}`: `{name?, email?, entra_oid?, clear_entra_oid?, active?, reason?}`. ServiceNow/Entra kaynaklı kişide yalnızca Entra kimliği (422 `kaynak_kisi`). Entra kimliği değişikliği ve pasifleştirme gerekçe ister; eski kimliğe verilmiş doğrudan roller geri alınır (`revoked`). Kendi kaydı 403.
+- `GET /api/v1/iam/groups?q=` ve `PATCH /api/v1/iam/groups/{sys_id}` (`{entra_group_id, reason}`): grup ve Entra grup kimliği; rolü olan grubun kimliği değiştirilemez (409).
+- `POST /api/v1/iam/grants` (`idempotency_key`): `{principal_type: user|group, target: sys_id, role, expires_at?, justification}` → 201 (`renewed`: aynı rol yenilendi). Hatalar: `gerekce_gerekli`, `makine_rolu`, `sure_gerekli`, `sure_uzun`, `bitis_gecmiste`, `entra_kimligi_yok`, `grup_kimligi_yok`, `kisi_pasif`, `kendine_rol` (403), `gorevler_ayriligi` (409).
+- `POST /api/v1/iam/grants/revoke`: `{principal_type, target, role, reason}`; kendi rolü 403, olmayan atama 404.
+- `GET /api/v1/iam/events?limit=`: rol verme, yenileme, geri alma ve kişi değişiklikleri (yapan, kime, rol, süre, gerekçe).
+- `/api/v1/me` → `can.iam_read`, `can.task_admin`. Veritabanı rolleri her istekte okunur; verilen veya geri alınan rol bir sonraki istekte geçerlidir.
+
 ### İlişki haritası ve zaman içinde sorgu (ADR-0031)
 
 - `GET /api/v1/ci/{sys_id}/as-of?at=<ISO 8601, saat dilimiyle>`: CI'ın o andaki hâli. Yanıtta şunlar bulunur:

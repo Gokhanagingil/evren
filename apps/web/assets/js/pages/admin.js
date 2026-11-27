@@ -16,7 +16,8 @@ const ROLE_FOR = {
   create_ci: 'Konfigürasyon analisti', relate: 'Konfigürasyon analisti', review_match: 'Eşleştirme analisti',
   schema_draft: 'Şema tasarımcısı', schema_approve: 'Şema onaylayıcı', connector_admin: 'Veri sorumlusu',
   retire: 'Veri sorumlusu', anomaly_review: 'Veri sorumlusu', attest: 'CI sahibi', system: 'Platform operatörü',
-  iam_admin: 'Yetki yöneticisi', audit_read: 'Denetçi',
+  iam_admin: 'Yetki yöneticisi', audit_read: 'Denetçi', iam_read: 'Yetki yöneticisi veya Denetçi',
+  task_admin: 'Konfigürasyon yöneticisi',
 };
 
 /** CI seçici: ilişki eklemek gibi bir CI üzerinde yapılan işler için. */
@@ -79,10 +80,14 @@ function tasks(goCi) {
         desc: 'Sınıf ağacı, alanlar, kimlik kuralları ve izinli ilişkiler.' },
     ] },
     { group: 'Kullanıcılar ve yetkiler', desc: 'Kim ne yapabilir; roller ve görevler ayrılığı.', items: [
-      { id: 'kullanici', title: 'Kullanıcı ekle ve rol ver', icon: 'key', cap: 'iam_admin', guide: 'kullanicilar', soon: true,
-        desc: 'Bir kişiyi kaydedin, süreli ve gerekçeli rol verin veya geri alın.' },
-      { id: 'matris', title: 'Rol–yetki matrisini incele', icon: 'shield', guide: 'kullanicilar', soon: true,
-        desc: 'Hangi rol hangi işlemi yapabilir; birleşemeyen roller.' },
+      { id: 'kullanici', title: 'Kişi ekle', icon: 'key', cap: 'iam_admin', guide: 'kullanicilar', href: '#/kullanicilar/yeni',
+        desc: 'ServiceNow veya Entra eşitlemesinde henüz olmayan bir kişiyi kaydedin; ardından rol verin.' },
+      { id: 'rol-ver', title: 'Rol ver veya geri al', icon: 'check', cap: 'iam_admin', guide: 'kullanicilar', href: '#/kullanicilar',
+        desc: 'Kişiyi veya grubu seçin; rol gerekçeyle, yetkili roller süreli verilir. Hemen geçerli olur.' },
+      { id: 'matris', title: 'Rol–yetki matrisini incele', icon: 'shield', cap: 'iam_read', guide: 'kullanicilar', href: '#/kullanicilar/roller',
+        desc: 'Hangi rol hangi işlemi yapabilir; birleşemeyen roller ve rolü taşıyanlar.' },
+      { id: 'yetki-gecmisi', title: 'Yetki geçmişini incele', icon: 'clock', cap: 'iam_read', guide: 'kullanicilar', href: '#/kullanicilar/gecmis',
+        desc: 'Kim kime hangi rolü ne zaman, hangi gerekçeyle verdi veya geri aldı.' },
     ] },
     { group: 'Entegrasyonlar', desc: 'Veri kaynakları, bağlayıcılar ve çalışmalar.', items: [
       { id: 'kaynaklar', title: 'Veri kaynaklarını görüntüle', icon: 'plug', guide: 'entegrasyonlar', href: '#/kaynaklar',

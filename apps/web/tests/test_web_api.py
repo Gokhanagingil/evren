@@ -1013,7 +1013,8 @@ def test_admin_panel_guides_tasks_by_permission_and_deep_links(page, base_url):
     expect(page.locator(".task-group")).to_have_count(7)
     # Bu oturumda Şema onaylayıcı yok: görev açılmaz, hangi rolün gerektiğini söyler
     expect(page.locator("#task-sema-onay .task-locked")).to_contain_text("Şema onaylayıcı rolü gerekir")
-    expect(page.locator("#task-kullanici")).to_contain_text("Hazırlanıyor")
+    expect(page.locator("#task-kullanici .task-locked")).to_contain_text("Yetki yöneticisi rolü gerekir")
+    expect(page.locator("#task-denetim")).to_contain_text("Hazırlanıyor")
     # Planlanan yönetişim görevleri panelde görünür (F1-24 … F1-26)
     expect(page.locator("#task-zamanli-gorev")).to_contain_text("Hazırlanıyor")
     # Arama: "alan" yazınca ilgili görevler kalır; Enter ilk göreve odaklar
@@ -1076,3 +1077,103 @@ def test_admin_panel_and_guide_have_no_horizontal_overflow_on_mobile(browser, ba
         pg.wait_for_timeout(150)
         assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, path
     context.close()
+
+
+def test_users_and_roles_page_grants_revokes_and_explains_with_keyboard(page, base_url, browser):
+    """U8.3 (ADR-0034): Yetki yöneticisi kişi ekler, gerekçeli ve süreli rol verir, görevler ayrılığı önceden
+    uyarılır ve reddedilir, rol gerekçeyle geri alınır; matris, rolü taşıyanlar, yetki geçmişi; kendi kaydında
+    değişiklik yok; mobilde taşma yok. Rol veritabanından verildiği için oturum açmadan hemen geçerli olur."""
+    import uuid as _uuid
+
+    import psycopg
+
+    tag = _uuid.uuid4().hex[:6]
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("""INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, expires_at,
+                                                        justification)
+                        VALUES ('user', 'arayuz-testi', 'evren_iam_admin', 'test-kurulum', now() + interval '1 hour',
+                                'Arayüz testi') ON CONFLICT DO NOTHING""")
+    try:
+        page.goto(base_url + "/#/kullanicilar/yeni")
+        expect(page.locator("#newUser")).to_be_focused()
+        page.keyboard.type(f"web.kisi.{tag}")
+        page.fill("#newName", f"Web Kişi {tag}")
+        shot(page, "web_api_users_add")
+        page.locator("#newName").press("Enter")
+        expect(page.locator("#toast")).to_contain_text(f"Web Kişi {tag} eklendi")
+        expect(page.locator("#detailTitle")).to_have_text(f"Web Kişi {tag}")
+        expect(page.locator("#personRoles")).to_contain_text("Rolü yok")
+
+        # Yetkili rol: süre kendiliğinden en uzun sınıra gelir; gerekçe kısa ise gönderilmez
+        page.click("#grantOpen")
+        expect(page.locator("#grantRole")).to_be_focused()
+        page.select_option("#grantRole", "evren_schema_approver")
+        expect(page.locator("#grantExpiryHelp")).to_contain_text("bitiş tarihi zorunlu")
+        expect(page.locator("#grantRoleInfo")).to_contain_text("Şema değişiklik setlerini onaylar")
+        expect(page.locator(".dialog")).not_to_contain_text("null")
+        assert page.locator("#grantExpiry").input_value()
+        page.fill("#grantWhy", "kısa")
+        page.locator("#grantWhy").press("Enter")
+        expect(page.locator("#grantWhy")).to_have_attribute("aria-invalid", "true")
+        page.fill("#grantWhy", f"TALEP-{tag}: şema onay görevi")
+        shot(page, "web_api_users_grant")
+        page.locator("#grantWhy").press("Enter")
+        expect(page.locator("#toast")).to_contain_text("Şema onaylayıcı rolü verildi")
+        expect(page.locator("#personRoles")).to_contain_text("Şema onaylayıcı")
+        expect(page.locator("#personRoles")).to_contain_text(f"TALEP-{tag}")
+
+        # Görevler ayrılığı: önceden uyarı, gönderilirse API reddeder
+        page.click("#grantOpen")
+        page.select_option("#grantRole", "evren_schema_designer")
+        expect(page.locator("#grantRoleInfo")).to_contain_text("Görevler ayrılığı")
+        expect(page.locator("#grantSend")).to_be_disabled()  # API de reddeder (API testi); boşuna istek yok
+        page.select_option("#grantRole", "evren_cmdb_editor")
+        expect(page.locator("#grantSend")).to_be_enabled()
+        page.keyboard.press("Escape")
+        expect(page.locator(".dialog")).to_have_count(0)
+
+        # Geri alma: gerekçe zorunlu
+        page.locator("#personRoles .revoke-btn").first.click()
+        expect(page.locator("#revokeWhy")).to_be_focused()
+        page.keyboard.press("Enter")
+        expect(page.locator("#revokeWhy")).to_have_attribute("aria-invalid", "true")
+        page.fill("#revokeWhy", "Görev değişti, TALEP-99")
+        page.keyboard.press("Enter")
+        expect(page.locator("#toast")).to_contain_text("geri alındı")
+        expect(page.locator("#personRoles")).to_contain_text("Rolü yok")
+        page.keyboard.press("Escape")
+
+        # Rol–yetki matrisi ve rolü taşıyanlar
+        page.click("#tab-roller")
+        expect(page.locator("#roleMatrix")).to_contain_text("Konfigürasyon yöneticisi")
+        expect(page.locator("#sodList")).to_contain_text("Şema onaylayıcı")
+        shot(page, "web_api_users_matrix")
+        page.locator(".role-link", has_text="Yetki yöneticisi").click()
+        expect(page.locator("#detailTitle")).to_have_text("Yetki yöneticisi")
+        page.click("#roleHolders")
+        expect(page.locator("#iamRoleFilter")).to_have_value("evren_iam_admin")
+        expect(page.locator("#iamList")).to_contain_text("Arayuz Testi")
+
+        # Yetki geçmişi
+        page.click("#tab-gecmis")
+        expect(page.locator("#iamBody")).to_contain_text("Rol geri alındı")
+        expect(page.locator("#iamBody")).to_contain_text("Görev değişti, TALEP-99")
+
+        # Kendi kaydı: değişiklik düğmesi yok
+        page.click("#tab-kisiler")
+        page.fill("#iamSearch", "arayuz-testi")
+        page.locator("#iamList tbody tr").first.press("Enter")
+        expect(page.locator("#detailContent")).to_contain_text("Bu sizsiniz")
+        expect(page.locator("#grantOpen")).to_have_count(0)
+
+        context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+        pg = context.new_page()
+        for route in ("#/kullanicilar", "#/kullanicilar/roller", "#/kullanicilar/gecmis"):
+            pg.goto(base_url + "/" + route)
+            pg.wait_for_selector("#iamTabs .tab")
+            pg.wait_for_timeout(150)
+            assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, route
+        context.close()
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM iam.principal_role WHERE principal_id = 'arayuz-testi'")

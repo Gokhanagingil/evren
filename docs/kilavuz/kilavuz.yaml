@@ -29,7 +29,7 @@ topics:
   - {id: entegrasyonlar, file: 06-entegrasyonlar.md, title: "Veri kaynakları ve entegrasyonlar",
      summary: "Kaynak bağlamak, bağlayıcı kimliği, çalıştırma, gölge mod ve kurallar.", routes: [kaynaklar, kurallar]}
   - {id: kullanicilar, file: 07-kullanicilar.md, title: "Kullanıcılar, roller ve yetkiler",
-     summary: "Hangi rol ne yapar, yetki nasıl verilir, görevler ayrılığı."}
+     summary: "Hangi rol ne yapar, yetki nasıl verilir, görevler ayrılığı.", routes: [kullanicilar]}
   - {id: isletim, file: 08-isletim.md, title: "Sistemin sağlığını izlemek",
      summary: "Sistem durumu sayfasını okumak ve sorun gidermek.", routes: [sistem-durumu]}
   - {id: raporlar, file: 09-raporlar.md, title: "Raporlar ve kontroller",

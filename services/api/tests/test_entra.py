@@ -182,3 +182,33 @@ def test_entra_configuration_is_strict():
         Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_HOST": "0.0.0.0"})  # noqa: S104 - reddedildiğini test eder
     with pytest.raises(ValueError, match="zorunlu"):
         Settings.from_env({})
+
+
+def test_database_roles_apply_on_next_request_and_revocation_drops_them():
+    """ADR-0034: çerezde yalnızca uygulama rolleri ve rol verilmiş gruplar var; veritabanı atamaları her istekte
+    okunur. Kişiye verilen rol yeniden girişsiz geçerli olur, geri alınınca hemen düşer; grup rolü de geri alınınca
+    düşer. Uygulama rolleri (Entra) atamadan etkilenmez."""
+    group = str(uuid.uuid4())
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("DELETE FROM iam.principal_role WHERE principal_id IN (%s, %s)", (OID, group))
+        conn.execute("INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, justification) "
+                     "VALUES ('group', %s, 'evren_ci_owner', 'test-yonetici', 'Grup rolü testi')", (group,))
+    try:
+        idp = Idp()
+        idp.override = {"groups": [group, str(uuid.uuid4())]}
+        with entra_client(idp) as c:
+            done, _ = sign_in(c, idp)
+            assert done.status_code == 303
+            roles = lambda: {r["name"] for r in c.get("/api/v1/me").json()["roles"]}  # noqa: E731
+            assert roles() == {"evren_reader", "evren_match_reviewer", "evren_ci_owner"}
+            with psycopg.connect(autocommit=True) as conn:
+                conn.execute("INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, "
+                             "justification) VALUES ('user', %s, 'evren_data_steward', 'test-yonetici', 'Kişi testi')",
+                             (OID,))
+            assert "evren_data_steward" in roles()  # yeniden giriş gerekmeden
+            with psycopg.connect(autocommit=True) as conn:
+                conn.execute("DELETE FROM iam.principal_role WHERE principal_id IN (%s, %s)", (OID, group))
+            assert roles() == {"evren_reader", "evren_match_reviewer"}  # geri alınan roller hemen düştü
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM iam.principal_role WHERE principal_id IN (%s, %s)", (OID, group))

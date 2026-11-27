@@ -30,6 +30,7 @@ Bir izin şu boyutlardan oluşur:
 | Denetçi | ✓ (tümü) | — | okuma | — | — | — | — | ✓ | ✓ | görme | ✓ |
 | Yetki yöneticisi | — | — | — | — | — | — | ✓ | — | — | — | — |
 | Platform operatörü | — | — | — | — | — | — | — | — | — | — | ✓ |
+| Konfigürasyon yöneticisi | ✓ | — | okuma | — | — | — | — | — | — | — | — |
 | Platform yöneticisi (break-glass) | ✓ | ✓ | ✓ | — | — | — | — | — | ✓ | — | ✓ |
 | Entegrasyon hesabı (makine) | ✓ | — | — | — | — | — | — | — | — | — | — |
 | SN eşleme hesabı (makine) | ✓ | ServiceNow kaynağı olarak | — | — | — | — | — | — | — | — | — |
@@ -42,12 +43,16 @@ Bir izin şu boyutlardan oluşur:
 | Denetçi | Konfigürasyon analisti | Denetçi denetlediği veriyi değiştiremez |
 | Platform yöneticisi | Denetçi | Kendi denetçisi olamaz |
 | Yetki yöneticisi | Şema onaylayıcı | Yetki ve şema kontrolü ayrı kişilerde |
+| Denetçi | Konfigürasyon yöneticisi | Denetçi denetlediği yönetişim sürecini yönetemez |
+
+Konfigürasyon yöneticisi yönetişim görevlerini tanımlar (`governance` kaynağında `task_admin`; U8.4–U8.6). Rol–yetki matrisinin canlı hâli uygulamada "Yönetim → Kullanıcılar ve Roller → Roller ve yetkiler" sekmesindedir (ADR-0034).
 
 Ek kurallar:
 
-- Kimse kendine rol veremez (`granted_by <> principal_id`).
+- Kimse kendine veya üyesi olduğu gruba rol veremez, kendi rolünü geri alamaz (`granted_by <> principal_id`; API "veren" alanını kişinin ham kimliğiyle yazar, böylece kural veritabanında da işler).
 - Şema setinde `approved_by <> created_by`.
-- Rol atamaları süreli olabilir (`expires_at`) ve gerekçe zorunludur.
+- Rol atamaları süreli olabilir (`expires_at`) ve gerekçe zorunludur (en az 10 karakter). Yetkili roller süreli verilir: Yetki yöneticisi ve Şema onaylayıcı en çok 90 gün, Platform yöneticisi (break-glass) en çok 1 gün. Makine rolleri kişiye veya gruba verilmez.
+- Geri alma da gerekçelidir; pasifleştirilen kişinin doğrudan rolleri geri alınır.
 - Her değişiklik `audit.security_event`'e yazılır.
 - Grup üyeliği yoluyla oluşan SoD çatışmaları uygulama katmanında ve periyodik raporla denetlenir.
 
@@ -57,6 +62,8 @@ Platform yöneticisi rolü yalnızca acil durumda, süreli ve gerekçeli atanır
 
 ## Entra eşlemesi
 
-- Entra grupları `iam.principal_role` içinde `principal_type='group'` ile rollere bağlanır.
-- Kullanıcı oturumunda grup üyelikleri token'dan veya Graph'tan alınır.
-- Rol hesabı istek başına önbelleklenir (kısa TTL).
+- Entra grupları `iam.principal_role` içinde `principal_type='group'` ile, grup kimliğiyle (`ref.sys_user_group.entra_group_id`) rollere bağlanır.
+- Kişiye verilen rol Entra nesne kimliğiyle (oid) eşlenir; e-posta ve oturum adı değişebildiği için kullanılmaz.
+- Oturum çerezinde yalnızca Entra uygulama rollerinden gelen Evren rolleri ve rol verilmiş gruplar bulunur. `iam.principal_role`'deki roller **her istekte** okunur: verilen rol yeniden girişsiz geçerli olur, geri alınan veya süresi dolan rol hemen düşer (ADR-0034). Yeni grup ataması yeniden girişte görülür (çerez sınırı).
+- Görevler ayrılığı girişte ve her istekte denetlenir; çatışan atama oturumu durdurur.
+- Entra'dan kişi ve grup eşitlemesi (Graph) hedef ortamla gelecek (U10); o zamana kadar Entra kimliği "Kullanıcılar ve Roller" ekranında elle bağlanır.

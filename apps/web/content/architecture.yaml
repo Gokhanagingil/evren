@@ -408,12 +408,12 @@ details:
     security: [Koşullu erişim, MFA kimlik doğrulama bağlamı, "PKCE + nonce, tekrar koruması", Şifreli kısa ömürlü oturum çerezi]
   rbac_abac:
     phase: F1
-    text: İzin rol, sınıf, işlem, alan, hassasiyet ve koşul boyutlarıyla tanımlanır. Örnek koşul "yalnızca destek grubu olduğum CI'lar". Matris arayüzde düzenlenir.
-    tech: [iam.permission, "db/migrations/0002_iam_seed.sql"]
-    security: [Varsayılan reddet]
+    text: İzin rol, sınıf, işlem, alan, hassasiyet ve koşul boyutlarıyla tanımlanır. Örnek koşul "yalnızca destek grubu olduğum CI'lar" (koşul değerlendirmesi henüz yok; koşullu izin verilmez). Rol–yetki matrisi, kişiler, gruplar ve yetki geçmişi "Kullanıcılar ve Roller" ekranında; rol kişiye Entra nesne kimliğiyle veya Entra grubuna, gerekçeli ve yetkiliyse süreli verilir. Veritabanı rolleri her istekte okunur; geri alınan rol hemen düşer (ADR-0034).
+    tech: [iam.permission, iam.principal_role, "GET/POST /api/v1/iam/*"]
+    security: [Varsayılan reddet, Kimse kendine rol veremez, "Yetkili rol en çok 90 gün, break-glass 1 gün", Makine rolü kişiye verilmez]
   sod:
     phase: F0
-    text: Çatışan roller aynı kişiye atanamaz; veritabanı tetikleyicisi bunu uygular. Kimse kendine yetki veremez. Şema setini hazırlayan kişi onaylayamaz.
+    text: Çatışan roller aynı kişiye atanamaz; veritabanı tetikleyicisi bunu uygular, rol verme ekranı önceden uyarır, oturum her istekte yeniden denetlenir. Kimse kendine yetki veremez. Şema setini hazırlayan kişi onaylayamaz. Denetçi yönettiği süreci (konfigürasyon yöneticiliği) yönetemez.
     tech: [iam.sod_constraint]
     security: [Atamalar denetim izinde]
   schema_sets:

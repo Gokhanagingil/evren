@@ -54,7 +54,7 @@
 | F1-02 | Entra uygulama izni Machine.Read.All (yalnızca okuma); vekil sunucu çıkış izni | Devam ediyor |
 | F1-03 | NNMi web servis kullanıcısı ve NNMi sürümü | Devam ediyor |
 | F1-04 | ServiceNow change_request ve task_ci okuma izni | Devam ediyor |
-| F1-10 | Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı | Planlandı |
+| F1-10 | Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı | Devam ediyor |
 | F1-24 | ServiceNow'da görevin açılacağı tablo ve atama grubu kararı; o tabloya yazma izni olan entegrasyon hesabı (canlı kabul U10) | Planlandı |
 | F1-25 | Konfigürasyon yöneticisi rolünün sahibi ve kampanya takvimi (süreç sahipleri) | Planlandı |
 | F2-01 | ServiceNow tarafında Evren veri kaynağı için platform ekibi onayı | Planlandı |
@@ -152,7 +152,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: Arama tamam (U3, ADR-0018); CI 360° ekranı (ilişkiler, etki) U7'de.
 - [ ] **F1-09** CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam — _Planlandı_
   - Not: Beklemede: zemin hazır (metadata/health_rules.yaml + evren_core.health puanlama, testli). Pano, veri hattı (alım geçidi, bağlayıcılar, eskime, bağımlı CI) kurulduktan sonra; ölçecek gerçek veri yolu olmadan erken.
-- [ ] **F1-10** Rol–yetki matrisi ekranı (RBAC + ABAC) — _Planlandı_
+- [ ] **F1-10** Rol–yetki matrisi ekranı (RBAC + ABAC) — _Devam ediyor_
+  - Not: 27.11.2026 (ADR-0034, U8.3, göç 0030): rol–yetki matrisi ekranı, kişiler ve gruplar, panelden rol verme ve geri alma (gerekçe zorunlu, yetkili rol süreli, makine rolü kişiye verilmez, kendine rol yok, görevler ayrılığı önceden), Evren'de kişi açma, Entra kimliği bağlama, yetki geçmişi; veritabanı rolleri her istekte okunur. Kalan: ABAC koşul değerlendirmesi (koşullu izinler) ve süreç sahiplerinin matris onayı.
   - Sizden gereken: Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı
 - [x] **F1-11** Şema tasarımcısı ve değişiklik setleri
   - Not: Şema ve Değişiklikler sayfası: 7 işlem (sınıf/alan ekle, alan değiştir, kullanımdan kaldır, seçim değeri, veri kaynağı ekle (gölge), yaşam döngüsü); taslak → onaya gönderme (doğrulama + etki analizi) → onay (hazırlayan onaylayamaz: API + kısıt + tetikleyici) → yayın = metadata/changes/ dosyası (ADR-0015). Alan silme ve fiziksel kolona taşıma sonraki sürümde.

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 from urllib.parse import urlsplit
 
@@ -15,7 +15,7 @@ from .authz import Grant
 from .errors import ApiError
 from .security import Principal
 
-__all__ = ["Ctx", "context", "require_csrf"]
+__all__ = ["Ctx", "context", "effective_roles", "require_csrf", "user_principal_id"]
 
 _GUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
@@ -78,16 +78,55 @@ class Ctx:
 def principal_from_request(request: Request) -> Principal:
     settings = request.app.state.settings
     if settings.auth_mode == "dev":
-        return Principal(settings.dev_user, settings.dev_name, frozenset(settings.dev_roles), "dev")
+        roles = frozenset(settings.dev_roles)
+        return Principal(settings.dev_user, settings.dev_name, roles, "dev", base_roles=roles)
     principal = request.app.state.sessions.decode(request.cookies.get(settings.session_cookie))
     if principal is None:
         raise ApiError(401, "oturum_gerekli", "Oturum açmanız gerekiyor.")
     return principal
 
 
+def user_principal_id(principal: Principal) -> str:
+    """``iam.principal_role`` içindeki kişi kimliği: Entra'da nesne kimliği (oid), geliştirmede kullanıcı adı."""
+    return principal.id.lower()
+
+
+def effective_roles(conn: psycopg.Connection[Any], principal: Principal) -> tuple[frozenset[str], list[str]]:
+    """Kimlik sağlayıcının rolleri + veritabanındaki süresi dolmamış atamalar (kişiye ve gruplarına). Her istekte
+    okunur: geri alınan veya süresi dolan rol hemen düşer. Gruplar: Entra'da oturumdaki rol verilmiş gruplar,
+    geliştirmede kişinin ``ref.sys_user_grmember`` üyelikleri (Entra grup kimliği bağlı gruplar).
+    Dönüş: (roller, görevler ayrılığı çatışmaları)."""
+    groups = list(principal.groups)
+    with conn.cursor() as cur:
+        if principal.mode == "dev":
+            cur.execute("""SELECT g.entra_group_id::text FROM ref.sys_user u
+                             JOIN ref.sys_user_grmember m ON m."user" = u.sys_id
+                             JOIN ref.sys_user_group g ON g.sys_id = m."group"
+                            WHERE lower(u.user_name) = lower(%s) AND g.entra_group_id IS NOT NULL AND g.active""",
+                        (principal.id,))
+            groups += [r[0] for r in cur.fetchall()]
+        cur.execute("""SELECT role FROM iam.principal_role
+                        WHERE (expires_at IS NULL OR expires_at > now())
+                          AND ((principal_type = 'user' AND principal_id = %s)
+                               OR (principal_type = 'group' AND principal_id = ANY(%s)))""",
+                    (user_principal_id(principal), groups))
+        roles = set(principal.base_roles) | {r[0] for r in cur.fetchall()}
+        # Kimlik sağlayıcının rolleri kendi aralarında girişte denetlendi (Entra) veya yapılandırmadır (geliştirme);
+        # burada veritabanı atamasının yol açtığı çatışmalar aranır
+        cur.execute("SELECT role_a, role_b, description FROM iam.sod_constraint WHERE role_a = ANY(%s) AND role_b = ANY(%s)",
+                    (sorted(roles), sorted(roles)))
+        conflicts = [d for a, b, d in cur.fetchall() if not {a, b} <= principal.base_roles]
+    return frozenset(roles), conflicts
+
+
 def context(request: Request) -> Iterator[Ctx]:
     principal = principal_from_request(request)
     with request.app.state.pool.connection() as conn:
+        roles, conflicts = effective_roles(conn, principal)
+        if conflicts:
+            raise ApiError(403, "gorevler_ayriligi", "Rolleriniz görevler ayrılığı kuralıyla çatışıyor; yetki "
+                                                     "yöneticinize başvurun.", [{"kural": c} for c in conflicts])
+        principal = replace(principal, roles=roles)
         perms = request.app.state.authorizer.permissions(conn, principal.roles)
         yield Ctx(request, conn, principal, perms)
 
