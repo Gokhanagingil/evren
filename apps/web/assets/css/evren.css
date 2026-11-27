@@ -636,7 +636,10 @@ label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: v
 }
 
 /* Kullanıcılar ve roller (U8.3): rol–yetki matrisi */
-.matrix-wrap { max-width: 100%; }
+/* Geniş matris kutu içinde kayar. Hücrelerdeki ekran okuyucu metinleri (.sr-only, mutlak konumlu) kutunun içinde kalsın
+   diye kutu ve hücreler konumlandırılır; yoksa sayfayı yatayda genişletirler. */
+.matrix-wrap { max-width: 100%; width: 100%; position: relative; }
+.matrix td { position: relative; }
 .matrix { border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
 .matrix th, .matrix td { padding: 6px 8px; border-bottom: 1px solid var(--stroke); text-align: center; white-space: nowrap; }
 .matrix thead th { vertical-align: bottom; font-weight: 600; color: var(--text2); background: #fafafb; }

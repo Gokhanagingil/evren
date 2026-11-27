@@ -1168,11 +1168,17 @@ def test_users_and_roles_page_grants_revokes_and_explains_with_keyboard(page, ba
 
         context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
         pg = context.new_page()
-        for route in ("#/kullanicilar", "#/kullanicilar/roller", "#/kullanicilar/gecmis"):
+        for route, ready in (("#/kullanicilar", "#iamList table"), ("#/kullanicilar/roller", "#roleMatrix"),
+                             ("#/kullanicilar/gecmis", "#iamBody table")):
             pg.goto(base_url + "/" + route)
-            pg.wait_for_selector("#iamTabs .tab")
-            pg.wait_for_timeout(150)
-            assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, route
+            pg.wait_for_selector(ready)
+            pg.wait_for_timeout(200)
+            # Tanı: görünür alanın dışına taşan mutlak konumlu öğeler (kaydırma kutusundan kaçıp sayfayı genişletenler)
+            wide = pg.evaluate("""() => [...document.querySelectorAll('#view *')]
+                .filter((e) => e.getBoundingClientRect().right > window.innerWidth + 1
+                  && ['absolute', 'fixed'].includes(getComputedStyle(e).position))
+                .slice(0, 5).map((e) => `${e.tagName}.${e.className}:${Math.round(e.getBoundingClientRect().right)}`)""")
+            assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, (route, wide)
         context.close()
     finally:
         with psycopg.connect(autocommit=True) as conn:
