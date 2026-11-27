@@ -13,6 +13,7 @@ import threading
 import time
 from datetime import timedelta
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import pytest
 
@@ -875,10 +876,8 @@ def test_impact_section_shows_affected_services_and_dependencies(page, base_url)
 
 
 def _local_input(page, when):
-    """Tarayıcının yerel saatiyle datetime-local değeri (saniye hassasiyeti)."""
-    return page.evaluate("""(iso) => { const d = new Date(iso); const p = (n) => String(n).padStart(2, '0');
-      return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T`
-        + `${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`; }""", when.isoformat())
+    """datetime-local değeri İstanbul saatiyle (arayüz bütün saatleri İstanbul saatiyle gösterir ve girdiyi öyle okur)."""
+    return when.astimezone(ZoneInfo("Europe/Istanbul")).strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def test_relation_map_levels_keyboard_recenter_and_past_moment(page, base_url):
@@ -969,3 +968,35 @@ def test_ci_panel_past_moment_and_timeline(page, base_url):
     page.fill("#ciAsOfAt", _local_input(page, ids["between"] - timedelta(days=30)))
     page.click("#ciAsOfShow")
     expect(page.locator("#ciAsOfNone")).to_contain_text("henüz yoktu")
+
+
+def test_system_status_page_groups_states_and_refreshes_with_keyboard(page, base_url):
+    """U8.1 (ADR-0032): sistem durumu; bileşenler üç grupta, durumları ve gerekçeleriyle; "Yenile" klavyeyle."""
+    page.goto(base_url + "/#/sistem-durumu")
+    expect(page.locator("#nav a[data-route='sistem-durumu']")).to_have_attribute("aria-current", "page")
+    expect(page.locator("#sysOverall")).to_contain_text("Genel durum:")
+    expect(page.locator(".sys-group")).to_have_count(3)
+    expect(page.locator("#sys-database")).to_contain_text("PostgreSQL")
+    expect(page.locator("#sys-database .pill")).to_have_text("Çalışıyor")
+    expect(page.locator("#sys-opensearch")).to_contain_text("Bu kurulumda yok")  # testte OpenSearch yok: yedek
+    expect(page.locator("#sys-sources")).to_contain_text("Kaynak çalışmaları")
+    expect(page.locator("#sysCounts .metric")).to_have_count(4)
+    text = page.locator("main").inner_text()
+    assert "null" not in text and "undefined" not in text
+    shot(page, "web_api_system_status")
+    before = page.locator("#sysOverall").inner_text()
+    page.wait_for_timeout(1100)
+    page.locator("#sysRefresh").focus()
+    page.keyboard.press("Enter")
+    expect(page.locator("#sysOverall")).not_to_have_text(before)  # son denetim zamanı yenilendi
+    expect(page.locator("#sysRefresh")).to_be_enabled()
+
+
+def test_system_status_mobile_has_no_horizontal_overflow(browser, base_url):
+    context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    pg = context.new_page()
+    pg.goto(base_url + "/#/sistem-durumu")
+    expect(pg.locator("#sys-database")).to_be_visible()
+    pg.wait_for_timeout(150)
+    assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+    context.close()

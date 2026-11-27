@@ -17,6 +17,8 @@ Hatalar: 400 şema/kayıt, 401 kimlik, 403 kaynak yetkisi, 404 çalışma, 409 �
 from __future__ import annotations
 
 import logging
+import os
+import socket
 import threading
 import time
 from collections.abc import AsyncIterator, Callable
@@ -118,12 +120,49 @@ def create_app(settings: GatewaySettings, *, pool: Any | None = None, publisher:
     publisher = publisher or KafkaPublisher(settings.kafka, "evren-gateway")
     limiter = RateLimiter()
     now = clock or (lambda: datetime.now(UTC))
+    # Nabız (sistem durumu, U8.1): örnek başına kabul edilen kayıt ve Kafka teslim hatası; Kafka bağlantısı ayrıntıda
+    stats = {"accepted": 0, "publish_failed": 0}
+    started = time.time()
+    worker_id = f"gateway-{socket.gethostname()}-{os.getpid()}"
+    stop = threading.Event()
+
+    def beat(*, stopped: bool = False) -> None:
+        """Tek nabız yazar; veritabanına ulaşılamazsa sessizce bir sonrakini bekler (geçit isteği etkilenmez)."""
+        details = {"kafka": {"ok": bool(publisher.ready(timeout=2.0))}}
+        try:
+            with pool.connection(timeout=5) as conn:
+                conn.execute(
+                    """INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, stopped_at, processed, failed,
+                                                           poll_seconds, kind, details)
+                       VALUES (%(id)s, to_timestamp(%(started)s), now(), CASE WHEN %(stopped)s THEN now() END,
+                               %(done)s, %(failed)s, %(poll)s, 'gateway', %(details)s)
+                       ON CONFLICT (worker_id) DO UPDATE SET seen_at = now(),
+                         stopped_at = CASE WHEN %(stopped)s THEN now() END, processed = EXCLUDED.processed,
+                         failed = EXCLUDED.failed, details = EXCLUDED.details""",
+                    {"id": worker_id, "started": started, "stopped": stopped, "done": stats["accepted"],
+                     "failed": stats["publish_failed"], "poll": max(settings.heartbeat_seconds, 1),
+                     "details": Jsonb(details)})
+        except Exception as exc:  # nabız yazılamazsa geçit çalışmayı sürdürür
+            log.warning("Geçit nabzı yazılamadı (%s)", type(exc).__name__)
+
+    def beat_loop() -> None:
+        while not stop.wait(settings.heartbeat_seconds):
+            beat()
 
     @asynccontextmanager
     async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
         if own_pool:
             pool.open(wait=False)
+        thread = None
+        if settings.heartbeat_seconds > 0 and own_pool:
+            beat()
+            thread = threading.Thread(target=beat_loop, name="gateway-heartbeat", daemon=True)
+            thread.start()
         yield
+        stop.set()
+        if thread is not None:
+            thread.join(timeout=5)
+            beat(stopped=True)
         publisher.close()
         if own_pool:
             pool.close()
@@ -317,8 +356,10 @@ def create_app(settings: GatewaySettings, *, pool: Any | None = None, publisher:
         try:
             publisher.publish(messages, timeout=settings.publish_timeout_s)
         except PublishError:
+            stats["publish_failed"] += 1
             raise GatewayError(503, "kafka_kullanilamaz", "Kayıtlar olay omurgasına teslim edilemedi; yeniden deneyin.",
                                headers={"Retry-After": "5"}) from None
+        stats["accepted"] += len(messages)
         with pool.connection() as conn:
             conn.execute("UPDATE ingest.source_run SET accepted_count = accepted_count + %s WHERE run_id = %s",
                          (len(messages), run_id))
@@ -360,4 +401,5 @@ def create_app(settings: GatewaySettings, *, pool: Any | None = None, publisher:
             return run_status(run_id, load_run(cur, run_id, cred))
 
     app.state.pool, app.state.publisher, app.state.limiter = pool, publisher, limiter
+    app.state.beat, app.state.worker_id = beat, worker_id
     return app

@@ -147,3 +147,32 @@ def test_rereconcile_cli(capsys):
     assert "Tanımsız veri kaynağı" in capsys.readouterr().err
     assert main(["--rereconcile", "ServiceNowChange"]) == 0  # CI'a bağlı kaydı olmayan kaynak: 0 CI
     assert "'cis': 0" in capsys.readouterr().out
+
+
+def test_heartbeat_details_report_outbox_publisher_and_kafka(as_reconciler, metadata):
+    """Sistem durumu (U8.1, ADR-0032): istek çalışanı olay yayıncısının açık olup olmadığını, alım tüketicisi Kafka
+    bağlantısını ve gecikmesini nabız ayrıntısında bildirir (en az yetkili rolle yazılır)."""
+    from evren_reconciler.worker import IngestWorker
+
+    class FakeOutbox:
+        pass
+
+    tag = uuid.uuid4().hex[:6]
+    worker = Worker(WorkerConfig(conninfo="", worker_id=f"hb-req-{tag}"), metadata, outbox=FakeOutbox())
+    worker._heartbeat(as_reconciler)
+    bare = Worker(WorkerConfig(conninfo="", worker_id=f"hb-bare-{tag}"), metadata)
+    bare._heartbeat(as_reconciler)
+
+    class Unreachable:
+        def assignment(self):
+            raise RuntimeError("broker yok")
+
+    ingest = IngestWorker(WorkerConfig(conninfo="", worker_id=f"hb-ing-{tag}"), metadata,
+                          consumer_factory=Unreachable, dlq=object())
+    ingest._heartbeat(as_reconciler)  # tüketici henüz açılmadı
+    ingest._consumer = Unreachable()
+    ingest._heartbeat(as_reconciler)
+    rows = dict(fetch(as_reconciler, "SELECT worker_id, details FROM ingest.worker_heartbeat WHERE worker_id LIKE %s",
+                      f"hb-%-{tag}"))
+    assert rows == {f"hb-req-{tag}": {"outbox_publisher": True}, f"hb-bare-{tag}": {"outbox_publisher": False},
+                    f"hb-ing-{tag}": {"kafka": {"ok": False, "error": "RuntimeError"}}}

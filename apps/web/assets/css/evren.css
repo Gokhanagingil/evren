@@ -545,3 +545,20 @@ label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: v
 .asof-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .asof-form input[type="datetime-local"] { min-height: 32px; border: 1px solid var(--stroke2); border-radius: 8px; padding: 0 8px; font: inherit; font-size: 13px; }
 #ciAsOf .then { color: var(--muted); text-decoration: line-through; }
+/* Sistem durumu (U8.1, ADR-0032) */
+#sysOverall { flex: 1 1 320px; margin: 0; }
+#sysOverall:empty { display: none; }
+.sys-group { margin-top: 18px; }
+.sys-group-title { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 0 0 10px; }
+.sys-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.sys-card { margin: 0; border-left: 4px solid var(--stroke2); }
+.sys-card.sys-ok { border-left-color: var(--good); }
+.sys-card.sys-warn { border-left-color: #e0a020; }
+.sys-card.sys-bad { border-left-color: var(--bad); }
+.sys-card.sys-off { border-left-color: var(--stroke2); }
+.sys-card.sys-off .sys-summary { color: var(--muted); }
+.sys-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+.sys-head h3 { margin: 0 0 6px; }
+.sys-summary { margin: 0 0 10px; font-weight: 600; font-size: 13.5px; overflow-wrap: anywhere; }
+.sys-note { margin: 10px 0 0; }
+@media (max-width: 640px) { .sys-grid { grid-template-columns: minmax(0, 1fr); } }

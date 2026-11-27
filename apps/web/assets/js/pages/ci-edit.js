@@ -1,7 +1,7 @@
 // CI elle düzenleme penceresi. Değerler Manual kaynak kaydı olarak uzlaştırmaya girer (CLAUDE.md kural 1):
 // yönetişim alanlarında elle değer geçerlidir; kaynak sahipli alanlarda yalnızca yedektir. Yalnızca değişen alanlar
 // gönderilir; boş bırakılan alan elle girilmiş değeri kaldırır.
-import { h, clear } from '../lib/dom.js';
+import { h, clear, fromIstanbulInput, toIstanbulInput } from '../lib/dom.js';
 import { closeOverlay, dialog, toast } from '../lib/shell.js';
 import { ROLE_TR, editCi, refSearch } from '../lib/data.js';
 
@@ -25,15 +25,6 @@ function authorityText(f) {
   return `Öncelik: ${f.authority.map((r) => ROLE_TR[r] || r).join(' → ')}`;
 }
 
-/** ISO (UTC) → datetime-local girişi (yerel saat). */
-function toLocalInput(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return '';
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function control(f, initial, onRefSearch) {
   const id = `edit-${f.attribute}`;
   const common = { id, name: f.attribute, 'aria-describedby': hintText(f) ? `${id}-hint` : null };
@@ -54,7 +45,7 @@ export function control(f, initial, onRefSearch) {
     return h('input', { ...common, type: 'number', step: f.type === 'integer' ? '1' : 'any', value: initial ?? '' });
   }
   if (f.type === 'glide_date') return h('input', { ...common, type: 'date', value: initial ? String(initial).slice(0, 10) : '' });
-  if (f.type === 'glide_date_time') return h('input', { ...common, type: 'datetime-local', value: toLocalInput(initial) });
+  if (f.type === 'glide_date_time') return h('input', { ...common, type: 'datetime-local', value: toIstanbulInput(initial, { seconds: false }) });
   if (f.max_length > 255) return h('textarea', { ...common, rows: '3', maxlength: String(f.max_length) }, initial ?? '');
   return h('input', { ...common, type: 'text', maxlength: String(f.max_length), value: initial ?? '' });
 }
@@ -67,7 +58,7 @@ export function readValue(f, el) {
   if (f.type === 'integer' && !f.choices) return Number.parseInt(v, 10);
   if (f.type === 'integer' && f.choices) return v;
   if (f.type === 'decimal') return Number(v);
-  if (f.type === 'glide_date_time') return new Date(v).toISOString();
+  if (f.type === 'glide_date_time') return fromIstanbulInput(v);
   return f.type === 'string' ? v.trim() : v;
 }
 

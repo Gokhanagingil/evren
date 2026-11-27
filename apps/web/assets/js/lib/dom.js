@@ -115,6 +115,40 @@ export function formatDateTime(iso) {
   return Number.isNaN(d.getTime()) ? String(iso) : DT.format(d).replace(',', '');
 }
 
+const DTS = new Intl.DateTimeFormat('tr-TR', {
+  day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit',
+  timeZone: 'Europe/Istanbul',
+});
+
+/** GG.AA.YYYY SS:dd:ss (İstanbul saati): art arda olayların ayırt edilmesi gereken yerler için (sistem durumu). */
+export function formatDateTimeSec(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  return Number.isNaN(d.getTime()) ? String(iso) : DTS.format(d).replace(',', '');
+}
+
+/* datetime-local girişleri İstanbul saatiyle okunur ve yazılır: uygulamadaki bütün saatler İstanbul saatiyle
+ * gösterildiği için tarayıcının saat dilimi farklı olsa da seçilen an gösterilenle aynıdır (Türkiye 2016'dan beri
+ * sabit UTC+3). Saniye isteğe bağlı: bir uzlaştırma çalışmasının değişiklikleri saniyeler içindedir. */
+const IST_PARTS = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Istanbul', year: 'numeric', month: '2-digit',
+  day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+
+/** Date/ISO → datetime-local değeri (İstanbul saati). */
+export function toIstanbulInput(value, { seconds = true } = {}) {
+  if (!value) return '';
+  const d = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(d.getTime())) return '';
+  const p = Object.fromEntries(IST_PARTS.formatToParts(d).map((x) => [x.type, x.value]));
+  return `${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}${seconds ? `:${p.second}` : ''}`;
+}
+
+/** datetime-local değeri (İstanbul saati) → ISO 8601 (UTC); geçersizse null. */
+export function fromIstanbulInput(value) {
+  if (!value) return null;
+  const d = new Date(`${value.length === 16 ? `${value}:00` : value}+03:00`);
+  return Number.isNaN(d.getTime()) ? null : d.toISOString();
+}
+
 export function formatNumber(n) {
   return Number(n).toLocaleString('tr-TR');
 }

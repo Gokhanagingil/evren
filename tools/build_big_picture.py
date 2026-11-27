@@ -448,16 +448,16 @@ def build() -> str:
     chips = [("sec_entra", "Entra ID"), ("sec_rbac", "RBAC + ABAC"), ("sec_sod", "Görevler ayrılığı"),
              ("sec_schema", "Şema değişikliği"), ("sec_writer", "Tek yazar"), ("sec_least", "En az yetki"),
              ("sec_audit", "Denetim izi"), ("sec_secrets", "mTLS + sır kasası"), ("sec_supply", "Tedarik zinciri"),
-             ("sec_ai", "Yapay zekâ önerir")]
+             ("sec_ai", "Yapay zekâ önerir"), ("ops", "Sistem durumu")]
     k_items = [item(c, lbl) for c, lbl in chips]
     kgap = 10
     kw = (W - 2 * M - 32 - (len(chips) - 1) * kgap) / len(chips)
     kh = uniform(kw, k_items)
     gt = st6 + sh + 12
-    gh = 44 + kh + 14
-    cv.panel(M, gt, W - 2 * M, gh, "7", "Güvenlik ve yönetişim — her katmanda", pct=st.group_pct("security"))
+    gh = 42 + kh + 12
+    cv.panel(M, gt, W - 2 * M, gh, "7", "Güvenlik, yönetişim ve işletim — her katmanda", pct=st.group_pct("security"))
     for i, it in enumerate(k_items):
-        cv.cbox(M + 16 + i * (kw + kgap), gt + 42, kw, kh, "security", it)
+        cv.cbox(M + 16 + i * (kw + kgap), gt + 40, kw, kh, "security", it)
 
     # fazlar ------------------------------------------------------------------
     ft = gt + gh + 12

@@ -856,6 +856,29 @@
       ],
       "security": []
     },
+    "ops_status": {
+      "label": "Sistem durumu",
+      "sub": [
+        "Servis nabızları, Kafka,",
+        "OpenSearch, kuyruklar"
+      ],
+      "kind": "engine",
+      "kind_label": "Evren bileşeni",
+      "chapter": "consume",
+      "phase": "F1",
+      "text": "Platformun bütün parçalarının durumu tek ekranda ve tek API'de (ADR-0032). Servisler (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi) nabızlarına ayrıntı yazar; Kafka'nın durumu onu kullanan servislerin bildirdiğidir, API Kafka'ya bağlanmaz. Veritabanı, göç defteri, OpenSearch (küme ve dizin farkı), olay yayını gecikmesi, istek kuyrukları ve kaynak çalışmaları da denetlenir. Metrik, uyarı ve geçmiş eğilim OpenTelemetry ile gelecek (F1-15).",
+      "tech": [
+        "ingest.worker_heartbeat",
+        "GET /api/v1/system/status",
+        "meta.schema_migration"
+      ],
+      "security": [
+        "Yalnızca platform okuma izni (Platform operatörü",
+        "Veri sorumlusu",
+        "Denetçi)",
+        "Olay içeriği API'ye kapalı"
+      ]
+    },
     "evren_master": {
       "label": "Evren (ana kaynak)",
       "sub": [

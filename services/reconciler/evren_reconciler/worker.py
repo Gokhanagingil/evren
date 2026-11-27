@@ -42,8 +42,9 @@ from typing import Any
 
 import psycopg
 from psycopg import sql
+from psycopg.types.json import Jsonb
 
-from evren_core.kafka_client import KafkaPublisher, PublishError
+from evren_core.kafka_client import KafkaPublisher, PublishError, consumer_lag
 from evren_core.messaging import TOPIC_RECORD, KafkaConfigError, KafkaSettings
 from evren_core.metadata import Metadata, load_metadata
 from evren_core.sources import SourceRegistryError
@@ -195,20 +196,24 @@ class Worker:
                      totals["split"], totals["failed"])
         return totals
 
+    def details(self) -> dict[str, Any]:
+        """Nabız ayrıntısı (sistem durumu, U8.1): olay yayıncısı açık mı (Kafka yapılandırılmış mı)."""
+        return {"outbox_publisher": self.outbox is not None}
+
     def _heartbeat(self, conn: psycopg.Connection[Any], *, failed_now: bool = False, stopped: bool = False) -> None:
         conn.execute(
             """INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, stopped_at, processed, failed,
-                                                   last_error_at, poll_seconds, kind)
+                                                   last_error_at, poll_seconds, kind, details)
                VALUES (%(id)s, to_timestamp(%(started)s), now(), CASE WHEN %(stopped)s THEN now() END, %(processed)s,
-                       %(failed)s, CASE WHEN %(failed_now)s THEN now() END, %(poll)s, %(kind)s)
+                       %(failed)s, CASE WHEN %(failed_now)s THEN now() END, %(poll)s, %(kind)s, %(details)s)
                ON CONFLICT (worker_id) DO UPDATE SET seen_at = now(),
                  stopped_at = CASE WHEN %(stopped)s THEN now() END,
                  processed = EXCLUDED.processed, failed = EXCLUDED.failed,
                  last_error_at = COALESCE(EXCLUDED.last_error_at, ingest.worker_heartbeat.last_error_at),
-                 poll_seconds = EXCLUDED.poll_seconds""",
+                 poll_seconds = EXCLUDED.poll_seconds, details = EXCLUDED.details""",
             {"id": self.config.worker_id, "started": self.started_at or time.time(), "stopped": stopped,
              "processed": self.processed, "failed": self.failed, "failed_now": failed_now,
-             "poll": self.config.poll_seconds, "kind": self.kind})
+             "poll": self.config.poll_seconds, "kind": self.kind, "details": Jsonb(self.details())})
 
     # ------------------------------------------------------------------ döngü
     def serve(self) -> None:
@@ -269,9 +274,16 @@ class IngestWorker(Worker):
         return Consumer(self.config.kafka.consumer_config(f"evren-ingest-{self.config.worker_id}",
                                                           self.config.consumer_group))
 
+    _consumer: Any = None
+
+    def details(self) -> dict[str, Any]:
+        """Kafka tüketici gecikmesi ve bağlantısı (sistem durumu, U8.1)."""
+        return {"kafka": consumer_lag(self._consumer) if self._consumer is not None else {"ok": False,
+                                                                                         "error": "tüketici yok"}}
+
     def serve(self) -> None:
         self.started_at = time.time()
-        consumer = self._consumer_factory()
+        consumer = self._consumer = self._consumer_factory()
         consumer.subscribe([TOPIC_RECORD])
         backoff = 1.0
         try:

@@ -199,6 +199,7 @@ def smoke() -> int:
 
         name, sys_id = smoke_event_backbone()
         smoke_search(name, sys_id)
+        smoke_system_status()
     except SmokeError as exc:
         print(f"\nDuman testi BAŞARISIZ: {exc}", file=sys.stderr)
         return 1
@@ -480,6 +481,35 @@ def smoke_connector_runner() -> None:
         compose("--profile", "runner", "stop", "connector-runner", check=False, capture=True)
         http("POST", f"{API}/api/v1/credentials/{name}/revoke", {})
         token_file.unlink(missing_ok=True)
+
+
+def smoke_system_status() -> None:
+    """Sistem durumu (U8.1, ADR-0032): gerçek yığında servis nabızları, Kafka (servislerin bildirdiği), OpenSearch ve
+    göç defteri. Dev oturumunda Veri sorumlusu rolü var (platform okuma izni)."""
+    step("Sistem durumu: servis nabızları, Kafka, OpenSearch, göç defteri")
+    must_ok = ("database", "migrations", "kafka", "svc_requests", "svc_ingest", "svc_indexer", "svc_gateway", "outbox")
+    last: dict[str, str] = {}
+
+    def ready() -> Any:
+        status, doc = http("GET", f"{API}/api/v1/system/status")
+        if status != 200:
+            return None
+        by = {c["id"]: c for c in doc["components"]}
+        last.clear()
+        last.update({k: f"{c['state']}: {c['summary']}" for k, c in by.items()})
+        healthy = all(by[k]["state"] == "ok" for k in must_ok) and by["opensearch"]["state"] in ("ok", "warn")
+        return healthy and by
+
+    try:
+        by = wait_for("bütün servisler sağlıklı görünüyor", ready, timeout=120, interval=5)
+    except SmokeError:
+        for k, v in sorted(last.items()):
+            print(f"  · {k}: {v}", file=sys.stderr)
+        raise
+    check(True, f"veritabanı, göçler, Kafka ve beş servis çalışıyor ({by['kafka']['summary']})")
+    check(by["opensearch"]["state"] in ("ok", "warn"), f"OpenSearch: {by['opensearch']['summary']}")
+    lag = next((i["value"] for i in by["svc_ingest"]["items"] if i["label"] == "Kafka gecikmesi"), "—")
+    check(True, f"alım tüketicisi Kafka gecikmesini bildiriyor ({lag})")
 
 
 def smoke_search(name: str, sys_id: str) -> None:

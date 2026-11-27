@@ -393,3 +393,27 @@ def test_mobile_layout_has_no_horizontal_overflow(browser, base_url):
     shot(pg, "web_mobile_menu")
     context.close()
     assert not errors
+
+
+def test_system_status_in_demo_mode_explains_itself(page, base_url):
+    """U8.1: statik demo modunda sistem durumu yoktur; sayfa bunu söyler ve gezinme menüsünde Yönetim grubu görünür."""
+    page.goto(base_url + "/#/sistem-durumu")
+    playwright.expect(page.locator("#view .notice")).to_contain_text("canlı API ile çalışır")
+    playwright.expect(page.locator("#nav a[data-route='sistem-durumu']")).to_have_attribute("aria-current", "page")
+
+
+def test_time_inputs_use_istanbul_time_whatever_the_browser_timezone(browser, base_url):
+    """Geçmiş an ve tarih alanı girişleri (U7.4, U8.1): arayüz saatleri İstanbul saatiyle gösterir; giriş de İstanbul
+    saatiyle okunur. Tarayıcı başka saat diliminde olsa da seçilen an gösterilenle aynıdır."""
+    ctx = browser.new_context(timezone_id="America/New_York")
+    pg = ctx.new_page()
+    pg.goto(base_url + "/")
+    out = pg.evaluate("""async () => {
+      const m = await import('/assets/js/lib/dom.js');
+      return [m.toIstanbulInput(new Date('2026-11-26T06:30:15Z')), m.fromIstanbulInput('2026-11-26T09:30:15'),
+              m.toIstanbulInput('2026-11-26T06:30:15Z', { seconds: false }), m.fromIstanbulInput('2026-11-26T09:30'),
+              m.fromIstanbulInput('bozuk'), m.formatDateTimeSec('2026-11-26T06:30:15Z')];
+    }""")
+    assert out == ["2026-11-26T09:30:15", "2026-11-26T06:30:15.000Z", "2026-11-26T09:30", "2026-11-26T06:30:00.000Z",
+                   None, "26.11.2026 09:30:15"]
+    ctx.close()

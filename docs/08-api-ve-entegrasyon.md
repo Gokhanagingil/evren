@@ -117,6 +117,19 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/ci/{sys_id}/impact?depth=6` (1–10): `upstream` (bu CI düşerse etkilenenler) ve `downstream` (bağımlılıkları). Her biri `nodes` (sys_id, ad, sınıf, düzey, ilişki tipi, `phrase` (bağımlı ucun Türkçe fiili), `via`/`via_name` (aracı CI), `service`, `production`, `retired`), `services`, `hidden` (okuma izni olmayan CI sayısı; adları sızmaz), `truncated` (500 düğüm sınırı). `summary`: etkilenen hizmet ve üretimdeki hizmet sayısı.
 - Yön `metadata/relationship_types.yaml` → `impact` (`parent` | `child` | `none`); yürüyüş döngüsüzdür.
 
+### Sistem durumu (ADR-0032)
+
+- `GET /api/v1/system/status` yalnızca `platform` okuma izniyle çağrılabilir (Platform operatörü, Veri sorumlusu, Denetçi); izni olmayan 403 alır. `/api/v1/me` → `can.system`.
+- Yanıt:
+  - `overall` ve `overall_label`: `off` dışındaki en kötü durum;
+  - `counts`;
+  - `components`: her biri `id`, `label`, `state` (`ok` | `warn` | `bad` | `off`), `state_label`, `summary`, `items` (`label`/`value`) ve `note`.
+- Bileşenler:
+  - `api`, `database`, `migrations`, `kafka`, `opensearch`;
+  - servisler: `svc_requests`, `svc_ingest`, `svc_indexer`, `svc_connector`, `svc_gateway`;
+  - `outbox`, `queues`, `sources`.
+- Kafka'nın durumu onu kullanan servislerin nabzından okunur; API Kafka'ya bağlanmaz.
+
 ### İlişki haritası ve zaman içinde sorgu (ADR-0031)
 
 - `GET /api/v1/ci/{sys_id}/as-of?at=<ISO 8601, saat dilimiyle>`: CI'ın o andaki hâli. Yanıtta şunlar bulunur:

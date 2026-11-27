@@ -292,6 +292,13 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "DELETE FROM ingest.dependent_key WHERE false"),
         ("evren_readonly", "SELECT count(*) FROM ingest.dependent_key"),
         ("evren_app_connector", "SELECT count(*) FROM ingest.dependent_key"),
+        # 0029 (ADR-0032): API olay içeriğini (payload) okuyamaz, nabız yazamaz; geçit nabzı dışında yazamaz
+        ("evren_app_api", "SELECT payload FROM events.outbox LIMIT 1"),
+        ("evren_app_api", "INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, poll_seconds, kind) "
+                          "VALUES ('x', now(), now(), 30, 'gateway')"),
+        ("evren_app_ingest", "SELECT count(*) FROM events.outbox"),
+        ("evren_app_ingest", "DELETE FROM ingest.worker_heartbeat WHERE false"),
+        ("evren_app_api", "INSERT INTO meta.schema_migration (version, sha256) VALUES ('x', repeat('0', 64))"),
         # 0028 (ADR-0031): ilişki bildirimlerini yalnızca uzlaştırıcı yazar; bağlayıcı ve salt okur göremez
         ("evren_app_api", "INSERT INTO cmdb.cmdb_rel_ci_source (rel_sys_id, data_source, source_key) "
                           "SELECT sys_id, 'Manual', 'x' FROM cmdb.cmdb_rel_ci WHERE false"),
@@ -365,6 +372,11 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_reconciler", "DELETE FROM cmdb.cmdb_rel_ci_source WHERE false"),
         ("evren_app_reconciler", "UPDATE cmdb.cmdb_rel_ci_source SET last_run = NULL WHERE false"),
         ("evren_app_api", "SELECT data_source, source_key, last_reported FROM cmdb.cmdb_rel_ci_source"),
+        ("evren_app_api", "SELECT count(*), min(created_at) FROM events.outbox WHERE published_at IS NULL"),
+        ("evren_app_api", "SELECT version, sha256 FROM meta.schema_migration"),
+        ("evren_app_ingest", "BEGIN; INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, poll_seconds, "
+                             "kind, details) VALUES ('gw-test', now(), now(), 30, 'gateway', '{}') "
+                             "ON CONFLICT (worker_id) DO UPDATE SET seen_at = now(); ROLLBACK"),
         ("evren_auditor_ro", "SELECT data_source, source_key FROM cmdb.cmdb_rel_ci_source"),
     ],
 )

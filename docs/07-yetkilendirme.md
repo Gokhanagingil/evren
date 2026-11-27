@@ -17,21 +17,22 @@ Bir izin şu boyutlardan oluşur:
 
 ## Matris (tohum)
 
-| Rol | CI okuma | CI yazma | İlişki | Eşleştirme | Kurallar | Şema | IAM | Denetim izi | Kısıtlı alan | Bağlayıcılar |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Okuyucu | ✓ | — | okuma | — | — | — | — | — | — | — |
-| CI sahibi | ✓ | yönetişim alanları, **yalnızca kendi destek grubu** | okuma | — | — | — | — | — | — | — |
-| Konfigürasyon analisti | ✓ | ✓ (Manual kaynağı) | oluştur/sil (Manual) | — | — | — | — | — | — | — |
-| Eşleştirme analisti | ✓ | — | okuma | karar, birleştir, ayır | — | — | — | — | — | — |
-| Veri sorumlusu | ✓ | — | okuma | — | ✓ | — | — | — | — | görme + yönetim |
-| Şema tasarımcısı | ✓ | — | — | — | — | taslak | — | — | — | — |
-| Şema onaylayıcı | ✓ | — | — | — | — | onay/yayın | — | — | — | — |
-| Güvenlik okuyucu | ✓ | — | okuma | — | — | — | — | — | ✓ | — |
-| Denetçi | ✓ (tümü) | — | okuma | — | — | — | — | ✓ | ✓ | görme |
-| Yetki yöneticisi | — | — | — | — | — | — | ✓ | — | — | — |
-| Platform yöneticisi (break-glass) | ✓ | ✓ | ✓ | — | — | — | — | — | ✓ | — |
-| Entegrasyon hesabı (makine) | ✓ | — | — | — | — | — | — | — | — | — |
-| SN eşleme hesabı (makine) | ✓ | ServiceNow kaynağı olarak | — | — | — | — | — | — | — | — |
+| Rol | CI okuma | CI yazma | İlişki | Eşleştirme | Kurallar | Şema | IAM | Denetim izi | Kısıtlı alan | Bağlayıcılar | Sistem durumu |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Okuyucu | ✓ | — | okuma | — | — | — | — | — | — | — | — |
+| CI sahibi | ✓ | yönetişim alanları, **yalnızca kendi destek grubu** | okuma | — | — | — | — | — | — | — | — |
+| Konfigürasyon analisti | ✓ | ✓ (Manual kaynağı) | oluştur/sil (Manual) | — | — | — | — | — | — | — | — |
+| Eşleştirme analisti | ✓ | — | okuma | karar, birleştir, ayır | — | — | — | — | — | — | — |
+| Veri sorumlusu | ✓ | — | okuma | — | ✓ | — | — | — | — | görme + yönetim | ✓ |
+| Şema tasarımcısı | ✓ | — | — | — | — | taslak | — | — | — | — | — |
+| Şema onaylayıcı | ✓ | — | — | — | — | onay/yayın | — | — | — | — | — |
+| Güvenlik okuyucu | ✓ | — | okuma | — | — | — | — | — | ✓ | — | — |
+| Denetçi | ✓ (tümü) | — | okuma | — | — | — | — | ✓ | ✓ | görme | ✓ |
+| Yetki yöneticisi | — | — | — | — | — | — | ✓ | — | — | — | — |
+| Platform operatörü | — | — | — | — | — | — | — | — | — | — | ✓ |
+| Platform yöneticisi (break-glass) | ✓ | ✓ | ✓ | — | — | — | — | — | ✓ | — | ✓ |
+| Entegrasyon hesabı (makine) | ✓ | — | — | — | — | — | — | — | — | — | — |
+| SN eşleme hesabı (makine) | ✓ | ServiceNow kaynağı olarak | — | — | — | — | — | — | — | — | — |
 
 ## Görevler ayrılığı (veritabanında zorlanır)
 

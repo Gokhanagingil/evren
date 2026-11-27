@@ -44,7 +44,8 @@ def me(ctx: Ctx = Depends(context)) -> dict[str, Any]:
                     "read_ci": ctx.grant("cmdb_ci", "read").allowed,
                     "create_ci": ctx.grant("cmdb_ci", "create").allowed,
                     "attest": ctx.grant("cmdb_ci", "attest").allowed,
-                    "retire": ctx.grant("cmdb_ci", "retire").allowed},
+                    "retire": ctx.grant("cmdb_ci", "retire").allowed,
+                    "system": ctx.grant("platform", "read").allowed},
             "sys_user": (lambda u: {"mapped": u is not None, "name": u["name"] if u else None})(ctx.sys_user())}
 
 

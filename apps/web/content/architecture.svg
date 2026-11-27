@@ -334,6 +334,7 @@
 <text x="104.0" y="1426.0" fill="#172e42" font-size="26" font-weight="700" text-anchor="start">Tüketim ve entegrasyon</text>
 <text x="105.0" y="1452.0" fill="#4d6474" font-size="15" font-weight="400" text-anchor="start">Tek API, iki dil — yerel REST ve ServiceNow uyumlu uç noktalar. Yapay zekâ ajanları kurumun kendi MCP katmanından bağlanır.</text>
 <path data-edge="web_ui:rest_api" d="M230.0 1521.0H250.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path data-edge="ops_status:web_ui" d="M140.0 1610.0V1570.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="corp_mcp:evren_mcp" d="M1140.0 1610.0V1570.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="grc_app:rest_api" d="M666.0 1610.0V1590.0H614.0V1570.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
 <path data-edge="event_stream:grc_app" d="M940.0 1570.0V1610.0" stroke="#637b89" stroke-width="2" fill="none" stroke-linejoin="round" marker-end="url(#arrow)"/>
@@ -403,6 +404,15 @@
 <text x="264.0" y="1636.0" fill="#2b3f4c" font-size="15" font-weight="700" text-anchor="start">Diğer iç uygulamalar</text>
 <text x="264.0" y="1654.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">Tedarik portalı, raporlama,</text>
 <text x="264.0" y="1670.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">otomasyon</text>
+</g>
+<g class="node" id="n-ops_status" data-node="ops_status" data-chapter="consume" tabindex="0" role="button" aria-label="Sistem durumu: Servis nabızları, Kafka, OpenSearch, kuyruklar">
+<rect x="50.0" y="1610.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
+<rect x="190.0" y="1619.0" width="30" height="18" rx="9" fill="#3f7f5f" stroke="#ffffff" stroke-width="1"/>
+<text x="205.0" y="1632.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
+<text x="64.0" y="1636.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">Sistem</text>
+<text x="64.0" y="1655.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">durumu</text>
+<text x="64.0" y="1673.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Servis nabızları, Kafka,</text>
+<text x="64.0" y="1689.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">OpenSearch, kuyruklar</text>
 </g>
 </g>
 <g id="ch-servicenow" data-chapter="servicenow">

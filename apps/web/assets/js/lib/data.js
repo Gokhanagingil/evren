@@ -357,6 +357,9 @@ export async function ciHistory(id) {
   return (await api(`/api/v1/ci/${encodeURIComponent(id)}/history?limit=50`)).items;
 }
 
+/** Sistem durumu (U8.1, ADR-0032): yalnızca platform okuma izniyle. */
+export const systemStatus = () => api('/api/v1/system/status');
+
 /** Değişiklik zaman çizelgesi (U7.4, F1-19): anlar yeniden eskiye; ``before`` sonraki sayfanın imleci. */
 export function ciTimeline(id, before = null, limit = 60) {
   const p = new URLSearchParams({ limit: String(limit) });

@@ -197,3 +197,25 @@ def test_readiness_reflects_kafka_and_headers_are_hardened(gateway):
     h = client.get("/healthz").headers
     assert h["cache-control"] == "no-store" and h["x-content-type-options"] == "nosniff"
     assert client.get("/docs").status_code == 404 and client.get("/openapi.json").status_code == 404
+
+
+# ------------------------------------------------------------------ nabız (sistem durumu, U8.1, ADR-0032)
+def test_heartbeat_reports_kafka_reachability_and_accepted_records(gateway):
+    """Geçit kendi rolüyle (evren_app_ingest) nabız yazar: kabul edilen kayıt, Kafka teslim hatası, Kafka bağlantısı."""
+    client, pub = gateway
+    wid = client.app.state.worker_id
+    _name, headers = issue("Zabbix")
+    rid = open_run(client, headers)
+    assert client.post(f"/ingest/v1/runs/{rid}/records", json={"records": [record_env("Zabbix", rid, "hb-1")]},
+                       headers=headers).status_code == 202
+    pub.fail = True
+    assert client.post(f"/ingest/v1/runs/{rid}/records", json={"records": [record_env("Zabbix", rid, "hb-2")]},
+                       headers=headers).status_code == 503
+    pub.is_ready = False
+    client.app.state.beat()
+    assert db("SELECT kind, processed, failed, details, stopped_at IS NULL FROM ingest.worker_heartbeat "
+              "WHERE worker_id = %s", wid) == [("gateway", 1, 1, {"kafka": {"ok": False}}, True)]
+    pub.is_ready = True
+    client.app.state.beat(stopped=True)
+    assert db("SELECT details, stopped_at IS NOT NULL FROM ingest.worker_heartbeat WHERE worker_id = %s",
+              wid) == [({"kafka": {"ok": True}}, True)]

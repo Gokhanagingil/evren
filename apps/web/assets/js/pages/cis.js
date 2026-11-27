@@ -1,9 +1,8 @@
 // Konfigürasyon öğeleri: arama ve filtreli liste (API'de sunucu tarafı, imleçli); CI 360° paneli
 // ("bu değer nereden geldi?"), API modunda zaman çizelgesi, geçmiş bir an ve ilişki haritası bağlantısı (U7.4).
-import { h, clear, dataTable, formatDateTime, kv, pill, section } from '../lib/dom.js';
+import { h, clear, dataTable, formatDateTime, fromIstanbulInput, kv, pill, section, toIstanbulInput } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
 import { OUTCOME, ROLE_TR, attest, backend, ciAsOf, ciDetail, ciFacets, ciImpact, ciSearch, ciTimeline, reviewAnomaly, splitCi, srcChip } from '../lib/data.js';
-import { fromLocalInput, toLocalInput } from './graph.js';
 import { STATE_TONE, openRejectDialog, waitForRequests } from './attestation.js';
 import { STAGE_TONE, observationList, openDecisionDialog, sendDecision } from './staleness.js';
 import { openEditDialog } from './ci-edit.js';
@@ -360,11 +359,11 @@ export async function renderCis(view, param) {
 
   function asOfSection(c) {
     const box = h('div', { id: 'ciAsOf', 'aria-live': 'polite' });
-    const input = h('input', { type: 'datetime-local', id: 'ciAsOfAt', step: '1', 'aria-label': 'Geçmiş an', max: toLocalInput(new Date()),
-      value: toLocalInput(new Date(Date.now() - 7 * 864e5)) });
+    const input = h('input', { type: 'datetime-local', id: 'ciAsOfAt', step: '1', 'aria-label': 'Geçmiş an', max: toIstanbulInput(new Date()),
+      value: toIstanbulInput(new Date(Date.now() - 7 * 864e5)) });
     const map = h('a', { class: 'btn ghost small', id: 'ciAsOfMap', href: `#/iliski-haritasi/${c.sys_id}` }, 'O andaki ilişki haritası');
     const sync = () => {
-      const iso = fromLocalInput(input.value);
+      const iso = fromIstanbulInput(input.value);
       map.setAttribute('href', `#/iliski-haritasi/${c.sys_id}${iso ? `@${iso}` : ''}`);
     };
     const show = async () => {
@@ -377,7 +376,7 @@ export async function renderCis(view, param) {
       input.removeAttribute('aria-invalid');
       clear(box).append(h('p', { class: 'muted small' }, 'Yükleniyor…'));
       try {
-        const d = await ciAsOf(c.sys_id, fromLocalInput(input.value));
+        const d = await ciAsOf(c.sys_id, fromIstanbulInput(input.value));
         if (box.isConnected) clear(box).append(...asOfView(c, d));
       } catch (err) {
         clear(box).append(h('p', { class: 'muted small' }, `Yüklenemedi: ${err.message}`));

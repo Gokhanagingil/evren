@@ -1,7 +1,7 @@
 // İlişki haritası (U7.4, ADR-0031): bir CI'ın çevresi. Bu CI'a bağımlı olanlar üstte, bağımlılıkları altta, etki
 // taşımayan bağlantılar (fiziksel bağlantı, sahiplik) aynı düzeyde kesikli çizgiyle. Geçmiş bir an seçilirse ilişkiler
 // o ana geri sarılır (değişim geçmişinden); düğüm adları bugünkü hâliyledir. Çizim satır içi stil kullanmaz (CSP).
-import { h, s, clear, errorBox, formatDateTime, pill } from '../lib/dom.js';
+import { h, s, clear, errorBox, formatDateTime, fromIstanbulInput, pill, toIstanbulInput } from '../lib/dom.js';
 import { setHeader } from '../lib/shell.js';
 import { backend, ciGraph, ciSearch } from '../lib/data.js';
 
@@ -12,14 +12,6 @@ const GAP_Y = 84;
 const PAD = 28;
 
 const short = (text, n) => (text.length > n ? `${text.slice(0, n - 1)}…` : text);
-
-/** Yerel saatle datetime-local değeri ("2026-11-26T09:30:15"; saniye hassasiyeti: bir çalışmanın değişiklikleri
- * saniyeler içindedir) ↔ ISO 8601 (UTC). */
-export function toLocalInput(date) {
-  const p = (n) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${p(date.getMonth() + 1)}-${p(date.getDate())}T${p(date.getHours())}:${p(date.getMinutes())}:${p(date.getSeconds())}`;
-}
-export const fromLocalInput = (value) => (value ? new Date(value).toISOString() : null);
 
 /** Düzeylere göre yerleşim: düzey 0 merkez satırı; diğer satırlar komşularının ortalama konumuna göre sıralanır. */
 export function layout(nodes, edges) {
@@ -104,7 +96,7 @@ export async function renderGraph(view, param) {
   const depth = h('select', { class: 'compact', id: 'graphDepth', 'aria-label': 'Derinlik' },
     [1, 2, 3].map((d) => h('option', { value: String(d), selected: d === state.depth }, `${d} adım`)));
   const atInput = h('input', { type: 'datetime-local', id: 'graphAt', step: '1', 'aria-label': 'Geçmiş bir an (boş: şimdi)',
-    max: toLocalInput(new Date()) });
+    max: toIstanbulInput(new Date()) });
   const atApply = h('button', { class: 'btn secondary small', type: 'button', id: 'graphAtApply' }, 'Bu andaki hâli');
   const atClear = h('button', { class: 'btn ghost small', type: 'button', id: 'graphAtNow' }, 'Şimdi');
   const physical = h('input', { type: 'checkbox', id: 'graphPhysical', checked: true });
@@ -127,7 +119,7 @@ export async function renderGraph(view, param) {
     }, 250);
   });
   const go = () => {
-    const iso = fromLocalInput(atInput.value);
+    const iso = fromIstanbulInput(atInput.value);
     location.hash = `#/iliski-haritasi/${state.id}${iso ? `@${iso}` : ''}`;
   };
   depth.addEventListener('change', () => { state.depth = Number(depth.value); draw(); });
@@ -279,7 +271,7 @@ export async function renderGraph(view, param) {
     }
     state.id = id;
     state.at = at && !Number.isNaN(Date.parse(at)) ? new Date(at).toISOString() : null;
-    atInput.value = state.at ? toLocalInput(new Date(state.at)) : '';
+    atInput.value = state.at ? toIstanbulInput(new Date(state.at)) : '';
     state.selected = null;
     clear(results);
     await draw();

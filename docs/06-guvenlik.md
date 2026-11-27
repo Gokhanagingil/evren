@@ -27,6 +27,7 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | **I**nformation disclosure | Güvenlik duruşu verisinin sızması | Ayrı kısıtlı tablo; alan hassasiyeti (`sensitivity`); rol bazlı okuma; okuma denetimi | `ci_security_posture`, IAM |
 | I | Hata mesajlarında iç ayrıntı | Standart hata gövdesi; yığın izi yalnızca sunucu logunda | api |
 | I | Yapay zekâ modeline hassas veri gitmesi | Onaylı/kurum içi model; veri sınıflandırması; asgari bağlam | docs/11 |
+| I | Sistem durumunun (sürüm, bağlantı sayısı, kuyruk, servis adları) her kullanıcıya açılması | Yalnızca `platform` okuma izni (Platform operatörü, Veri sorumlusu, Denetçi); yanıtta sır ve bağlantı bilgisi yok; API olay içeriğini (`payload`) okuyamaz, yalnızca kimlik ve zaman sütunlarını (ADR-0032) | api `system.py`, göç 0029 |
 | I | Geçmiş bir andaki değerin veya ilişki haritasının yetkisiz kişiye gösterilmesi | Geçmiş de bugünkü okuma izni ve alan duyarlılığıyla süzülür; okunamayan sınıftaki karşı CI'ın adı dönmez, haritada üzerinden genişlenmez (ADR-0031) | api `timeline.py`, `graph.py` |
 | **D**enial of service | Büyük sorgu veya derin etki analizi | Koşul ve IN sınırı, sayfalama, sorgu zaman aşımı, derinlik sınırı, hız sınırı; geçmiş an sorgusu 20 000 değişiklikte durur, harita 3 adım ve 120 düğümle sınırlı | api, mcp |
 | T | Kaynağın ilişkiyi bırakmasının veya kısmi çalışmanın ilişkileri silmesi | İlişki yalnızca tam ve devre kesicisi OK çalışmada, kaynak kaydı geldiği hâlde listelemiyorsa kalkar; başka bildireni varsa kalmaz; kalkma değişim geçmişinde (ADR-0031) | reconciler |

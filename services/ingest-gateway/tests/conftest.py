@@ -69,6 +69,7 @@ def gateway(metadata) -> Iterator[tuple[TestClient, FakePublisher]]:
     with TestClient(create_app(settings(), publisher=pub, metadata=metadata)) as client:
         yield client, pub
     with psycopg.connect(autocommit=True) as c:
+        c.execute("DELETE FROM ingest.worker_heartbeat WHERE worker_id = %s", (client.app.state.worker_id,))
         c.execute("DELETE FROM ingest.source_run WHERE opened_by LIKE 'gwtest-%'")
         c.execute("DELETE FROM ingest.connector_credential WHERE name LIKE 'gwtest-%'")
 
@@ -80,6 +81,7 @@ def retired_gateway(metadata) -> Iterator[TestClient]:
     with TestClient(create_app(settings(), publisher=FakePublisher(), metadata=md)) as client:
         yield client
     with psycopg.connect(autocommit=True) as c:
+        c.execute("DELETE FROM ingest.worker_heartbeat WHERE worker_id = %s", (client.app.state.worker_id,))
         c.execute("DELETE FROM ingest.connector_credential WHERE name LIKE 'gwtest-%'")
 
 

@@ -13,7 +13,7 @@ from typing import Any, Protocol
 
 from .messaging import KafkaSettings
 
-__all__ = ["KafkaPublisher", "Message", "PublishError", "Publisher"]
+__all__ = ["KafkaPublisher", "Message", "PublishError", "Publisher", "consumer_lag"]
 
 Message = tuple[str, bytes, bytes, list[tuple[str, bytes]] | None]  # konu, anahtar, değer, başlıklar
 
@@ -68,3 +68,23 @@ class KafkaPublisher:
 
     def close(self) -> None:
         self._producer.flush(10)
+
+
+def consumer_lag(consumer: Any, timeout: float = 2.0) -> dict[str, Any]:
+    """Tüketicinin kendisine atanmış bölümlerdeki gecikmesi (yüksek su işareti − konum), nabız ayrıntısı için (U8.1).
+
+    Kafka'ya ulaşılamazsa hata yükseltmez: ``{"ok": False, "error": <tür>}`` döner (ayrıntı sızdırılmaz). Konumu henüz
+    olmayan bölümde (ilk okuma öncesi) alt su işareti esas alınır.
+    """
+    try:
+        assigned = list(consumer.assignment() or [])
+        if not assigned:
+            return {"ok": True, "partitions": 0, "lag": 0}
+        lag = 0
+        for tp in consumer.position(assigned):
+            low, high = consumer.get_watermark_offsets(tp, timeout=timeout, cached=False)
+            pos = tp.offset if tp.offset is not None and tp.offset >= 0 else low
+            lag += max(int(high) - int(pos), 0)
+        return {"ok": True, "partitions": len(assigned), "lag": lag}
+    except Exception as exc:  # durum bildirimi: nabız hiçbir koşulda düşmemeli
+        return {"ok": False, "error": type(exc).__name__}

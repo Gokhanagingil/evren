@@ -56,6 +56,8 @@ class GatewaySettings:
     statement_timeout_ms: int = 10_000
     db_pool_size: int = 8
     metadata_dir: Path = REPO_ROOT / "metadata"
+    #: Nabız aralığı (sn; sistem durumu, U8.1). 0: nabız yazılmaz
+    heartbeat_seconds: int = 30
 
     @classmethod
     def from_env(cls, env: Mapping[str, str]) -> GatewaySettings:
@@ -87,4 +89,5 @@ class GatewaySettings:
             max_batch=_int(env, "EVREN_GATEWAY_MAX_BATCH", 500, 1, 5000),
             publish_timeout_s=_int(env, "EVREN_GATEWAY_PUBLISH_TIMEOUT", 30, 1, 300),
             metadata_dir=Path(env.get("EVREN_METADATA_DIR") or REPO_ROOT / "metadata"),
+            heartbeat_seconds=_int(env, "EVREN_GATEWAY_HEARTBEAT_SECONDS", 30, 0, 3600),
         )

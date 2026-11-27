@@ -29,7 +29,9 @@ from typing import Any
 import psycopg
 from psycopg import sql
 from psycopg.rows import dict_row
+from psycopg.types.json import Jsonb
 
+from evren_core.kafka_client import consumer_lag
 from evren_core.messaging import TOPIC_CI_CHANGED, KafkaConfigError, KafkaSettings
 from evren_core.metadata import Metadata, load_metadata
 from evren_core.opensearch_client import OpenSearch, OpenSearchConfigError, OpenSearchError, OpenSearchSettings
@@ -178,16 +180,18 @@ class IndexerWorker:
         conn.execute("SET application_name = 'evren-indexer'")
         return conn
 
-    def _heartbeat(self, conn: psycopg.Connection[Any], *, stopped: bool = False) -> None:
+    def _heartbeat(self, conn: psycopg.Connection[Any], *, stopped: bool = False, consumer: Any = None) -> None:
+        # Ayrıntı (sistem durumu, U8.1): Kafka tüketici gecikmesi; OpenSearch'e yazabiliyor olmak nabzın kendisidir
+        details = {"kafka": consumer_lag(consumer)} if consumer is not None else {}
         conn.execute(
             """INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, stopped_at, processed, failed,
-                                                   poll_seconds, kind)
+                                                   poll_seconds, kind, details)
                VALUES (%(id)s, to_timestamp(%(started)s), now(), CASE WHEN %(stopped)s THEN now() END, %(done)s,
-                       %(failed)s, 10, 'indexer')
+                       %(failed)s, 10, 'indexer', %(details)s)
                ON CONFLICT (worker_id) DO UPDATE SET seen_at = now(), stopped_at = CASE WHEN %(stopped)s THEN now() END,
-                 processed = EXCLUDED.processed, failed = EXCLUDED.failed""",
+                 processed = EXCLUDED.processed, failed = EXCLUDED.failed, details = EXCLUDED.details""",
             {"id": self.config.worker_id, "started": self.started_at, "stopped": stopped, "done": self.indexed,
-             "failed": self.failed})
+             "failed": self.failed, "details": Jsonb(details)})
         if self.config.health_file:
             Path(self.config.health_file).touch()
 
@@ -230,7 +234,7 @@ class IndexerWorker:
                         while not self.stop.is_set():
                             self.poll_once(consumer, indexer)
                             if time.monotonic() - last_beat >= 10:
-                                self._heartbeat(conn)
+                                self._heartbeat(conn, consumer=consumer)
                                 last_beat = time.monotonic()
                         self._heartbeat(conn, stopped=True)
                 except (OpenSearchError, psycopg.OperationalError) as exc:
