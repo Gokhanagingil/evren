@@ -1018,7 +1018,10 @@ def test_admin_panel_guides_tasks_by_permission_and_deep_links(page, base_url):
     # Bu oturumda Şema onaylayıcı yok: görev açılmaz, hangi rolün gerektiğini söyler
     expect(page.locator("#task-sema-onay .task-locked")).to_contain_text("Şema onaylayıcı rolü gerekir")
     expect(page.locator("#task-kullanici .task-locked")).to_contain_text("Yetki yöneticisi rolü gerekir")
-    expect(page.locator("#task-denetim")).to_contain_text("Hazırlanıyor")
+    # Denetim izi (U8.8) artık etkin: bu oturumda Denetçi yok, görev gereken rolü söyler (görevler ayrılığı)
+    expect(page.locator("#task-denetim .task-locked")).to_contain_text("Denetçi rolü gerekir")
+    expect(page.locator("#task-denetim")).not_to_contain_text("Hazırlanıyor")
+    expect(page.locator("#task-denetim-inceleme .task-locked")).to_contain_text("Denetçi rolü gerekir")
     # Yönetişim görevleri: kampanya Konfigürasyon yöneticisi ister (F1-25); kural görevi hazırlanıyor (F1-26)
     expect(page.locator("#task-zamanli-gorev .task-locked")).to_contain_text("rolü gerekir")
     expect(page.locator("#task-kural-gorevi .task-locked")).to_contain_text("rolü gerekir")
