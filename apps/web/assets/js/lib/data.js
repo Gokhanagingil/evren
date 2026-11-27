@@ -453,6 +453,15 @@ export function taskCancel(id, reason) {
   return api(`/api/v1/tasks/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
 }
 export const taskChannels = () => api('/api/v1/task-channels');
+// Sihirbazlar (U8.7, ADR-0038)
+export const integrationsCatalog = () => api('/api/v1/integrations');
+export function integrationPlan(body) {
+  return api('/api/v1/integrations/plan', { method: 'POST', body: JSON.stringify(body) });
+}
+export const integrationStatus = (name) => api(`/api/v1/integrations/${encodeURIComponent(name)}`);
+export function validateChangeSet(changes) {
+  return api('/api/v1/schema/change-sets/validate', { method: 'POST', body: JSON.stringify({ changes }) });
+}
 // CMDB sağlığı, kalite kuralları ve bulgular (U8.6, ADR-0037)
 export const healthView = () => api('/api/v1/quality/health');
 export const qualityRules = () => api('/api/v1/quality/rules');

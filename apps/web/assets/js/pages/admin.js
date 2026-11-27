@@ -10,6 +10,8 @@ import { openCreateDialog } from './ci-create.js';
 import { openImportDialog } from './ci-import.js';
 import { openAddRelationDialog } from './ci-relations.js';
 import { openChangeSetFor } from './schema.js';
+import { openClassWizard, openFieldWizard } from './schema-wizard.js';
+import { openIntegrationWizard } from './integration-wizard.js';
 
 /** Yetenek → bu işi yapabilen rol (yetkisiz kullanıcıya yol gösterir). */
 const ROLE_FOR = {
@@ -67,13 +69,16 @@ function tasks(goCi) {
     ] },
     { group: 'Veri modeli', desc: 'Sınıf ve alanlar değişiklik setiyle eklenir: taslak, başka birinin onayı, yayın.', items: [
       { id: 'sinif', title: 'Yeni sınıf ekle', icon: 'tree', cap: 'schema_draft', guide: 'veri-modeli',
-        desc: 'Yeni bir CI türü tanımlayın (ör. yeni bir cihaz tipi).',
-        run: (opener) => openChangeSetFor({ op: 'add_class' }, opener) },
+        desc: 'Adım adım: üst sınıf, ad ve öznitelikler; doğrulanır ve onaya gönderilir (ör. yeni bir cihaz tipi).',
+        run: () => openClassWizard() },
       { id: 'alan', title: 'Sınıfa alan ekle', icon: 'tree', cap: 'schema_draft', guide: 'veri-modeli',
-        desc: 'Bir sınıfa yeni bir öznitelik ekleyin; alt sınıflar devralır.',
-        run: (opener) => openChangeSetFor({ op: 'add_field' }, opener) },
+        desc: 'Adım adım: sınıf, alanlar (seçim değerleriyle); alt sınıflar devralır.',
+        run: () => openFieldWizard() },
       { id: 'secim', title: 'Seçim listesine değer ekle', icon: 'sliders', cap: 'schema_draft', guide: 'veri-modeli',
         desc: 'Bir açılır listeye yeni bir değer ekleyin.', run: (opener) => openChangeSetFor({ op: 'add_choice' }, opener) },
+      { id: 'degisiklik-seti', title: 'Değişiklik seti hazırla (gelişmiş)', icon: 'layers', cap: 'schema_draft', guide: 'veri-modeli',
+        desc: 'Birden çok işlemi (alan değiştirme, kullanımdan kaldırma…) tek sette elle hazırlayın.',
+        run: (opener) => openChangeSetFor({ op: 'modify_field' }, opener) },
       { id: 'sema-onay', title: 'Değişiklikleri onayla ve yayımla', icon: 'check', cap: 'schema_approve', guide: 'veri-modeli',
         href: '#/sema', desc: 'Başkasının hazırladığı değişiklik setini inceleyin, onaylayın veya reddedin.' },
       { id: 'model', title: 'Veri modelini incele', icon: 'tree', guide: 'veri-modeli', href: '#/veri-modeli',
@@ -90,6 +95,9 @@ function tasks(goCi) {
         desc: 'Kim kime hangi rolü ne zaman, hangi gerekçeyle verdi veya geri aldı.' },
     ] },
     { group: 'Entegrasyonlar', desc: 'Veri kaynakları, bağlayıcılar ve çalışmalar.', items: [
+      { id: 'yeni-entegrasyon', title: 'Yeni entegrasyon kur', icon: 'plug', cap: 'connector_admin', guide: 'entegrasyonlar',
+        desc: 'Adım adım: kaynak türü, bağlantı, zamanlama, geçit kimliği, kurulum paketi ve deneme çalışması.',
+        run: () => openIntegrationWizard() },
       { id: 'kaynaklar', title: 'Veri kaynaklarını görüntüle', icon: 'plug', guide: 'entegrasyonlar', href: '#/kaynaklar',
         desc: 'Her kaynağın rolü, son çalışması, devre kesici durumu ve kapsamı.' },
       { id: 'kimlik', title: 'Bağlayıcıya kimlik ver veya iptal et', icon: 'key', cap: 'connector_admin',

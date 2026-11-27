@@ -32,7 +32,8 @@ export function openDetail({ kicker = '', title, body, footer = [], onClose, ope
   panel.classList.add('open');
   panel.removeAttribute('inert');
   panel.setAttribute('aria-hidden', 'false');
-  $('detailTitle').focus({ preventScroll: true });
+  // Açık bir pencere varken (ör. arka planda yenilenen panel) odak pencerede kalır; panel odağı çalmaz.
+  if (!overlay) $('detailTitle').focus({ preventScroll: true });
 }
 
 export function isDetailOpen() {
@@ -85,9 +86,9 @@ export function isOverlayOpen() {
 
 /** İletişim kutusu. ``footer``: eylem düğmeleri; ``focus``: açılınca odaklanacak öğe (yoksa Kapat);
  * ``onClose``: nasıl kapanırsa kapansın (Esc, ✕, dış tıklama, düğme) bir kez çağrılır. */
-export function dialog({ title, body, footer = [], focus = null, onClose = null }) {
+export function dialog({ title, body, footer = [], focus = null, onClose = null, wide = false }) {
   const close = h('button', { class: 'btn ghost', type: 'button', 'aria-label': 'Kapat', onclick: closeOverlay }, '✕');
-  const box = h('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'dialogTitle' },
+  const box = h('div', { class: wide ? 'dialog wide' : 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': 'dialogTitle' },
     h('header', {}, h('h2', { id: 'dialogTitle' }, title), close),
     h('div', { class: 'body' }, body),
     footer.length ? h('footer', {}, footer) : null);

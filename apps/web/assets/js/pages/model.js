@@ -4,7 +4,7 @@
 import { h, append, clear, dataTable, fold, formatNumber, kv, metric, pill, section, tabs } from '../lib/dom.js';
 import { closeDetail, openDetail, setHeader } from '../lib/shell.js';
 import { dataModel } from '../lib/data.js';
-import { openChangeSetFor } from './schema.js';
+import { openFieldWizard } from './schema-wizard.js';
 
 const TYPE_TR = { string: 'Metin', integer: 'Tam sayı', decimal: 'Ondalık', boolean: 'Evet/hayır', reference: 'Referans',
   glide_date: 'Tarih', glide_date_time: 'Tarih-saat' };
@@ -133,7 +133,7 @@ export async function renderModel(view, param) {
     const footer = [];
     if (m.can_draft) {
       footer.push(h('button', { class: 'btn', type: 'button', id: 'modelAddField',
-        onclick: (ev) => openChangeSetFor({ op: 'add_field', table: name }, ev.currentTarget) }, 'Bu sınıfa alan ekle'));
+        onclick: () => openFieldWizard({ table: name }) }, 'Bu sınıfa alan ekle'));
     }
     openDetail({
       kicker: 'Sınıf', title: c.label_tr, opener, footer,

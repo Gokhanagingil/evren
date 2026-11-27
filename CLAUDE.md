@@ -130,7 +130,8 @@ packages/evren-core/      Saf alan mantığı + testler
   credentials.py          bağlayıcı belirteçleri (yalnızca SHA-256 özeti saklanır)
   search.py               CI arama dizini: eşleme, belge, sorgu (ADR-0018)
   opensearch_client.py    OpenSearch G/Ç adaptörü (standart kütüphane; çekirdekte OpenSearch'e dokunan tek modül)
-  connectors/             bağlayıcı sözleşmesi, YAML alan eşleme motoru; çalıştırıcı (http, gateway, runtime), şifreli
+  connectors/             bağlayıcı sözleşmesi, YAML alan eşleme motoru; örnek tanımı doğrulaması (instances; çalıştırıcı ve
+                          entegrasyon sihirbazı ortak, ADR-0038); çalıştırıcı (http, gateway, runtime), şifreli
                           ham yük arşivi (archive, ADR-0024) ve kaynak istemcileri sources/ (ADR-0020; sırlar yalnızca dosyadan)
   metadata.py             sözlük yükleme/doğrulama, tohum SQL, sn.* görünümler
   relations.py            izinli ilişki kuralları (kalıtım, ters yön tespiti; ADR-0019)

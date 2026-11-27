@@ -2,6 +2,12 @@
 
 Evren'e veri bağlayıcılarla gelir. Her kaynak bir **rolü** doldurur (keşif, sanallaştırma, ağ, izleme, güvenlik, ITSM). Kurallar ürüne değil role bağlıdır: araç değişse de kurallar değişmez.
 
+## Yeni entegrasyon kurmak
+
+> Taslak. Ayrıntılar en sonda tamamlanacak (F1-27).
+
+[Yönetim Paneli](#/yonetim)'nde **Yeni entegrasyon kur** sihirbazı adım adım ilerler: kaynak türü, bağlantı, zamanlama, geçit kimliği, kurulum paketi ve doğrulama. Sır (parola, belirteç) hiçbir adımda yazılmaz; yalnızca kurum sır kasasındaki değerin çalıştırıcıya bağlanacağı dosya yolu verilir. Sihirbazın ürettiği blok çalıştırıcının örnek dosyasına eklenir; çalıştırıcı örneği bildirince deneme çalışmasıyla doğrulanır.
+
 ## Bir kaynağı çalıştırmak
 
 1. [Veri Kaynakları](#/kaynaklar) sayfasında kaynağı seçin.

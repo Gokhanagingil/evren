@@ -305,15 +305,18 @@ def test_data_model_counts_from_db_and_add_field_opens_preset_change_set(page, b
     page.goto(base_url + "/#/veri-modeli/cmdb_ci_rack")
     page.wait_for_selector("#detail.open #modelAddField")
     page.click("#modelAddField")
-    page.wait_for_selector("#csName")
-    row = page.locator(".op-row").first
-    assert row.locator("select").nth(0).input_value() == "add_field"
-    assert row.locator("select").nth(1).input_value() == "cmdb_ci_rack"
+    # U8.7: alan sihirbazı sınıf seçili olarak alan adımında açılır
+    expect(page.locator("#wizStepTitle")).to_have_text("2. Alanlar")
+    expect(page.locator("#wf0-label")).to_be_focused()
     element = f"u_oda_{uuid.uuid4().hex[:6]}"
-    page.fill("#csName", "Kabin odası alanı")
-    row.locator("input[type=text]").nth(0).fill(element)
-    row.locator("input[type=text]").nth(1).fill("Oda")
-    page.click("#csSave")
+    page.keyboard.type("Oda")
+    expect(page.locator("#wf0-name")).to_have_value("u_oda")
+    page.fill("#wf0-name", element)
+    page.click("#wizNext")
+    expect(page.locator("#wizValid")).to_contain_text("Doğrulandı")
+    expect(page.locator("#wizChanges")).to_contain_text(f"cmdb_ci_rack.{element}")
+    page.fill("#wizSetName", "Kabin odası alanı")
+    page.click("#wizNext")
     page.wait_for_url(re.compile(r".*#/sema/[0-9a-f]{32}$"))  # sıkı CSP: metin değerlendiren bekleme kullanılmaz
     page.wait_for_selector("#detail.open #csChanges")
     expect(page.locator("#csChanges")).to_contain_text(element)
@@ -1441,3 +1444,118 @@ def test_quality_rule_from_template_findings_task_exception_and_health(page, bas
     finally:
         with psycopg.connect(autocommit=True) as conn:
             conn.execute("DELETE FROM iam.principal_role WHERE principal_id = 'arayuz-testi'")
+
+
+def test_class_wizard_builds_class_with_fields_and_choices_and_sends_for_approval(page, base_url):
+    """U8.7 (ADR-0038): yönetim panelinden "Yeni sınıf ekle" sihirbazı: üst sınıf aranır ve seçilir (devralınan alan ve
+    kimlik kuralı görünür), teknik ad Türkçe addan önerilir, seçim listeli alan değerleriyle eklenir, gözden geçirmede
+    sunucuda doğrulanır, taslak oluşturulup onaya gönderilir; hatalı ad geri dönüp düzeltilir; klavyeyle ilerlenir."""
+    import uuid
+
+    tag = uuid.uuid4().hex[:5]
+    page.goto(base_url + "/#/yonetim/sinif")
+    expect(page.locator("#wizStepTitle")).to_have_text("1. Nerede duracak?")
+    expect(page.locator(".wiz-step.current")).to_contain_text("Nerede duracak?")
+    page.fill("#wizClassSearch", "donanım")
+    page.locator("#wizClassList button[data-cls='cmdb_ci_hardware']").click()
+    expect(page.locator("#wizClassInfo")).to_contain_text("alan devralınır")
+    page.click("#wizNext")
+    expect(page.locator("#wizClassLabel")).to_be_focused()
+    page.keyboard.type(f"Kiosk cihazı {tag}")
+    expect(page.locator("#wizClassName")).to_have_value(f"u_cmdb_ci_kiosk_cihazi_{tag}")
+    page.fill("#wizClassName", "kiosk")
+    page.locator("#wizClassName").press("Enter")
+    expect(page.locator("#wizError")).to_contain_text("u_ ile başlamalı")
+    page.fill("#wizClassName", f"u_cmdb_ci_kiosk_{tag}")
+    page.click("#wizNext")
+    expect(page.locator("#wizStepTitle")).to_have_text("3. Alanlar (isteğe bağlı)")
+    page.click("#wizAddField")
+    page.fill("#wf0-label", "Ekran boyutu")
+    page.select_option("#wf0-type", "integer")
+    expect(page.locator("#wf0-len")).to_be_hidden()
+    page.click("#wizAddField")
+    page.fill("#wf1-label", "Konum tipi")
+    page.locator("label[for=wf1-choice]").click()
+    page.fill("#wf1-values", "Lobi\nŞube girişi")
+    shot(page, "web_api_class_wizard_fields")
+    page.click("#wizNext")
+    expect(page.locator("#wizValid")).to_contain_text("Doğrulandı")
+    expect(page.locator("#wizChanges li")).to_have_count(5)
+    expect(page.locator("#wizChanges")).to_contain_text("sube_girisi")
+    expect(page.locator("#wizSetName")).to_have_value(f"Yeni sınıf: Kiosk cihazı {tag}")
+    page.click("#wizNext")
+    page.wait_for_url(re.compile(r".*#/sema/[0-9a-f]{32}$"))
+    page.wait_for_selector("#detail.open #csChanges")
+    expect(page.locator("#csChanges")).to_contain_text(f"u_cmdb_ci_kiosk_{tag}")
+    expect(page.locator("#detail")).to_contain_text("Onay bekliyor")
+
+
+def test_integration_wizard_from_catalog_to_trial_run(page, base_url, browser):
+    """U8.7 (ADR-0038): "Yeni entegrasyon kur" sihirbazı: kaynak türü (rol ve kimlik türüyle), bağlantı (sır yerine
+    kasadaki dosya yolu), zamanlama, geçit kimliği (belirteç bir kez), kurulum paketi (çalıştırıcı bloğu ve sır listesi;
+    Evren'de saklanmaz), doğrulama: çalıştırıcı örneği bildirince deneme çalışması; mobilde taşma yok."""
+    import uuid
+
+    import psycopg
+
+    name = f"zabbix-ui-{uuid.uuid4().hex[:5]}"
+    runner = f"arayuz-runner-{uuid.uuid4().hex[:5]}"
+    try:
+        page.goto(base_url + "/#/yonetim/yeni-entegrasyon")
+        expect(page.locator("#wizStepTitle")).to_have_text("1. Kaynak türü")
+        page.click("#wizNext")
+        expect(page.locator("#wizError")).to_contain_text("Bir kaynak türü seçin")
+        page.locator("label[for=intConnector-zabbix]").click()
+        expect(page.locator("label[for=intConnector-zabbix]")).to_contain_text("İzleme")
+        page.click("#wizNext")
+        expect(page.locator("#intName")).to_be_focused()
+        page.fill("#intName", name)
+        page.fill("#intUrl", "http://zabbix.kurum.local")
+        page.click("#wizNext")
+        expect(page.locator("#wizError")).to_contain_text("https://")
+        page.fill("#intUrl", "https://zabbix.kurum.local/api_jsonrpc.php")
+        page.fill("#int-token_file", f"/run/secrets/{name}_token")
+        shot(page, "web_api_integration_connection")
+        page.click("#wizNext")
+        page.locator("label[for=intSchedule-manual]").click()
+        page.click("#wizNext")
+        expect(page.locator("#intGatewayPath")).to_have_value(f"/run/secrets/evren_gateway_{name}")
+        page.click("#wizNext")
+        expect(page.locator("#wizError")).to_contain_text("Kimlik ver")
+        page.click("#intIssue")
+        expect(page.locator("#intToken")).to_be_focused()
+        assert len(page.locator("#intToken").input_value()) > 20
+        page.click("#wizNext")
+        expect(page.locator("#intYaml")).to_contain_text(f"name: {name}")
+        expect(page.locator("#intYaml")).to_contain_text("schedule: null")
+        expect(page.locator("#intSecrets tbody tr")).to_have_count(2)
+        expect(page.locator("#intSecrets")).to_contain_text("Evren alım geçidi belirteci")
+        shot(page, "web_api_integration_package")
+        with psycopg.connect(autocommit=True) as conn:
+            assert conn.execute("SELECT count(*) FROM ingest.connector_instance WHERE name = %s", (name,)).fetchone()[0] == 0
+        page.click("#wizNext")
+        expect(page.locator("#intChecks")).to_contain_text("Bekleniyor")
+        expect(page.locator("#intChecks li.ok")).to_have_count(2)  # veri kaynağı + kimlik
+        with psycopg.connect(autocommit=True) as conn:  # çalıştırıcı örneği bildirir (kurulum)
+            conn.execute("""INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, poll_seconds, kind)
+                            VALUES (%s, now(), now(), 15, 'connector')""", (runner,))
+            conn.execute("""INSERT INTO ingest.connector_instance (name, connector, data_source, schedule_tz,
+                                                                   max_runtime_minutes, runner_id, seen_at)
+                            VALUES (%s, 'zabbix', 'Zabbix', 'Europe/Istanbul', 60, %s, now())""", (name, runner))
+        expect(page.locator("#intTrial")).to_be_visible(timeout=8000)
+        page.click("#intTrial")
+        expect(page.locator("#intChecks")).to_contain_text("Sırada", timeout=8000)
+        shot(page, "web_api_integration_verify")
+        page.click("#wizNext")  # Kapat
+        expect(page.locator(".overlay")).to_have_count(0)
+        context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+        pg = context.new_page()
+        pg.goto(base_url + "/#/yonetim/yeni-entegrasyon")
+        pg.wait_for_selector("#wizStepTitle")
+        pg.wait_for_timeout(200)
+        assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+        context.close()
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("UPDATE ingest.connector_run_request SET status = 'cancelled', finished_at = now() "
+                         "WHERE instance = %s AND status IN ('pending', 'running')", (name,))

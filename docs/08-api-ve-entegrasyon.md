@@ -150,6 +150,13 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/task-channels`: kanallar (tür, yaşam döngüsü, varsayılan, ayar, açık ve teslim edilemeyen sayısı) ve görev çalışanının durumu. `PATCH /api/v1/task-channels/{name}`: `{is_default?, lifecycle?, settings?: {table, close_state, cancel_state, closed_states, default_group}, reason}`; ayar doğrulanır, denetim izine yazılır.
 - ServiceNow tarafı (görev çalışanı, Table API): `POST /api/now/table/<tablo>` yalnızca standart alanlarla, `GET …?sysparm_query=correlation_id=<görev>` (tekillik), `GET …/<sys_id>` (eşitleme), `PATCH …/<sys_id>` (`state`, `close_notes`).
 
+### Sihirbazlar (ADR-0038)
+
+- `GET /api/v1/integrations` (`connector_admin`): bağlayıcı kataloğu (rol, kimlik türü ve alanları, seçenekler, adres örneği, varsayılan zamanlama, veri kaynağının yaşam döngüsü, mevcut örnekler) ve yarım kalan kurulumlar (kimliği verilmiş, çalıştırıcıda görünmeyen).
+- `POST /api/v1/integrations/plan` (`connector_admin`): `{name, connector, url?, user?, token_file?, password_file?, tenant_id?, client_id?, client_secret_file?, scope?, ca_file?, gateway_token_file, schedule_choice: default|custom|manual, schedule?, schedule_mode, page_size?, api_release?, lookback_days?, max_runtime_minutes}` → `{yaml, secrets: [{key, path, what}], schedule, next_runs, warnings}`. Çalıştırıcının kurallarıyla doğrulanır (`yapilandirma_gecersiz` 422); sır değeri alanı yoktur; **saklanmaz**.
+- `GET /api/v1/integrations/{name}` (`connector_admin`): `steps` (`data_source`, `credential`, `instance` — bildirildi mi, çalıştırıcı canlı mı —, `run`), `complete`, `started`.
+- `POST /api/v1/schema/change-sets/validate` (`schema_draft`): `{changes}` → `{ok, errors, changes (açıklamalar), impact}`; kaydetmez.
+
 ### Kalite kuralları, bulgular ve CMDB sağlığı (ADR-0037)
 
 Okuma: CI okuma izni (`cmdb_ci` / `read`); okunamayan sınıftaki CI'ın bulgusu listelenmez. Yazma: Konfigürasyon yöneticisi (`governance` / `task_admin`). Yazma uç noktaları CSRF başlığı ister.

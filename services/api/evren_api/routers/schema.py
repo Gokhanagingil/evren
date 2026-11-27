@@ -252,6 +252,26 @@ def get_set(set_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
         return _present(ctx, cur, _row(cur, set_id))
 
 
+class ChangeSetCheck(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    changes: list[ChangeItem] = Field(min_length=1, max_length=50)
+
+
+@router.post("/change-sets/validate", dependencies=[Depends(require_csrf)])
+def validate_set(body: ChangeSetCheck, ctx: Ctx = Depends(context)) -> dict[str, Any]:
+    """Sihirbazın gözden geçirme adımı (U8.7, ADR-0038): kaydetmeden doğrulama ve etki. Hata 200 ile ``ok: false``."""
+    ctx.require("schema", "schema_draft")
+    try:
+        changes = parse_changes([c.model_dump() for c in body.changes])
+    except ChangeError as exc:
+        return {"ok": False, "errors": exc.errors, "impact": [], "changes": []}
+    with ctx.conn.cursor() as cur:
+        _result, validation = _validate(ctx, cur, changes)
+        impact = _impact(ctx, cur, changes) if validation["ok"] else []
+    return {"ok": validation["ok"], "errors": validation["errors"], "impact": impact,
+            "changes": [describe(c) for c in changes]}
+
+
 @router.post("/change-sets", dependencies=[Depends(require_csrf)], status_code=201)
 def create_set(body: ChangeSetCreate, ctx: Ctx = Depends(context)) -> JSONResponse:
     ctx.require("schema", "schema_draft")
