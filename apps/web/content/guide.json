@@ -84,8 +84,15 @@
    "id": "gorevler",
    "title": "Yönetişim görevleri",
    "summary": "Sorumlulara açılan görevler, zamanlanmış kampanyalar, kararı ve görev kanalı.",
-   "words": 158,
-   "markdown": "# Yönetişim görevleri\n\n> Taslak. Tek seferlik görev, zamanlanmış kampanyalar, görevleri izleme ve görev kanalı hazır; kurala bağlı görevler hazırlanıyor (plan F1-26). Kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).\n\nEvren, verinin güncel kalması için sorumlulara görev açar:\n\n- **Zamanlanmış görevler (kampanyalar):** örneğin uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.\n- **Kural görevleri:** örneğin hiçbir uygulama veya sunucuyla ilişkisi olmayan bir veritabanı bulunduğunda, veritabanının sahibine görev.\n\nGörevler şimdilik ServiceNow'da açılır; ileride Evren'in kendi görev ekranından da yürütülebilir. Tanımlar [yönetim panelinden](kilavuz:yonetim-paneli) yapılır.\n\n## Zamanlanmış kampanyalar\n\nKonfigürasyon yöneticisi **Görevler → Kampanyalar** sekmesinden kampanya tanımlar: ne istenecek, hangi CI'lar için, ne sıklıkla ve kaç günde. Kapsamdaki her CI için sorumlusuna (sahip → yöneten → destek grubu) bir görev açılır; aynı CI için açık görev varsa yenisi açılmaz.\n\n### Koşul örnekleri\n\n| Ne istiyorsunuz? | Sınıf | Koşul |\n|---|---|---|\n| Üretimdeki bütün uygulamalar | Uygulama | `used_for=Production` |\n| Çalışır durumdaki sunucular | Sunucu | `operational_status=1` |\n| Adı \"ist-\" ile başlayan CI'lar | Konfigürasyon Öğesi | `nameSTARTSWITHist-` |\n\n## Teknik ayrıntı\n\n- [Yönetişim görevleri ve kanallar](belge:adr/0035-yonetisim-gorevleri-ve-kanallar)\n- [Zamanlanmış yönetişim kampanyaları](belge:adr/0036-zamanlanmis-yonetisim-kampanyalari)\n"
+   "words": 156,
+   "markdown": "# Yönetişim görevleri\n\n> Taslak. Tek seferlik görev, zamanlanmış kampanyalar, kurala bağlı görevler ([CMDB sağlığı](kilavuz:saglik)), görevleri izleme ve görev kanalı hazır. Kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).\n\nEvren, verinin güncel kalması için sorumlulara görev açar:\n\n- **Zamanlanmış görevler (kampanyalar):** örneğin uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.\n- **Kural görevleri:** örneğin hiçbir uygulama veya sunucuyla ilişkisi olmayan bir veritabanı bulunduğunda, veritabanının sahibine görev.\n\nGörevler şimdilik ServiceNow'da açılır; ileride Evren'in kendi görev ekranından da yürütülebilir. Tanımlar [yönetim panelinden](kilavuz:yonetim-paneli) yapılır.\n\n## Zamanlanmış kampanyalar\n\nKonfigürasyon yöneticisi **Görevler → Kampanyalar** sekmesinden kampanya tanımlar: ne istenecek, hangi CI'lar için, ne sıklıkla ve kaç günde. Kapsamdaki her CI için sorumlusuna (sahip → yöneten → destek grubu) bir görev açılır; aynı CI için açık görev varsa yenisi açılmaz.\n\n### Koşul örnekleri\n\n| Ne istiyorsunuz? | Sınıf | Koşul |\n|---|---|---|\n| Üretimdeki bütün uygulamalar | Uygulama | `used_for=Production` |\n| Çalışır durumdaki sunucular | Sunucu | `operational_status=1` |\n| Adı \"ist-\" ile başlayan CI'lar | Konfigürasyon Öğesi | `nameSTARTSWITHist-` |\n\n## Teknik ayrıntı\n\n- [Yönetişim görevleri ve kanallar](belge:adr/0035-yonetisim-gorevleri-ve-kanallar)\n- [Zamanlanmış yönetişim kampanyaları](belge:adr/0036-zamanlanmis-yonetisim-kampanyalari)\n"
+  },
+  {
+   "id": "saglik",
+   "title": "CMDB sağlığı ve kalite kuralları",
+   "summary": "Sağlık puanı, kural tanımlamak, bulgular ve istisna.",
+   "words": 136,
+   "markdown": "# CMDB sağlığı ve kalite kuralları\n\n> Taslak. Ekranlar hazır; kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).\n\n**CMDB Sağlığı** sayfası CMDB'nin ne kadar eksiksiz, doğru, kurallara uygun ve kapsamlı olduğunu tek puanla ve dört boyutla gösterir: tamlık, doğruluk, uyum, kapsam.\n\n**Kurallar** sekmesinde Konfigürasyon yöneticisi kalite ve uyum kuralı tanımlar. Kural, kapsamdaki CI'lardan hangilerinin **bulgu** olduğunu söyler. Örnek: hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı.\n\n- Bulgunun sorumlusuna (sahip → yöneten → destek grubu) tek görev açılır.\n- Sorumlu düzeltince bulgu da görev de kendiliğinden kapanır.\n- \"Geçerli değil\" kararı bulguyu süreli istisna yapar.\n- \"Reddedildi\" (sorumlusu ben değilim) kararında CI'ın sahibi düzeltilince görev yeni sorumluya gider.\n\nKural türleri: ilişkisi olmayan CI, boş alan, bir kaynak rolünce görülmeyen CI, koşula uyan CI, izinli olmayan ilişki. Kural ürüne değil role bağlıdır.\n\n## Teknik ayrıntı\n\n- [Kalite kuralları, bulgular ve sağlık panosu](belge:adr/0037-kalite-kurallari-ve-bulgular)\n- [Yönetişim görevleri ve kanallar](belge:adr/0035-yonetisim-gorevleri-ve-kanallar)\n"
   },
   {
    "id": "sozluk",
@@ -119,6 +126,7 @@
   "kontroller": "raporlar",
   "yonetim": "yonetim-paneli",
   "gorevler": "gorevler",
+  "saglik": "saglik",
   "buyuk-resim": "teknik",
   "mimari": "teknik",
   "yol-haritasi": "teknik"

@@ -363,6 +363,20 @@ def test_segregation_of_duties_enforced():
                           "SELECT sys_id, 'manual', 'done', 5 FROM gov.campaign WHERE false"),
         ("evren_readonly", "SELECT count(*) FROM gov.campaign"),
         ("evren_app_connector", "SELECT count(*) FROM gov.campaign_run"),
+        # 0033 (ADR-0037): bulguyu ve sağlık ölçümünü görev çalışanı yazar; API kural tanımlar, istisna verir ama
+        # bulgu açamaz/silemez, ölçüm yazamaz; çalışan kural tanımlayamaz, istisna veremez; salt okur bulgu görmez
+        ("evren_app_api", "INSERT INTO insight.finding (rule, ci_sys_id) SELECT sys_id, sys_id FROM insight.quality_rule WHERE false"),
+        ("evren_app_api", "DELETE FROM insight.finding WHERE false"),
+        ("evren_app_api", "UPDATE insight.finding SET details = '{}' WHERE false"),
+        ("evren_app_api", "INSERT INTO insight.health_snapshot (overall) VALUES (1)"),
+        ("evren_app_api", "UPDATE insight.quality_rule_run SET status = 'done' WHERE false"),
+        ("evren_app_api", "DELETE FROM insight.quality_rule WHERE false"),
+        ("evren_app_governance", "UPDATE insight.quality_rule SET params = '{}' WHERE false"),
+        ("evren_app_governance", "UPDATE insight.finding SET exception_by = 'x' WHERE false"),
+        ("evren_app_governance", "DELETE FROM insight.finding WHERE false"),
+        ("evren_app_governance", "DELETE FROM insight.health_snapshot WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM insight.finding"),
+        ("evren_app_connector", "SELECT count(*) FROM insight.quality_rule"),
         # 0030 (ADR-0034): API kişi kaydında yalnızca izinli sütunlara yazar, silemez; eşleme Entra kimliğine yazamaz
         ("evren_app_api", "UPDATE ref.sys_user SET department = NULL WHERE false"),
         ("evren_app_api", "DELETE FROM ref.sys_user WHERE false"),

@@ -150,6 +150,20 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `GET /api/v1/task-channels`: kanallar (tür, yaşam döngüsü, varsayılan, ayar, açık ve teslim edilemeyen sayısı) ve görev çalışanının durumu. `PATCH /api/v1/task-channels/{name}`: `{is_default?, lifecycle?, settings?: {table, close_state, cancel_state, closed_states, default_group}, reason}`; ayar doğrulanır, denetim izine yazılır.
 - ServiceNow tarafı (görev çalışanı, Table API): `POST /api/now/table/<tablo>` yalnızca standart alanlarla, `GET …?sysparm_query=correlation_id=<görev>` (tekillik), `GET …/<sys_id>` (eşitleme), `PATCH …/<sys_id>` (`state`, `close_notes`).
 
+### Kalite kuralları, bulgular ve CMDB sağlığı (ADR-0037)
+
+Okuma: CI okuma izni (`cmdb_ci` / `read`); okunamayan sınıftaki CI'ın bulgusu listelenmez. Yazma: Konfigürasyon yöneticisi (`governance` / `task_admin`). Yazma uç noktaları CSRF başlığı ister.
+
+- `GET /api/v1/quality/health`: son ölçüm (`overall`, `grade`, `dimensions` → `score`, `grade`, `metrics`: `label`, `good`, `total`, `pct`, kural ölçümünde `rule`, `open`, `excepted`), `measured_at`, `stale` (2 saatten eski), son 30 günün günlük `trend`'i, `findings` (açık, istisna, ayıklama). Ölçüm yoksa `measured: false`.
+- `GET /api/v1/quality/rules`: kurallar (tür, kapsam, boyut, önem, sıklık, açık/istisna/ayıklama sayısı, son değerlendirme, durum) ve kataloglar: `kinds`, `dimensions`, `severities`, `intervals`, `roles`, `relationship_types`, `templates`, `classes`.
+- `GET /api/v1/quality/rules/{sys_id}`: ayrıntı, son 20 değerlendirme (`status`: done, failed, inconclusive), izinli geçişler. `GET /api/v1/quality/fields?class=`: sınıfın sözlük alanları.
+- `POST /api/v1/quality/rules/preview`: `{check_kind, params, scope_class, scope_query?, rule?}` → `{valid, in_scope, matched, by_basis, people, groups, sample (why ile), inconclusive, partial}`; geçersiz kural 200 `{valid: false, problem}`.
+- `POST /api/v1/quality/rules` (`idempotency_key`): `{name, description?, check_kind, params, scope_class, scope_query?, dimension, severity, open_task, task_title, task_instructions?, due_days (1–180), channel?, exception_days (1–730), max_findings (1–50 000), interval_hours (1|6|24|168), activate}` → 201. Hatalar: `kural_gecersiz`, `kanal_yok` (422), `ad_var` (409).
+- `PATCH /api/v1/quality/rules/{sys_id}`: düzenleme (yalnızca taslak/duraklatılmış) ve/veya `{state, reason (≥ 10)}`. `POST /api/v1/quality/rules/{sys_id}/run`: `{reason}` → 202.
+- `GET /api/v1/quality/findings?rule=&ci=&state=current|open|excepted|resolved|all&triage=&dimension=&q=`: bulgular (CI, kural, neden `text`, son görev, istisna) ve sayılar. `GET /api/v1/quality/findings/{sys_id}`: ayrıntı ve bütün görevleri, `can_except`, `can_reopen`.
+- `POST /api/v1/quality/findings/{sys_id}/exception`: `{reason (≥ 10), days (1–730)}`; açık görevi iptal edilir. `POST /api/v1/quality/findings/{sys_id}/reopen`: `{reason}`; istisnayı kaldırır veya ayıklamayı bitirir.
+- Kural görevinde (`kind: finding`) `GET /api/v1/tasks/{sys_id}` → `finding` (kural, neden, istisna süresi) ve kararlar: Düzeltildi, Geçerli değil (süreli istisna), Reddedildi (sorumlusu ben değilim). `GET /api/v1/ci/{sys_id}` → `findings`.
+
 ### Zamanlanmış kampanyalar (ADR-0036)
 
 Okuma: Konfigürasyon yöneticisi (`task_admin`) veya Denetçi (`audit_read`); yazma yalnızca Konfigürasyon yöneticisi. Yazma uç noktaları CSRF başlığı ister.

@@ -1,6 +1,6 @@
 # Yönetişim görevleri
 
-> Taslak. Tek seferlik görev, zamanlanmış kampanyalar, görevleri izleme ve görev kanalı hazır; kurala bağlı görevler hazırlanıyor (plan F1-26). Kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).
+> Taslak. Tek seferlik görev, zamanlanmış kampanyalar, kurala bağlı görevler ([CMDB sağlığı](kilavuz:saglik)), görevleri izleme ve görev kanalı hazır. Kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).
 
 Evren, verinin güncel kalması için sorumlulara görev açar:
 

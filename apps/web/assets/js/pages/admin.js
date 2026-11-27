@@ -111,7 +111,8 @@ function tasks(goCi) {
         desc: 'Ör. uygulama sahiplerine her çeyrek veri güncelliği teyidi veya erişim gözden geçirme.' },
       { id: 'kampanyalar', title: 'Kampanyaları izle', icon: 'calendar', cap: 'task_admin', guide: 'gorevler',
         href: '#/gorevler/kampanyalar', desc: 'Etkin, duraklatılmış ve taslak kampanyalar; çalışmalar ve açık görev sayıları.' },
-      { id: 'kural-gorevi', title: 'Kuraldan görev aç', icon: 'sliders', guide: 'gorevler', soon: true,
+      { id: 'kural-gorevi', title: 'Kuraldan görev aç', icon: 'sliders', cap: 'task_admin', guide: 'saglik',
+        href: '#/saglik/kurallar/yeni',
         desc: 'Ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı bulununca sahibine görev.' },
       { id: 'gorev-ac', title: 'Tek seferlik görev aç', icon: 'check', cap: 'task_admin', guide: 'gorevler', href: '#/gorevler/yeni',
         desc: 'Bir CI\'ın sorumlusuna (sahip → yöneten → destek grubu) veya seçtiğiniz kişiye görev açın.' },
@@ -129,14 +130,16 @@ function tasks(goCi) {
         href: '#/ci/kapsam=yetkisiz-degisiklik', desc: 'Onaylı değişiklik kaydı olmadan yapılan değişiklikler.' },
       { id: 'golge', title: 'Gölge mod raporu', icon: 'layers', guide: 'raporlar', href: '#/golge-mod',
         desc: 'Mevcut CMDB ile Evren\'in gözlemlerinin karşılaştırması.' },
+      { id: 'saglik', title: 'CMDB sağlık panosu', icon: 'heart', guide: 'saglik', href: '#/saglik',
+        desc: 'Tamlık, doğruluk, uyum ve kapsam puanları; kural bulguları ve eğilim.' },
+      { id: 'bulgular', title: 'Bulguları izle', icon: 'inbox', guide: 'saglik', href: '#/saglik/bulgular',
+        desc: 'Kuralların bulduğu CI\'lar, nedeni, sorumlusu ve görevi; istisnalar.' },
     ] },
     { group: 'İşletim', desc: 'Platformun sağlığı ve izlenebilirliği.', items: [
       { id: 'durum', title: 'Sistem durumunu izle', icon: 'heart', cap: 'system', guide: 'isletim', href: '#/sistem-durumu',
         desc: 'Veritabanı, Kafka, arama, servisler ve veri akışı tek ekranda.' },
       { id: 'denetim', title: 'Denetim izini incele', icon: 'shield', cap: 'audit_read', guide: 'isletim', soon: true,
         desc: 'Kim, ne zaman, neyi değiştirdi; güvenlik olayları.' },
-      { id: 'saglik', title: 'CMDB sağlık panosu', icon: 'heart', guide: 'isletim', soon: true,
-        desc: 'Tamlık, doğruluk, kapsam ve uyum kuralları.' },
     ] },
   ];
 }

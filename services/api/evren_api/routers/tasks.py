@@ -18,7 +18,7 @@ from fastapi.responses import JSONResponse
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, Field
 
-from evren_core.governance import OUTCOMES, ChannelSettings, Party, pick_assignee
+from evren_core.governance import DECISIONS, OUTCOMES, ChannelSettings, Party, pick_assignee
 
 from ..deps import Ctx, context, require_csrf
 from ..errors import ApiError
@@ -162,8 +162,29 @@ def get_task(sys_id: str, ctx: Ctx = Depends(context)) -> dict[str, Any]:
     open_ = item["state"] == "open"
     item["can_complete"] = open_ and (who["mine"] or _admin(ctx))
     item["can_cancel"] = open_ and _admin(ctx)
-    item["outcomes"] = [{"id": k, "label": v} for k, v in OUTCOMES.items() if k != "cancelled"]
+    if item["kind"] == "finding":
+        # Kural görevi (ADR-0037): karar bulguya döner — istisna veya sorumlu ayıklaması
+        item["outcomes"] = [{"id": "corrected", "label": "Düzeltildi (kural sonraki değerlendirmede doğrular)"},
+                            {"id": "not_applicable", "label": "Geçerli değil (süreli istisna)"},
+                            {"id": "rejected", "label": "Reddedildi (sorumlusu ben değilim)"}]
+        item["finding"] = _finding(ctx, item.get("source_ref"))
+    else:
+        item["outcomes"] = [{"id": k, "label": OUTCOMES[k]} for k in DECISIONS]
     return item
+
+
+def _finding(ctx: Ctx, finding: str | None) -> dict[str, Any] | None:
+    if not finding:
+        return None
+    row = ctx.conn.execute("""SELECT f.sys_id, f.state, q.sys_id, q.name, q.description, q.exception_days, f.details,
+                                     f.exception_until
+                                FROM insight.finding f JOIN insight.quality_rule q ON q.sys_id = f.rule
+                               WHERE f.sys_id = %s""", (finding,)).fetchone()
+    if row is None:
+        return None
+    return {"sys_id": row[0], "state": row[1], "rule": {"sys_id": row[2], "name": row[3], "why": row[4]},
+            "exception_days": row[5], "summary": (row[6] or {}).get("text") or "",
+            "exception_until": row[7].isoformat() if row[7] else None}
 
 
 class AssigneeIn(BaseModel):

@@ -405,6 +405,16 @@ export async function renderCis(view, param) {
         d.key ? h('div', { class: 'cell-sub mono' }, d.key) : null))) : null));
   }
 
+  // Kalite bulguları (U8.6, ADR-0037): CI'ın açık ve istisnalı bulguları, nedeni ve görevi
+  function findingSection(list) {
+    if (!list?.length) return null;
+    return section('Kalite bulguları', h('ul', { class: 'mini', id: 'ciFindings' }, list.map((f) => h('li', {},
+      h('div', { class: 'pills' }, pill(f.state === 'excepted' ? 'İstisna' : 'Açık', f.state === 'excepted' ? 'neutral' : 'warn'),
+        pill(f.rule.severity_tr, f.rule.severity === 'low' ? 'neutral' : f.rule.severity === 'medium' ? 'warn' : 'bad')),
+      h('a', { href: `#/saglik/bulgular/${f.sys_id}` }, f.rule.name),
+      h('div', { class: 'cell-sub' }, [f.text, f.task ? `görev ${f.task.number}${f.task.assignee ? ` · ${f.task.assignee}` : ''}` : null].filter(Boolean).join(' · '))))));
+  }
+
   // Eskime (U7.1, ADR-0028): açık öneri veya son karar; Veri sorumlusuna Emekliye ayır / Koru
   function stalenessSection(c, opener) {
     const s = c.staleness;
@@ -551,6 +561,7 @@ export async function renderCis(view, param) {
           h('div', { class: 'attrs' }, c.attributes.map(attrRow))),
         c.security_posture ? postureSection(c.security_posture) : null,
         changeSection(c.change_control, reviewFor(c, opener)),
+        findingSection(c.findings),
         mode === 'api' ? section('Etki', impactBox) : null,
         stalenessSection(c, opener),
         attestationSection(c, opener),

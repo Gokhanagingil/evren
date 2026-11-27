@@ -1018,7 +1018,8 @@ def test_admin_panel_guides_tasks_by_permission_and_deep_links(page, base_url):
     expect(page.locator("#task-denetim")).to_contain_text("Hazırlanıyor")
     # Yönetişim görevleri: kampanya Konfigürasyon yöneticisi ister (F1-25); kural görevi hazırlanıyor (F1-26)
     expect(page.locator("#task-zamanli-gorev .task-locked")).to_contain_text("rolü gerekir")
-    expect(page.locator("#task-kural-gorevi")).to_contain_text("Hazırlanıyor")
+    expect(page.locator("#task-kural-gorevi .task-locked")).to_contain_text("rolü gerekir")
+    expect(page.locator("#task-saglik")).not_to_contain_text("Hazırlanıyor")
     # Arama: "alan" yazınca ilgili görevler kalır; Enter ilk göreve odaklar
     page.fill("#adminSearch", "alan")
     expect(page.locator("#task-alan")).to_be_visible()
@@ -1336,6 +1337,106 @@ def test_campaign_defined_previewed_activated_run_and_tasks_listed(page, base_ur
         pg.wait_for_selector("#campaignList table")
         pg.wait_for_timeout(200)
         assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+        context.close()
+    finally:
+        with psycopg.connect(autocommit=True) as conn:
+            conn.execute("DELETE FROM iam.principal_role WHERE principal_id = 'arayuz-testi'")
+
+
+def test_quality_rule_from_template_findings_task_exception_and_health(page, base_url, browser):
+    """U8.6 (ADR-0037): Konfigürasyon yöneticisi şablondan "ilişkisiz veritabanı" kuralını tanımlar, bulguları
+    önizler, etkinleştirir; görev çalışanı turunda bulgular ve sorumluya görev açılır; sorumlu görevde "Geçerli
+    değil" der → bulgu istisna; sağlık panosu puanı, boyut ölçümlerini ve klavyeyle gezilen eğilimi gösterir; mobil."""
+    import uuid
+
+    import psycopg
+    from scenarios import make_owned_ci
+
+    from evren_core.governance import ServiceNowTaskSimulator
+    from evren_governance.config import GovernanceConfig
+    from evren_governance.worker import GovernanceWorker
+
+    tag = f"qui{uuid.uuid4().hex[:5]}"
+    make_owned_ci("arayuz-testi")  # kişi kaydı (bağımlı veritabanı CI'ı uzlaştırıcıda ana CI ister: doğrudan açılır)
+    with psycopg.connect(autocommit=True) as conn:
+        (me,) = conn.execute("SELECT sys_id FROM ref.sys_user WHERE user_name = 'arayuz-testi'").fetchone()
+        _mine, orphan = (conn.execute("INSERT INTO cmdb.cmdb_ci (sys_class_name, name, owned_by) VALUES "
+                                     "('cmdb_ci_db_instance', %s, %s) RETURNING sys_id", (name, who)).fetchone()[0]
+                        for name, who in ((f"{tag}-benim", me), (f"{tag}-sahipsiz", None)))
+        conn.execute("""INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, expires_at,
+                                                        justification)
+                        VALUES ('user', 'arayuz-testi', 'evren_config_manager', 'test-kurulum', now() + interval '1 hour',
+                                'Arayüz testi') ON CONFLICT DO NOTHING""")
+
+    def worker_cycle():
+        cfg = GovernanceConfig(conninfo="", public_url="https://evren.ornek.test", worker_id=f"arayuz-kural-{tag}",
+                               sync_minutes=1)
+        w = GovernanceWorker(cfg, transport=ServiceNowTaskSimulator(), connect=lambda: psycopg.connect())
+        with w.open() as conn:
+            w.cycle(conn)
+
+    try:
+        page.goto(base_url + "/#/saglik/kurallar/yeni")
+        expect(page.locator("#ruleTemplate")).to_be_focused()
+        page.select_option("#ruleTemplate", "iliskisiz-veritabani")
+        expect(page.locator("#ruleName")).to_have_value("Uygulama veya sunucuyla ilişkisi olmayan veritabanı")
+        page.fill("#ruleName", f"İlişkisiz veritabanı {tag}")
+        expect(page.locator("#ruleRelated option:checked")).to_have_count(4)
+        page.fill("#ruleQuery", f"nameSTARTSWITH{tag}")
+        page.locator("#ruleQuery").press("Enter")
+        expect(page.locator("#rulePreview")).to_contain_text("2 bulgu")
+        expect(page.locator("#ruleSample li")).to_have_count(2)
+        expect(page.locator("#ruleSample")).to_contain_text("ilişkisi yok")
+        shot(page, "web_api_rule_new")
+        page.click("#ruleActivate")
+        expect(page.locator("#toast")).to_contain_text("Kural etkin")
+        expect(page.locator("#detailTitle")).to_have_text(f"İlişkisiz veritabanı {tag}")
+        rid = page.url.rsplit("/", 1)[-1]
+        assert re.fullmatch(r"[0-9a-f]{32}", rid), page.url
+        worker_cycle()
+        page.reload()
+        expect(page.locator("#ruleRuns")).to_contain_text("2 bulgu (2 yeni")
+        page.click("#ruleFindings")
+        expect(page.locator("#findingScope")).to_be_visible()
+        expect(page.locator("#findingList tbody tr")).to_have_count(2)
+        expect(page.locator("#findingList")).to_contain_text("Atanmamış")
+        page.locator("#findingList tbody tr", has_text=f"{tag}-benim").click()
+        expect(page.locator("#findingText")).to_contain_text("ilişkisi yok")
+        task_link = page.locator("#findingTasks a").first
+        task_number = task_link.inner_text()
+        shot(page, "web_api_finding_detail")
+        task_link.click()
+        expect(page.locator("#taskFinding")).to_contain_text("ilişkisi yok")
+        page.click("#taskDecide")
+        page.select_option("#taskOutcome", "not_applicable")
+        page.fill("#taskNote", "Arşiv veritabanı; bilinçli olarak bağımsız")
+        page.click("#taskSend")
+        expect(page.locator("#toast")).to_contain_text(f"{task_number} kapatıldı")
+        page.goto(base_url + f"/#/saglik/bulgular/kural/{rid}")
+        page.locator("#findingState").select_option("excepted")
+        expect(page.locator("#findingList tbody tr")).to_have_count(1)
+        expect(page.locator("#findingList")).to_contain_text("İstisna")
+        # CI sayfasında kalite bulgusu
+        page.goto(base_url + f"/#/ci/{orphan}")
+        expect(page.locator("#ciFindings")).to_contain_text(f"İlişkisiz veritabanı {tag}")
+        # Sağlık panosu
+        page.goto(base_url + "/#/saglik")
+        expect(page.locator("#healthOverall")).not_to_be_empty()
+        expect(page.locator("#healthDims .metric")).to_have_count(4)
+        expect(page.locator("#dimPanel-completeness")).to_contain_text(f"İlişkisiz veritabanı {tag}")
+        page.locator("#trendChart").focus()
+        page.keyboard.press("ArrowLeft")
+        expect(page.locator("#trendReadout")).to_contain_text("genel puan")
+        page.wait_for_timeout(300)
+        shot(page, "web_api_health")
+        context = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+        pg = context.new_page()
+        for route, ready in (("#/saglik", "#healthDims"), ("#/saglik/bulgular", "#findingList table"),
+                             ("#/saglik/kurallar", "#ruleList table")):
+            pg.goto(base_url + "/" + route)
+            pg.wait_for_selector(ready)
+            pg.wait_for_timeout(200)
+            assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, route
         context.close()
     finally:
         with psycopg.connect(autocommit=True) as conn:

@@ -305,6 +305,10 @@ export async function renderTasks(view, param) {
         t.delivery_status === 'failed' ? h('p', { class: 'notice bad' }, `ServiceNow'a teslim edilemedi: ${t.delivery_note || 'bilinmeyen hata'}. Görev çalışanı yeniden deneyecek.`) : null,
         t.delivery_status === 'kept_in_evren' ? h('p', { class: 'notice' }, t.delivery_note) : null,
         t.description ? section('Ne yapılacak', h('p', { class: 'small' }, t.description)) : null,
+        t.finding ? section('Bulgu', h('p', { class: 'small', id: 'taskFinding' }, t.finding.summary || t.finding.rule.name),
+          kv([['Kural', t.finding.rule.name], ['Neden önemli', t.finding.rule.why || '—'],
+            ['Bulgu', h('a', { href: `#/saglik/bulgular/${t.finding.sys_id}` }, t.finding.state === 'resolved' ? 'Giderildi' : 'Bulguyu aç')]]),
+          t.state === 'open' ? h('p', { class: 'muted small' }, `Düzeltince kural bir sonraki değerlendirmede bulguyu kapatır, görev de kendiliğinden kapanır. "Geçerli değil" bulguyu ${t.finding.exception_days} gün istisna yapar; "Reddedildi" sorumlusu siz değilseniz.`) : null) : null,
         t.kind === 'attestation' && t.state === 'open' && t.can_complete ? h('p', { class: 'notice', id: 'taskAttest' },
           'Kayıt doğruysa ', h('a', { href: '#/sahiplik-onayi' }, 'Sahiplik Onayı'), ' sayfasında onaylayın; görev kendiliğinden kapanır. Düzeltme gerekiyorsa CI\'ı düzenleyip kararı burada verin.') : null,
         section('Görev', kv([

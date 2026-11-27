@@ -36,7 +36,10 @@ OUTCOMES = {
     "not_applicable": "Geçerli değil",
     "rejected": "Reddedildi",
     "cancelled": "İptal edildi",
+    "resolved": "Bulgu giderildi",  # yalnızca kural görevinde, bulgu kapanınca kendiliğinden (ADR-0037)
 }
+#: Sorumlunun seçebildiği kararlar (iptal ve "bulgu giderildi" kendiliğinden veya yöneticiden gelir)
+DECISIONS = tuple(k for k in OUTCOMES if k not in ("cancelled", "resolved"))
 
 #: ServiceNow'a yazılan alanlar: yalnızca ``task`` tablosunun standart alanları (özel alan, iş kuralı, ACL gerekmez)
 ALLOWED_SN_FIELDS = frozenset({

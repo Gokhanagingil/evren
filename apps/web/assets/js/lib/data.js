@@ -453,6 +453,38 @@ export function taskCancel(id, reason) {
   return api(`/api/v1/tasks/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: JSON.stringify({ reason }) });
 }
 export const taskChannels = () => api('/api/v1/task-channels');
+// CMDB sağlığı, kalite kuralları ve bulgular (U8.6, ADR-0037)
+export const healthView = () => api('/api/v1/quality/health');
+export const qualityRules = () => api('/api/v1/quality/rules');
+export const qualityRule = (id) => api(`/api/v1/quality/rules/${encodeURIComponent(id)}`);
+export const qualityFields = (cls) => api(`/api/v1/quality/fields?${new URLSearchParams({ class: cls })}`);
+export function rulePreview(body) {
+  return api('/api/v1/quality/rules/preview', { method: 'POST', body: JSON.stringify(body) });
+}
+export function ruleCreate(body) {
+  return api('/api/v1/quality/rules', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
+}
+export function ruleUpdate(id, body) {
+  return api(`/api/v1/quality/rules/${encodeURIComponent(id)}`, { method: 'PATCH', body: JSON.stringify(body) });
+}
+export function ruleRun(id, reason) {
+  return api(`/api/v1/quality/rules/${encodeURIComponent(id)}/run`, { method: 'POST', body: JSON.stringify({ reason }) });
+}
+export function findingsList({ state = 'current', q = '', dimension = null, rule = null, triage = false } = {}) {
+  const p = new URLSearchParams({ state });
+  if (q) p.set('q', q);
+  if (dimension) p.set('dimension', dimension);
+  if (rule) p.set('rule', rule);
+  if (triage) p.set('triage', 'true');
+  return api(`/api/v1/quality/findings?${p}`);
+}
+export const findingDetail = (id) => api(`/api/v1/quality/findings/${encodeURIComponent(id)}`);
+export function findingException(id, reason, days) {
+  return api(`/api/v1/quality/findings/${encodeURIComponent(id)}/exception`, { method: 'POST', body: JSON.stringify({ reason, days }) });
+}
+export function findingReopen(id, reason) {
+  return api(`/api/v1/quality/findings/${encodeURIComponent(id)}/reopen`, { method: 'POST', body: JSON.stringify({ reason }) });
+}
 // Zamanlanmış kampanyalar (U8.5, ADR-0036)
 export const campaignsList = () => api('/api/v1/campaigns');
 export const campaignDetail = (id) => api(`/api/v1/campaigns/${encodeURIComponent(id)}`);

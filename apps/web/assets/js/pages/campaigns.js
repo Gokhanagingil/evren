@@ -2,7 +2,7 @@
 // (veri güncelliği teyidi, erişim gözden geçirme, kontrol listesi), kimden (kapsam: sınıf + koşul; sorumlu CI'dan
 // bulunur), ne sıklıkla ve kaç günde. Görev çalışanı dönem gelince her CI için sorumlusuna görev açar; aynı CI için
 // açık görev varsa yenisi açılmaz. Denetçi salt okur.
-import { h, clear, dataTable, formatDateTime, formatNumber, kv, pill, section } from '../lib/dom.js';
+import { h, append, clear, dataTable, formatDateTime, formatNumber, kv, pill, section } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, toast } from '../lib/shell.js';
 import {
   campaignCreate, campaignDetail, campaignPreview, campaignRun, campaignUpdate, campaignsList, taskChannels,
@@ -130,7 +130,7 @@ export async function openCampaignDialog(meta, onDone, existing = null) {
         query.focus();
         return null;
       }
-      clear(preview).append(...previewBox(p));
+      append(clear(preview), previewBox(p));
       previewed = true;
       return p;
     } catch (err) {

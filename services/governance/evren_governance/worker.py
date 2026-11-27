@@ -31,17 +31,17 @@ from evren_core.governance import (
     CAMPAIGN_KINDS,
     OUTCOMES,
     ChannelSettings,
-    Party,
     ServiceNowTaskChannel,
     ServiceNowTaskSimulator,
     TaskForChannel,
     campaign_scope,
     next_run,
-    pick_assignee,
 )
 from evren_core.metadata import Metadata, load_metadata
 
 from .config import GovernanceConfig
+from .quality import RuleEvaluator, snapshot_health
+from .tasks import NoChannel, open_ci_tasks
 
 __all__ = ["CHANNEL", "GovernanceWorker"]
 
@@ -116,9 +116,12 @@ class GovernanceWorker:
     def cycle(self, conn: psycopg.Connection[Any]) -> dict[str, int]:
         self._last_cycle = time.monotonic()
         totals = {"delivered": 0, "kept": 0, "failed": 0, "synced": 0, "external_closed": 0, "closed": 0,
-                  "campaign_tasks": 0, "reminded": 0, "overdue": 0}
+                  "campaign_tasks": 0, "reminded": 0, "overdue": 0, "exceptions_expired": 0, "rules_inconclusive": 0,
+                  "findings_opened": 0, "findings_resolved": 0, "rule_tasks": 0}
         self.campaigns(conn, totals)
+        evaluated = RuleEvaluator(self.metadata, self._event).cycle(conn, totals)
         self.due_events(conn, totals)
+        totals["health_measured"] = int(snapshot_health(conn, self.metadata, force=evaluated > 0))
         sn = self._sn_settings(conn)
         if sn is not None and self.sn_ready:
             ch = self.channel(sn)
@@ -283,37 +286,16 @@ class GovernanceWorker:
             return 0
         cis = conn.execute(f"SELECT c.sys_id, c.name, c.owned_by, c.managed_by, c.support_group FROM cmdb.cmdb_ci c "  # noqa: S608 - aynı
                            f"WHERE {where} ORDER BY c.name", params).fetchall()
-        users = {r[0]: Party(*r) for r in conn.execute(
-            "SELECT sys_id, active, source FROM ref.sys_user WHERE sys_id = ANY(%s)",
-            ([x for ci in cis for x in (ci[2], ci[3]) if x],)).fetchall()}
-        groups = {r[0]: Party(*r) for r in conn.execute(
-            "SELECT sys_id, active, source FROM ref.sys_user_group WHERE sys_id = ANY(%s)",
-            ([ci[4] for ci in cis if ci[4]],)).fetchall()}
-        ch = conn.execute("SELECT name, kind FROM gov.task_channel WHERE lifecycle = 'active' AND "
-                          "(name = %s OR (%s::text IS NULL AND is_default))", (channel, channel)).fetchone()
-        if ch is None:
-            finish("failed", "Etkin görev kanalı yok.", in_scope=total)
+        items = [{"ci": ci, "owned_by": owned, "managed_by": managed, "support_group": group, "source_ref": cid,
+                  "dedup_key": f"campaign:{cid}:{ci}", "title": f"{title} — {ci_name}", "description": instructions}
+                 for ci, ci_name, owned, managed, group in cis]
+        try:
+            res = open_ci_tasks(conn, items, kind=kind, source="campaign", due_days=due_days, channel=channel,
+                                actor=CAMPAIGN_ACTOR, event=self._event, event_detail={"campaign": name, "run": run})
+        except NoChannel as exc:
+            finish("failed", str(exc), in_scope=total)
             return 0
-        due = datetime.now(UTC) + timedelta(days=due_days)
-        created = already = unassigned = 0
-        for ci, ci_name, owned, managed, group in cis:
-            who = pick_assignee(owned_by=users.get(owned), managed_by=users.get(managed), support_group=groups.get(group))
-            row = conn.execute(
-                """INSERT INTO gov.task (kind, title, description, ci_sys_id, assignee_user, assignee_group,
-                                         assignee_basis, due_at, source, source_ref, dedup_key, channel, delivery_status,
-                                         created_by)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, 'campaign', %s, %s, %s, %s, %s)
-                   ON CONFLICT (dedup_key) WHERE state = 'open' AND dedup_key IS NOT NULL DO NOTHING
-                   RETURNING sys_id""",
-                (kind, f"{title} — {ci_name}"[:160], instructions, ci, who.user, who.group, who.basis, due, cid,
-                 f"campaign:{cid}:{ci}", ch[0], "not_needed" if ch[1] == "evren" else "pending",
-                 CAMPAIGN_ACTOR)).fetchone()
-            if row is None:
-                already += 1
-                continue
-            created += 1
-            unassigned += who.basis == "unassigned"
-            self._event(conn, row[0], "created", {"campaign": name, "run": run, "basis": who.basis})
+        created, already, unassigned = len(res.created), res.already_open, res.unassigned
         finish("done", None, in_scope=total, created=created, already_open=already, unassigned=unassigned)
         log.info("kampanya %s (%s): kapsam=%d açılan=%d açıkta=%d atanmamış=%d", name, CAMPAIGN_KINDS.get(kind, kind),
                  total, created, already, unassigned)

@@ -125,6 +125,18 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             items.append(_item("campaign_failed", "Son yedi günde çalışması başarısız olan kampanya", failed,
                                "#/gorevler/kampanyalar", "Kapsam sınırı aşıldı veya koşul geçersiz; kampanyayı açıp nedenini okuyun.",
                                "warn"))
+        q_fail, q_triage = ctx.conn.execute(
+            """SELECT (SELECT count(DISTINCT rule) FROM insight.quality_rule_run
+                        WHERE status IN ('failed', 'inconclusive') AND started_at > now() - interval '7 days'
+                          AND id IN (SELECT max(id) FROM insight.quality_rule_run GROUP BY rule)),
+                      (SELECT count(*) FROM insight.finding WHERE state = 'open' AND triage)""").fetchone()
+        if q_triage:
+            items.append(_item("finding_triage", "Sorumlusu görevi reddeden bulgu", q_triage, "#/saglik/bulgular/ayiklama",
+                               "Sorumlu \"bu benim değil\" dedi; CI'ın sahibini düzeltin veya bulguyu yeniden açın.", "warn"))
+        if q_fail:
+            items.append(_item("rule_failed", "Son çalışması başarısız veya sonuçsuz kural", q_fail, "#/saglik/kurallar",
+                               "Bulgu sınırı aşıldı, koşul geçersiz veya bağlı kaynak sağlıksız; kuralı açıp nedenini okuyun.",
+                               "warn"))
         if row[1]:
             items.append(_item("task_unassigned", "Sorumlusu olmayan görev", row[1], "#/gorevler/atanmamis",
                                "CI'ın sahibi, yöneteni ve destek grubu yok; görevi bir kişiye veya gruba atayın.", "info"))

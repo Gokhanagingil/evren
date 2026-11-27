@@ -38,6 +38,8 @@ topics:
      summary: "Bütün yönetim işlerinin tek yerden başlatılması.", routes: [yonetim]}
   - {id: gorevler, file: 13-yonetisim-gorevleri.md, title: "Yönetişim görevleri",
      summary: "Sorumlulara açılan görevler, zamanlanmış kampanyalar, kararı ve görev kanalı.", routes: [gorevler]}
+  - {id: saglik, file: 14-cmdb-sagligi.md, title: "CMDB sağlığı ve kalite kuralları",
+     summary: "Sağlık puanı, kural tanımlamak, bulgular ve istisna.", routes: [saglik]}
   - {id: sozluk, file: 11-sozluk.md, title: "Kavramlar sözlüğü",
      summary: "Evren'de geçen terimlerin kısa açıklamaları."}
   - {id: teknik, file: 12-teknik.md, title: "Teknik belgeler",

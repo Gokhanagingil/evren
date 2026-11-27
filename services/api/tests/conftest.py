@@ -12,7 +12,8 @@ from pathlib import Path
 import pytest
 
 REPO = Path(__file__).resolve().parents[3]
-for p in (REPO / "packages/evren-core/src", REPO / "services/api", REPO / "services/reconciler", REPO / "tools"):
+for p in (REPO / "packages/evren-core/src", REPO / "services/api", REPO / "services/reconciler", REPO / "tools",
+          REPO / "services/governance"):
     if str(p) not in sys.path:
         sys.path.insert(0, str(p))
 

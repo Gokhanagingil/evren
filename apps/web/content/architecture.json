@@ -456,10 +456,11 @@
       "kind_label": "Veri deposu",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0). F0'da gölge mod raporu mevcut CMDB'yi rol tabanlı karşılaştırır (kapsam, mükerrer, değer farkı) ve GRC için değiştirilemez kanıt üretir (ADR-0014).",
+      "text": "CMDB sağlığı dört boyutta ölçülür (tamlık, doğruluk, uyum, kapsam); görev çalışanı saatte bir ölçer, pano eğilimi gösterir. Kalite ve uyum kuralları panelden tanımlanır, bulgu üretir; bulgunun sorumlusuna görev gider (ADR-0037). Kaynak hacmi, mükerrer oranı, eskime ve kapsam boşlukları zaman serisi olarak izlenir. Anomali tespitinde OpenSearch Random Cut Forest kullanılır (Apache 2.0). F0'da gölge mod raporu mevcut CMDB'yi rol tabanlı karşılaştırır (kapsam, mükerrer, değer farkı) ve GRC için değiştirilemez kanıt üretir (ADR-0014).",
       "tech": [
+        "insight.quality_rule / insight.finding",
+        "insight.health_snapshot",
         "OpenSearch Anomaly Detection",
-        "insight.health_metric",
         "insight.evidence_snapshot"
       ],
       "security": [
@@ -492,7 +493,7 @@
       "kind_label": "İnsan kararı / arayüz",
       "chapter": "sense",
       "phase": "F1",
-      "text": "Evren veriyi güncel tutan işi de yönetir. Konfigürasyon yöneticisi yönetim panelinden zamanlanmış kampanya tanımlar (ör. uygulama sahiplerine her çeyrek veri güncelliği teyidi, erişim gözden geçirme). Kapsam sınıf ve koşulla yazılır, önce önizlenir; görev çalışanı dönem gelince her CI'ın sorumlusuna bir görev açar, sahiplik onayı teyit görevini kapatır (ADR-0036). Veri kalitesi ve uyum kuralları da bulgu görevi açar (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev); bulgu kapanınca görev kapanır. Görev bir kanal üzerinden teslim edilir. Şimdilik ServiceNow (standart görev tablosu ve alanları, Table API), Evren'in kendi kanalı baştan hazır; kanal ileride Evren'e devredilir.",
+      "text": "Evren veriyi güncel tutan işi de yönetir. Konfigürasyon yöneticisi yönetim panelinden zamanlanmış kampanya tanımlar (ör. uygulama sahiplerine her çeyrek veri güncelliği teyidi, erişim gözden geçirme). Kapsam sınıf ve koşulla yazılır, önce önizlenir; görev çalışanı dönem gelince her CI'ın sorumlusuna bir görev açar, sahiplik onayı teyit görevini kapatır (ADR-0036). Veri kalitesi ve uyum kuralları da bulgu görevi açar (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev); bulgu kapanınca görev kapanır, \"geçerli değil\" süreli istisna olur (ADR-0037). Görev bir kanal üzerinden teslim edilir. Şimdilik ServiceNow (standart görev tablosu ve alanları, Table API), Evren'in kendi kanalı baştan hazır; kanal ileride Evren'e devredilir.",
       "tech": [
         "gov.task / gov.task_channel / gov.campaign",
         "services/governance (görev çalışanı)",

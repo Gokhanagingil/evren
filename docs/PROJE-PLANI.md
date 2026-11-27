@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 20/63 adım tamamlandı
+**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 22/63 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -127,7 +127,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 8/27 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 10/27 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -150,8 +150,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: 26.11.2026 (ADR-0029, U7.2, göç 0027): alım zarfında parent (ana kaydın kaynak anahtarı); uzlaştırıcı ana CI'ı bulur, yerel anahtarı ana CI bağlamında ingest.dependent_key'de arar (küresel dizine girmez), ana kayıt sonra gelirse çalışma sonunda çözer, eksik veri tahmin edilmez; başvuru alanı veya ilişki (yön ilişki kurallarından). NNMi MAC'li arayüzleri ağ adaptörü CI'ı olur; CI ayrıntısında bağımlı CI'lar.
 - [ ] **F1-08** OpenSearch araması ve CI 360° ekranı — _Devam ediyor_
   - Not: Arama tamam (U3, ADR-0018); CI 360° ekranı (ilişkiler, etki) U7'de.
-- [ ] **F1-09** CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam — _Planlandı_
-  - Not: Beklemede: zemin hazır (metadata/health_rules.yaml + evren_core.health puanlama, testli). Pano, veri hattı (alım geçidi, bağlayıcılar, eskime, bağımlı CI) kurulduktan sonra; ölçecek gerçek veri yolu olmadan erken.
+- [ ] **F1-09** CMDB sağlık panosu: tamlık, doğruluk, uyum, kapsam — _Devam ediyor_
+  - Not: 27.11.2026 (ADR-0037, U8.6, göç 0033): CMDB Sağlığı sayfası: genel puan ve derece, dört boyut (tamlık: health_rules alanları; doğruluk: eskime; uyum: üretim sunucusunda yönetişim alanları; kapsam: rol bazında görülme) ve her etkin kuralın ölçümü; görev çalışanı saatte bir (ve kural çalışınca) ölçer, insight.health_snapshot; 30 günlük eğilim (klavye, tablo görünümü). Kalan: doğrulukta mükerrer adayı ve kopuk referans, uyumda sahiplik onayı oranı ve GRC kontrol sonuçları.
 - [ ] **F1-10** Rol–yetki matrisi ekranı (RBAC + ABAC) — _Devam ediyor_
   - Not: 27.11.2026 (ADR-0034, U8.3, göç 0030): rol–yetki matrisi ekranı, kişiler ve gruplar, panelden rol verme ve geri alma (gerekçe zorunlu, yetkili rol süreli, makine rolü kişiye verilmez, kendine rol yok, görevler ayrılığı önceden), Evren'de kişi açma, Entra kimliği bağlama, yetki geçmişi; veritabanı rolleri her istekte okunur. Kalan: ABAC koşul değerlendirmesi (koşullu izinler) ve süreç sahiplerinin matris onayı.
   - Sizden gereken: Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı
@@ -166,7 +166,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-16** Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı — _Planlandı_
 - [x] **F1-17** Sahiplik ve sertifikasyon: CI sahibinin periyodik onayı, sahipsiz CI raporu
   - Not: 26.11.2026 (ADR-0027, U6.4, göç 0025): metadata/attestation.yaml (üretim 180 gün, diğer 365 gün; alt sınıflara kalıtılır, emekli CI kapsam dışı); attest izni (CI sahibi rolü) + oturumun sys_user eşlemesi (Entra'da yalnızca entra_oid) + owned_by/managed_by; ingest.attestation_request → uzlaştırıcı yeniden denetler, Manual kaydına yazar (neden attestation); ret neden+gerekçe ister ve Veri sorumlusuna anomali açar, sonraki onay kapatır; süre dolumu ve sahip değişikliği Not Yet Reviewed yapar; Sahiplik Onayı sayfası (Bende/toplu onay, Onay bekleyen, Reddedilen, Sahipsiz), CI panelinde bölüm; GRC kontrolü CMDB-06. Entra kullanıcılarının entra_oid eşitlemesi U8.
-- [ ] **F1-18** Uyum denetimi (beklenen–gerçek): metadata ile tanımlı kurallar, ör. üretim sunucusunun destek grubu, izlemesi ve korunması — _Planlandı_
+- [x] **F1-18** Uyum denetimi (beklenen–gerçek): metadata ile tanımlı kurallar, ör. üretim sunucusunun destek grubu, izlemesi ve korunması
+  - Not: 27.11.2026 (ADR-0037, U8.6): uyum kuralları panelden (metadata dosyası yerine onaylı panel tanımı; tür kataloğu sözlükle doğrulanır): boş alan (ör. üretim CI'ında sahip, destek grubu), rolce görülmeyen CI (izleme, uç nokta koruması), koşula uyan CI, izinli olmayan ilişki (kaynaktan gelen kuralsız ilişki atılmaz, bulgu olarak raporlanır). Şablonlar ürün adı içermez.
 - [x] **F1-19** Zaman içinde sorgu: CI'ın geçmiş bir andaki hâli ve değişiklik zaman çizelgesi
   - Not: 26.11.2026 (ADR-0031, U7.4, göç 0028): CI'ın geçmiş bir andaki öznitelikleri ve ilişkileri değişim geçmişi bugünden geri sarılarak çıkarılır (evren_core/timeline.py; ikinci kopya tutulmaz); bugünle farkı, sonradan açılan/kalkan ilişkiler; CI o anda yoksa açıkça söylenir. Zaman çizelgesi aynı çalışmanın veya elle isteğin değişikliklerini tek an olarak gösterir. Bunun için ilişki yaşam döngüsü eklendi: ilişkiyi bildiren kaynak kaydı tutulur (cmdb_rel_ci_source), tam ve sağlıklı çalışmada bildirilmeyen ilişki kalkar, açılma/kalkma değişim geçmişindedir. İlişki haritası seçilen ana göre çizilir.
 - [ ] **F1-20** Ölçek ve yük testi: 40.000 sunucu + 100.000 ağ cihazı hacmiyle alım, uzlaştırma ve arama — _Planlandı_
@@ -180,7 +181,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-25** Zamanlanmış yönetişim kampanyaları yönetim panelinden: veri güncelliği teyidi (sahiplik onayına bağlı), erişim gözden geçirme, serbest kontrol listesi; kapsam (sınıf ve koşul), sıklık, sorumlu alanı, önizleme (kaç görev, kime), etkinleştirme; sonuç ve kanıt (GRC Platformu'na) — _Devam ediyor_
   - Not: 27.11.2026 (ADR-0036, U8.5, göç 0032): kampanya tanımı panelden (Görevler → Kampanyalar; Yönetim → Zamanlanmış görev tanımla): tür (veri güncelliği teyidi, erişim gözden geçirme, kontrol listesi), kapsam (sınıf + koşul; alanlar sözlükten, değerler parametre, emekli CI hariç), hazır sıklık veya cron (İstanbul), süre, kapsam sınırı; önizleme (kaç CI, sahibine/yönetenine/grubuna/atanmamış, kaç kişi ve grup, örnekler); taslak → etkin ↔ duraklatıldı → emekli (gerekçeli), şimdi çalıştır; görev çalışanı yürütür (CI başına tek açık görev), API yalnızca ister (sütun yetkisi); sahiplik onayı teyit görevini kapatır (tetikleyici); hatırlatma ve süre aşımı olayları; başarısız çalışma Size düşen işler'de. Kalan: kampanya sonucunun GRC Platformu'na kanıt olarak aktarımı (GRC entegrasyonuyla, F2-08) ve süreç sahiplerinin takvimi.
   - Sizden gereken: Konfigürasyon yöneticisi rolünün sahibi ve kampanya takvimi (süreç sahipleri)
-- [ ] **F1-26** Kural tabanlı bulgu görevleri: veri kalitesi ve uyum kuralları (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı, sahipsiz üretim CI'ı) bulgu üretir, bulgu sorumlusuna görev açar; bulgu sürerken mükerrer görev açılmaz, bulgu kapanınca görev kapanır; kural tanımı panelden — _Planlandı_
+- [x] **F1-26** Kural tabanlı bulgu görevleri: veri kalitesi ve uyum kuralları (ör. hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı, sahipsiz üretim CI'ı) bulgu üretir, bulgu sorumlusuna görev açar; bulgu sürerken mükerrer görev açılmaz, bulgu kapanınca görev kapanır; kural tanımı panelden
+  - Not: 27.11.2026 (ADR-0037, U8.6, göç 0033): kural tanımı panelden (Yönetim → Kuraldan görev aç; CMDB Sağlığı → Kurallar), şablondan başlama, önizleme (kaç bulgu, kime, neden); görev çalışanı değerlendirir, bulgu (kural × CI, tek) ve sorumluya tek görev; bulgu kapanınca görev "Bulgu giderildi" ile kapanır; "Geçerli değil" süreli istisna, "Reddedildi" sorumlu değişene kadar ayıklama (tetikleyiciler); ilk şablon: uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev.
 - [ ] **F1-27** Kullanım kılavuzu içeriğinin son hâli: ürün oturduktan sonra her konunun ekranlarla doğrulanması, ekran görüntüleri (hedef ortamla), taslak notunun kaldırılması — _Planlandı_
   - Not: 27.11.2026 proje sahibi kararı: altyapı U8.2'de hazır (ADR-0033); içerik ekranlar değişebileceği için en sonda yazılır.
 

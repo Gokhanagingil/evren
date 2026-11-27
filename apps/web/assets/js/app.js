@@ -8,6 +8,7 @@ import { renderQueue } from './pages/queue.js';
 import { renderCis } from './pages/cis.js';
 import { renderControls } from './pages/controls.js';
 import { renderAttestation } from './pages/attestation.js';
+import { renderHealth } from './pages/health.js';
 import { renderStaleness } from './pages/staleness.js';
 import { renderGraph } from './pages/graph.js';
 import { renderSystem } from './pages/system.js';
@@ -39,6 +40,8 @@ const ROUTES = {
     help: 'CI sahibi kaydı dönemsel olarak onaylar veya gerekçeyle reddeder. "Bende" görünümünde toplu onay; sahipsiz ve reddedilen CI\'lar Veri sorumlusu içindir. Onay uzlaştırıcıdan geçer.' },
   eskime: { title: 'Eskime', icon: 'clock', render: renderStaleness,
     help: 'Gözlemci kaynakların (keşif, sanallaştırma, ağ, izleme, uç nokta) hiçbirinin uzun süredir görmediği CI\'lar. Kaynakların son çalışması sağlıklı değilse öneri ilerlemez. Emekliye ayırma veya koruma Veri sorumlusunun gerekçeli kararıdır; CI silinmez.' },
+  saglik: { title: 'CMDB Sağlığı', icon: 'heart', render: renderHealth,
+    help: 'Genel puan ve dört boyut: tamlık, doğruluk, uyum, kapsam. Kurallar sekmesinde Konfigürasyon yöneticisi kural tanımlar (şablondan başlayarak) ve bulguları önizler; görev çalışanı kuralı düzenli değerlendirir, bulgunun sorumlusuna görev açar, düzeltilince görev kendiliğinden kapanır. Bulgular sekmesinde neden, sorumlu ve istisna.' },
   kontroller: { title: 'GRC Kontrolleri', icon: 'shield', render: renderControls,
     help: 'GRC Platformu\'na giden CMDB tabanlı kontrol sonuçları. Kaynak verisi kısmi toplandıysa sonuç "kesin değil" olur.' },
   'golge-mod': { title: 'Gölge Mod Raporu', icon: 'layers', render: renderShadow,
@@ -71,7 +74,7 @@ const ROUTES = {
 
 const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk', 'gorevler', 'kilavuz'] },
-  { group: 'CMDB', items: ['ci', 'iliski-haritasi', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
+  { group: 'CMDB', items: ['ci', 'iliski-haritasi', 'saglik', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
   { group: 'Yönetim', items: ['yonetim', 'kullanicilar', 'sistem-durumu'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },

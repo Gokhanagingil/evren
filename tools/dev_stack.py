@@ -202,6 +202,7 @@ def smoke() -> int:
         smoke_system_status()
         smoke_tasks()
         smoke_campaign()
+        smoke_quality()
     except SmokeError as exc:
         print(f"\nDuman testi BAŞARISIZ: {exc}", file=sys.stderr)
         return 1
@@ -575,6 +576,36 @@ def smoke_campaign() -> None:
         check(status == 200 and len(tasks["items"]) == preview["in_scope"], "kampanyanın görevleri listelendi")
     finally:
         http("PATCH", f"{API}/api/v1/campaigns/{cid}", {"state": "retired", "reason": "Yığın duman testi bitti"})
+
+
+def smoke_quality() -> None:
+    """Kalite kuralı (U8.6, ADR-0037): API'den kural (önizleme → etkin) → görev çalışanı (gerçek konteyner) bulguları
+    açar ve sağlığı ölçer → pano ve bulgular API'den okunur → emekliye ayır."""
+    step("Kalite kuralı: önizleme → etkinleştir → görev çalışanı bulguları açar → sağlık panosu")
+    rule = {"check_kind": "missing_fields", "params": {"fields": ["owned_by"]}, "scope_class": "cmdb_ci_server",
+            "scope_query": "nameSTARTSWITHist-"}
+    status, preview = http("POST", f"{API}/api/v1/quality/rules/preview", rule)
+    check(status == 200 and preview["valid"] and preview["in_scope"] > 0,
+          f"önizleme: {preview.get('in_scope')} CI kapsamda, {preview.get('matched')} bulgu")
+    status, created = http("POST", f"{API}/api/v1/quality/rules",
+                           {**rule, "name": f"Duman testi kuralı {uuid.uuid4().hex[:6]}", "dimension": "compliance",
+                            "task_title": "Sahibi doldurun", "channel": "evren", "activate": True,
+                            "idempotency_key": f"smoke-{uuid.uuid4().hex}"})
+    check(status == 201 and created["state"] == "active", "kural etkin")
+    rid = created["sys_id"]
+    try:
+        run = wait_for("görev çalışanı kuralı değerlendirdi",
+                       lambda: (r := http("GET", f"{API}/api/v1/quality/rules/{rid}")[1]["runs"])
+                       and r[0]["status"] in ("done", "failed", "inconclusive") and r[0], timeout=90, interval=3)
+        check(run["status"] == "done" and run["matched"] == preview["matched"],
+              f"değerlendirme: {run['matched']} bulgu, {run['tasks_opened']} görev")
+        status, found = http("GET", f"{API}/api/v1/quality/findings?rule={rid}")
+        check(status == 200 and len(found["items"]) == preview["matched"], "bulgular listelendi")
+        status, health = http("GET", f"{API}/api/v1/quality/health")
+        check(status == 200 and health["measured"] and health["overall"] is not None,
+              f"sağlık panosu: genel puan {health.get('overall')}")
+    finally:
+        http("PATCH", f"{API}/api/v1/quality/rules/{rid}", {"state": "retired", "reason": "Yığın duman testi bitti"})
 
 
 def smoke_search(name: str, sys_id: str) -> None:
