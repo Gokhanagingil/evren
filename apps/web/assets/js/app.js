@@ -13,6 +13,7 @@ import { renderStaleness } from './pages/staleness.js';
 import { renderGraph } from './pages/graph.js';
 import { renderSystem } from './pages/system.js';
 import { renderAdmin } from './pages/admin.js';
+import { renderAudit } from './pages/audit.js';
 import { renderUsers } from './pages/users.js';
 import { renderTasks } from './pages/tasks.js';
 import { renderDoc, renderGuide } from './pages/guide.js';
@@ -62,6 +63,8 @@ const ROUTES = {
     help: 'Önce genel bilgi, ayrıntı konu sayfalarında, teknik belgeler bağlantıyla. Soldaki aramayla konu bulun; her sayfanın sonunda önceki ve sonraki konuya geçin.' },
   belge: { title: 'Teknik Belge', icon: 'book', render: renderDoc,
     help: 'Mimari, güvenlik, API ve karar kayıtları. Oturum açılmış canlı kurulumda uygulama içinde açılır.' },
+  denetim: { title: 'Denetim İzi', icon: 'shield', render: renderAudit,
+    help: 'Kim, ne zaman, neyi, nereden ve hangi sonuçla yaptı. Olaylar sekmesinde dönem, akış, kategori ve sonuçla süzün; bir olaya tıklayın: ayrıntı, kaynak IP, istek kimliği ve mührü. "Bu kişinin olayları" ve "Aynı istekteki olaylar" ile iz sürün; CSV veya NDJSON indirin (aktarma da kaydedilir). Bütünlük sekmesinde saatlik zincirli mühürler ve doğrulama; İncelemeler sekmesinde dönemi gözden geçirip kaydedin. Yalnızca Denetçi görür.' },
   'sistem-durumu': { title: 'Sistem Durumu', icon: 'heart', render: renderSystem,
     help: 'Veritabanı, göçler, Kafka, OpenSearch, servis nabızları (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi), olay yayını, istek kuyrukları ve kaynak çalışmaları. "Bu kurulumda yok": servis veya bileşen bu ortamda çalışmıyor. Yalnızca Platform operatörü, Veri sorumlusu ve Denetçi görür.' },
   'buyuk-resim': { title: 'Büyük Resim', icon: 'orbit', render: renderBigPicture,
@@ -76,10 +79,10 @@ const NAV = [
   { group: 'Genel', items: ['genel-bakis', 'kuyruk', 'gorevler', 'kilavuz'] },
   { group: 'CMDB', items: ['ci', 'iliski-haritasi', 'saglik', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
   { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
-  { group: 'Yönetim', items: ['yonetim', 'kullanicilar', 'sistem-durumu'] },
+  { group: 'Yönetim', items: ['yonetim', 'kullanicilar', 'denetim', 'sistem-durumu'] },
   { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
 ];
-const SOON = [['CMDB sağlığı', 'F1'], ['Zamanlanmış görevler', 'F1'], ['ServiceNow eşitleme', 'F2']];
+const SOON = [['ServiceNow eşitleme', 'F2'], ['Süreç uygulaması (olay, değişiklik, talep)', 'F4']];
 
 function readClosed() {
   try { return new Set(JSON.parse(localStorage.getItem('evren.nav.closed') || '[]')); } catch { return new Set(); }

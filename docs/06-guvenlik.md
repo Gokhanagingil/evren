@@ -21,9 +21,9 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | **S**poofing | Sahte bağlayıcı veri gönderir | mTLS istemci sertifikası; anahtar ↔ data_source eşlemesi | ingest-gateway |
 | S | Oturum çalma | Entra OIDC + PKCE, `__Host-` çerez, kısa oturum, koşullu erişim | api |
 | **T**ampering | Kaynak verisi CMDB'yi bozar (ör. kısmi çalışma, eşleme hatası) | Şema doğrulama, devre kesici, uzlaştırma kuralları, birleştirmenin geri alınabilmesi | reconciler, `circuit_breaker.py` |
-| T | Denetim izinin değiştirilmesi | UPDATE/DELETE/TRUNCATE engelli tetikleyici; SIEM'e aktarım | `0003_security.sql` |
+| T | Denetim izinin değiştirilmesi | UPDATE/DELETE/TRUNCATE engelli tetikleyici (uygulama rolleri); ayrıcalıklı kullanıcıya (tablo sahibi, veritabanı yöneticisi) karşı tespit: akış başına saatlik zincirli mühür, görev çalışanının günlük ve Denetçinin elle doğrulaması (ekleme, silme, değiştirme, mühür kaldırma, dönem atlama yakalanır); mühür ve doğrulama `evren.audit.v1` ile SIEM'e gider (veritabanı dışı tanık) (ADR-0039) | `0003_security.sql`, göç 0034, `evren_core/audit.py`, test_audit, test_audit_seal_pg |
 | T | SQL enjeksiyonu (sysparm_query) | Parametreli SQL; alan adları sözlükten; `javascript:` reddi | `encoded_query.py` |
-| **R**epudiation | "Bu değişikliği ben yapmadım" | `audit.ci_change` (aktör, kaynak, gerekçe, korelasyon); yetki değişiklikleri `audit.security_event` | DB |
+| **R**epudiation | "Bu değişikliği ben yapmadım" | `audit.ci_change` (aktör, kaynak, gerekçe, korelasyon); yetki değişiklikleri `audit.security_event`; her güvenlik olayında istek kimliği (`X-Request-Id`) ve kaynak IP, aynı isteğin olayları birbirine bağlı (ADR-0039) | DB, api `deps.py` |
 | **I**nformation disclosure | Güvenlik duruşu verisinin sızması | Ayrı kısıtlı tablo; alan hassasiyeti (`sensitivity`); rol bazlı okuma; okuma denetimi | `ci_security_posture`, IAM |
 | I | Hata mesajlarında iç ayrıntı | Standart hata gövdesi; yığın izi yalnızca sunucu logunda | api |
 | I | Yapay zekâ modeline hassas veri gitmesi | Onaylı/kurum içi model; veri sınıflandırması; asgari bağlam | docs/11 |
@@ -139,6 +139,19 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | R | Kimin açtığının ve neden zorladığının bilinmemesi | İstekte kişi ve gerekçe (zorlamada veritabanı gerekçeyi zorunlu kılar), `audit.security_event` `ci_create` (toplu işte `ci_import`, dosya adı ve satır sayısıyla), kimlik bağında karar veren, değişim geçmişinde kişi ve neden `manual` (testli) | göç 0022, test_manual_create_pg |
 | I | Sırların imaja, ortam değişkenine veya günlüğe sızması | Sırlar yalnızca dosyadan (`*_FILE`, compose `secrets`); `.dockerignore` sır dizinini dışlar; göç aracı psycopg hatalarında yalnızca sınıf yazar; geliştirme sırları rastgele ve git dışı | `tools/dev_secrets.py`, `tools/migrate.py` |
 
+
+### Denetim izi (ADR-0039)
+
+| Tehdit | Senaryo | Denetim | Nerede |
+| --- | --- | --- | --- |
+| S | Kaynak IP'nin `X-Forwarded-For` ile sahtelenmesi | Başlığa yalnızca `EVREN_TRUSTED_PROXIES` listesindeki vekillerden gelince güvenilir; "her adres" yapılandırma hatası; liste boşsa doğrudan bağlanan adres | api `config.py`, `deploy/evren.py`, test_api_audit |
+| I | Bir isteğin denetim bağlamının (istek kimliği, IP) sonraki isteğe taşınması | Oturum ayarı bağlantı havuza dönerken temizlenir; temizlenemezse bağlantı atılır | api `db.py` |
+| I | Denetim izinin toplu dışarı çıkarılması | Yalnızca Denetçi (`audit_read`); dışa aktarma en çok 50.000 kayıt ve kendisi denetim olayı (kim, süzgeç, sayı); CI değişikliğinde görme yetkisi olmayan alanın değeri gizli | api `routers/audit.py`, test_api_audit |
+| T | Dışa aktarılan CSV'de formül enjeksiyonu (kişi adı veya nesnede `=HYPERLINK(…)`) | `=`, `+`, `-`, `@`, `\|`, sekme veya satır başıyla başlayan hücrenin önüne `'` | `evren_core.audit.safe_cell`, test_audit, test_api_audit |
+| T/R | Mühür ekleyen çalışanın zinciri bozması veya incelemenin sonradan değiştirilmesi | Çalışan yalnızca mühür ekler (sütun yetkisi), zincir tetikleyicisi boşluğu ve sahte bağı reddeder; mühür, doğrulama ve inceleme salt eklemedir (tablo sahibi için bile); API mühür yazamaz | göç 0034, test_postgres, test_audit_seal_pg |
+| R | Kayıtların incelenmediği veya mühür sorunu varken "sorun yok" denmesi | İnceleme kaydı mühürleri doğrular, sayıları sabitler; mühür sorunu varken "Bulgu yok" reddedilir; 7 günü geçen inceleme Denetçiye iş olarak düşer | api `routers/audit.py`, `admin.py` |
+| E | Platform yöneticisinin kendi izini görmesi veya incelemesi | Görevler ayrılığı: denetim izi yalnızca Denetçi rolünde; Platform yöneticisi ve Konfigürasyon yöneticisi 403 (testli) | `0002_iam_seed.sql`, test_api_audit |
+
 ## Uygulanan denetimler (bu depoda, testli)
 
 - `0003_security.sql`: 7 grup rolü, şema ve tablo düzeyinde yetkiler, salt ekleme denetim izi, rol atama denetimi, kısıtlı güvenlik tablosu.
@@ -182,13 +195,16 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | ISO/IEC 27001:2022 A.5.9 | Bilgi varlıkları envanteri | CMDB'nin kendisi; kapsam boşluğu raporları |
 | A.5.15 / A.5.18 / A.8.2 | Erişim kontrolü, ayrıcalıklı erişim | RBAC+ABAC, SoD, break-glass, rol denetimi |
 | A.8.9 | Yapılandırma yönetimi | Golden record, kaynak bilgisi, yetkisiz değişiklik tespiti |
-| A.8.15 / A.8.16 | Kayıt ve izleme | Salt ekleme denetim izi, SIEM |
+| A.8.15 / A.8.16 | Kayıt ve izleme | Salt ekleme denetim izi; tek görünüm, istek kimliği ve kaynak IP; zincirli mühür ve doğrulama; `evren.audit.v1` ile SIEM (ADR-0039) |
+| A.5.28 | Kanıt toplama | Denetlenen dışa aktarma, mühür doğrulama ve dönem incelemesi kaydı |
+| CIS Controls v8 8.2, 8.5, 8.9, 8.11 | Kayıt toplama, ayrıntılı kayıt, merkezi toplama, kayıt gözden geçirme | Birleşik denetim izi, SIEM konusu, haftalık inceleme kanıtı (`audit.review`) |
 | A.8.25–A.8.28 | Güvenli geliştirme | CI güvenlik kapıları, kod gözden geçirme komutu, ASVS |
 | ISO/IEC 20000-1 8.2.6 | Yapılandırma yönetimi | CI tanımı, ilişkiler, doğrulama ve denetim |
 | ISO/IEC 42001 | Yapay zekâ yönetim sistemi | docs/11 |
 
 ## Açık işler
 
-- Kurum sır kasası ve SIEM ürününe göre entegrasyon (açık soru).
+- Kurum sır kasası entegrasyonu ve SIEM ürününe özgü teslim (konu sözleşmesi hazır: `evren.audit.v1`; HEC veya Syslog/CEF ürün seçilince) — açık soru.
+- Denetim kaydı saklama ve arşivleme politikası (mühürle birlikte soğuk depolama) ve harici zaman damgası (RFC 3161).
 - Dağıtım ortamına göre ağ politikaları (Kubernetes NetworkPolicy veya güvenlik duvarı kuralları).
 - Sızma testi: F2 öncesi, ServiceNow'a yazma başlamadan.

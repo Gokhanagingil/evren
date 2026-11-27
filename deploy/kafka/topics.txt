@@ -5,3 +5,5 @@ evren.ingest.run.v1 1 2592000000
 evren.cmdb.ci.changed.v1 6 2592000000
 evren.dlq.v1 1 2592000000
 evren.cmdb.activity.v1 3 2592000000
+# Denetim olayları ve saatlik mühürler (ADR-0039): kurum SIEM'i bu konudan okur; 1 yıl saklanır.
+evren.audit.v1 3 31536000000

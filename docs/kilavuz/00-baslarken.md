@@ -13,6 +13,7 @@ Evren, kurumun altyapısını tek ve güvenilir bir kayıtta toplar. Keşif, san
 - [Kullanıcılara yetki vermek](kilavuz:kullanicilar)
 - [Sistemin sağlığını izlemek](kilavuz:isletim)
 - [Raporları ve kontrolleri izlemek](kilavuz:raporlar)
+- [Kimin ne yaptığını izlemek (denetim izi)](kilavuz:denetim-izi)
 
 Yönetim işlerinin hepsi tek yerden başlar: [Yönetim Paneli](#/yonetim) ([nasıl kullanılır?](kilavuz:yonetim-paneli)).
 

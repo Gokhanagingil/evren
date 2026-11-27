@@ -727,3 +727,21 @@ label.check input { width: 16px; height: 16px; min-height: 16px; accent-color: v
 .mini-table { width: 100%; border-collapse: collapse; font-size: 12.5px; margin: 8px 0 10px; }
 .mini-table th, .mini-table td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--stroke); vertical-align: top; overflow-wrap: anywhere; }
 .mini-table th { color: var(--muted); font-weight: 600; }
+/* Denetim izi (U8.8) */
+.linkbtn { border: 0; background: none; padding: 0; font: inherit; font-size: 12.5px; color: var(--accent-dark); text-decoration: underline; cursor: pointer; }
+.linkbtn:hover { color: var(--accent); }
+.audit-toolbar { flex-wrap: wrap; }
+.audit-custom { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.audit-custom[hidden] { display: none; }
+.audit-pivots { margin: 0 0 12px; }
+.audit-pivots[hidden] { display: none; }
+.chip.pivot { color: var(--text); gap: 6px; padding: 3px 4px 3px 10px; font-size: 12px; }
+.pivot-x { border: 0; background: #e3e5e9; color: var(--text); width: 20px; height: 20px; border-radius: 999px; font: inherit; line-height: 1; cursor: pointer; }
+.pivot-x:hover, .pivot-x:focus-visible { background: var(--accent-soft); color: var(--accent-dark); }
+.audit-listhead { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0 8px; }
+.audit-listhead .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.audit-json { max-height: 320px; white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+#auditMore { margin-top: 12px; }
+.metric.metric-sm .metric-number { font-size: 19px; letter-spacing: -.2px; margin-top: 10px; }
+.btn[hidden] { display: none; }
+@media (max-width: 640px) { .audit-custom, .audit-custom input { width: 100%; } .audit-listhead .actions .btn { flex: 1; text-align: center; } }

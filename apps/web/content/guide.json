@@ -7,8 +7,8 @@
    "id": "baslarken",
    "title": "Evren'e başlarken",
    "summary": "Evren nedir ve nereden başlanır.",
-   "words": 140,
-   "markdown": "# Evren'e başlarken\n\nEvren, kurumun altyapısını tek ve güvenilir bir kayıtta toplar. Keşif, sanallaştırma, ağ, izleme ve güvenlik araçlarından gelen bilgiyi birleştirir ve her bilginin nereden geldiğini gösterir.\n\n## Ne yapmak istiyorsunuz?\n\n- [Bir sunucuyu veya uygulamayı bulmak](kilavuz:ci-bulma)\n- [Yeni bir kayıt eklemek ya da düzeltmek](kilavuz:ci-ekleme)\n- [Evren'in sorduğu eşleştirme sorularını yanıtlamak](kilavuz:eslestirme)\n- [Sorumlu olduğunuz kayıtları onaylamak](kilavuz:yasam-dongusu)\n- [Veri modeline sınıf veya alan eklemek](kilavuz:veri-modeli)\n- [Yeni bir veri kaynağı bağlamak](kilavuz:entegrasyonlar)\n- [Kullanıcılara yetki vermek](kilavuz:kullanicilar)\n- [Sistemin sağlığını izlemek](kilavuz:isletim)\n- [Raporları ve kontrolleri izlemek](kilavuz:raporlar)\n\nYönetim işlerinin hepsi tek yerden başlar: [Yönetim Paneli](#/yonetim) ([nasıl kullanılır?](kilavuz:yonetim-paneli)).\n\n## Üç şeyi bilmek yeter\n\n1. **Her bilginin bir kaynağı vardır.** Bir kaydın değerini açtığınızda hangi araçtan ve hangi kuralla geldiğini görürsünüz.\n2. **Evren emin olmadığında sorar.** İki kaydın aynı sunucu olup olmadığından emin değilse karar size kalır.\n3. **Hiçbir şey kaybolmaz.** Kayıtlar silinmez, her değişiklik geçmişte durur ve geri alınabilir.\n\nKavramlar için [sözlük](kilavuz:sozluk), ayrıntılı bilgi için [teknik belgeler](kilavuz:teknik).\n"
+   "words": 146,
+   "markdown": "# Evren'e başlarken\n\nEvren, kurumun altyapısını tek ve güvenilir bir kayıtta toplar. Keşif, sanallaştırma, ağ, izleme ve güvenlik araçlarından gelen bilgiyi birleştirir ve her bilginin nereden geldiğini gösterir.\n\n## Ne yapmak istiyorsunuz?\n\n- [Bir sunucuyu veya uygulamayı bulmak](kilavuz:ci-bulma)\n- [Yeni bir kayıt eklemek ya da düzeltmek](kilavuz:ci-ekleme)\n- [Evren'in sorduğu eşleştirme sorularını yanıtlamak](kilavuz:eslestirme)\n- [Sorumlu olduğunuz kayıtları onaylamak](kilavuz:yasam-dongusu)\n- [Veri modeline sınıf veya alan eklemek](kilavuz:veri-modeli)\n- [Yeni bir veri kaynağı bağlamak](kilavuz:entegrasyonlar)\n- [Kullanıcılara yetki vermek](kilavuz:kullanicilar)\n- [Sistemin sağlığını izlemek](kilavuz:isletim)\n- [Raporları ve kontrolleri izlemek](kilavuz:raporlar)\n- [Kimin ne yaptığını izlemek (denetim izi)](kilavuz:denetim-izi)\n\nYönetim işlerinin hepsi tek yerden başlar: [Yönetim Paneli](#/yonetim) ([nasıl kullanılır?](kilavuz:yonetim-paneli)).\n\n## Üç şeyi bilmek yeter\n\n1. **Her bilginin bir kaynağı vardır.** Bir kaydın değerini açtığınızda hangi araçtan ve hangi kuralla geldiğini görürsünüz.\n2. **Evren emin olmadığında sorar.** İki kaydın aynı sunucu olup olmadığından emin değilse karar size kalır.\n3. **Hiçbir şey kaybolmaz.** Kayıtlar silinmez, her değişiklik geçmişte durur ve geri alınabilir.\n\nKavramlar için [sözlük](kilavuz:sozluk), ayrıntılı bilgi için [teknik belgeler](kilavuz:teknik).\n"
   },
   {
    "id": "ci-bulma",
@@ -95,6 +95,13 @@
    "markdown": "# CMDB sağlığı ve kalite kuralları\n\n> Taslak. Ekranlar hazır; kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).\n\n**CMDB Sağlığı** sayfası CMDB'nin ne kadar eksiksiz, doğru, kurallara uygun ve kapsamlı olduğunu tek puanla ve dört boyutla gösterir: tamlık, doğruluk, uyum, kapsam.\n\n**Kurallar** sekmesinde Konfigürasyon yöneticisi kalite ve uyum kuralı tanımlar. Kural, kapsamdaki CI'lardan hangilerinin **bulgu** olduğunu söyler. Örnek: hiçbir uygulama veya sunucuyla ilişkisi olmayan veritabanı.\n\n- Bulgunun sorumlusuna (sahip → yöneten → destek grubu) tek görev açılır.\n- Sorumlu düzeltince bulgu da görev de kendiliğinden kapanır.\n- \"Geçerli değil\" kararı bulguyu süreli istisna yapar.\n- \"Reddedildi\" (sorumlusu ben değilim) kararında CI'ın sahibi düzeltilince görev yeni sorumluya gider.\n\nKural türleri: ilişkisi olmayan CI, boş alan, bir kaynak rolünce görülmeyen CI, koşula uyan CI, izinli olmayan ilişki. Kural ürüne değil role bağlıdır.\n\n## Teknik ayrıntı\n\n- [Kalite kuralları, bulgular ve sağlık panosu](belge:adr/0037-kalite-kurallari-ve-bulgular)\n- [Yönetişim görevleri ve kanallar](belge:adr/0035-yonetisim-gorevleri-ve-kanallar)\n"
   },
   {
+   "id": "denetim-izi",
+   "title": "Denetim izi",
+   "summary": "Kim, ne zaman, neyi yaptı; mühürler, doğrulama ve dönem incelemesi.",
+   "words": 167,
+   "markdown": "# Denetim izi\n\n> Taslak. Ekranlar hazır; kılavuz içeriği ekranlar oturduktan sonra tamamlanacak (F1-27).\n\n**Denetim İzi** sayfası Evren'de kimin, ne zaman, neyi, nereden ve hangi sonuçla yaptığını tek yerde gösterir. Yalnızca **Denetçi** görür; Platform yöneticisi kendi denetçisi olamaz.\n\n- **Olaylar:** yönetim ve güvenlik olayları (oturum, yetki reddi, rol verme, şema, entegrasyon, yönetişim), CI öznitelik değişiklikleri ve görev olayları. Dönem, akış, kategori ve sonuçla süzülür; bir olaydan \"Bu kişinin olayları\", \"Bu nesnenin olayları\" veya \"Aynı istekteki olaylar\" ile iz sürülür. CSV veya NDJSON olarak indirilir; dışa aktarmanın kendisi de olaydır.\n- **Bütünlük:** her akış saatlik dönemlerde zincirli mühürle kapatılır. Bir kayıt sonradan değiştirilirse, silinirse veya eklenirse doğrulama sorun bulur. Görev çalışanı günde bir son yedi günü kendiliğinden doğrular; Denetçi istediği dönemi elle doğrular.\n- **İncelemeler:** Denetçi bir dönemi gözden geçirir, \"Bulgu yok\" veya \"Bulgu var\" kararıyla not yazar. Mühür sorunu varken \"Bulgu yok\" kaydedilmez. İnceleme değiştirilemez.\n\nBütün olaylar, mühürler ve doğrulamalar olay omurgasıyla kurum SIEM'ine (`evren.audit.v1`) de gider.\n\n## Teknik ayrıntı\n\n- [Denetim izi, mühürler ve SIEM aktarımı](belge:adr/0039-denetim-izi-ve-siem)\n- [Güvenlik ve tehdit modeli](belge:06-guvenlik)\n"
+  },
+  {
    "id": "sozluk",
    "title": "Kavramlar sözlüğü",
    "summary": "Evren'de geçen terimlerin kısa açıklamaları.",
@@ -127,6 +134,7 @@
   "yonetim": "yonetim-paneli",
   "gorevler": "gorevler",
   "saglik": "saglik",
+  "denetim": "denetim-izi",
   "buyuk-resim": "teknik",
   "mimari": "teknik",
   "yol-haritasi": "teknik"

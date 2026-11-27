@@ -24,6 +24,7 @@ Hepsi aynı yetki modelinden (docs/07) ve aynı golden record'dan geçer.
 - **Hata gövdesi:** `{"error": {"code", "message" (Türkçe), "details"}}`.
 - **Sayfalama:** imleç + `limit` (en fazla 1000).
 - **Oturum:** tarayıcı için Entra ID OIDC + PKCE ve şifreli `__Host-` çerezi; durum değiştiren isteklerde `X-Evren-Request: 1` başlığı (ADR-0010). Makine hesapları (GRC Platformu, otomasyon) için kapsamlı istemci kimliği F1'de eklenecek.
+- **İstek kimliği:** her yanıtta `X-Request-Id` (32 onaltılık). Aynı istekte yazılan güvenlik olaylarına işlenir; destek ve denetimde olayları bağlar (ADR-0039).
 - **Uygulanan uç noktalar** ve durumları: `services/api/README.md`. Makine tarafından okunur sözleşme: `GET /api/v1/openapi.json`.
 
 ### Eşleştirme kararı
@@ -156,6 +157,19 @@ ADR-0015. `GET /api/v1/schema/catalog` (sınıflar ve kendi alanları, referans 
 - `POST /api/v1/integrations/plan` (`connector_admin`): `{name, connector, url?, user?, token_file?, password_file?, tenant_id?, client_id?, client_secret_file?, scope?, ca_file?, gateway_token_file, schedule_choice: default|custom|manual, schedule?, schedule_mode, page_size?, api_release?, lookback_days?, max_runtime_minutes}` → `{yaml, secrets: [{key, path, what}], schedule, next_runs, warnings}`. Çalıştırıcının kurallarıyla doğrulanır (`yapilandirma_gecersiz` 422); sır değeri alanı yoktur; **saklanmaz**.
 - `GET /api/v1/integrations/{name}` (`connector_admin`): `steps` (`data_source`, `credential`, `instance` — bildirildi mi, çalıştırıcı canlı mı —, `run`), `complete`, `started`.
 - `POST /api/v1/schema/change-sets/validate` (`schema_draft`): `{changes}` → `{ok, errors, changes (açıklamalar), impact}`; kaydetmez.
+
+### Denetim izi (ADR-0039)
+
+Okuma `audit/audit_read`, doğrulama ve inceleme `audit/audit_review` ister (ikisi de Denetçi). Süzgeçler: `since`, `until` (en çok 366 gün; varsayılan son 7 gün), `source` (`security`/`ci`/`task`), `category`, `action`, `actor`, `outcome` (`allow`/`deny`), `object`, `request_id`, `ip`, `q`.
+
+- `GET /api/v1/audit/catalog`: akışlar, kategoriler, bilinen olay türleri (Türkçe ad ve kategori).
+- `GET /api/v1/audit/events?…&cursor=&limit=` → `{items, next, total (ilk sayfada; 10.000 üstü "10.000+"), since, until}`. Olay: `key`, `source`, `id`, `at`, `actor`, `action`, `action_label`, `category`, `object`, `object_link`, `outcome`, `client_ip`, `request_id`, `detail`, `masked`.
+- `GET /api/v1/audit/events/{source}/{id}`: olay + `seal` (dönem, son doğrulama) + `related` (aynı istekteki olaylar).
+- `GET /api/v1/audit/summary?since&until`: akış ve kategori başına sayı, ret sayısı, en çok ret alan ve en etkin kişiler.
+- `GET /api/v1/audit/export?…&format=csv|ndjson`: en çok 50.000 kayıt (`X-Evren-Truncated`); CSV `;` ayraçlı, UTF-8 BOM'lu, formül korumalı. Aktarmanın kendisi `audit_export` olayıdır.
+- `GET /api/v1/audit/integrity`: akış başına son mühür, gecikme, son kendiliğinden/elle doğrulama, son 30 günün sorunlu doğrulamaları. `GET /api/v1/audit/seals?stream&limit`: son mühürler ve son doğrulama sonucu.
+- `POST /api/v1/audit/seals/verify` `{since, until, stream?}` (en çok 92 gün) → `{checked, failed, ok, message, problems}`; her mühür için `audit.seal_check` kanıtı ve `audit_verify` olayı.
+- `GET /api/v1/audit/reviews` → `{items, due, every_days, suggested}`. `POST /api/v1/audit/reviews` `{period_start, period_end, outcome: no_findings|findings, note (10–4000), idempotency_key}` → `201`; mühürler önce doğrulanır, mühür sorunu varken `no_findings` → `422 muhur_sorunu`.
 
 ### Kalite kuralları, bulgular ve CMDB sağlığı (ADR-0037)
 
@@ -308,6 +322,7 @@ Kafka `evren.cmdb.ci.changed.v1` (anahtar: `sys_id`, CloudEvents; outbox'tan yay
 - `type`: `evren.cmdb.ci.created.v1`, `evren.cmdb.ci.changed.v1`. `subject` = sys_id.
 - `data`: sınıf, değişen öznitelikler (eski → yeni), kaynak, çalışma. Hassasiyeti `confidential`/`restricted` olan alanın değeri konmaz (`redacted: true`).
 - İnsan istekleri (elle düzenleme, ayırma …) `evren.cmdb.activity.v1` konusundadır.
+- Denetim izi `evren.audit.v1` konusundadır (1 yıl saklama, ADR-0039): `type` = `evren.audit.security_event` (kim, ne, nesne, izin/ret, kaynak IP, istek kimliği, ayrıntı), `evren.audit.seal` (akış, dönem, kayıt sayısı, özet, önceki zincir, zincir), `evren.audit.seal_check` (mühür, doğrulayan, sonuç, sorun). Kurum SIEM'i bu konuyu tüketir; mühür zincir değerleri veritabanı dışında tanık olur.
 - Webhook (F2-06): `X-Evren-Signature: sha256=<HMAC>` + zaman damgası (tekrar saldırısına karşı 5 dakika penceresi).
 
 ## GRC Platformu (tedarik) entegrasyonu (F2-08)

@@ -16,7 +16,8 @@ def main() -> int:
     except (ConfigError, ValueError) as exc:
         print(f"Yapılandırma hatası: {exc}", file=sys.stderr)
         return 2
-    uvicorn.run(create_app(settings), host=settings.host, port=settings.port, proxy_headers=False,
+    uvicorn.run(create_app(settings), host=settings.host, port=settings.port,
+                proxy_headers=bool(settings.trusted_proxies), forwarded_allow_ips=list(settings.trusted_proxies),
                 server_header=False, date_header=False, log_level="info")
     return 0
 

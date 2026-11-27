@@ -19,5 +19,9 @@ def make_pool(settings: Settings) -> ConnectionPool:
         conn.execute(sql.SQL("SET statement_timeout = {}").format(sql.Literal(settings.statement_timeout_ms)))
         conn.execute("SET application_name = 'evren-api'")
 
+    def reset(conn: psycopg.Connection[Any]) -> None:
+        # İsteğin denetim bağlamı (ADR-0039) bir sonraki isteğe taşınmaz; hata olursa havuz bağlantıyı atar.
+        conn.execute("SELECT set_config('evren.request_id', '', false), set_config('evren.client_ip', '', false)")
+
     return ConnectionPool(settings.db_conninfo, min_size=1, max_size=settings.db_pool_size, configure=configure,
-                          open=False, name="evren-api", timeout=10)
+                          reset=reset, open=False, name="evren-api", timeout=10)

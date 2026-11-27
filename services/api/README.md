@@ -20,7 +20,8 @@ python tools/dev_stack.py up --demo      # veya konteynerde, tüm yığınla (AD
 | `GET /api/v1/reports/shadow`, kanıt anlık görüntüsü (ADR-0014) | Tamam |
 | `/api/v1/schema/*` metadata değişiklik setleri (ADR-0015) | Tamam |
 | `GET /api/v1/search` küresel arama: OpenSearch, PostgreSQL yedeği, yetki sorguda (ADR-0018) | Tamam |
-| Makine hesapları, ilişki düzenleme | Sırada |
+| `/api/v1/audit/*` denetim izi: olaylar (süzgeç, imleç), ayrıntı, özet, CSV/NDJSON dışa aktarma, bütünlük, mühür doğrulama, inceleme kaydı; her yanıtta `X-Request-Id` (ADR-0039) | Tamam |
+| Makine hesapları | Sırada |
 | `/api/now/table/*`, `/api/now/identifyreconcile` | F2-05 |
 
 Ortam değişkenleri: `EVREN_AUTH_MODE` (`dev` | `entra`, zorunlu), `EVREN_DATABASE_URL` veya `EVREN_DATABASE_URL_FILE`, `EVREN_SESSION_KEY_FILE`, `EVREN_COOKIE_SECURE`, `EVREN_ENTRA_*`. Sırlar dosya yolundan okunur; `dev` modu yalnızca 127.0.0.1'de açılır. Konteynerde `EVREN_DEV_CONTAINER=1` ile 0.0.0.0'a bağlanır ve yalnızca loopback/özel ağdan gelen istekleri kabul eder (Entra modunda yok sayılır). Konteynerde veritabanına `evren_api_svc` giriş rolüyle bağlanır.

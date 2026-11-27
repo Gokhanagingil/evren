@@ -11,6 +11,7 @@ from evren_core.envelope import IngestEnvelope, IngestRecord
 from evren_core.messaging import (
     MAX_MESSAGE_BYTES,
     TOPIC_ACTIVITY,
+    TOPIC_AUDIT,
     TOPIC_CI_CHANGED,
     KafkaConfigError,
     KafkaSettings,
@@ -81,6 +82,11 @@ def test_outbox_message_routes_and_redacts():
     topic2, _k, value2 = outbox_message({**row, "event_type": "evren.ci.edit.requested.v1", "payload": {"id": "x"}})
     assert topic2 == TOPIC_ACTIVITY and json.loads(value2)["type"] == "evren.ci.edit.requested.v1"
     assert outbox_message({**row, "event_type": "cmdb.ci.created.v1"})[0] == TOPIC_CI_CHANGED
+    # Denetim izi (ADR-0039): güvenlik olayı, mühür ve doğrulama SIEM konusuna
+    for kind in ("audit.security_event", "audit.seal", "audit.seal_check"):
+        topic3, key3, value3 = outbox_message({**row, "aggregate_id": "seal:5", "event_type": kind, "payload": {"id": 5}})
+        assert topic3 == TOPIC_AUDIT == "evren.audit.v1" and key3 == b"seal:5"
+        assert json.loads(value3)["type"] == f"evren.{kind}"
 
 
 def test_redact_payload_without_changes_is_identity():

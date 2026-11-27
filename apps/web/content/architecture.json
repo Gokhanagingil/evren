@@ -588,20 +588,25 @@
     "audit_trail": {
       "label": "Denetim izi",
       "sub": [
-        "Salt ekleme,",
-        "aylık bölümler"
+        "Tek görünüm, saatlik",
+        "zincirli mühür"
       ],
       "kind": "security",
       "kind_label": "Güvenlik denetimi",
       "chapter": "store",
       "phase": "F0",
-      "text": "Her öznitelik değişikliği kim, ne zaman, hangi kaynak ve hangi gerekçeyle bilgisiyle yazılır. UPDATE, DELETE ve TRUNCATE tetikleyiciyle engellenir.",
+      "text": "Her öznitelik değişikliği kim, ne zaman, hangi kaynak ve hangi gerekçeyle bilgisiyle yazılır. UPDATE, DELETE ve TRUNCATE tetikleyiciyle engellenir. Güvenlik ve yönetim olayları, CI değişiklikleri ve görev olayları tek görünümdedir (audit.trail); her olayda istek kimliği ve kaynak IP vardır. Görev çalışanı her akışı saatlik zincirli mühürle kapatır ve günde bir doğrular; Denetçi Denetim İzi sayfasında süzer, iz sürer, dışa aktarır, mühürleri doğrular ve dönem incelemesini kanıt olarak kaydeder. Süreç uygulamasının olayları aynı görünüme yeni akış olarak eklenir (ADR-0039).",
       "tech": [
-        "audit.ci_change",
-        "audit.security_event"
+        "audit.trail",
+        "audit.seal",
+        "audit.seal_check",
+        "audit.review",
+        "evren_core/audit.py",
+        "evren_governance/audit_seal.py"
       ],
       "security": [
         "Salt ekleme",
+        "Zincirli mühür",
         "SIEM'e aktarım"
       ]
     },
@@ -1206,18 +1211,24 @@
     "siem": {
       "label": "SIEM aktarımı",
       "sub": [
-        "Denetim ve güvenlik",
-        "olayları"
+        "evren.audit.v1 →",
+        "kurum SIEM'i"
       ],
       "kind": "security",
       "kind_label": "Güvenlik denetimi",
       "chapter": "security",
       "phase": "F1",
-      "text": "Denetim ve güvenlik olayları kurum SIEM sistemine aktarılır.",
+      "text": "Her güvenlik olayı, her mühür ve her mühür doğrulaması aynı veritabanı işleminde outbox'a yazılır ve evren.audit.v1 Kafka konusuyla (1 yıl saklama) kurum SIEM'ine gider. Mühür zincir değerlerinin SIEM'de bulunması veritabanı dışında bir tanık sağlar. Ürüne özgü teslim (HEC, Syslog/CEF) SIEM ürünü seçilince eklenir (ADR-0039).",
       "tech": [
-        "audit.security_event"
+        "events.outbox",
+        "evren.audit.v1",
+        "audit.security_event",
+        "audit.seal",
+        "audit.seal_check"
       ],
-      "security": []
+      "security": [
+        "Değiştirilemezlik tanığı"
+      ]
     },
     "supply_chain": {
       "label": "Tedarik zinciri güvenliği",

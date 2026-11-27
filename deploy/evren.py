@@ -43,7 +43,8 @@ def api() -> int:
         print(f"Yapılandırma hatası: {exc}", file=sys.stderr)
         return 2
     uvicorn.run(create_app(settings), host=settings.host, port=settings.port, server_header=False,
-                proxy_headers=False, log_level=os.environ.get("EVREN_LOG_LEVEL", "info").lower())
+                proxy_headers=bool(settings.trusted_proxies), forwarded_allow_ips=list(settings.trusted_proxies),
+                log_level=os.environ.get("EVREN_LOG_LEVEL", "info").lower())
     return 0
 
 

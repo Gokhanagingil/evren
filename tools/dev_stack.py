@@ -43,7 +43,7 @@ LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "g
 API = "http://127.0.0.1:8088"
 GATEWAY = "http://127.0.0.1:8089"
 OPENSEARCH = "http://127.0.0.1:59200"
-TOPICS = {"evren.ingest.record.v1", "evren.ingest.run.v1", "evren.cmdb.ci.changed.v1", "evren.cmdb.activity.v1",
+TOPICS = {"evren.ingest.record.v1", "evren.ingest.run.v1", "evren.cmdb.ci.changed.v1", "evren.cmdb.activity.v1", "evren.audit.v1",
           "evren.dlq.v1"}
 
 

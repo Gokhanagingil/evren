@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 22/63 adım tamamlandı
+**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 22/65 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -163,7 +163,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [x] **F1-14** Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla)
   - Not: 26.11.2026 (ADR-0024, U5.4): çalıştırıcı tarafında şifreli parça dosyaları (Fernet, anahtar döndürme), veri içermeyen manifest ve özet denetimi, göreli raw_ref, saklama süresiyle günlük temizlik, connector_run --from-archive ile kaynaksız yeniden işleme; yığın duman testinde sınandı. S3 yazıcısı ve saklama süresinin kurum onayı U10.
 - [ ] **F1-15** Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry) — _Planlandı_
-- [ ] **F1-16** Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı — _Planlandı_
+- [ ] **F1-16** Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı — _Devam ediyor_
+  - Not: 27.11.2026 (U8.8, ADR-0039, göç 0034): tek denetim izi görünümü, istek kimliği ve kaynak IP, saatlik zincirli mühür ve doğrulama, dönem incelemesi kanıtı, Denetim İzi sayfası; olay, mühür ve doğrulama evren.audit.v1 konusunda. Kalan: SIEM ürününe özgü teslim ve canlı kabul (U10).
 - [x] **F1-17** Sahiplik ve sertifikasyon: CI sahibinin periyodik onayı, sahipsiz CI raporu
   - Not: 26.11.2026 (ADR-0027, U6.4, göç 0025): metadata/attestation.yaml (üretim 180 gün, diğer 365 gün; alt sınıflara kalıtılır, emekli CI kapsam dışı); attest izni (CI sahibi rolü) + oturumun sys_user eşlemesi (Entra'da yalnızca entra_oid) + owned_by/managed_by; ingest.attestation_request → uzlaştırıcı yeniden denetler, Manual kaydına yazar (neden attestation); ret neden+gerekçe ister ve Veri sorumlusuna anomali açar, sonraki onay kapatır; süre dolumu ve sahip değişikliği Not Yet Reviewed yapar; Sahiplik Onayı sayfası (Bende/toplu onay, Onay bekleyen, Reddedilen, Sahipsiz), CI panelinde bölüm; GRC kontrolü CMDB-06. Entra kullanıcılarının entra_oid eşitlemesi U8.
 - [x] **F1-18** Uyum denetimi (beklenen–gerçek): metadata ile tanımlı kurallar, ör. üretim sunucusunun destek grubu, izlemesi ve korunması
@@ -261,13 +262,15 @@ ServiceNow formlarında CI seçimi Evren aramasıyla yapılır. Yapay zekâ öne
 
 ## F4 · Task tarafına hazırlık
 
-_Ay 12+ · 2028 (öneri)_ · 0/3 adım
+_Ay 12+ · 2028 (öneri)_ · 0/5 adım
 
 Aynı kimlik motoruyla olay–CI bağlama. ServiceNow task desenine uygun veri modeli ve Incident/Change pilotunun tasarımı.
 
 - [ ] **F4-01** Olay → CI bağlama (event management) için kimlik motorunun kullanımı — _Planlandı_
 - [ ] **F4-02** Task veri modeli tasarımı (ServiceNow task deseni) — _Planlandı_
 - [ ] **F4-03** Incident/Change pilot kapsamı ve ServiceNow lisans çıkış planı — _Planlandı_
+- [ ] **F4-04** Süreç uygulaması olaylarının ortak denetim izine bağlanması (olay, değişiklik, talep: aynı görünüm, mühür, SIEM akışı; ADR-0039) — _Planlandı_
+- [ ] **F4-05** ESM süreç kataloğu ve ISO/IEC 20000-1 süreç eşlemesi (hangi süreç hangi kayıt ve kanıtı üretir) — _Planlandı_
 
 **Çıkış kriterleri**
 

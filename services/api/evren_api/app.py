@@ -5,6 +5,7 @@ import ipaddress
 import json
 import logging
 import posixpath
+import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any
@@ -28,6 +29,7 @@ from .present import Presenter
 from .routers import (
     admin,
     attestation,
+    audit,
     auth,
     campaigns,
     ci,
@@ -163,7 +165,9 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
             # Geliştirme konteyneri kimlik doğrulamasızdır: yalnızca ana makine/özel ağdan gelen istekler.
             return JSONResponse({"error": {"code": "erisim_yok", "message": "Geliştirme yığınına yalnızca yerel "
                                            "ağdan erişilebilir.", "details": []}}, status_code=403)
+        request.state.request_id = uuid.uuid4().hex  # denetim izinde aynı isteğin olaylarını bağlar (ADR-0039)
         response = await call_next(request)
+        response.headers["X-Request-Id"] = request.state.request_id
         for k, v in SECURITY_HEADERS.items():
             response.headers.setdefault(k, v)
         if request.url.path.startswith(("/api/", "/auth/")) or request.url.path in ("/healthz", "/readyz"):
@@ -186,7 +190,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, search.router,
               connectors.router, insight.router, manual.router, attestation.router, staleness.router, impact.router,
               timeline.router, graph.router, system.router, admin.router, iam.router, tasks.router, campaigns.router,
-              quality.router, integrations.router, auth.router):
+              quality.router, integrations.router, audit.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

@@ -25,7 +25,7 @@ from pydantic import ValidationError
 from .envelope import IngestEnvelope
 
 __all__ = [
-    "MAX_MESSAGE_BYTES", "TOPIC_ACTIVITY", "TOPIC_CI_CHANGED", "TOPIC_DLQ", "TOPIC_RECORD", "TOPIC_RUN",
+    "MAX_MESSAGE_BYTES", "TOPIC_ACTIVITY", "TOPIC_AUDIT", "TOPIC_CI_CHANGED", "TOPIC_DLQ", "TOPIC_RECORD", "TOPIC_RUN",
     "KafkaConfigError", "KafkaSettings", "MessageError", "decode_record", "dlq_headers", "encode_record",
     "outbox_message", "record_key", "redact_payload", "topic_for_event",
 ]
@@ -34,6 +34,7 @@ TOPIC_RECORD = "evren.ingest.record.v1"
 TOPIC_RUN = "evren.ingest.run.v1"
 TOPIC_CI_CHANGED = "evren.cmdb.ci.changed.v1"
 TOPIC_ACTIVITY = "evren.cmdb.activity.v1"
+TOPIC_AUDIT = "evren.audit.v1"  # denetim olayları ve mühürler → kurum SIEM'i (ADR-0039)
 TOPIC_DLQ = "evren.dlq.v1"
 #: Tek mesaj üst sınırı (Kafka varsayılanı ~1 MB). Geçit daha büyük kaydı reddeder; tüketici yine denetler.
 MAX_MESSAGE_BYTES = 900_000
@@ -87,8 +88,11 @@ def dlq_headers(reason: str, *, origin_topic: str, partition: int | None, offset
 
 # --------------------------------------------------------------------------- outbox olayları
 def topic_for_event(event_type: str) -> str:
-    """CI yaşam döngüsü olayları (``cmdb.ci.*``: oluşturma, değişiklik) CI konusuna; insan istekleri etkinlik konusuna."""
-    return TOPIC_CI_CHANGED if event_type.startswith("cmdb.ci.") else TOPIC_ACTIVITY
+    """CI yaşam döngüsü olayları (``cmdb.ci.*``: oluşturma, değişiklik) CI konusuna; denetim olayları ve mühürler
+    (``audit.*``) denetim konusuna (SIEM, ADR-0039); insan istekleri etkinlik konusuna."""
+    if event_type.startswith("cmdb.ci."):
+        return TOPIC_CI_CHANGED
+    return TOPIC_AUDIT if event_type.startswith("audit.") else TOPIC_ACTIVITY
 
 
 def redact_payload(payload: Mapping[str, Any], hidden: Iterable[str]) -> dict[str, Any]:

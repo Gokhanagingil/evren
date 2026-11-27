@@ -2,7 +2,8 @@
 
 * ``GET /api/v1/admin/attention``: kişiye düşen bekleyen işler (yalnızca yetkisi olduğu işler): eşleştirme kuyruğu,
   onay bekleyen veya taslakta kalan değişiklik setleri, sahiplik onayı süresi dolan CI'lar, eskime adayları, açık
-  yetkisiz değişiklikler, devre kesicisi açık kaynaklar, süresi yaklaşan bağlayıcı kimlikleri, sistem durumu.
+  yetkisiz değişiklikler, devre kesicisi açık kaynaklar, süresi yaklaşan bağlayıcı kimlikleri, denetim izi (bozulmuş
+  mühür, durmuş mühürleme, haftalık inceleme), sistem durumu.
   Panel bunları "Size düşen işler" olarak gösterir; her biri ilgili ekrana götürür.
 * ``GET /api/v1/docs`` ve ``GET /api/v1/docs/{ad}``: teknik belgeler (``docs/*.md``, ``docs/adr/*.md``) uygulama içinde.
   Oturum ister (mimari ve güvenlik tasarımı oturumsuz erişime açılmaz); ad yalnızca izinli biçimde ve docs altında
@@ -11,6 +12,7 @@
 from __future__ import annotations
 
 import re
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -18,6 +20,7 @@ from fastapi import APIRouter, Depends
 from ..config import REPO_ROOT
 from ..deps import Ctx, context
 from ..errors import ApiError
+from .audit import REVIEW_EVERY, SEAL_LAG
 from .system import system_status
 
 router = APIRouter(prefix="/api/v1", tags=["admin"])
@@ -140,6 +143,22 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
         if row[1]:
             items.append(_item("task_unassigned", "Sorumlusu olmayan görev", row[1], "#/gorevler/atanmamis",
                                "CI'ın sahibi, yöneteni ve destek grubu yok; görevi bir kişiye veya gruba atayın.", "info"))
+    if ctx.grant("audit", "audit_read").allowed:
+        # Denetim izi (ADR-0039): bozulmuş mühür, durmuş mühürleme, haftalık inceleme (CIS 8.11)
+        failed, last_end, last_review = ctx.conn.execute(
+            """SELECT (SELECT count(*) FROM audit.seal_check WHERE NOT ok AND checked_at > now() - interval '30 days'),
+                      (SELECT max(period_end) FROM audit.seal), (SELECT max(reviewed_at) FROM audit.review)""").fetchone()
+        if failed:
+            items.append(_item("audit_seal_failed", "Doğrulanamayan denetim izi mührü (son 30 gün)", failed,
+                               "#/denetim/butunluk", "Kayıtlar mühürlendikten sonra değişmiş olabilir; dönemi inceleyin "
+                               "ve bulgu olarak kaydedin.", "bad"))
+        if last_end is not None and datetime.now(UTC) - last_end > SEAL_LAG:
+            items.append(_item("audit_seal_lag", "Denetim izi mühürlenmiyor", 1, "#/sistem-durumu",
+                               "Son mühür iki saatten eski; görev çalışanının çalıştığını denetleyin."))
+        if ctx.grant("audit", "audit_review").allowed and (
+                last_review is None or datetime.now(UTC) - last_review > REVIEW_EVERY):
+            items.append(_item("audit_review_due", "Haftalık denetim izi incelemesi", 1, "#/denetim/incelemeler",
+                               "Son yedi günün olaylarını ve mühür doğrulamasını gözden geçirip kayda geçirin.", "info"))
     if ctx.grant("cmdb_ci", "attest").allowed and (user := ctx.sys_user()):
         from .attestation import summary as attestation_summary  # döngüsel içe aktarmayı önlemek için burada
         mine = attestation_summary(ctx).get("mine") or {}

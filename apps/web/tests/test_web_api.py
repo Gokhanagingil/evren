@@ -1559,3 +1559,124 @@ def test_integration_wizard_from_catalog_to_trial_run(page, base_url, browser):
         with psycopg.connect(autocommit=True) as conn:
             conn.execute("UPDATE ingest.connector_run_request SET status = 'cancelled', finished_at = now() "
                          "WHERE instance = %s AND status IN ('pending', 'running')", (name,))
+
+
+@pytest.fixture(scope="module")
+def auditor_url():
+    """Denetçi ayrı oturumla çalışır: görevler ayrılığı gereği düzenleyici rollerle birleşemez (ADR-0039)."""
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": "evren_auditor",
+                                  "EVREN_DEV_USER": "denetci-arayuz", "EVREN_DEV_NAME": "Denetçi Arayüz",
+                                  "EVREN_DB_POOL_SIZE": "3"})
+    server = uvicorn.Server(uvicorn.Config(create_app(settings), host="127.0.0.1", port=port, log_level="warning"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    for _ in range(100):
+        if server.started:
+            break
+        time.sleep(0.05)
+    yield f"http://127.0.0.1:{port}"
+    server.should_exit = True
+    thread.join(timeout=5)
+
+
+def test_audit_trail_filters_pivots_exports_verifies_and_reviews(browser, auditor_url, base_url, page):
+    """U8.8 (ADR-0039): Denetçi ret olaylarını arar, ayrıntıda kaynak IP, istek kimliği ve mührü görür, kişiye göre iz
+    sürer ve süzgeci klavyeyle kaldırır, CSV indirir; Bütünlük sekmesinde mühürleri doğrular; İncelemeler sekmesinde
+    dönemi gerekçeyle kaydeder. Yetkisi olmayan kişi bildirim görür. Mobilde taşma yok."""
+    import uuid as _uuid
+
+    import psycopg
+    from conftest import make_client
+
+    from evren_governance.audit_seal import seal_streams
+
+    tag = _uuid.uuid4().hex[:8]
+    with make_client(("evren_reader",), f"web-ret-{tag}") as c:
+        for _ in range(2):
+            assert c.get("/api/v1/audit/events").status_code == 403
+    with psycopg.connect(autocommit=True) as conn:
+        if conn.execute("SELECT count(*) FROM audit.seal WHERE stream = 'security'").fetchone()[0] == 0:
+            conn.execute("""INSERT INTO audit.security_event (at, principal, action, decision, detail)
+                            VALUES (now() - interval '3 hours', 'test:muhur-oncesi', 'login', 'allow', '{}')""")
+        conn.execute("SET ROLE evren_app_governance")
+        seal_streams(conn)
+
+    # Yetkisi olmayan (düzenleyici rollü) kişi: bildirim, API çağrısı yok
+    page.goto(base_url + "/#/denetim")
+    expect(page.locator("#view")).to_contain_text("Denetim izini Denetçi rolü görür")
+
+    context = browser.new_context(viewport={"width": 1440, "height": 900}, locale="tr-TR", accept_downloads=True)
+    pg = context.new_page()
+    problems: list[str] = []
+    pg.on("console", lambda m: problems.append(m.text) if m.type in ("error", "warning") else None)
+    pg.on("pageerror", lambda e: problems.append(str(e)))
+    pg.goto(auditor_url + "/#/denetim")
+    expect(pg.locator("#auditSummary .metric")).to_have_count(5)
+    pg.fill("#auditSearch", f"web-ret-{tag}")
+    rows = pg.locator("#auditList tbody tr")
+    expect(rows).to_have_count(2)
+    expect(pg.locator("#auditTotal")).to_contain_text("2 olay")
+    expect(pg.locator("#auditMore")).to_be_hidden()
+    expect(rows.first).to_contain_text("Yetki reddi")
+    shot(pg, "web_api_audit_events")
+    rows.first.focus()
+    pg.keyboard.press("Enter")
+    expect(pg.locator("#detailTitle")).to_contain_text("Yetki reddi: denetim izi okuma")
+    expect(pg.locator("#eventSeal")).to_contain_text("Henüz mühürlenmedi")
+    expect(pg.locator("#eventDetail")).to_be_visible()
+    pg.wait_for_timeout(400)  # panel açılış geçişi
+    shot(pg, "web_api_audit_detail")
+    pg.click("#pivot-actor")
+    chip = pg.locator("#auditPivots .chip")
+    expect(chip).to_contain_text(f"web-ret-{tag}")
+    expect(rows).to_have_count(2)
+    pg.locator("#auditPivots .pivot-x").focus()
+    pg.keyboard.press("Enter")
+    expect(chip).to_have_count(0)
+    pg.select_option("#auditOutcome", "allow")
+    expect(pg.locator("#auditList .empty")).to_be_visible()
+    pg.select_option("#auditOutcome", "deny")
+    expect(rows).to_have_count(2)
+    assert "format=csv" in (pg.get_attribute("#auditCsv", "href") or "")
+    with pg.expect_download() as dl:
+        pg.click("#auditCsv")
+    content = Path(dl.value.path()).read_text(encoding="utf-8-sig")
+    assert content.startswith("Zaman (UTC);") and content.count(f"web-ret-{tag}") == 2
+
+    # Bütünlük: akış başına mühür, elle doğrulama
+    pg.click("#tab-integrity")
+    expect(pg.locator("#sealStreams .metric")).to_have_count(3)
+    expect(pg.locator("#sealStream-security")).not_to_contain_text("Mühür yok")
+    pg.click("#verifyRun")
+    expect(pg.locator("#verifyResult .notice")).to_contain_text("mühür")
+    shot(pg, "web_api_audit_integrity")
+
+    # İnceleme: kısa not reddedilir, gerekçeyle kaydedilir; liste güncellenir
+    pg.click("#tab-reviews")
+    pg.click("#reviewNew")
+    expect(pg.locator("#revStart")).to_be_focused()
+    expect(pg.locator("#revSummary")).to_contain_text("olay")
+    pg.click("#revSave")
+    expect(pg.locator("#revError")).to_contain_text("en az 10")
+    expect(pg.locator("#revNote")).to_be_focused()
+    pg.click("label[for='revOutcome-findings']")
+    pg.fill("#revNote", f"Arayüz testi incelemesi {tag}: ret olayları gözden geçirildi.")
+    shot(pg, "web_api_audit_review")
+    pg.click("#revSave")
+    expect(pg.locator("#toast")).to_contain_text("İnceleme kaydedildi")
+    expect(pg.locator("#auditBody table")).to_contain_text(f"Arayüz testi incelemesi {tag}")
+    expect(pg.locator("#reviewDue")).to_contain_text("güncel")
+    context.close()
+    assert not problems, f"Konsol hatası/CSP ihlali: {problems}"
+
+    mobile = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    mp = mobile.new_page()
+    for route in ("#/denetim", "#/denetim/butunluk", "#/denetim/incelemeler"):
+        mp.goto(auditor_url + "/" + route)
+        expect(mp.locator("#auditBody table").first).to_be_visible()
+        mp.wait_for_timeout(150)
+        assert mp.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, route
+    mobile.close()

@@ -13,7 +13,7 @@ from fastapi import APIRouter, Depends, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from psycopg.types.json import Jsonb
 
-from ..deps import require_csrf
+from ..deps import request_origin, require_csrf
 from ..entra import ENTRA_ROLE_MAP, Denied, Unavailable
 from ..errors import ApiError
 from ..security import Principal
@@ -22,9 +22,10 @@ router = APIRouter(tags=["oturum"])
 
 
 def _security_event(request: Request, principal: str, action: str, decision: str, detail: dict[str, Any]) -> None:
+    rid, ip = request_origin(request)
     with request.app.state.pool.connection() as conn, conn.cursor() as cur:
-        cur.execute("INSERT INTO audit.security_event (principal, action, decision, detail) VALUES (%s, %s, %s, %s)",
-                    (principal, action, decision, Jsonb(detail)))
+        cur.execute("INSERT INTO audit.security_event (principal, action, decision, detail, client_ip, request_id) "
+                    "VALUES (%s, %s, %s, %s, %s, %s)", (principal, action, decision, Jsonb(detail), ip or None, rid or None))
 
 
 def resolve_roles(conn: Any, oid: str, groups: tuple[str, ...], app_roles: tuple[str, ...]) -> tuple[set[str], list[str]]:

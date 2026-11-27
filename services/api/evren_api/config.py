@@ -54,6 +54,20 @@ def _loopback(host: str) -> bool:
         return False
 
 
+def _trusted_proxies(raw: str) -> tuple[str, ...]:
+    out = []
+    for item in (p.strip() for p in raw.split(",")):
+        if not item:
+            continue
+        try:
+            out.append(str(ipaddress.ip_network(item, strict=False)))
+        except ValueError:
+            raise ConfigError(f"EVREN_TRUSTED_PROXIES geçersiz adres: {item[:60]!r} (IP veya CIDR)") from None
+    if any(n in ("0.0.0.0/0", "::/0") for n in out):
+        raise ConfigError("EVREN_TRUSTED_PROXIES her adrese güvenemez; vekilin adresini yazın")
+    return tuple(out)
+
+
 @dataclass(frozen=True)
 class Settings:
     auth_mode: str
@@ -73,6 +87,9 @@ class Settings:
     entra: EntraConfig | None = None
     dev_container: bool = False
     opensearch: OpenSearchSettings | None = None  # U3: küresel arama; yoksa PostgreSQL yedeği
+    #: Önündeki ters vekil/yük dengeleyici adresleri (IP veya CIDR). Yalnızca bunlardan gelen X-Forwarded-For
+    #: güvenilir; denetim izindeki kaynak IP buradan gelir (ADR-0039). Boşsa doğrudan bağlanan adres yazılır.
+    trusted_proxies: tuple[str, ...] = ()
 
     @property
     def session_cookie(self) -> str:
@@ -119,4 +136,5 @@ class Settings:
             session_hours=int(env.get("EVREN_SESSION_HOURS", "8")),
             dev_user=env.get("EVREN_DEV_USER", "dev"), dev_name=env.get("EVREN_DEV_NAME", "Geliştirici"),
             dev_roles=roles, entra=entra, dev_container=dev_container, opensearch=_opensearch(env),
+            trusted_proxies=_trusted_proxies(env.get("EVREN_TRUSTED_PROXIES", "")),
         )

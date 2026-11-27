@@ -8,6 +8,8 @@ Tur (``poll_seconds``'ta bir veya ``LISTEN evren_task`` bildirimiyle hemen):
 2. **Eşitleme:** teslim edilmiş açık görevin ServiceNow kaydı okunur; ServiceNow'da kapatılmışsa görev Evren'de açık
    kalır, "kanalda kapatıldı" diye işaretlenir (karar Evren'de verilir).
 3. **Kapatma:** Evren'de kapanan görevin ServiceNow kaydı kararla birlikte kapatılır.
+4. **Denetim izi:** bitmiş saatlik dönemler zincirli mühürle kapatılır, günde bir son mühürler doğrulanır
+   (``audit_seal``, ADR-0039).
 
 Hata: ServiceNow'a ulaşılamazsa görev ``failed`` olur ve sonraki turda yeniden denenir (en çok ``max_attempts``).
 Hata iletisi sır ve sunucu gövdesi içermez. Çalışan CMDB'ye yazamaz; yalnızca görevin teslim alanlarını yazar.
@@ -39,6 +41,7 @@ from evren_core.governance import (
 )
 from evren_core.metadata import Metadata, load_metadata
 
+from .audit_seal import seal_streams, verify_recent
 from .config import GovernanceConfig
 from .quality import RuleEvaluator, snapshot_health
 from .tasks import NoChannel, open_ci_tasks
@@ -122,6 +125,8 @@ class GovernanceWorker:
         evaluated = RuleEvaluator(self.metadata, self._event).cycle(conn, totals)
         self.due_events(conn, totals)
         totals["health_measured"] = int(snapshot_health(conn, self.metadata, force=evaluated > 0))
+        totals["audit_sealed"] = seal_streams(conn)
+        totals["audit_verified"], totals["audit_seal_failed"] = verify_recent(conn)
         sn = self._sn_settings(conn)
         if sn is not None and self.sn_ready:
             ch = self.channel(sn)

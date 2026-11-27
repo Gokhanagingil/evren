@@ -76,7 +76,7 @@ chapters:
       - {id: cmdb_rel_ci, kind: store, col: 2, row: 0, label: cmdb_rel_ci, sub: ["İlişkiler, bağımlılık", "haritası"]}
       - {id: dictionary, kind: store, col: 3, row: 0, label: Metadata sözlüğü, sub: ["sys_db_object,", "sys_dictionary, sys_choice"]}
       - {id: provenance, kind: store, col: 4, row: 0, label: Kaynak bilgisi, sub: ["Öznitelik → kaynak,", "geçmiş bir an"]}
-      - {id: audit_trail, kind: security, col: 5, row: 0, label: Denetim izi, sub: ["Salt ekleme,", "aylık bölümler"]}
+      - {id: audit_trail, kind: security, col: 5, row: 0, label: Denetim izi, sub: ["Tek görünüm, saatlik", "zincirli mühür"]}
       - {id: sn_views, kind: store, col: 0, row: 1, label: "sn.* görünümler", sub: ["sn.cmdb_ci_server", "gibi sorgulanır"]}
       - {id: search_index, kind: store, col: 1, row: 1, label: Arama dizini, sub: ["OpenSearch · CI", "seçici, bulanık arama"]}
       - {id: cache, kind: store, col: 2, row: 1, label: Valkey, sub: ["Önbellek, CI kilidi,", "hız sınırı"]}
@@ -87,6 +87,7 @@ chapters:
       - {from: cmdb_ci, to: sn_views}
       - {from: cmdb_ci, to: search_index}
       - {from: cmdb_ci, to: outbox}
+      - {from: audit_trail, to: outbox}
       - {from: cmdb_rel_ci, to: cmdb_ci}
 
   - id: consume
@@ -146,7 +147,7 @@ chapters:
       - {id: ai_governance, kind: security, col: 5, row: 0, label: Yapay zekâ yönetişimi, sub: ["ISO/IEC 42001 uyumlu", "öneri–onay, kayıt"]}
       - {id: mtls, kind: security, col: 0, row: 1, label: mTLS ve ağ, sub: ["Servisler arası TLS,", "bölütleme"]}
       - {id: db_roles, kind: security, col: 1, row: 1, label: En az yetkili DB rolleri, sub: ["Golden record'a tek", "yazan: uzlaştırıcı"]}
-      - {id: siem, kind: security, col: 2, row: 1, label: SIEM aktarımı, sub: ["Denetim ve güvenlik", "olayları"]}
+      - {id: siem, kind: security, col: 2, row: 1, label: SIEM aktarımı, sub: ["evren.audit.v1 →", "kurum SIEM'i"]}
       - {id: supply_chain, kind: security, col: 3, row: 1, span: 2, label: Tedarik zinciri güvenliği, sub: ["Hash kilitli bağımlılık, SBOM, imaj tarama,", "gitleaks, SAST, sabitlenmiş CI eylemleri"]}
       - {id: threat_model, kind: security, col: 5, row: 1, label: Tehdit modeli, sub: ["STRIDE, OWASP", "ASVS L2 hedefi"]}
     edges:
@@ -283,9 +284,9 @@ details:
     security: []
   audit_trail:
     phase: F0
-    text: Her öznitelik değişikliği kim, ne zaman, hangi kaynak ve hangi gerekçeyle bilgisiyle yazılır. UPDATE, DELETE ve TRUNCATE tetikleyiciyle engellenir.
-    tech: [audit.ci_change, audit.security_event]
-    security: [Salt ekleme, SIEM'e aktarım]
+    text: Her öznitelik değişikliği kim, ne zaman, hangi kaynak ve hangi gerekçeyle bilgisiyle yazılır. UPDATE, DELETE ve TRUNCATE tetikleyiciyle engellenir. Güvenlik ve yönetim olayları, CI değişiklikleri ve görev olayları tek görünümdedir (audit.trail); her olayda istek kimliği ve kaynak IP vardır. Görev çalışanı her akışı saatlik zincirli mühürle kapatır ve günde bir doğrular; Denetçi Denetim İzi sayfasında süzer, iz sürer, dışa aktarır, mühürleri doğrular ve dönem incelemesini kanıt olarak kaydeder. Süreç uygulamasının olayları aynı görünüme yeni akış olarak eklenir (ADR-0039).
+    tech: [audit.trail, audit.seal, audit.seal_check, audit.review, evren_core/audit.py, evren_governance/audit_seal.py]
+    security: [Salt ekleme, Zincirli mühür, SIEM'e aktarım]
   sn_views:
     phase: F0
     text: Her sınıf için ServiceNow tablo adıyla bir görünüm üretilir (ör. sn.cmdb_ci_linux_server). Raporlama ve SQL kullanıcıları alışık oldukları adlarla sorgular.
@@ -443,9 +444,9 @@ details:
     security: [Test edilmiş yetki sınırları]
   siem:
     phase: F1
-    text: Denetim ve güvenlik olayları kurum SIEM sistemine aktarılır.
-    tech: [audit.security_event]
-    security: []
+    text: Her güvenlik olayı, her mühür ve her mühür doğrulaması aynı veritabanı işleminde outbox'a yazılır ve evren.audit.v1 Kafka konusuyla (1 yıl saklama) kurum SIEM'ine gider. Mühür zincir değerlerinin SIEM'de bulunması veritabanı dışında bir tanık sağlar. Ürüne özgü teslim (HEC, Syslog/CEF) SIEM ürünü seçilince eklenir (ADR-0039).
+    tech: [events.outbox, evren.audit.v1, audit.security_event, audit.seal, audit.seal_check]
+    security: [Değiştirilemezlik tanığı]
   supply_chain:
     phase: F0
     text: Bağımlılıklar hash ile kilitlenir, imaj taranır ve SBOM üretilir. CI eylemleri commit SHA ile, dış konteyner görüntüleri özetle (digest) sabitlenir. Evren tek imajdır; root olmayan kullanıcı ve salt okunur kökle çalışır. Sır taraması ve SAST her değişiklikte çalışır.

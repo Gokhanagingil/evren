@@ -512,3 +512,29 @@ export function campaignRun(id, reason) {
 export function taskChannelUpdate(name, body) {
   return api(`/api/v1/task-channels/${encodeURIComponent(name)}`, { method: 'PATCH', body: JSON.stringify(body) });
 }
+
+// ---------------------------------------------------------------------------------------------- denetim izi (U8.8)
+function auditQuery(filters) {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(filters || {})) if (v !== null && v !== undefined && v !== '') p.set(k, v);
+  return p;
+}
+export const auditCatalog = () => api('/api/v1/audit/catalog');
+export const auditEvents = (filters) => api(`/api/v1/audit/events?${auditQuery(filters)}`);
+export const auditEvent = (source, id) => api(`/api/v1/audit/events/${encodeURIComponent(source)}/${encodeURIComponent(id)}`);
+export const auditSummary = (filters) => api(`/api/v1/audit/summary?${auditQuery(filters)}`);
+/** Dışa aktarma bağlantısı (oturum çereziyle indirilir; aktarmanın kendisi denetim olayıdır). */
+export function auditExportUrl(filters, format) {
+  const p = auditQuery({ ...filters, cursor: null });
+  p.set('format', format);
+  return `/api/v1/audit/export?${p}`;
+}
+export const auditIntegrity = () => api('/api/v1/audit/integrity');
+export const auditSeals = (filters) => api(`/api/v1/audit/seals?${auditQuery(filters)}`);
+export function auditVerify(body) {
+  return api('/api/v1/audit/seals/verify', { method: 'POST', body: JSON.stringify(body) });
+}
+export const auditReviews = () => api('/api/v1/audit/reviews');
+export function auditReview(body) {
+  return api('/api/v1/audit/reviews', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
+}

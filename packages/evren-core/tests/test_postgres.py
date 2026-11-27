@@ -128,7 +128,14 @@ def test_audit_trail_is_append_only():
     for stmt in ("UPDATE audit.ci_change SET actor = 'x'", "DELETE FROM audit.ci_change", "TRUNCATE audit.ci_change"):
         with pytest.raises(SqlError, match="değiştirilemez"):
             psql(stmt)
-
+    # 0034 (ADR-0039): mühür, doğrulama ve inceleme kanıtı da salt eklemedir (tablo sahibi için bile)
+    psql("INSERT INTO audit.review (reviewer, period_start, period_end, events, denied, seals_checked, seals_ok, outcome, "
+         "note) VALUES ('test', now() - interval '1 hour', now(), 0, 0, 0, true, 'findings', 'salt ekleme denemesi')")
+    stmts = ["TRUNCATE audit.seal, audit.seal_check", "TRUNCATE audit.seal_check", "TRUNCATE audit.review"]
+    stmts += ["UPDATE audit.review SET outcome = 'no_findings'", "DELETE FROM audit.review"]
+    for stmt in stmts:
+        with pytest.raises(SqlError, match="değiştirilemez"):
+            psql(stmt)
 
 def test_api_writes_only_people_it_created():
     """0030 (ADR-0034): API rolü ServiceNow/Entra kaynaklı kişi açamaz, adını/durumunu değiştiremez; yalnızca Entra
@@ -386,6 +393,28 @@ def test_segregation_of_duties_enforced():
         ("evren_app_reconciler", "UPDATE ref.sys_user_group SET entra_group_id = NULL WHERE false"),
         ("evren_auditor_ro", "INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, justification) "
                              "VALUES ('user', 'x', 'evren_reader', 'y', 'z')"),
+        # 0034 (ADR-0039): mühürleri yalnızca görev çalışanı ekler; kimse mühür, doğrulama veya inceleme
+        # değiştiremez/silemez; API mühür yazamaz; çalışan inceleme göremez; salt okur (kendi rolü) denetim izini göremez
+        ("evren_app_api", "INSERT INTO audit.seal (stream, period_start, period_end, row_count, digest, prev_chain, "
+                          "chain, sealed_by) SELECT stream, period_start, period_end, 0, digest, prev_chain, chain, "
+                          "'x' FROM audit.seal WHERE false"),
+        ("evren_app_api", "UPDATE audit.seal SET row_count = 0 WHERE false"),
+        ("evren_app_api", "UPDATE audit.review SET outcome = 'no_findings' WHERE false"),
+        ("evren_app_api", "DELETE FROM audit.seal_check WHERE false"),
+        ("evren_app_api", "INSERT INTO audit.seal_check (seal, checked_by, ok, checked_at) "
+                          "SELECT id, 'x', true, now() FROM audit.seal WHERE false"),
+        ("evren_app_governance", "UPDATE audit.seal SET chain = chain WHERE false"),
+        ("evren_app_governance", "DELETE FROM audit.seal WHERE false"),
+        ("evren_app_governance", "SELECT count(*) FROM audit.review"),
+        ("evren_app_governance", "INSERT INTO audit.security_event (principal, action, decision) VALUES ('t', 'login', 'allow')"),
+        ("evren_app_governance", "UPDATE audit.ci_change SET actor = 'x' WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM audit.trail"),
+        ("evren_readonly", "SELECT count(*) FROM audit.seal"),
+        ("evren_app_connector", "SELECT count(*) FROM audit.review"),
+        ("evren_app_ingest", "SELECT count(*) FROM audit.seal"),
+        ("evren_auditor_ro", "INSERT INTO audit.review (reviewer, period_start, period_end, events, denied, seals_checked, "
+                             "seals_ok, outcome, note) VALUES ('x', now(), now() + interval '1 hour', 0, 0, 0, true, "
+                             "'findings', 'salt okur yazamaz')"),
         # ADR-0023: kısıtlı duruşu yalnızca uzlaştırıcı yazar; API yalnızca okur (hassasiyet denetimi API'de)
         ("evren_app_api", "UPDATE cmdb.ci_security_posture SET risk_score = 'High' WHERE false"),
         ("evren_app_api", "DELETE FROM cmdb.ci_security_posture WHERE false"),
@@ -453,6 +482,17 @@ def test_least_privilege_boundaries(role, statement):
                              "kind, details) VALUES ('gw-test', now(), now(), 30, 'gateway', '{}') "
                              "ON CONFLICT (worker_id) DO UPDATE SET seen_at = now(); ROLLBACK"),
         ("evren_auditor_ro", "SELECT data_source, source_key FROM cmdb.cmdb_rel_ci_source"),
+        # 0034 (ADR-0039): denetçi salt okur birleşik izi, mühürleri ve incelemeleri okur; API doğrulama ve inceleme
+        # kanıtı ekler; görev çalışanı akışları okur
+        ("evren_auditor_ro", "SELECT source, actor, client_ip, request_id FROM audit.trail LIMIT 1"),
+        ("evren_auditor_ro", "SELECT chain FROM audit.seal LIMIT 1"),
+        ("evren_auditor_ro", "SELECT outcome, note FROM audit.review LIMIT 1"),
+        ("evren_app_api", "SELECT count(*) FROM audit.trail WHERE at > now() - interval '1 day'"),
+        ("evren_app_api", "BEGIN; INSERT INTO audit.seal_check (seal, checked_by, ok) SELECT id, 'x', true FROM audit.seal "
+                          "WHERE false; ROLLBACK"),
+        ("evren_app_governance", "SELECT count(*) FROM audit.security_event"),
+        ("evren_app_governance", "SELECT count(*) FROM audit.ci_change"),
+        ("evren_app_governance", "SELECT count(*) FROM audit.seal_check"),
     ],
 )
 def test_allowed_paths_work(role, statement):

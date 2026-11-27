@@ -146,8 +146,12 @@ function tasks(goCi) {
     { group: 'İşletim', desc: 'Platformun sağlığı ve izlenebilirliği.', items: [
       { id: 'durum', title: 'Sistem durumunu izle', icon: 'heart', cap: 'system', guide: 'isletim', href: '#/sistem-durumu',
         desc: 'Veritabanı, Kafka, arama, servisler ve veri akışı tek ekranda.' },
-      { id: 'denetim', title: 'Denetim izini incele', icon: 'shield', cap: 'audit_read', guide: 'isletim', soon: true,
-        desc: 'Kim, ne zaman, neyi değiştirdi; güvenlik olayları.' },
+      { id: 'denetim', title: 'Denetim izini incele', icon: 'shield', cap: 'audit_read', guide: 'denetim-izi', href: '#/denetim',
+        desc: 'Kim, ne zaman, neyi, nereden yaptı; ret olayları, dışa aktarma.' },
+      { id: 'denetim-butunluk', title: 'Denetim izinin bütünlüğünü doğrula', icon: 'check', cap: 'audit_read', guide: 'denetim-izi',
+        href: '#/denetim/butunluk', desc: 'Saatlik zincirli mühürler; kayıtların sonradan değişmediğini kanıtla.' },
+      { id: 'denetim-inceleme', title: 'Haftalık incelemeyi kaydet', icon: 'calendar', cap: 'audit_read', guide: 'denetim-izi',
+        href: '#/denetim/incelemeler', desc: 'Dönemin olaylarını gözden geçir; karar ve not kanıt olarak kalır.' },
     ] },
   ];
 }

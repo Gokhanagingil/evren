@@ -1,6 +1,7 @@
 """İstek bağlamı: kimlik, veritabanı bağlantısı, izinler ve CSRF denetimi."""
 from __future__ import annotations
 
+import ipaddress
 import re
 from collections.abc import Iterator
 from dataclasses import dataclass, field, replace
@@ -65,9 +66,10 @@ class Ctx:
                        detail: dict[str, Any] | None = None) -> None:
         """Güvenlik olayını yazar. İstek bir veritabanı işleminin içindeyse (ör. ret ardından ApiError ile geri
         alınacak işlem) olay ayrı bir bağlantıyla yazılır; böylece ret kaydı geri alınmaz."""
-        params = (self.principal.audit_id, action, resource, decision, Jsonb(detail or {}))
-        query = ("INSERT INTO audit.security_event (principal, action, resource, decision, detail) "
-                 "VALUES (%s, %s, %s, %s, %s)")
+        rid, ip = request_origin(self.request)
+        params = (self.principal.audit_id, action, resource, decision, Jsonb(detail or {}), ip or None, rid or None)
+        query = ("INSERT INTO audit.security_event (principal, action, resource, decision, detail, client_ip, request_id) "
+                 "VALUES (%s, %s, %s, %s, %s, %s, %s)")
         if self.conn.info.transaction_status == psycopg.pq.TransactionStatus.IDLE:
             self.conn.execute(query, params)
             return
@@ -119,9 +121,25 @@ def effective_roles(conn: psycopg.Connection[Any], principal: Principal) -> tupl
     return frozenset(roles), conflicts
 
 
+def request_origin(request: Request) -> tuple[str, str]:
+    """(istek kimliği, kaynak IP) — denetim izi için; IP geçersizse boş (ör. test istemcisi)."""
+    rid = getattr(request.state, "request_id", "") or ""
+    host = request.client.host if request.client else ""
+    try:
+        ip = str(ipaddress.ip_address(host))
+    except ValueError:
+        ip = ""
+    return rid, ip
+
+
 def context(request: Request) -> Iterator[Ctx]:
     principal = principal_from_request(request)
+    rid, ip = request_origin(request)
     with request.app.state.pool.connection() as conn:
+        # Bu bağlantıdaki her denetim olayına istek kimliği ve kaynak IP işlenir (tetikleyici); bağlantı havuza
+        # dönerken temizlenir (db.make_pool, reset).
+        conn.execute("SELECT set_config('evren.request_id', %s, false), set_config('evren.client_ip', %s, false)",
+                     (rid, ip))
         roles, conflicts = effective_roles(conn, principal)
         if conflicts:
             raise ApiError(403, "gorevler_ayriligi", "Rolleriniz görevler ayrılığı kuralıyla çatışıyor; yetki "

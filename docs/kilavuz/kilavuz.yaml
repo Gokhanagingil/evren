@@ -40,6 +40,8 @@ topics:
      summary: "Sorumlulara açılan görevler, zamanlanmış kampanyalar, kararı ve görev kanalı.", routes: [gorevler]}
   - {id: saglik, file: 14-cmdb-sagligi.md, title: "CMDB sağlığı ve kalite kuralları",
      summary: "Sağlık puanı, kural tanımlamak, bulgular ve istisna.", routes: [saglik]}
+  - {id: denetim-izi, file: 15-denetim-izi.md, title: "Denetim izi",
+     summary: "Kim, ne zaman, neyi yaptı; mühürler, doğrulama ve dönem incelemesi.", routes: [denetim]}
   - {id: sozluk, file: 11-sozluk.md, title: "Kavramlar sözlüğü",
      summary: "Evren'de geçen terimlerin kısa açıklamaları."}
   - {id: teknik, file: 12-teknik.md, title: "Teknik belgeler",
