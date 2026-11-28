@@ -1980,3 +1980,55 @@ def test_coverage_policy_template_shows_role_fields_and_one_finding_per_server(p
     expect(page.locator("#ruleSample")).to_contain_text("İzleme rolünde hiç görülmedi")
     shot(page, "web_api_rule_coverage")
     page.keyboard.press("Escape")
+
+
+def test_coverage_finding_explains_identity_gap_and_links_to_the_queue(page, base_url):
+    """P1.2 (ADR-0046): izleme sunucuyu tanıyor ama kaydı kuyrukta → bulgu "olası kimlik boşluğu" der, kuyruk kaydına
+    bağlantı verir ve sorumluya görev açılmadığını söyler."""
+    import uuid
+
+    import psycopg
+    from psycopg.types.json import Jsonb
+
+    from evren_core.governance import ServiceNowTaskSimulator
+    from evren_governance.config import GovernanceConfig
+    from evren_governance.worker import GovernanceWorker
+
+    tag = f"kiu{uuid.uuid4().hex[:5]}"
+    with psycopg.connect(autocommit=True) as conn:
+        (srv,) = conn.execute("INSERT INTO cmdb.cmdb_ci (sys_class_name, name, used_for) VALUES "
+                              "('cmdb_ci_linux_server', %s, 'Production') RETURNING sys_id", (f"{tag}-srv",)).fetchone()
+        for src, key in (("vCenter", f"{tag}-vc"), ("Zabbix", f"{tag}-zbx")):
+            conn.execute("""INSERT INTO ingest.source_record (data_source, source_key, class_hint, content_hash, last_seen)
+                            VALUES (%s, %s, 'cmdb_ci_linux_server', 'x', now())""", (src, key))
+        conn.execute("""INSERT INTO ingest.identity_link (data_source, source_key, ci_sys_id, method, decided_by)
+                        VALUES ('vCenter', %s, %s, 'rule', 'test')""", (f"{tag}-vc", srv))
+        (qid,) = conn.execute("""INSERT INTO ingest.match_candidate (data_source, source_key, reason, candidates)
+                                 VALUES ('Zabbix', %s, 'Kural 2 CI ile eşleşti', %s) RETURNING sys_id""",
+                              (f"{tag}-zbx", Jsonb([{"sys_id": srv, "probability": 0.99}]))).fetchone()
+        for (src,) in conn.execute("SELECT name FROM ingest.data_source WHERE role = ANY(%s)",
+                                   (["Monitoring", "Virtualization", "Discovery"],)).fetchall():
+            conn.execute("""INSERT INTO ingest.source_run (run_id, data_source, mode, started_at, finished_at, completed,
+                                                            breaker_state)
+                            VALUES (gen_random_uuid(), %s, 'snapshot', clock_timestamp(), clock_timestamp(), true, 'ok')""",
+                         (src,))
+        (rid,) = conn.execute(
+            """INSERT INTO insight.quality_rule (name, check_kind, params, scope_class, scope_query, dimension, task_title,
+                                                 channel, state, next_run_at, created_by)
+               VALUES (%s, 'coverage_gap', %s, 'cmdb_ci_server', %s, 'coverage', 'Kapsamı tamamlayın', 'evren', 'active',
+                       now() - interval '1 minute', 'test') RETURNING sys_id""",
+            (f"Kapsam {tag}", Jsonb({"roles": ["Monitoring"], "observed_by": ["Virtualization", "Discovery"]}),
+             f"nameSTARTSWITH{tag}")).fetchone()
+    w = GovernanceWorker(GovernanceConfig(conninfo="", public_url="https://evren.ornek.test", worker_id=f"arayuz-{tag}",
+                                          sync_minutes=1), transport=ServiceNowTaskSimulator(), connect=lambda: psycopg.connect())
+    with w.open() as conn:
+        w.cycle(conn)
+    page.goto(base_url + f"/#/saglik/bulgular/kural/{rid}")
+    page.locator("#findingList tbody tr", has_text=f"{tag}-srv").click()
+    expect(page.locator("#findingText")).to_contain_text("olası kimlik boşluğu")
+    box = page.locator("#findingIdentity")
+    expect(box).to_contain_text("Sorumluya görev açılmadı")
+    expect(box.locator("a")).to_have_attribute("href", f"#/kuyruk/{qid}")
+    expect(page.locator("#findingTasks")).to_have_count(0)
+    shot(page, "web_api_finding_identity")
+    page.keyboard.press("Escape")

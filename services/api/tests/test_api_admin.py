@@ -19,7 +19,7 @@ def test_attention_lists_only_work_the_person_may_do():
         assert ids(reader) == {}  # okuyucuya düşen karar yok
     with make_client(("evren_reader", "evren_match_reviewer"), "eslestirici") as reviewer:
         got = ids(reviewer)
-        assert set(got) <= {"queue"}
+        assert set(got) <= {"queue", "coverage_identity"}
         if "queue" in got:  # demo verisinde açık kuyruk kaydı var
             assert got["queue"]["href"] == "#/kuyruk" and got["queue"]["count"] > 0
     with make_client(("evren_operator",), "operator") as operator:
@@ -62,3 +62,33 @@ def test_technical_docs_are_listed_and_served_by_name(client):
 def test_doc_names_cannot_escape_docs(client, name, code):
     r = client.get(f"/api/v1/docs/{name}")
     assert r.status_code == code, (name, r.status_code, r.text)
+
+
+def test_coverage_finding_waiting_for_matching_is_shown_to_match_reviewer_only():
+    """P1.2 (ADR-0046): bütün eksik rolleri kimlik boşluğu olan kapsam bulgusu sahibine gitmez; eşleştirme analistinin
+    "Size düşen işler" listesinde görünür, okuyucuda görünmez."""
+    import uuid
+
+    import psycopg
+    from psycopg.types.json import Jsonb
+
+    with psycopg.connect(autocommit=True) as c:
+        ci = c.execute("INSERT INTO cmdb.cmdb_ci (sys_class_name, name) VALUES ('cmdb_ci_linux_server', %s) "
+                       "RETURNING sys_id", (f"kik-{uuid.uuid4().hex[:6]}",)).fetchone()[0]
+        rule = c.execute("""INSERT INTO insight.quality_rule (name, check_kind, params, scope_class, dimension, task_title,
+                                                               state, next_run_at, created_by)
+                            VALUES (%s, 'coverage_gap', '{"roles": ["Monitoring"]}', 'cmdb_ci_server', 'coverage',
+                                    'Kapsamı tamamlayın', 'paused', NULL, 'test') RETURNING sys_id""",
+                         (f"Kapsam {uuid.uuid4().hex[:6]}",)).fetchone()[0]
+        c.execute("INSERT INTO insight.finding (rule, ci_sys_id, details) VALUES (%s, %s, %s)",
+                  (rule, ci, Jsonb({"missing": ["Monitoring"], "identity_only": True, "text": "x"})))
+    try:
+        with make_client(("evren_reader", "evren_match_reviewer"), "eslestirici-kapsam") as reviewer:
+            item = ids(reviewer)["coverage_identity"]
+            assert item["count"] >= 1 and item["href"] == "#/saglik/bulgular"
+        with make_client(("evren_reader",), "okuyucu-kapsam") as reader:
+            assert "coverage_identity" not in ids(reader)
+    finally:
+        with psycopg.connect(autocommit=True) as c:
+            c.execute("UPDATE insight.finding SET state = 'resolved', resolved_at = now() WHERE rule = %s", (rule,))
+            c.execute("UPDATE insight.quality_rule SET state = 'retired' WHERE sys_id = %s", (rule,))

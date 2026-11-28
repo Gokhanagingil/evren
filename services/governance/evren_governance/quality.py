@@ -25,7 +25,7 @@ from psycopg.types.json import Jsonb
 from evren_core.governance import NOT_RETIRED_SQL
 from evren_core.health import DIMENSIONS, Ratio, completeness_ratio, dimension_score, grade, overall_score
 from evren_core.metadata import Metadata, metadata_field_resolver
-from evren_core.quality import DIMENSION_TR, compile_rule, describe_details, relation_violations
+from evren_core.quality import DIMENSION_TR, compile_rule, describe_details, finalize_coverage, relation_violations
 
 from .tasks import NoChannel, open_ci_tasks
 
@@ -149,8 +149,8 @@ class RuleEvaluator:
                 return
         else:
             for ci, extra in rows:
-                if isinstance(extra, dict):  # kapsam boşluğu: eksik roller ve rol başına son görülme
-                    matched[ci] = {**base, **extra}
+                if isinstance(extra, dict):  # kapsam boşluğu: eksik roller, son görülme, kimlik ipuçları (ADR-0046)
+                    matched[ci] = finalize_coverage({**base, **extra})
                 else:
                     matched[ci] = {**base, **({"empty": list(extra)} if extra is not None else {})}
         labels = {k: str(v.get("label_tr") or k) for k, v in self.md.fields_of(scope_class).items()}
@@ -187,7 +187,9 @@ class RuleEvaluator:
     def open_tasks(self, conn: psycopg.Connection[Any], rid: str, name: str, title: str, instructions: str,
                    due_days: int, channel: str | None) -> int:
         """Açık (ayıklamada olmayan) ve açık görevi olmayan bulgulara görev. Sorumlu görevi reddettiyse, CI'ın
-        sorumlusu değişene kadar yeni görev açılmaz (bulgu Konfigürasyon yöneticisinin listesinde kalır)."""
+        sorumlusu değişene kadar yeni görev açılmaz (bulgu Konfigürasyon yöneticisinin listesinde kalır). Kapsam
+        bulgusunun bütün eksik rolleri kimlik boşluğuysa (``identity_only``) sahibine görev açılmaz: sorun eşleştirmede,
+        eşleştirme kuyruğunun kararıyla kapanır (ADR-0046)."""
         rows = conn.execute(
             """SELECT f.sys_id, f.ci_sys_id, c.name, c.owned_by, c.managed_by, c.support_group, f.triage, f.details,
                       (SELECT array[t.assignee_user::text, t.assignee_group::text] FROM gov.task t
@@ -195,6 +197,7 @@ class RuleEvaluator:
                         ORDER BY t.closed_at DESC LIMIT 1)
                  FROM insight.finding f JOIN cmdb.cmdb_ci c ON c.sys_id = f.ci_sys_id
                 WHERE f.rule = %s AND f.state = 'open'
+                  AND NOT coalesce((f.details->>'identity_only')::boolean, false)
                   AND NOT EXISTS (SELECT 1 FROM gov.task t WHERE t.source = 'rule' AND t.source_ref = f.sys_id
                                      AND t.state = 'open')""", (rid,)).fetchall()
         items = []

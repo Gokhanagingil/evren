@@ -25,6 +25,7 @@ __all__ = [
     "RulePlan",
     "compile_rule",
     "describe_details",
+    "finalize_coverage",
     "relation_violations",
 ]
 
@@ -285,6 +286,23 @@ def _int_param(value: Any, name: str, lo: int, hi: int) -> int:
 _SEEN = ("EXISTS (SELECT 1 FROM ingest.identity_link l JOIN ingest.source_record sr USING (data_source, source_key) "
          "JOIN ingest.data_source d ON d.name = l.data_source WHERE l.ci_sys_id = c.sys_id AND l.active "
          "AND d.lifecycle IN ('active', 'retiring') AND d.role = %s AND sr.last_seen >= now() - make_interval({unit} => %s))")
+#: Kimlik ipuçları (P1.2): eksik rolün kaynağında bu CI'ı aday gösteren açık kuyruk kaydı ya da aynı ada/IP'ye sahip,
+#: o rolün kaynağına bağlı başka bir CI (olası mükerrer). Varsa kaynak CI'ı büyük olasılıkla tanıyor, sorun eşleştirmede.
+_IDENTITY = (
+    "(SELECT coalesce(jsonb_agg(h), '[]'::jsonb) FROM ("
+    "SELECT jsonb_build_object('role', d.role, 'kind', 'queue', 'candidate', m.sys_id, 'data_source', m.data_source) h "
+    "FROM ingest.match_candidate m JOIN ingest.data_source d ON d.name = m.data_source "
+    "WHERE m.status = 'open' AND d.role = ANY(%s::text[]) AND (m.candidate_ci = c.sys_id "
+    "OR m.candidates @> jsonb_build_array(jsonb_build_object('sys_id', c.sys_id::text))) "
+    "UNION ALL "
+    "SELECT DISTINCT jsonb_build_object('role', d.role, 'kind', 'duplicate', 'ci', o.sys_id, 'ci_name', o.name, "
+    "'data_source', l.data_source) "
+    "FROM cmdb.cmdb_ci o JOIN ingest.identity_link l ON l.ci_sys_id = o.sys_id AND l.active "
+    "JOIN ingest.data_source d ON d.name = l.data_source "
+    "WHERE o.sys_id <> c.sys_id AND d.role = ANY(%s::text[]) AND d.lifecycle IN ('active', 'retiring') "
+    "AND ((coalesce(c.name, '') <> '' AND lower(split_part(o.name, '.', 1)) = lower(split_part(c.name, '.', 1))) "
+    "OR (coalesce(c.ip_address, '') <> '' AND o.ip_address = c.ip_address)) "
+    "LIMIT 10) s)")
 _LAST_SEEN = ("(SELECT max(sr.last_seen) FROM ingest.identity_link l JOIN ingest.source_record sr "
               "USING (data_source, source_key) JOIN ingest.data_source d ON d.name = l.data_source "
               "WHERE l.ci_sys_id = c.sys_id AND l.active AND d.lifecycle IN ('active', 'retiring') AND d.role = %s)")
@@ -320,8 +338,9 @@ def _coverage_plan(md: Any, scope_sql: str, scope_params: list[Any], params: Map
     detail = ("jsonb_build_object('missing', to_jsonb(array_remove(ARRAY["
               + ", ".join(f"CASE WHEN NOT {seen_day} THEN %s::text END" for _ in required)
               + "], NULL)), 'last_seen', jsonb_build_object("
-              + ", ".join(f"%s::text, {_LAST_SEEN}" for _ in required) + "))")
-    dparams: list[Any] = [x for r in required for x in (r, fresh, r)] + [x for r in required for x in (r, r)]
+              + ", ".join(f"%s::text, {_LAST_SEEN}" for _ in required) + "), 'identity', " + _IDENTITY + ")")
+    dparams: list[Any] = ([x for r in required for x in (r, fresh, r)] + [x for r in required for x in (r, r)]
+                          + [list(required), list(required)])
     labels = [roles[r].label_tr for r in required]
     seen_by = f"; {_join_or([roles[o].label_tr for o in observers])} son {within} saatte görüyor" if observers else ""
     return RulePlan(scope_sql, scope_params, match, mparams, detail, dparams,
@@ -337,6 +356,25 @@ def relation_violations(md: Any, rows: Sequence[tuple[str, str, str, str]]) -> l
         verdict = rules.check(parent_class, rel_type, child_class)
         if not verdict.allowed:
             out.append({"type": rel_type, "child": child_name, "child_class": child_class, "verdict": verdict.outcome})
+    return out
+
+
+def finalize_coverage(details: Mapping[str, Any]) -> dict[str, Any]:
+    """Kapsam bulgusunun ayrıntısını tamamlar (P1.2): kimlik ipuçlarından yalnızca eksik rollere ait olanlar kalır;
+    ``identity_roles`` kimlik ipucu olan eksik roller, ``identity_only`` eksik rollerin hepsinde ipucu var demektir
+    (sorun eşleştirmede: sahibine görev açılmaz, eşleştirme kuyruğu çözer)."""
+    out = dict(details)
+    missing = list(out.get("missing") or [])
+    hints, seen = [], set()
+    for h in out.get("identity") or []:
+        key = (h.get("role"), h.get("kind"), h.get("candidate") or h.get("ci"))
+        if h.get("role") in missing and key not in seen:
+            seen.add(key)
+            hints.append(dict(h))
+    out["identity"] = hints
+    roles = [r for r in missing if any(h["role"] == r for h in hints)]
+    out["identity_roles"] = roles
+    out["identity_only"] = bool(missing) and len(roles) == len(missing)
     return out
 
 
@@ -358,6 +396,15 @@ def describe_details(check_kind: str, details: Mapping[str, Any], field_labels: 
                 parts.append(f"{label} rolünde son görülme bilinmiyor")
                 continue
             parts.append(f"{label} rolünde {days} gündür görülmüyor" if days else f"{label} rolünde bugün görülmedi")
+        for i, role in enumerate(details.get("missing", [])):
+            hints = [h for h in details.get("identity") or [] if h.get("role") == role]
+            if any(h.get("kind") == "queue" for h in hints):
+                src = next(h["data_source"] for h in hints if h.get("kind") == "queue")
+                parts[i] += f" (olası kimlik boşluğu: {src} kaydı eşleştirme kuyruğunda)"
+            elif hints:
+                h = hints[0]
+                other = h.get("ci_name") or h.get("ci")
+                parts[i] += f" (olası mükerrer: {h['data_source']} aynı ad veya IP'li başka bir CI'a bağlı: {other})"
         return _tr_capital("; ".join(parts)) if parts else str(details.get("summary") or "")
     if check_kind == "missing_fields":
         names = [str((field_labels or {}).get(f, f)) for f in details.get("empty", [])]

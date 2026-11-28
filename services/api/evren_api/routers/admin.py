@@ -45,6 +45,13 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             if n:
                 items.append(_item("queue", "Eşleştirme kuyruğunda karar bekleyen kayıt", n, "#/kuyruk",
                                    "Evren bu kayıtları emin olamadığı için size soruyor."))
+            cur.execute("""SELECT count(*) FROM insight.finding WHERE state = 'open'
+                             AND coalesce((details->>'identity_only')::boolean, false)""")
+            n = cur.fetchone()[0]
+            if n:  # P1.2 (ADR-0046): kapsam bulgusu sahibine gitmedi; kuyruk kararıyla kapanır
+                items.append(_item("coverage_identity", "Eşleştirme bekleyen kapsam bulgusu", n, "#/saglik/bulgular",
+                                   "Kaynak bu CI'ları büyük olasılıkla tanıyor ama eşleşmemiş; kuyruk kararı verilince "
+                                   "bulgu kendiliğinden kapanır."))
         if ctx.grant("schema", "schema_approve").allowed:
             cur.execute("SELECT count(*) FROM meta.schema_change_set WHERE state = 'in_review' AND created_by <> %s",
                         (me,))

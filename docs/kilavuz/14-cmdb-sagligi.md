@@ -13,7 +13,7 @@
 
 Kural türleri: ilişkisi olmayan CI, boş alan, bir kaynak rolünce görülmeyen CI, kapsam boşluğu, koşula uyan CI, izinli olmayan ilişki. Kural ürüne değil role bağlıdır.
 
-**Kapsam boşluğu** kuralı "çalışan her üretim sunucusu izlenmeli ve korunmalı" gibi bir politikayı denetler. Eksik rollerin hepsi tek bulguda ve tek görevde toplanır; bulgu, her rolün sunucuyu en son ne zaman gördüğünü yazar. Kapatılmış makine için görev açılmaz. Eksik giderilince sonraki kaynak çalışması bunu görür, bulgu ve görev kendiliğinden kapanır.
+**Kapsam boşluğu** kuralı "çalışan her üretim sunucusu izlenmeli ve korunmalı" gibi bir politikayı denetler. Eksik rollerin hepsi tek bulguda ve tek görevde toplanır; bulgu, her rolün sunucuyu en son ne zaman gördüğünü yazar. Kapatılmış makine için görev açılmaz. Eksik giderilince sonraki kaynak çalışması bunu görür, bulgu ve görev kendiliğinden kapanır. Kaynak sunucuyu tanıyor ama kaydı eşleştirme kuyruğunda bekliyorsa sahibine görev açılmaz; bulgu eşleştirme analistine düşer.
 
 ## Teknik ayrıntı
 

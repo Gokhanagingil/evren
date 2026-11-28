@@ -1,6 +1,6 @@
 # ADR-0046: Kapalı döngü kapsam güvencesi
 
-- Durum: Kabul edildi (P1.1); sonraki parçalar aşağıda, her parça bu kayda eklenir
+- Durum: Kabul edildi (P1.1, P1.2); sonraki parçalar aşağıda, her parça bu kayda eklenir
 - Tarih: 28.11.2026
 - Karar verenler: Proje sahibi (öneri: "akıl katmanı ters yönlü de çalışabilir mi?", 28.11.2026), mimari
 
@@ -48,9 +48,23 @@ Davranış:
 - **Şablon:** "Üretimde çalışan ama izlenmeyen veya korumasız sunucu". İzleme + uç nokta güvenliği, 7 gün; sanallaştırma veya keşif, 48 saat.
 - **En az yetki:** Görev çalışanı yalnızca `ingest.source_record` tablosunun kimlik ve `last_seen` sütunlarını okur. Kayıt içeriğini göremez, yazamaz (göç 0038).
 
+### P1.2 — Kapsam boşluğu mu, kimlik boşluğu mu?
+
+Bir rol sunucuyu "görmüyor" olabilir; ama o rolün kaynağı sunucuyu tanıyor, yalnızca kaydı sunucuya bağlanamamış da olabilir. O durumda sorun sunucu sahibinde değil eşleştirmededir. Yanlış kişiye giden görev güveni en hızlı bozan şeydir.
+
+- **İpuçları:** Eksik her rol için iki iz aranır:
+  - o rolün kaynağından gelen ve bu CI'ı aday gösteren **açık eşleştirme kuyruğu kaydı** (`candidate_ci` veya `candidates`);
+  - o rolün kaynağına bağlı, aynı kısa ada veya IP'ye sahip **başka bir CI** (olası mükerrer).
+- **Ayrıntı:** `identity` (ipuçları), `identity_roles` (ipucu olan eksik roller), `identity_only` (eksik rollerin hepsinde ipucu var).
+- **Yönlendirme:**
+  - `identity_only` ise sahibine görev açılmaz. Bulgu eşleştirme analistinin "Size düşen işler" listesine düşer. Kuyruk kararı kaydı bağlayınca sonraki değerlendirmede bulgu kendiliğinden kapanır.
+  - Karışık durumda (bir rol kimlik, bir rol gerçek eksik) sahibine görev açılır. Metin kimlik kısmını "olası kimlik boşluğu" diye ayırır.
+- **Arayüz:** Bulgu ayrıntısında "Olası kimlik boşluğu" bölümü yer alır; kuyruk kaydına veya diğer CI'a bağlantı verir.
+- **En az yetki:** Görev çalışanı kuyruk kaydının yalnızca kimliğini, kaynağını, durumunu ve adaylarını okur. Karar ve gerekçe sütunlarını göremez, yazamaz (göç 0039).
+- **Sınır:** Ad eşleşmesi kısa ad (ilk noktaya kadar) ve büyük/küçük harf duyarsızdır; Türkçe harf katlaması SQL'de yapılmaz. Bu yalnızca bir ipucudur; görevi sahibinden alır, bağı ise kurmaz.
+
 ### Sonraki parçalar (planlandı)
 
-- **P1.2 Kapsam mı, kimlik mi?** İlgili rolün kaynağında, CI'a benzeyen (ad, IP) ama eşleşmemiş bir kayıt varsa sorun izlemede değil eşleştirmededir. Görev sorumluya değil eşleştirme kuyruğuna gider. Yanlış kişiye giden görev güveni en hızlı bozan şeydir.
 - **P1.3 Olay tetikli doğrulama ve kanıtlı kapanış.** Bir rolün kaynak çalışması sağlıklı bitince o role bağlı kurallar hemen yeniden değerlendirilir. Kapanış notu kanıtı taşır, örneğin "Zabbix çalışması 28.11 14:05'te gördü"; kanıt denetim izine ve GRC Platformu'na gider.
 - **P1.4 Öncelik:** Görev süresi ve sırası, CI'ın taşıdığı hizmetin kritikliğine göre belirlenir.
 - **P1.5 Kapsam dosyası ekranı:** Tek cümle özet; ardından istenince açılan rol × kaynak × son görülme tablosu, taşıdığı hizmet, sorumlu ve görev durumu.

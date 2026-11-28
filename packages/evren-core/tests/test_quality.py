@@ -123,3 +123,36 @@ def test_coverage_gap_text_names_roles_and_days_since_last_seen():
     labels = {"Monitoring": "İzleme", "EndpointSecurity": "Uç nokta güvenliği"}
     assert describe_details("coverage_gap", d, role_labels=labels, now=now) == (
         "İzleme rolünde 14 gündür görülmüyor; Uç nokta güvenliği rolünde hiç görülmedi")
+
+
+# ------------------------------------------------------------------ kapsam mı kimlik mi (P1.2, ADR-0046)
+def test_finalize_keeps_hints_of_missing_roles_and_flags_identity_only():
+    from evren_core.quality import finalize_coverage
+
+    d = finalize_coverage({
+        "missing": ["Monitoring"],
+        "identity": [{"role": "Monitoring", "kind": "queue", "candidate": "q1", "data_source": "Zabbix"},
+                     {"role": "Monitoring", "kind": "queue", "candidate": "q1", "data_source": "Zabbix"},
+                     {"role": "EndpointSecurity", "kind": "duplicate", "ci": "x", "data_source": "Defender"}]})
+    assert d["identity"] == [{"role": "Monitoring", "kind": "queue", "candidate": "q1", "data_source": "Zabbix"}]
+    assert d["identity_roles"] == ["Monitoring"] and d["identity_only"] is True
+    mixed = finalize_coverage({"missing": ["Monitoring", "EndpointSecurity"],
+                               "identity": [{"role": "Monitoring", "kind": "queue", "candidate": "q1",
+                                             "data_source": "Zabbix"}]})
+    assert mixed["identity_roles"] == ["Monitoring"] and mixed["identity_only"] is False
+    none = finalize_coverage({"missing": [], "identity": []})
+    assert none["identity_only"] is False
+
+
+def test_coverage_text_explains_identity_gap_and_duplicate():
+    from datetime import UTC, datetime
+
+    labels = {"Monitoring": "İzleme", "EndpointSecurity": "Uç nokta güvenliği"}
+    d = {"missing": ["Monitoring", "EndpointSecurity"], "last_seen": {"Monitoring": None, "EndpointSecurity": None},
+         "identity": [{"role": "Monitoring", "kind": "queue", "candidate": "q1", "data_source": "Zabbix"},
+                      {"role": "EndpointSecurity", "kind": "duplicate", "ci": "c2", "ci_name": "ist-db-01.corp",
+                       "data_source": "Defender"}]}
+    text = describe_details("coverage_gap", d, role_labels=labels, now=datetime(2026, 11, 28, tzinfo=UTC))
+    assert text == ("İzleme rolünde hiç görülmedi (olası kimlik boşluğu: Zabbix kaydı eşleştirme kuyruğunda); "
+                    "Uç nokta güvenliği rolünde hiç görülmedi (olası mükerrer: Defender aynı ad veya IP'li başka bir "
+                    "CI'a bağlı: ist-db-01.corp)")

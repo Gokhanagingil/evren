@@ -200,6 +200,21 @@ async function overviewTab(body) {
 }
 
 // ---------------------------------------------------------------------------------------------- kural penceresi
+/** Kapsam bulgusunda kimlik ipuçları (P1.2, ADR-0046): kaynak CI'ı büyük olasılıkla tanıyor, sorun eşleştirmede. */
+function identitySection(d) {
+  const hints = d.identity || [];
+  if (!hints.length) return null;
+  const items = hints.map((x) => h('li', {}, x.kind === 'queue'
+    ? h('a', { href: `#/kuyruk/${x.candidate}` }, `${x.data_source} kaydı eşleştirme kuyruğunda`)
+    : h('a', { href: `#/ci/${x.ci}` }, `${x.data_source}, aynı ad veya IP'li başka bir CI'a bağlı: ${x.ci_name || x.ci}`)));
+  return h('div', { class: 'section', id: 'findingIdentity', role: 'group', 'aria-labelledby': 'findingIdentityTitle' },
+    h('h3', { id: 'findingIdentityTitle' }, 'Olası kimlik boşluğu'),
+    h('p', { class: d.identity_only ? 'notice warn' : 'muted small' }, d.identity_only
+      ? 'Sorumluya görev açılmadı: kaynak bu CI\'ı büyük olasılıkla tanıyor ama eşleşmemiş. Eşleştirme kararı verilince bulgu kendiliğinden kapanır.'
+      : 'Eksik rollerin bir kısmı eşleştirme sorunu olabilir; sorumlunun görevi yalnızca gerçekten eksik olanlar için.'),
+    h('ul', { class: 'mini' }, items));
+}
+
 function multiSelect(id, options, selected, label) {
   return h('select', { id, multiple: true, size: '7', 'aria-label': label },
     options.map((o) => h('option', { value: o.name, selected: selected.includes(o.name) }, `${'  '.repeat(o.depth || 0)}${o.label}`)));
@@ -590,6 +605,7 @@ async function findingsTab(body, { onRoute, filter }) {
           f.triage ? pill('Sorumlusu reddetti', 'bad') : null),
         h('p', { class: 'notice', id: 'findingText' }, f.text),
         f.triage ? h('p', { class: 'notice warn' }, 'Sorumlu bu görevin kendisine ait olmadığını söyledi. CI\'ın sahibini düzeltince görev yeni sorumluya kendiliğinden açılır.') : null,
+        identitySection(f.details || {}),
         f.exception ? h('p', { class: 'notice' }, `İstisna ${formatDateTime(f.exception.until)} tarihine kadar · ${f.exception.by}: ${f.exception.note || ''}`) : null,
         section('Bulgu', kv([['CI', h('a', { href: `#/ci/${f.ci.sys_id}` }, f.ci.name)], ['Sınıf', f.ci.class_label],
           ['Kural', h('a', { href: `#/saglik/kurallar/${f.rule.sys_id}` }, f.rule.name)], ['Neden önemli', f.rule.why || '—'],

@@ -25,6 +25,7 @@ from evren_core.quality import (
     TEMPLATES,
     compile_rule,
     describe_details,
+    finalize_coverage,
     relation_violations,
 )
 
@@ -232,7 +233,7 @@ def preview(body: PreviewIn, ctx: Ctx = Depends(context)) -> dict[str, Any]:
                         [*plan.detail_params, [s["sys_id"] for s in p["sample"]]])
             role_labels = {k: v.label_tr for k, v in md.sources.roles.items()}
             for ci, extra in cur.fetchall():
-                d = extra if isinstance(extra, dict) else {"empty": list(extra or [])}
+                d = finalize_coverage(extra) if isinstance(extra, dict) else {"empty": list(extra or [])}
                 texts[ci] = describe_details(body.check_kind, d, labels, role_labels=role_labels)
         for s in p["sample"]:
             s["why"] = texts.get(s["sys_id"]) or plan.summary

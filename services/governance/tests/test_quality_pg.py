@@ -335,3 +335,63 @@ def test_coverage_gap_is_inconclusive_when_an_observer_role_is_unhealthy(worker)
     rid = rule(tag, "coverage_gap", COVERAGE, scope_class="cmdb_ci_server", dimension="coverage")
     cycle(worker)
     assert last_run(rid)["status"] == "inconclusive" and findings(rid) == []
+
+
+def queue_item(source: str, key: str, candidate: str) -> str:
+    """Kaynağın eşleşmemiş kaydı kuyrukta; aday olarak ``candidate`` CI'ını gösteriyor."""
+    with owner() as c:
+        c.execute("""INSERT INTO ingest.source_record (data_source, source_key, class_hint, content_hash, last_seen)
+                     VALUES (%s, %s, 'cmdb_ci_linux_server', 'x', now())""", (source, key))
+        return c.execute("""INSERT INTO ingest.match_candidate (data_source, source_key, reason, candidates)
+                            VALUES (%s, %s, 'Kural 2 CI ile eşleşti', %s) RETURNING sys_id""",
+                         (source, key, Jsonb([{"sys_id": candidate, "probability": 0.99}]))).fetchone()[0]
+
+
+def test_identity_gap_opens_no_owner_task_and_closes_when_the_queue_links_the_record(worker):
+    """P1.2: izleme sunucuyu tanıyor ama kaydı kuyrukta bekliyor → sahibine görev yok; kuyruk bağlayınca bulgu kapanır."""
+    tag = f"kik{uuid.uuid4().hex[:6]}"
+    srv = ci(f"{tag}-srv", "cmdb_ci_linux_server", owned_by=person(), used_for="Production")
+    seen(srv, "vCenter", 0.1)
+    qid = queue_item("Zabbix", f"{tag}-zbx", srv)
+    healthy_runs("Monitoring", "Virtualization", "Discovery")
+    rid = rule(tag, "coverage_gap", {"roles": ["Monitoring"], "observed_by": ["Virtualization", "Discovery"]},
+               scope_class="cmdb_ci_server", dimension="coverage")
+    cycle(worker)
+    [f] = findings(rid)
+    d = f["details"]
+    assert d["identity_only"] is True and d["identity"][0]["kind"] == "queue" and d["identity"][0]["candidate"] == qid
+    assert "eşleştirme kuyruğunda" in d["text"] and tasks(f["sys_id"]) == []
+    with owner() as c:  # eşleştirme analisti kaydı sunucuya bağladı
+        c.execute("""INSERT INTO ingest.identity_link (data_source, source_key, ci_sys_id, method, decided_by)
+                     VALUES ('Zabbix', %s, %s, 'manual', 'analist')""", (f"{tag}-zbx", srv))
+        c.execute("UPDATE ingest.match_candidate SET status = 'accepted', decided_by = 'analist', decided_at = now() "
+                  "WHERE sys_id = %s", (qid,))
+    healthy_runs("Monitoring", "Virtualization", "Discovery")
+    request_run(rid)
+    cycle(worker)
+    assert findings(rid)[0]["state"] == "resolved" and tasks(f["sys_id"]) == []
+
+
+def test_mixed_gap_opens_owner_task_and_duplicate_is_a_hint(worker):
+    """İzleme için kuyruk ipucu, uç nokta güvenliği gerçekten eksik → sahibine görev (metinde kimlik notu); başka bir
+    örnekte aynı adlı, izleme kaynağına bağlı ikinci CI olası mükerrer ipucudur."""
+    tag = f"kim{uuid.uuid4().hex[:6]}"
+    srv = ci(f"{tag}-srv", "cmdb_ci_linux_server", owned_by=person(), used_for="Production")
+    seen(srv, "vCenter", 0.1)
+    queue_item("Zabbix", f"{tag}-zbx", srv)
+    dup_src = ci(f"{tag}-dup", "cmdb_ci_linux_server", owned_by=person(), used_for="Production")
+    seen(dup_src, "vCenter", 0.1)
+    twin = ci(f"{tag}-dup.corp.local", "cmdb_ci_linux_server")  # aynı kısa ad; izleme kaynağı buna bağlanmış
+    seen(twin, "Zabbix", 0)
+    healthy_runs("Monitoring", "EndpointSecurity", "Virtualization", "Discovery")
+    rid = rule(tag, "coverage_gap", COVERAGE, scope_class="cmdb_ci_server", dimension="coverage")
+    cycle(worker)
+    by_ci = {f["ci_name"]: f for f in findings(rid)}
+    mixed = by_ci[f"{tag}-srv"]["details"]
+    assert mixed["identity_only"] is False and mixed["identity_roles"] == ["Monitoring"]
+    [t] = tasks(by_ci[f"{tag}-srv"]["sys_id"])
+    assert "olası kimlik boşluğu" in t["description"]
+    dup = by_ci[f"{tag}-dup"]["details"]
+    assert [h["kind"] for h in dup["identity"]] == ["duplicate"] and dup["identity"][0]["ci"] == twin
+    assert dup["identity_roles"] == ["Monitoring"] and dup["identity_only"] is False  # uç nokta yine eksik
+    assert f"{tag}-dup.corp.local" in by_ci[f"{tag}-dup"]["details"]["text"]

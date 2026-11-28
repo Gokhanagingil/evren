@@ -353,6 +353,10 @@ def test_segregation_of_duties_enforced():
         ("evren_app_governance", "SELECT attributes FROM ingest.source_record"),
         ("evren_app_governance", "SELECT lookup FROM ingest.source_record"),
         ("evren_app_governance", "UPDATE ingest.source_record SET last_seen = now() WHERE false"),
+        # 0039 (ADR-0046): kuyruk kaydının yalnızca kimliği, kaynağı, durumu ve adayları; karar ve gerekçe görülmez
+        ("evren_app_governance", "SELECT decision_note FROM ingest.match_candidate"),
+        ("evren_app_governance", "SELECT features FROM ingest.match_candidate"),
+        ("evren_app_governance", "UPDATE ingest.match_candidate SET status = 'accepted' WHERE false"),
         ("evren_app_api", "UPDATE gov.task SET external_ref = NULL WHERE false"),
         ("evren_app_api", "UPDATE gov.task SET delivery_status = 'delivered' WHERE false"),
         ("evren_app_api", "DELETE FROM gov.task WHERE false"),
@@ -553,6 +557,8 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_auditor_ro", "SELECT count(*) FROM ai.proposal"),
         # 0038 (ADR-0046): görev çalışanı kapsam boşluğu için kaynağın CI'ı en son ne zaman gördüğünü okur
         ("evren_app_governance", "SELECT data_source, source_key, last_seen FROM ingest.source_record LIMIT 1"),
+        ("evren_app_governance", "SELECT sys_id, data_source, status, candidate_ci, candidates FROM ingest.match_candidate "
+                                 "LIMIT 1"),
     ],
 )
 def test_allowed_paths_work(role, statement):
