@@ -256,3 +256,82 @@ def test_worker_cannot_except_define_or_decide(worker):
         c.execute("UPDATE insight.finding SET state = 'resolved', resolved_at = now() WHERE sys_id = %s", (f["sys_id"],))
         with pytest.raises(psycopg.errors.CheckViolation):
             c.execute("UPDATE insight.finding SET state = 'open' WHERE sys_id = %s", (f["sys_id"],))
+
+
+# ------------------------------------------------------------------ kapsam boşluğu (P1.1, ADR-0046)
+COVERAGE = {"roles": ["Monitoring", "EndpointSecurity"], "fresh_days": 7,
+            "observed_by": ["Virtualization", "Discovery"], "observed_within_hours": 48}
+
+
+def healthy_runs(*roles: str) -> None:
+    """Rollerin kaynaklarına sağlıklı son çalışma (devre kesici OK); kural sonuç verebilsin."""
+    with owner() as c:
+        for (src,) in c.execute("SELECT name FROM ingest.data_source WHERE role = ANY(%s)", (list(roles),)).fetchall():
+            c.execute("""INSERT INTO ingest.source_run (run_id, data_source, mode, started_at, finished_at, completed,
+                                                         breaker_state)
+                         VALUES (gen_random_uuid(), %s, 'snapshot', clock_timestamp(), clock_timestamp(), true, 'ok')""",
+                      (src,))
+
+
+def seen(ci_id: str, source: str, days_ago: float) -> None:
+    """CI'ın ``source`` tarafından ``days_ago`` gün önce görülmesi (kaynak kaydı + etkin bağ)."""
+    key = f"{source}-{ci_id[:12]}"
+    with owner() as c:
+        c.execute("""INSERT INTO ingest.source_record (data_source, source_key, class_hint, content_hash, last_seen)
+                     VALUES (%s, %s, 'cmdb_ci_linux_server', 'x', now() - make_interval(secs => %s))
+                     ON CONFLICT (data_source, source_key) DO UPDATE SET last_seen = EXCLUDED.last_seen""",
+                  (source, key, days_ago * 86400))
+        c.execute("""INSERT INTO ingest.identity_link (data_source, source_key, ci_sys_id, method, decided_by)
+                     VALUES (%s, %s, %s, 'rule', 'test') ON CONFLICT DO NOTHING""", (source, key, ci_id))
+
+
+def test_coverage_gap_collects_missing_roles_in_one_finding_and_closes_when_covered(worker):
+    tag = f"kps{uuid.uuid4().hex[:6]}"
+    sahip = person()
+    srv = ci(f"{tag}-calisan", "cmdb_ci_linux_server", owned_by=sahip, used_for="Production")
+    kapali = ci(f"{tag}-kapali", "cmdb_ci_linux_server", owned_by=sahip, used_for="Production")
+    seen(srv, "vCenter", 0.1)            # çalışıyor (sanallaştırma 2,4 saat önce gördü)
+    seen(srv, "Zabbix", 14)              # izleme 14 gündür görmüyor
+    seen(kapali, "vCenter", 10)          # 10 gündür hiçbir gözlemci görmüyor: kapatılmış, görev açılmaz
+    healthy_runs("Monitoring", "EndpointSecurity", "Virtualization", "Discovery")
+    rid = rule(tag, "coverage_gap", COVERAGE, scope_class="cmdb_ci_server", query=f"nameSTARTSWITH{tag}",
+               dimension="coverage")
+    cycle(worker)
+    run = last_run(rid)
+    assert run["status"] == "done", run["note"]
+    [f] = findings(rid)
+    assert f["ci_name"] == f"{tag}-calisan" and f["details"]["missing"] == ["Monitoring", "EndpointSecurity"]
+    assert f["details"]["last_seen"]["EndpointSecurity"] is None and f["details"]["last_seen"]["Monitoring"]
+    assert f["details"]["text"] == "İzleme rolünde 14 gündür görülmüyor; Uç nokta güvenliği rolünde hiç görülmedi"
+    [t] = tasks(f["sys_id"])
+    assert t["state"] == "open" and "14 gündür" in t["description"]
+    # İzleme giderildi: bulgu aynı kalır, yalnızca uç nokta güvenliği eksik; görev açık
+    seen(srv, "Zabbix", 0)
+    healthy_runs("Monitoring", "EndpointSecurity", "Virtualization", "Discovery")
+    request_run(rid)
+    cycle(worker)
+    [f2] = findings(rid)
+    assert f2["sys_id"] == f["sys_id"] and f2["state"] == "open" and f2["details"]["missing"] == ["EndpointSecurity"]
+    assert tasks(f["sys_id"])[0]["state"] == "open" and len(tasks(f["sys_id"])) == 1
+    # Uç nokta güvenliği de gördü: bulgu kapanır, görev kendiliğinden kapanır
+    seen(srv, "Defender", 0)
+    healthy_runs("Monitoring", "EndpointSecurity", "Virtualization", "Discovery")
+    request_run(rid)
+    cycle(worker)
+    [f3] = findings(rid)
+    assert f3["state"] == "resolved"
+    assert tasks(f["sys_id"])[0]["state"] != "open"
+
+
+def test_coverage_gap_is_inconclusive_when_an_observer_role_is_unhealthy(worker):
+    tag = f"kpi{uuid.uuid4().hex[:6]}"
+    srv = ci(f"{tag}-srv", "cmdb_ci_linux_server", used_for="Production")
+    seen(srv, "vCenter", 0.1)
+    healthy_runs("Monitoring", "EndpointSecurity", "Discovery")
+    with owner() as c:  # sanallaştırma kaynağının son çalışması tamamlanmamış
+        for (src,) in c.execute("SELECT name FROM ingest.data_source WHERE role = 'Virtualization'").fetchall():
+            c.execute("INSERT INTO ingest.source_run (run_id, data_source, mode, started_at, completed) "
+                      "VALUES (gen_random_uuid(), %s, 'snapshot', clock_timestamp(), false)", (src,))
+    rid = rule(tag, "coverage_gap", COVERAGE, scope_class="cmdb_ci_server", dimension="coverage")
+    cycle(worker)
+    assert last_run(rid)["status"] == "inconclusive" and findings(rid) == []

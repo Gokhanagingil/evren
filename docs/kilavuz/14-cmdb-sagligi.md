@@ -11,9 +11,12 @@
 - "Geçerli değil" kararı bulguyu süreli istisna yapar.
 - "Reddedildi" (sorumlusu ben değilim) kararında CI'ın sahibi düzeltilince görev yeni sorumluya gider.
 
-Kural türleri: ilişkisi olmayan CI, boş alan, bir kaynak rolünce görülmeyen CI, koşula uyan CI, izinli olmayan ilişki. Kural ürüne değil role bağlıdır.
+Kural türleri: ilişkisi olmayan CI, boş alan, bir kaynak rolünce görülmeyen CI, kapsam boşluğu, koşula uyan CI, izinli olmayan ilişki. Kural ürüne değil role bağlıdır.
+
+**Kapsam boşluğu** kuralı "çalışan her üretim sunucusu izlenmeli ve korunmalı" gibi bir politikayı denetler. Eksik rollerin hepsi tek bulguda ve tek görevde toplanır; bulgu, her rolün sunucuyu en son ne zaman gördüğünü yazar. Kapatılmış makine için görev açılmaz. Eksik giderilince sonraki kaynak çalışması bunu görür, bulgu ve görev kendiliğinden kapanır.
 
 ## Teknik ayrıntı
 
 - [Kalite kuralları, bulgular ve sağlık panosu](belge:adr/0037-kalite-kurallari-ve-bulgular)
 - [Yönetişim görevleri ve kanallar](belge:adr/0035-yonetisim-gorevleri-ve-kanallar)
+- [Kapalı döngü kapsam güvencesi](belge:adr/0046-kapali-dongu-kapsam-guvencesi)

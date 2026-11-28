@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Any
 
 from .governance import campaign_scope
@@ -46,6 +47,14 @@ CHECK_KINDS: dict[str, dict[str, str]] = {
     "matches_condition": {
         "label": "Koşula uyan CI",
         "help": "Kapsamdaki CI ek koşula da uyuyorsa bulgu olur. Ör. emekli olduğu hâlde çalışır görünen CI.",
+    },
+    "coverage_gap": {
+        "label": "Kapsam boşluğu (zorunlu roller)",
+        "help": "Kapsamdaki CI, zorunlu kaynak rollerinden biri tarafından son günlerde görülmüyorsa bulgu olur; eksik "
+                "rollerin hepsi tek bulguda ve tek görevde toplanır, her rol için son görülme yazılır. Gözlemci roller "
+                "seçilirse yalnızca son saatlerde çalıştığı görülen CI değerlendirilir (kapatılmış makineye görev "
+                "açılmaz). Gölge ve emekli kaynak kapsam saymaz. Rollerden birinin kaynağı sağlıklı değilse kural sonuç "
+                "vermez.",
     },
     "relation_not_allowed": {
         "label": "İzinli olmayan ilişki",
@@ -91,6 +100,18 @@ TEMPLATES: list[dict[str, Any]] = [
      "params": {"role": "EndpointSecurity"}, "dimension": "coverage", "severity": "high",
      "task_title": "Uç nokta korumasını kurun",
      "task_instructions": "Sunucuya uç nokta koruma ajanını kurun veya kapsam dışıysa nedenini yazın."},
+    {"id": "kapsam-boslugu-uretim", "name": "Üretimde çalışan ama izlenmeyen veya korumasız sunucu",
+     "description": "Sanallaştırma veya keşif son 48 saatte görüyor (sunucu çalışıyor), ama izleme veya uç nokta "
+                    "güvenliği rolündeki hiçbir kaynak son 7 günde görmüyor. Eksik rollerin hepsi tek bulguda ve tek "
+                    "görevde; giderildiğini sonraki kaynak çalışması doğrular.",
+     "check_kind": "coverage_gap", "scope_class": "cmdb_ci_server", "scope_query": "used_for=Production",
+     "params": {"roles": ["Monitoring", "EndpointSecurity"], "fresh_days": 7,
+                "observed_by": ["Virtualization", "Discovery"], "observed_within_hours": 48},
+     "dimension": "coverage", "severity": "high",
+     "task_title": "Sunucunun kapsam eksiğini giderin",
+     "task_instructions": "Bulgu, hangi rollerin sunucuyu görmediğini ve en son ne zaman gördüğünü yazar. Sunucuyu "
+                          "eksik sistemlere ekleyin; giderildiğini sonraki kaynak çalışması doğrular ve görev "
+                          "kendiliğinden kapanır. Sunucu kapsam dışıysa \"Geçerli değil\" ile nedenini yazın."},
     {"id": "izinsiz-iliski", "name": "İzinli olmayan ilişki",
      "description": "CI'ın bir ilişkisi izinli ilişki kurallarına uymuyor (tip izinsiz veya yön ters).",
      "check_kind": "relation_not_allowed", "scope_class": "cmdb_ci", "scope_query": "", "params": {},
@@ -174,7 +195,8 @@ def compile_rule(md: Any, scope_class: str, scope_query: str, check_kind: str, p
         raise ValueError("Kural parametreleri bir nesne olmalı.")
     scope_sql, scope_params = campaign_scope(md, scope_class, scope_query)
     allowed = {"no_relation": {"related_classes", "exclude_classes", "rel_types"}, "missing_fields": {"fields"},
-               "not_seen_by_role": {"role"}, "matches_condition": {"condition"}, "relation_not_allowed": set()}
+               "not_seen_by_role": {"role"}, "matches_condition": {"condition"}, "relation_not_allowed": set(),
+               "coverage_gap": {"roles", "fresh_days", "observed_by", "observed_within_hours"}}
     unknown = set(params) - allowed[check_kind]
     if unknown:
         raise ValueError(f"Bu kural türünde olmayan parametre: {', '.join(sorted(unknown))}")
@@ -234,6 +256,9 @@ def compile_rule(md: Any, scope_class: str, scope_query: str, check_kind: str, p
         return RulePlan(scope_sql, scope_params, match, [role], depends_on_roles=(role,),
                         summary=f"{roles[role].label_tr} rolündeki hiçbir kaynakta görülmüyor")
 
+    if check_kind == "coverage_gap":
+        return _coverage_plan(md, scope_sql, scope_params, params)
+
     if check_kind == "matches_condition":
         cond = params.get("condition")
         if not isinstance(cond, str) or not cond.strip():
@@ -250,6 +275,60 @@ def compile_rule(md: Any, scope_class: str, scope_query: str, check_kind: str, p
     return RulePlan(scope_sql, scope_params, match, [], relation_check=True, summary="İzinli olmayan ilişki")
 
 
+def _int_param(value: Any, name: str, lo: int, hi: int) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or not lo <= value <= hi:
+        raise ValueError(f"{name} {lo} ile {hi} arasında bir tam sayı olmalı.")
+    return value
+
+
+#: Kapsam sayan kaynaklar: etkin veya devrediliyor (gölge ve emekli saymaz; ADR-0009)
+_SEEN = ("EXISTS (SELECT 1 FROM ingest.identity_link l JOIN ingest.source_record sr USING (data_source, source_key) "
+         "JOIN ingest.data_source d ON d.name = l.data_source WHERE l.ci_sys_id = c.sys_id AND l.active "
+         "AND d.lifecycle IN ('active', 'retiring') AND d.role = %s AND sr.last_seen >= now() - make_interval({unit} => %s))")
+_LAST_SEEN = ("(SELECT max(sr.last_seen) FROM ingest.identity_link l JOIN ingest.source_record sr "
+              "USING (data_source, source_key) JOIN ingest.data_source d ON d.name = l.data_source "
+              "WHERE l.ci_sys_id = c.sys_id AND l.active AND d.lifecycle IN ('active', 'retiring') AND d.role = %s)")
+
+
+def _coverage_plan(md: Any, scope_sql: str, scope_params: list[Any], params: Mapping[str, Any]) -> RulePlan:
+    """Kapsam politikası (P1.1, ADR-0046): zorunlu roller tazelikle; gözlemci roller "çalışıyor" kanıtı. Ayrıntı:
+    ``{"missing": [rol], "last_seen": {rol: zaman | null}}``."""
+    roles = md.sources.roles
+    required = _str_list(params.get("roles"), "Zorunlu roller")
+    observers = _str_list(params.get("observed_by"), "Gözlemci roller")
+    if not required:
+        raise ValueError("En az bir zorunlu rol seçin.")
+    for r in (*required, *observers):
+        if r not in roles:
+            raise ValueError(f"Bilinmeyen kaynak rolü: {r}")
+    if len(set(required)) != len(required) or len(set(observers)) != len(observers):
+        raise ValueError("Bir rol bir kez seçilir.")
+    if set(required) & set(observers):
+        raise ValueError("Bir rol hem zorunlu hem gözlemci olamaz.")
+    fresh = _int_param(params.get("fresh_days", 7), "Görülme tazeliği (gün)", 1, 90)
+    within = _int_param(params.get("observed_within_hours", 48), "Çalışıyor kanıtı penceresi (saat)", 1, 720)
+    seen_day = _SEEN.format(unit="days")
+    seen_hour = _SEEN.format(unit="hours")
+    missing_any = "(" + " OR ".join(f"NOT {seen_day}" for _ in required) + ")"
+    mparams: list[Any] = [x for r in required for x in (r, fresh)]
+    if observers:
+        running = "(" + " OR ".join(seen_hour for _ in observers) + ")"
+        match = f"{running} AND {missing_any}"
+        mparams = [x for o in observers for x in (o, within)] + mparams
+    else:
+        match = missing_any
+    detail = ("jsonb_build_object('missing', to_jsonb(array_remove(ARRAY["
+              + ", ".join(f"CASE WHEN NOT {seen_day} THEN %s::text END" for _ in required)
+              + "], NULL)), 'last_seen', jsonb_build_object("
+              + ", ".join(f"%s::text, {_LAST_SEEN}" for _ in required) + "))")
+    dparams: list[Any] = [x for r in required for x in (r, fresh, r)] + [x for r in required for x in (r, r)]
+    labels = [roles[r].label_tr for r in required]
+    seen_by = f"; {_join_or([roles[o].label_tr for o in observers])} son {within} saatte görüyor" if observers else ""
+    return RulePlan(scope_sql, scope_params, match, mparams, detail, dparams,
+                    depends_on_roles=tuple(dict.fromkeys((*required, *observers))),
+                    summary=f"{_join_or(labels)} rolünde son {fresh} günde görülmüyor{seen_by}")
+
+
 def relation_violations(md: Any, rows: Sequence[tuple[str, str, str, str]]) -> list[dict[str, str]]:
     """``rows``: (ebeveyn sınıfı, ilişki tipi, çocuk sınıfı, çocuk adı). İzinli olmayan veya yönü ters olanlar."""
     rules = md.relations
@@ -261,8 +340,25 @@ def relation_violations(md: Any, rows: Sequence[tuple[str, str, str, str]]) -> l
     return out
 
 
-def describe_details(check_kind: str, details: Mapping[str, Any], field_labels: Mapping[str, str] | None = None) -> str:
+def describe_details(check_kind: str, details: Mapping[str, Any], field_labels: Mapping[str, str] | None = None, *,
+                     role_labels: Mapping[str, str] | None = None, now: datetime | None = None) -> str:
     """Bulgu ayrıntısının tek cümlelik Türkçe açıklaması (görev açıklaması ve listeler için)."""
+    if check_kind == "coverage_gap":
+        now = now or datetime.now(UTC)
+        parts = []
+        for role in details.get("missing", []):
+            label = (role_labels or {}).get(role, role)
+            last = (details.get("last_seen") or {}).get(role)
+            if not last:
+                parts.append(f"{label} rolünde hiç görülmedi")
+                continue
+            try:
+                days = max(0, (now - datetime.fromisoformat(str(last))).days)
+            except ValueError:
+                parts.append(f"{label} rolünde son görülme bilinmiyor")
+                continue
+            parts.append(f"{label} rolünde {days} gündür görülmüyor" if days else f"{label} rolünde bugün görülmedi")
+        return _tr_capital("; ".join(parts)) if parts else str(details.get("summary") or "")
     if check_kind == "missing_fields":
         names = [str((field_labels or {}).get(f, f)) for f in details.get("empty", [])]
         return "Boş alan: " + ", ".join(names) if names else "Alanlar boş."

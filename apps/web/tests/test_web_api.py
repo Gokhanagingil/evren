@@ -1942,3 +1942,41 @@ def test_ai_proposal_page_accept_with_keyboard(page, base_url):
     expect(page.locator(f"#proposal-{number}")).to_contain_text("Kabul edildi")
     shot(page, "web_api_proposals")
     assert not problems, f"Konsol hatası/CSP ihlali: {problems}"
+
+
+def test_coverage_policy_template_shows_role_fields_and_one_finding_per_server(page, base_url):
+    """P1.1 (ADR-0046): kapsam politikası şablonu zorunlu ve gözlemci rolleri doldurur; önizleme çalışan ama izlenmeyen
+    ve korumasız sunucuyu tek bulgu olarak, eksik rolleri ve son görülmeyi yazarak gösterir; kapatılmış makine yok."""
+    import uuid
+
+    import psycopg
+
+    tag = f"kpu{uuid.uuid4().hex[:5]}"
+    with psycopg.connect(autocommit=True) as conn:
+        for name, days_ago in ((f"{tag}-calisan", 0.1), (f"{tag}-kapali", 10)):
+            (sid,) = conn.execute("INSERT INTO cmdb.cmdb_ci (sys_class_name, name, used_for) VALUES "
+                                  "('cmdb_ci_linux_server', %s, 'Production') RETURNING sys_id", (name,)).fetchone()
+            conn.execute("""INSERT INTO ingest.source_record (data_source, source_key, class_hint, content_hash, last_seen)
+                            VALUES ('vCenter', %s, 'cmdb_ci_linux_server', 'x', now() - make_interval(secs => %s))""",
+                         (f"{tag}-{sid[:8]}", days_ago * 86400))
+            conn.execute("""INSERT INTO ingest.identity_link (data_source, source_key, ci_sys_id, method, decided_by)
+                            VALUES ('vCenter', %s, %s, 'rule', 'test')""", (f"{tag}-{sid[:8]}", sid))
+        conn.execute("""INSERT INTO iam.principal_role (principal_type, principal_id, role, granted_by, expires_at,
+                                                        justification)
+                        VALUES ('user', 'arayuz-testi', 'evren_config_manager', 'test-kurulum', now() + interval '1 hour',
+                                'Arayüz testi') ON CONFLICT DO NOTHING""")
+    page.goto(base_url + "/#/saglik/kurallar/yeni")
+    page.select_option("#ruleTemplate", "kapsam-boslugu-uretim")
+    expect(page.locator("#ruleName")).to_have_value("Üretimde çalışan ama izlenmeyen veya korumasız sunucu")
+    expect(page.locator("#ruleCovRoles option:checked")).to_have_count(2)
+    expect(page.locator("#ruleCovObservers option:checked")).to_have_count(2)
+    expect(page.locator("#ruleCovFresh")).to_have_value("7")
+    expect(page.locator("#ruleCovWithin")).to_have_value("48")
+    page.fill("#ruleQuery", f"nameSTARTSWITH{tag}")
+    page.locator("#ruleQuery").press("Enter")
+    expect(page.locator("#rulePreview")).to_contain_text("1 bulgu")
+    expect(page.locator("#ruleSample li")).to_have_count(1)
+    expect(page.locator("#ruleSample")).to_contain_text(f"{tag}-calisan")
+    expect(page.locator("#ruleSample")).to_contain_text("İzleme rolünde hiç görülmedi")
+    shot(page, "web_api_rule_coverage")
+    page.keyboard.press("Escape")

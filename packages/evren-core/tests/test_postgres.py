@@ -349,7 +349,10 @@ def test_segregation_of_duties_enforced():
         ("evren_app_governance", "UPDATE gov.task SET outcome = 'confirmed' WHERE false"),
         ("evren_app_governance", "UPDATE cmdb.cmdb_ci SET name = 'x' WHERE false"),
         ("evren_app_governance", "UPDATE gov.task_channel SET is_default = true WHERE false"),
-        ("evren_app_governance", "SELECT count(*) FROM ingest.source_record"),
+        # 0038 (ADR-0046): kapsam boşluğu için yalnızca görülme zamanı; kaynak kaydının içeriği görülmez
+        ("evren_app_governance", "SELECT attributes FROM ingest.source_record"),
+        ("evren_app_governance", "SELECT lookup FROM ingest.source_record"),
+        ("evren_app_governance", "UPDATE ingest.source_record SET last_seen = now() WHERE false"),
         ("evren_app_api", "UPDATE gov.task SET external_ref = NULL WHERE false"),
         ("evren_app_api", "UPDATE gov.task SET delivery_status = 'delivered' WHERE false"),
         ("evren_app_api", "DELETE FROM gov.task WHERE false"),
@@ -548,6 +551,8 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_api", "UPDATE ai.proposal SET status = 'rejected', decided_by = 'y', decided_at = now(), "
                           "decision_note = 'yetki sınaması' WHERE false"),
         ("evren_auditor_ro", "SELECT count(*) FROM ai.proposal"),
+        # 0038 (ADR-0046): görev çalışanı kapsam boşluğu için kaynağın CI'ı en son ne zaman gördüğünü okur
+        ("evren_app_governance", "SELECT data_source, source_key, last_seen FROM ingest.source_record LIMIT 1"),
     ],
 )
 def test_allowed_paths_work(role, statement):

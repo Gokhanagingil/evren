@@ -148,11 +148,15 @@ class RuleEvaluator:
                 finish("failed", f"Bulgu sayısı sınırı ({limit}) aşıldı. Bulgular değişmedi.", in_scope=in_scope)
                 return
         else:
-            for ci, empty in rows:
-                matched[ci] = {**base, **({"empty": list(empty)} if empty is not None else {})}
+            for ci, extra in rows:
+                if isinstance(extra, dict):  # kapsam boşluğu: eksik roller ve rol başına son görülme
+                    matched[ci] = {**base, **extra}
+                else:
+                    matched[ci] = {**base, **({"empty": list(extra)} if extra is not None else {})}
         labels = {k: str(v.get("label_tr") or k) for k, v in self.md.fields_of(scope_class).items()}
+        role_labels = {k: v.label_tr for k, v in self.md.sources.roles.items()}
         for d in matched.values():
-            d["text"] = describe_details(kind, d, labels)
+            d["text"] = describe_details(kind, d, labels, role_labels=role_labels)
 
         current = {ci: (fid, state, triage) for fid, ci, state, triage in conn.execute(
             "SELECT sys_id, ci_sys_id, state, triage FROM insight.finding WHERE rule = %s AND state <> 'resolved'",

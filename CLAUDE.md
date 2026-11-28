@@ -144,7 +144,8 @@ packages/evren-core/      Saf alan mantığı + testler
   staleness.py            eskime: kural seçimi (staleness), gözlemci kaynaklarla karar, emeklilik değerleri (ADR-0028)
   governance.py           yönetişim görevleri: sorumlu seçimi, kanal ayarı, ServiceNow görev kanalı (yalnızca standart
                           alanlar) ve simülatörü (ADR-0035); kampanya kapsamı ve sonraki çalışma (ADR-0036)
-  quality.py              kalite ve uyum kuralları: tür kataloğu, şablonlar, kural → güvenli SQL planı, ilişki denetimi (ADR-0037)
+  quality.py              kalite ve uyum kuralları: tür kataloğu, şablonlar, kural → güvenli SQL planı, ilişki denetimi (ADR-0037);
+                          kapsam politikası (coverage_gap: zorunlu roller, tazelik, çalışıyor kanıtı; ADR-0046)
   health.py               CMDB sağlık puanlaması (boyut ve genel puan; ölçümü görev çalışanı yapar)
   audit.py                denetim izi: olay kataloğu (Türkçe ad, kategori), mühür biçimi, özet ve zincir, dönemler,
                           doğrulama, CSV hücre koruması (ADR-0039; mühürleyen görev çalışanı, doğrulayan API ile ortak)
@@ -165,7 +166,7 @@ packages/evren-core/      Saf alan mantığı + testler
 connectors/<kaynak>/      kaynak başına eşleme dosyaları; samples/ sentetik örnek veri (simülatör)
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
-db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri · 0032 kampanyalar · 0033 kalite kuralları · 0034 denetim izi ve mühürler · 0035 uyarılar ve bildirimler · 0036 ServiceNow replikası · 0037 yapay zekâ önerileri (tools/migrate.py uygular)
+db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri · 0032 kampanyalar · 0033 kalite kuralları · 0034 denetim izi ve mühürler · 0035 uyarılar ve bildirimler · 0036 ServiceNow replikası · 0037 yapay zekâ önerileri · 0038 kapsam boşluğu kuralı (tools/migrate.py uygular)
 services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), indexer (arama),
                           connector-runner (şimdi çalıştır + zamanlama; kaynak sırları yalnızca burada, ADR-0021),
                           governance (görev çalışanı: kampanya ve kural değerlendirme, sağlık ölçümü, ServiceNow'a görev teslimi, eşitleme,

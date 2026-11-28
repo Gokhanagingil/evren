@@ -273,6 +273,21 @@ export async function openRuleDialog(meta, onDone, existing = null) {
       paramBox.append(h('label', { class: 'field', for: 'ruleRole' }, 'Hangi kaynak rolü görmeli?'), role,
         h('p', { class: 'muted small' }, 'Kural ürüne değil role bağlıdır: izleme ürünü değişse de kural aynı kalır.'));
       readParams = () => ({ role: role.value });
+    } else if (k === 'coverage_gap') {
+      const roleOpts = meta.roles.map((x) => ({ name: x.id, label: x.label }));
+      const req = multiSelect('ruleCovRoles', roleOpts, params.roles || ['Monitoring', 'EndpointSecurity'], 'Görmesi gereken kaynak rolleri');
+      const obs = multiSelect('ruleCovObservers', roleOpts, params.observed_by || ['Virtualization', 'Discovery'], 'Çalıştığını gösteren roller');
+      const fresh = h('input', { type: 'number', id: 'ruleCovFresh', min: '1', max: '90', value: String(params.fresh_days ?? 7) });
+      const within = h('input', { type: 'number', id: 'ruleCovWithin', min: '1', max: '720', value: String(params.observed_within_hours ?? 48) });
+      paramBox.append(h('label', { class: 'field', for: 'ruleCovRoles' }, 'Hangi roller görmeli?'), req,
+        h('label', { class: 'field', for: 'ruleCovFresh' }, 'En geç kaç gün önce görülmüş olmalı?'), fresh,
+        h('label', { class: 'field', for: 'ruleCovObservers' }, 'Çalıştığını hangi roller gösterir? (isteğe bağlı)'), obs,
+        h('label', { class: 'field', for: 'ruleCovWithin' }, 'Son kaç saat içinde?'), within,
+        h('p', { class: 'muted small' }, 'Eksik rollerin hepsi tek bulguda toplanır. Çalıştığı görülmeyen (ör. kapatılmış) makine için görev açılmaz.'));
+      for (const el of [req, obs]) el.addEventListener('change', reset);
+      for (const el of [fresh, within]) el.addEventListener('input', reset);
+      readParams = () => ({ roles: picked(req), fresh_days: Number(fresh.value), observed_by: picked(obs),
+        observed_within_hours: Number(within.value) });
     } else if (k === 'matches_condition') {
       const cond = h('input', { type: 'text', id: 'ruleCondition', class: 'mono', maxlength: '2000', value: params.condition || '',
         placeholder: 'Ör. install_status=7^operational_status=1' });
@@ -468,9 +483,11 @@ async function rulesTab(body, { onRoute }) {
     }
     const p = x.params || {};
     const label = (n) => meta.classes.find((c) => c.name === n)?.label || n;
+    const roleLabel = (n) => meta.roles.find((r2) => r2.id === n)?.label || n;
     const paramText = x.check_kind === 'no_relation' ? `İlişkili olmalı: ${(p.related_classes || []).map(label).join(', ') || 'herhangi bir CI'}${p.exclude_classes?.length ? ` · sayılmaz: ${p.exclude_classes.map(label).join(', ')}` : ''}`
       : x.check_kind === 'missing_fields' ? `Boş olmamalı: ${(p.fields || []).join(', ')}`
         : x.check_kind === 'not_seen_by_role' ? `Görmesi gereken rol: ${meta.roles.find((r2) => r2.id === p.role)?.label || p.role}`
+          : x.check_kind === 'coverage_gap' ? `Görmesi gereken roller: ${(p.roles || []).map(roleLabel).join(', ')} (son ${p.fresh_days ?? 7} gün)${p.observed_by?.length ? ` · çalıştığını gösteren: ${p.observed_by.map(roleLabel).join(', ')} (son ${p.observed_within_hours ?? 48} saat)` : ''}`
           : x.check_kind === 'matches_condition' ? `Koşul: ${p.condition}` : 'İzinli ilişki kuralları';
     const lastBad = x.runs[0] && ['failed', 'inconclusive'].includes(x.runs[0].status) ? x.runs[0] : null;
     openDetail({

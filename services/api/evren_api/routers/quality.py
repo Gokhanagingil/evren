@@ -230,8 +230,10 @@ def preview(body: PreviewIn, ctx: Ctx = Depends(context)) -> dict[str, Any]:
             labels = {k: str(v.get("label_tr") or k) for k, v in md.fields_of(body.scope_class).items()}
             cur.execute(f"SELECT c.sys_id, {plan.detail_sql} FROM cmdb.cmdb_ci c WHERE c.sys_id = ANY(%s)",  # noqa: S608 - sözlükten derlendi
                         [*plan.detail_params, [s["sys_id"] for s in p["sample"]]])
-            for ci, empty in cur.fetchall():
-                texts[ci] = describe_details(body.check_kind, {"empty": list(empty or [])}, labels)
+            role_labels = {k: v.label_tr for k, v in md.sources.roles.items()}
+            for ci, extra in cur.fetchall():
+                d = extra if isinstance(extra, dict) else {"empty": list(extra or [])}
+                texts[ci] = describe_details(body.check_kind, d, labels, role_labels=role_labels)
         for s in p["sample"]:
             s["why"] = texts.get(s["sys_id"]) or plan.summary
         current = 0
