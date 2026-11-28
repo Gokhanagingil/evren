@@ -248,7 +248,8 @@ def preview(body: PreviewIn, ctx: Ctx = Depends(context)) -> dict[str, Any]:
 class RuleIn(BaseModel):
     name: str = Field(min_length=3, max_length=120)
     description: str = Field(default="", max_length=2000)
-    check_kind: Literal["no_relation", "missing_fields", "not_seen_by_role", "matches_condition", "relation_not_allowed"]
+    check_kind: Literal["no_relation", "missing_fields", "not_seen_by_role", "matches_condition", "relation_not_allowed",
+                        "coverage_gap"]
     params: dict[str, Any] = Field(default_factory=dict)
     scope_class: str = Field(pattern=r"^[a-z][a-z0-9_]{1,79}$")
     scope_query: str = Field(default="", max_length=2000)

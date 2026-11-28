@@ -152,6 +152,7 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Arayüz: kural formunda rol seçimleri ve sayılar; kural ayrıntısında ölçüt metni. API önizlemesi kapsam ayrıntısını gösterir.
   - Göç 0038: kural türü kısıtı; görev çalışanına `ingest.source_record` üzerinde yalnızca `data_source, source_key, last_seen` okuma (içerik görülmez); yetki testleri güncellendi.
   - Testler: çekirdek +10 (plan, parametre doğrulaması, metin), görev çalışanı +2 (tek bulgu daralıp kapanır, gözlemci rol sağlıksızken sonuç yok), tarayıcı +1 (şablon, önizleme), PostgreSQL yetki sınırları.
+  - Önizleme kurulurken bulunan hata (ikinci commit'te düzeltildi): API'nin kural oluşturma modeli yeni türü kabul etmiyordu (önizleme çalışıyor, oluşturma 422). Düzeltildi; API kural türlerinin çekirdek kataloğuyla aynı olduğunu ve kapsam kuralının API'den oluşturulup etkinleştirildiğini sınayan testler eklendi.
   - P1 kararı bekliyor: gerçek veriyle pilot mu (üç kaynağın salt okuma hesabı erkene), sentetik gösterim mi.
 - **U9.3b: IRE uyumlu alım ucu (tamamlandı, ADR-0045).** `evren_core/ire_inbound.py` + alım geçidi.
   - `POST /api/now/identifyreconcile?sysparm_data_source=…` (alım geçidinde): bağlayıcı belirteci, tek kaynak yetkisi; yük tek bir delta çalışması (aç → Kafka → kapanış iste); öğeler kaynak kaydı olarak uzlaştırıcıdan geçer. `/query` yalnızca doğrular.

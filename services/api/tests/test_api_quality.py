@@ -190,3 +190,38 @@ def test_reader_sees_health_and_findings_but_cannot_manage(admin):
                       headers=CSRF).status_code == 409
     assert admin.get("/api/v1/quality/rules/xyz").status_code == 404
     assert admin.get(f"/api/v1/quality/findings/{uuid.uuid4().hex}").status_code == 404
+
+
+def test_every_catalog_kind_is_accepted_by_the_api_model():
+    """Kural türü kataloğu (evren_core.quality) ile API'nin kabul ettiği türler aynı olmalı (P1.1'de kapsam türü
+    önizlemede çalışıp oluşturmada 422 veriyordu)."""
+    from typing import get_args
+
+    from evren_api.routers.quality import RuleIn
+    from evren_core.quality import CHECK_KINDS
+
+    assert set(get_args(RuleIn.model_fields["check_kind"].annotation)) == set(CHECK_KINDS)
+
+
+def test_coverage_policy_rule_is_created_activated_and_listed_with_its_criteria(admin):
+    from evren_core.quality import TEMPLATES
+
+    t = next(t for t in TEMPLATES if t["id"] == "kapsam-boslugu-uretim")
+    tag = f"qk{uuid.uuid4().hex[:6]}"
+    body = {k: t[k] for k in ("description", "check_kind", "scope_class", "params", "dimension", "severity",
+                              "task_title", "task_instructions")}
+    body.update({"name": f"Kapsam politikası {tag}", "scope_query": f"nameSTARTSWITH{tag}", "due_days": 14,
+                 "channel": "evren", "exception_days": 30, "idempotency_key": key()})
+    r = admin.post("/api/v1/quality/rules", json=body, headers=CSRF)
+    assert r.status_code == 201, r.text
+    rid = r.json()["sys_id"]
+    act = admin.patch(f"/api/v1/quality/rules/{rid}", json={"state": "active", "reason": "Kapsam politikası başlıyor"},
+                      headers=CSRF)
+    assert act.status_code == 200, act.text
+    doc = admin.get(f"/api/v1/quality/rules/{rid}").json()
+    assert doc["check_kind"] == "coverage_gap" and doc["check_kind_tr"].startswith("Kapsam boşluğu")
+    assert doc["params"]["roles"] == ["Monitoring", "EndpointSecurity"]
+    bad = admin.post("/api/v1/quality/rules", json={**body, "name": f"Bozuk {tag}", "idempotency_key": key(),
+                                                     "params": {"roles": ["Monitoring"], "observed_by": ["Monitoring"]}},
+                     headers=CSRF)
+    assert bad.status_code in (400, 422) and "hem zorunlu hem gözlemci" in bad.text
