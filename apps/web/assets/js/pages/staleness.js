@@ -1,7 +1,7 @@
 // Eskime (U7.1, F1-06, ADR-0028): gözlemci kaynakların görmediği CI'lar için öneriler ve Veri sorumlusunun kararı.
 // Öneriyi uzlaştırıcı açar; golden record kendiliğinden değişmez. Karar istek olarak kaydedilir, uzlaştırıcı yeniden
 // denetleyip uygular (aday mı, kaynaklar sağlıklı mı).
-import { h, append, clear, formatDateTime, metric, pill, section, tabs } from '../lib/dom.js';
+import { h, append, clear, formatDateTime, metric, pill, tabs } from '../lib/dom.js';
 import { closeOverlay, dialog, setHeader, toast } from '../lib/shell.js';
 import { backend, retirementStatus, stalenessCases, stalenessDecision, stalenessSummary } from '../lib/data.js';
 
@@ -70,7 +70,7 @@ export async function renderStaleness(view) {
   const { mode } = await backend();
   setHeader({
     title: 'Eskime',
-    sub: 'Keşif, sanallaştırma, ağ, izleme ve uç nokta kaynaklarının hiçbiri uzun süredir görmeyen CI\'lar. Öneri yalnızca kaynakların son çalışması sağlıklıysa ilerler; emekliye ayırma Veri sorumlusunun kararıdır.',
+    sub: 'Uzun süredir hiçbir kaynağın görmediği CI\'lar.',
     crumbs: [['Eskime']],
   });
   if (mode !== 'api') {
@@ -169,7 +169,8 @@ export async function renderStaleness(view) {
   append(view, [cards,
     summary.can_decide ? null : h('p', { class: 'muted small' }, 'Emekliye ayırma ve koruma kararını Veri sorumlusu verir; önerileri görebilirsiniz.'),
     tabBox, h('div', { class: 'toolbar' }, search), status, listBox,
-    section('Kurallar ve gözlemci kaynaklar',
+    // Karar mantığı ilk bakışta gerekmez; isteyen açar (aşamalı açıklama, ADR-0041).
+    h('details', { class: 'inherited', id: 'staleHow' }, h('summary', {}, 'Nasıl karar veriliyor?'),
       h('ul', { class: 'mini', id: 'staleRules' }, summary.rules.map((r) => h('li', {},
         h('div', { class: 'pills' }, pill(`${r.stale_after_days} gün → eskimiş`, 'warn'), pill(`${r.candidate_after_days} gün → aday`, 'bad')),
         h('div', {}, h('strong', {}, r.label), ' ve alt sınıfları')))),

@@ -1,5 +1,5 @@
 // Uygulama kabuğu servisleri: sayfa başlığı, sağ detay paneli, iletişim kutusu, arama paleti, bildirim.
-// GRC Platformu (tedarik) düzeniyle aynı: beyaz kenar menü, üst çubukta Ctrl+K, sağda detay paneli.
+// Görsel dil GRC Platformu (tedarik) ile aynı: üst çubukta Ctrl+K, sağda detay paneli; gezinme uygulama çubuğu ve sekmelerle (ADR-0041).
 import { h, append, clear, fold } from './dom.js';
 
 const $ = (id) => document.getElementById(id);

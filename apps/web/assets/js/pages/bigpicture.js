@@ -51,7 +51,7 @@ export async function renderBigPicture(view) {
   svg.classList.add('bp-svg');
   setHeader({
     title: 'Büyük Resim',
-    sub: 'Kaynaklar değişebilir, kurallar değişmez. Gözlemler ara katmanda anlamlanır, golden record Evren\'de tutulur, ServiceNow CMDB replika olur.',
+    sub: 'Tek sayfalık mimari özet ve tamamlanma durumu.',
     crumbs: [['Büyük Resim']],
     actions: [h('a', { class: 'btn secondary', href: '#/mimari' }, 'Bileşen ayrıntısı: Mimari Harita'),
       h('a', { class: 'btn secondary', href: '/content/big-picture.svg', download: 'Evren_Buyuk_Resim_A3.svg', id: 'bpExport',

@@ -739,7 +739,7 @@
       "kind_label": "İnsan kararı / arayüz",
       "chapter": "consume",
       "phase": "F0",
-      "text": "Türkçe arayüz, GRC Platformu ile aynı görsel dil. Yönetim işleri görev odaklı tek panelden yapılır; yetkisi olmayan iş gerektirdiği rolle görünür, kişiye düşen işler panelin başındadır. Katmanlı kullanım kılavuzu ve teknik belgeler uygulama içindedir (ADR-0033). Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.",
+      "text": "Türkçe arayüz, GRC Platformu ile aynı görsel dil. Gezinme dar uygulama çubuğundaki altı bölümle, bölüm sayfaları üst çubukta sekmeyle yapılır (mobilde alt çubuk); ekranlar aşamalı açıklamayla sade tutulur (ADR-0041). Yönetim işleri görev odaklı tek panelden yapılır; yetkisi olmayan iş gerektirdiği rolle görünür, kişiye düşen işler panelin başındadır. Katmanlı kullanım kılavuzu ve teknik belgeler uygulama içindedir (ADR-0033). Derleme adımı ve üçüncü taraf çalışma zamanı kodu yoktur. Sıkı içerik güvenlik politikasıyla dış kaynak yüklenmez.",
       "tech": [
         "Web Components",
         "ES modülleri",

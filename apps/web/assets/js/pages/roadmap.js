@@ -114,7 +114,7 @@ export async function renderRoadmap(view, param) {
 
   setHeader({
     title: rm.title.replace('Evren CMDB yol haritası', 'Yol Haritası'),
-    sub: `Son güncelleme ${formatDate(rm.updated_at)}. Adımlar faz içinde yapılış sırasıyla; "sizden gereken" kurumdan beklenen karar veya erişimdir. Aynı plan docs/PROJE-PLANI.md dosyasındadır.`,
+    sub: `Son güncelleme ${formatDate(rm.updated_at)}.`,
     crumbs: [['Yol Haritası']],
   });
   view.append(

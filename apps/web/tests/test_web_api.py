@@ -980,7 +980,7 @@ def test_ci_panel_past_moment_and_timeline(page, base_url):
 def test_system_status_page_groups_states_and_refreshes_with_keyboard(page, base_url):
     """U8.1 (ADR-0032): sistem durumu; bileşenler üç grupta, durumları ve gerekçeleriyle; "Yenile" klavyeyle."""
     page.goto(base_url + "/#/sistem-durumu")
-    expect(page.locator("#nav a[data-route='sistem-durumu']")).to_have_attribute("aria-current", "page")
+    expect(page.locator("#subnav a[data-route='sistem-durumu']")).to_have_attribute("aria-current", "page")
     expect(page.locator("#sysOverall")).to_contain_text("Genel durum:")
     expect(page.locator(".sys-group")).to_have_count(3)
     expect(page.locator("#sys-database")).to_contain_text("PostgreSQL")
@@ -1014,6 +1014,20 @@ def test_admin_panel_guides_tasks_by_permission_and_deep_links(page, base_url):
     görev başlatma (Yeni CI penceresi), "Nasıl yapılır?" kılavuza götürür."""
     page.goto(base_url + "/#/yonetim")
     expect(page.locator("#adminAttention h2")).to_have_text("Size düşen işler")
+    # Aşamalı açıklama (U8.10, ADR-0041): ilk bakışta en acil dört iş; gerisi "Tümünü göster" ile
+    items = page.locator("#adminTodo li")
+    expect(items.first).to_be_visible()
+    total = items.count()
+    assert page.locator("#adminTodo li:visible").count() == min(total, 4)
+    if total > 4:
+        more = page.locator("#adminTodoMore")
+        expect(more).to_have_text(f"Tümünü göster ({total})")
+        more.focus()
+        page.keyboard.press("Enter")
+        expect(more).to_have_attribute("aria-expanded", "true")
+        assert page.locator("#adminTodo li:visible").count() == total
+        more.click()
+        assert page.locator("#adminTodo li:visible").count() == 4
     expect(page.locator(".task-group")).to_have_count(7)
     # Bu oturumda Şema onaylayıcı yok: görev açılmaz, hangi rolün gerektiğini söyler
     expect(page.locator("#task-sema-onay .task-locked")).to_contain_text("Şema onaylayıcı rolü gerekir")

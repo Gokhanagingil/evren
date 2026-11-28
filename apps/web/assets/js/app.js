@@ -30,99 +30,108 @@ import { renderRoadmap } from './pages/roadmap.js';
 const ROUTES = {
   'genel-bakis': { title: 'Genel Bakış', icon: 'home', render: renderOverview,
     help: 'Karar bekleyen işler, kaynak kapsamı ve kaynak sağlığı tek ekranda. Kartlar ilgili listeyi filtreli açar.' },
-  kuyruk: { title: 'Eşleştirme Kuyruğu', icon: 'inbox', render: renderQueue,
+  kuyruk: { title: 'Eşleştirme Kuyruğu', tab: 'Eşleştirme', icon: 'inbox', render: renderQueue,
     help: 'Otomatik birleştirilmeyen kaynak kayıtları. Bir kayda tıklayın: kaynak kaydı ve adaylar yan yana, her kanıt ağırlığıyla açıklanır. Kararlar geri alınabilir.' },
-  ci: { title: 'Konfigürasyon Öğeleri', icon: 'server', render: renderCis,
+  ci: { title: 'Konfigürasyon Öğeleri', tab: 'Öğeler', icon: 'server', render: renderCis,
     help: 'Golden record. Bir CI açıldığında her özniteliğin hangi kaynaktan, hangi kuralla geldiği ve hangi değerlerin ezildiği görünür.' },
-  'iliski-haritasi': { title: 'İlişki Haritası', icon: 'graph', render: renderGraph,
+  'iliski-haritasi': { title: 'İlişki Haritası', tab: 'İlişki haritası', icon: 'graph', render: renderGraph,
     help: 'Bir CI\'ın çevresi: bu CI\'a bağımlı olanlar üstte, bağımlılıkları altta, fiziksel bağlantılar aynı düzeyde kesikli. Bir düğüme tıklayın veya Tab ile gelip Enter\'a basın: ilişkileri ve bildiren kaynaklar sağda görünür; "Merkeze al" haritayı o CI\'a taşır. "An" ile geçmiş bir tarihteki ilişkiler gösterilir.' },
-  'veri-modeli': { title: 'Veri Modeli', icon: 'tree', render: renderModel,
+  'veri-modeli': { title: 'Veri Modeli', tab: 'Veri modeli', icon: 'tree', render: renderModel,
     help: 'ServiceNow uyumlu sınıf ağacı. Bir sınıfa tıklayın veya Tab ile gelip Enter\'a basın: alanları (kalıtılanlar dahil), kimlik kuralı, izinli ilişkiler ve SQL görünümü açılır. Değişiklik yalnızca değişiklik setiyle yapılır.' },
-  'sahiplik-onayi': { title: 'Sahiplik Onayı', icon: 'check', render: renderAttestation,
+  'sahiplik-onayi': { title: 'Sahiplik Onayı', tab: 'Sahiplik onayı', icon: 'check', render: renderAttestation,
     help: 'CI sahibi kaydı dönemsel olarak onaylar veya gerekçeyle reddeder. "Bende" görünümünde toplu onay; sahipsiz ve reddedilen CI\'lar Veri sorumlusu içindir. Onay uzlaştırıcıdan geçer.' },
   eskime: { title: 'Eskime', icon: 'clock', render: renderStaleness,
     help: 'Gözlemci kaynakların (keşif, sanallaştırma, ağ, izleme, uç nokta) hiçbirinin uzun süredir görmediği CI\'lar. Kaynakların son çalışması sağlıklı değilse öneri ilerlemez. Emekliye ayırma veya koruma Veri sorumlusunun gerekçeli kararıdır; CI silinmez.' },
-  saglik: { title: 'CMDB Sağlığı', icon: 'heart', render: renderHealth,
+  saglik: { title: 'CMDB Sağlığı', tab: 'Sağlık', icon: 'heart', render: renderHealth,
     help: 'Genel puan ve dört boyut: tamlık, doğruluk, uyum, kapsam. Kurallar sekmesinde Konfigürasyon yöneticisi kural tanımlar (şablondan başlayarak) ve bulguları önizler; görev çalışanı kuralı düzenli değerlendirir, bulgunun sorumlusuna görev açar, düzeltilince görev kendiliğinden kapanır. Bulgular sekmesinde neden, sorumlu ve istisna.' },
-  kontroller: { title: 'GRC Kontrolleri', icon: 'shield', render: renderControls,
+  kontroller: { title: 'GRC Kontrolleri', tab: 'GRC kontrolleri', icon: 'shield', render: renderControls,
     help: 'GRC Platformu\'na giden CMDB tabanlı kontrol sonuçları. Kaynak verisi kısmi toplandıysa sonuç "kesin değil" olur.' },
-  'golge-mod': { title: 'Gölge Mod Raporu', icon: 'layers', render: renderShadow,
+  'golge-mod': { title: 'Gölge Mod Raporu', tab: 'Gölge mod', icon: 'layers', render: renderShadow,
     help: 'Mevcut CMDB (ServiceNow) ile Evren gözlemlerinin karşılaştırması: keşfin görmediği kayıtlar, CMDB\'de olmayan keşif kayıtları, mükerrer adayları ve değer farkları. Rapor GRC Platformu için değiştirilemez kanıt olarak kaydedilebilir.' },
-  kaynaklar: { title: 'Veri Kaynakları', icon: 'plug', render: renderSources,
+  kaynaklar: { title: 'Veri Kaynakları', tab: 'Veri kaynakları', icon: 'plug', render: renderSources,
     help: 'Her veri kaynağı bir rolü doldurur. Kurallar role bağlı olduğu için ürün değiştiğinde kurallar değişmez. Devre kesici kısmi çalışmada yıkıcı işlemleri durdurur.' },
-  sema: { title: 'Şema ve Değişiklikler', icon: 'key', render: renderSchema,
+  sema: { title: 'Şema ve Değişiklikler', tab: 'Şema', icon: 'key', render: renderSchema,
     help: 'Sınıf, alan, seçim listesi ve veri kaynağı yaşam döngüsü değişiklikleri taslak → onay → yayın akışıyla yapılır. Hazırlayan onaylayamaz. Yayınlanan set metadata/changes/ altına değişiklik dosyası olarak PR ile eklenir.' },
   kurallar: { title: 'Kurallar', icon: 'sliders', render: renderRules,
     help: 'Uzlaştırma (rol önceliği), tanımlama (IRE), veri tazeleme ve eskime kuralları. Kaynak: metadata/*.yaml.' },
-  yonetim: { title: 'Yönetim Paneli', icon: 'gear', render: renderAdmin,
+  yonetim: { title: 'Yönetim Paneli', tab: 'Panel', icon: 'gear', render: renderAdmin,
     help: 'Bütün yönetim işlerinin başlangıç noktası. Bir görev seçin: Evren ilgili pencereyi veya sayfayı açar. Yetkiniz olmayan görev gri görünür ve hangi rolün gerektiğini söyler. "Size düşen işler" sizin karar vermeniz gereken bekleyen işlerdir.' },
   gorevler: { title: 'Görevler', icon: 'check', render: renderTasks,
     help: 'Size ve grubunuza atanan yönetişim görevleri. Bir göreve tıklayın: ne yapılacağı, CI, son tarih ve "Kararı ver". Görev ServiceNow\'da açıldıysa da karar burada verilir; Evren ServiceNow kaydını kararla kapatır. Konfigürasyon yöneticisi görev açar, iptal eder, atanmamış ve dikkat isteyen görevleri ve kanalları yönetir.' },
-  kullanicilar: { title: 'Kullanıcılar ve Roller', icon: 'key', render: renderUsers,
+  kullanicilar: { title: 'Kullanıcılar ve Roller', tab: 'Kullanıcılar', icon: 'key', render: renderUsers,
     help: 'Kişiler, gruplar, rol–yetki matrisi ve yetki geçmişi. Bir kişiye tıklayın: rolleri, kimin ne zaman hangi gerekçeyle verdiği ve "Rol ver" / "Geri al". Yetkili roller süreli verilir; kimse kendine rol veremez; birleşemeyen roller (görevler ayrılığı) önceden uyarılır. Yetki yöneticisi yönetir, Denetçi görür.' },
-  kilavuz: { title: 'Kullanım Kılavuzu', icon: 'book', render: renderGuide,
+  kilavuz: { title: 'Kullanım Kılavuzu', tab: 'Kılavuz', icon: 'book', render: renderGuide,
     help: 'Önce genel bilgi, ayrıntı konu sayfalarında, teknik belgeler bağlantıyla. Soldaki aramayla konu bulun; her sayfanın sonunda önceki ve sonraki konuya geçin.' },
   belge: { title: 'Teknik Belge', icon: 'book', render: renderDoc,
     help: 'Mimari, güvenlik, API ve karar kayıtları. Oturum açılmış canlı kurulumda uygulama içinde açılır.' },
-  denetim: { title: 'Denetim İzi', icon: 'shield', render: renderAudit,
+  denetim: { title: 'Denetim İzi', tab: 'Denetim izi', icon: 'shield', render: renderAudit,
     help: 'Kim, ne zaman, neyi, nereden ve hangi sonuçla yaptı. Olaylar sekmesinde dönem, akış, kategori ve sonuçla süzün; bir olaya tıklayın: ayrıntı, kaynak IP, istek kimliği ve mührü. "Bu kişinin olayları" ve "Aynı istekteki olaylar" ile iz sürün; CSV veya NDJSON indirin (aktarma da kaydedilir). Bütünlük sekmesinde saatlik zincirli mühürler ve doğrulama; İncelemeler sekmesinde dönemi gözden geçirip kaydedin. Yalnızca Denetçi görür.' },
-  'sistem-durumu': { title: 'Sistem Durumu', icon: 'heart', render: renderSystem,
+  'sistem-durumu': { title: 'Sistem Durumu', tab: 'Sistem durumu', icon: 'heart', render: renderSystem,
     help: 'Veritabanı, göçler, Kafka, OpenSearch, servis nabızları (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi), olay yayını, istek kuyrukları ve kaynak çalışmaları. "Bu kurulumda yok": servis veya bileşen bu ortamda çalışmıyor. Yalnızca Platform operatörü, Veri sorumlusu ve Denetçi görür. Uyarılar bölümünde görev çalışanının kurallarla açtığı platform uyarıları; Platform operatörü gerekçeyle onaylar, koşul kalkınca uyarı kendiliğinden çözülür. Bildirimler bölümünde e-posta ve Teams kanallarının durumu, rol ve grup yönlendirmeleri ve sınama bildirimi.' },
-  'buyuk-resim': { title: 'Büyük Resim', icon: 'orbit', render: renderBigPicture,
+  'buyuk-resim': { title: 'Büyük Resim', tab: 'Büyük resim', icon: 'orbit', render: renderBigPicture,
     help: 'Tek sayfalık mimari özet: kaynak rolleri, alım, ara katman, kayıt sistemi, tüketim, ServiceNow geçişi, güvenlik ve fazlar.' },
-  mimari: { title: 'Mimari Harita', icon: 'map', render: renderArchitecture,
+  mimari: { title: 'Mimari Harita', tab: 'Mimari', icon: 'map', render: renderArchitecture,
     help: 'Bileşen düzeyinde harita. Bir kutuya tıklayın veya Tab ile gelip Enter\'a basın; ayrıntı ve yol haritası bağlantısı açılır. Esc kapatır.' },
-  'yol-haritasi': { title: 'Yol Haritası', icon: 'flag', render: renderRoadmap,
+  'yol-haritasi': { title: 'Yol Haritası', tab: 'Yol haritası', icon: 'flag', render: renderRoadmap,
     help: 'Fazlar, adımlar, çıkış kriterleri ve sizden gereken karar/erişimler. Aynı plan docs/PROJE-PLANI.md dosyasındadır.' },
 };
 
-const NAV = [
-  { group: 'Genel', items: ['genel-bakis', 'kuyruk', 'gorevler', 'kilavuz'] },
-  { group: 'CMDB', items: ['ci', 'iliski-haritasi', 'saglik', 'sahiplik-onayi', 'eskime', 'veri-modeli', 'kontroller', 'golge-mod'] },
-  { group: 'Kaynaklar ve kurallar', items: ['kaynaklar', 'kurallar', 'sema'] },
-  { group: 'Yönetim', items: ['yonetim', 'kullanicilar', 'denetim', 'sistem-durumu'] },
-  { group: 'Platform', items: ['buyuk-resim', 'mimari', 'yol-haritasi'] },
+// Gezinme (U8.10): altı bölüm uygulama çubuğunda (ikon + kısa ad); bölümün sayfaları üst çubukta sekme.
+// Bir bölüme dönülünce o bölümde en son açılan sekme açılır.
+const HUBS = [
+  { id: 'ana', label: 'Ana sayfa', icon: 'home', routes: ['genel-bakis'] },
+  { id: 'islerim', label: 'İşlerim', icon: 'inbox', routes: ['gorevler', 'kuyruk', 'sahiplik-onayi'] },
+  { id: 'cmdb', label: 'CMDB', icon: 'server', routes: ['ci', 'iliski-haritasi', 'saglik', 'eskime', 'veri-modeli'] },
+  { id: 'kaynaklar', label: 'Kaynaklar', icon: 'plug', routes: ['kaynaklar', 'kurallar', 'golge-mod', 'kontroller'] },
+  { id: 'yonetim', label: 'Yönetim', icon: 'gear', routes: ['yonetim', 'kullanicilar', 'sema', 'denetim', 'sistem-durumu'] },
+  { id: 'kilavuz', label: 'Kılavuz', icon: 'book', routes: ['kilavuz', 'buyuk-resim', 'mimari', 'yol-haritasi'], also: ['belge'] },
 ];
-const SOON = [['ServiceNow eşitleme', 'F2'], ['Süreç uygulaması (olay, değişiklik, talep)', 'F4']];
+const HUB_OF = Object.fromEntries(HUBS.flatMap((hb) => [...hb.routes, ...(hb.also || [])].map((r) => [r, hb])));
+const lastRoute = {};
+let queuePending = 0;
 
-function readClosed() {
-  try { return new Set(JSON.parse(localStorage.getItem('evren.nav.closed') || '[]')); } catch { return new Set(); }
-}
-function writeClosed(set) {
-  try { localStorage.setItem('evren.nav.closed', JSON.stringify([...set])); } catch { /* yalnızca kolaylık */ }
-}
-
-function buildNav(queueCount) {
-  const closed = readClosed();
+function buildNav(queueCount = queuePending) {
+  queuePending = queueCount;
   const nav = clear(document.getElementById('nav'));
-  const groups = [...NAV.map((g) => ({ ...g, soon: false })), { group: 'Yol haritasıyla gelecek', items: [], soon: true }];
-  for (const g of groups) {
-    const list = h('ul', { class: 'nav-items' });
-    const wrap = h('div', { class: `nav-group${g.soon ? ' nav-soon' : ''}${closed.has(g.group) ? ' closed' : ''}` });
-    const title = h('button', {
-      class: 'nav-title', type: 'button', 'aria-expanded': closed.has(g.group) ? 'false' : 'true',
-      onclick: () => {
-        const isClosed = wrap.classList.toggle('closed');
-        title.setAttribute('aria-expanded', isClosed ? 'false' : 'true');
-        if (isClosed) closed.add(g.group); else closed.delete(g.group);
-        writeClosed(closed);
-      },
-    }, g.group, icon('chev', 'icon chev'));
-    if (g.soon) {
-      for (const [label, phase] of SOON) {
-        list.append(h('li', {}, h('span', { class: 'nav-button', 'aria-disabled': 'true' }, label, h('em', {}, phase))));
-      }
-    } else {
-      for (const id of g.items) {
-        const r = ROUTES[id];
-        list.append(h('li', {}, h('a', { class: 'nav-button', href: `#/${id}`, dataset: { route: id } },
-          h('span', { class: 'nav-icon' }, icon(r.icon)), r.title,
-          id === 'kuyruk' && queueCount ? h('span', { class: 'nav-count', 'aria-label': `${queueCount} bekleyen` }, String(queueCount)) : null)));
-      }
-    }
-    wrap.append(title, list);
-    nav.append(wrap);
+  for (const hub of HUBS) {
+    nav.append(h('a', { class: 'hub', href: `#/${lastRoute[hub.id] || hub.routes[0]}`, dataset: { hub: hub.id } },
+      h('span', { class: 'hub-icon' }, icon(hub.icon),
+        hub.id === 'islerim' && queueCount ? h('span', { class: 'nav-count', 'aria-label': `${queueCount} bekleyen` }, String(queueCount)) : null),
+      h('span', { class: 'hub-label' }, hub.label)));
   }
+  markNav(parseHash().route);
+}
+
+function markNav(route) {
+  const hub = HUB_OF[route];
+  if (hub) lastRoute[hub.id] = hub.routes.includes(route) ? route : lastRoute[hub.id];
+  document.querySelectorAll('#nav a.hub').forEach((a) => {
+    if (a.dataset.hub === hub?.id) a.setAttribute('aria-current', 'page');
+    else a.removeAttribute('aria-current');
+    const h0 = HUBS.find((x) => x.id === a.dataset.hub);
+    a.setAttribute('href', `#/${lastRoute[h0.id] || h0.routes[0]}`);
+  });
+  const sub = clear(document.getElementById('subnav'));
+  sub.hidden = !hub || hub.routes.length < 2;
+  if (sub.hidden) return;
+  for (const r of hub.routes) {
+    sub.append(h('a', { class: 'subtab', href: `#/${r}`, dataset: { route: r }, 'aria-current': r === route ? 'page' : null },
+      ROUTES[r].tab || ROUTES[r].title,
+      r === 'kuyruk' && queuePending ? h('span', { class: 'nav-count', 'aria-label': `${queuePending} bekleyen` }, String(queuePending)) : null));
+  }
+}
+
+function setupAccount() {
+  const button = document.getElementById('meButton');
+  const panel = document.getElementById('mePanel');
+  const close = () => { panel.hidden = true; button.setAttribute('aria-expanded', 'false'); };
+  button.addEventListener('click', (ev) => {
+    ev.stopPropagation();
+    panel.hidden = !panel.hidden;
+    button.setAttribute('aria-expanded', panel.hidden ? 'false' : 'true');
+  });
+  document.addEventListener('click', (ev) => { if (!panel.hidden && !panel.contains(ev.target)) close(); });
+  document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape' && !panel.hidden) { close(); button.focus(); } });
 }
 
 function parseHash() {
@@ -136,12 +145,7 @@ let current = null;
 async function navigate() {
   const { route, param } = parseHash();
   const view = document.getElementById('view');
-  document.querySelectorAll('#nav a').forEach((a) => {
-    if (a.dataset.route === route) a.setAttribute('aria-current', 'page');
-    else a.removeAttribute('aria-current');
-  });
-  document.body.classList.remove('nav-open');
-  document.getElementById('menuToggle').setAttribute('aria-expanded', 'false');
+  markNav(route);
   if (current && current.route === route && current.update) {
     current.update(param);
     return;
@@ -213,23 +217,18 @@ async function openHelp() {
 
 function setupShell() {
   append(document.getElementById('brandMark'), icon('orbit'));
-  append(document.getElementById('menuToggle'), icon('menu'));
   append(document.getElementById('helpOpen'), icon('help'));
   document.getElementById('searchOpen').prepend(icon('search'));
   document.getElementById('searchOpen').addEventListener('click', () => palette(searchItems));
   document.getElementById('helpOpen').addEventListener('click', openHelp);
   document.getElementById('closeDetail').addEventListener('click', () => closeDetail());
-  document.getElementById('menuToggle').addEventListener('click', (ev) => {
-    const open = document.body.classList.toggle('nav-open');
-    ev.currentTarget.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
+  setupAccount();
   document.addEventListener('keydown', (ev) => {
     const typing = /^(INPUT|SELECT|TEXTAREA)$/.test(document.activeElement?.tagName || '');
     if ((ev.ctrlKey || ev.metaKey) && fold(ev.key) === 'k') { ev.preventDefault(); palette(searchItems); return; }
     if (ev.key === 'Escape') {
       if (closeOverlay()) { ev.preventDefault(); return; }
       if (isDetailOpen()) { ev.preventDefault(); closeDetail(); return; }
-      if (document.body.classList.contains('nav-open')) document.body.classList.remove('nav-open');
     }
     if (ev.key === '?' && !typing && !isOverlayOpen()) { ev.preventDefault(); openHelp(); }
   });
@@ -244,7 +243,10 @@ async function setupIdentity() {
     const s = (await overview()).summary;
     flag.hidden = !s.synthetic;
     clear(box).append(h('strong', {}, me.name), h('span', {}, me.roles.map((r) => r.label_tr).join(', ') || 'Rol yok'));
-    document.querySelector('.avatar').textContent = (me.name || '?').trim().charAt(0).toLocaleUpperCase('tr');
+    const avatar = document.getElementById('meButton');
+    avatar.textContent = (me.name || '?').trim().charAt(0).toLocaleUpperCase('tr');
+    avatar.setAttribute('aria-label', `Hesabım: ${me.name}`);
+    avatar.title = me.name;
     setupNotifications();
     if (me.mode === 'entra') {
       box.append(h('button', { class: 'btn ghost small', type: 'button', id: 'signOut', onclick: async () => {
@@ -258,10 +260,7 @@ async function setupIdentity() {
 setupShell();
 buildNav(0);
 setupIdentity().catch(() => {});
-queueCounts().then((n) => buildNav(n)).then(() => {
-  const { route } = parseHash();
-  document.querySelector(`#nav a[data-route="${route}"]`)?.setAttribute('aria-current', 'page');
-}).catch(() => {});
+queueCounts().then((n) => buildNav(n)).catch(() => {});
 window.addEventListener('hashchange', navigate);
 if (!location.hash) history.replaceState(null, '', '#/genel-bakis');
 navigate();

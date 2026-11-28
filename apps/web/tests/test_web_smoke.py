@@ -91,19 +91,14 @@ def test_overview_and_shell(page, base_url):
     page.goto(base_url + "/")
     page.wait_for_selector("#overviewStats")
     assert page.title() == "Genel Bakış · Evren CMDB"
-    assert page.locator("#nav a[aria-current=page]").inner_text().strip() == "Genel Bakış"
+    assert page.locator("#nav a[aria-current=page]").inner_text().strip() == "Ana sayfa"
     pending = DEMO["summary"]["queue_review"] + DEMO["summary"]["queue_insufficient"]
     page.wait_for_selector("#nav .nav-count")
-    assert page.locator("#nav .nav-count").inner_text() == str(pending)
+    assert page.locator("#nav a[data-hub=islerim] .nav-count").inner_text() == str(pending)
     assert page.locator(".domain").count() >= 2
+    # Ana sayfanın sekmesi yok; ayrıntılı demo bandı yinelenmez (üst çubuktaki işaret yeter)
+    assert page.locator("#subnav").is_hidden()
     shot(page, "web_overview")
-
-    # Kenar menü grubu daraltılır ve açılır (klavyeyle erişilebilir düğme)
-    title = page.locator(".nav-title", has_text="Platform")
-    title.click()
-    assert title.get_attribute("aria-expanded") == "false"
-    title.click()
-    assert title.get_attribute("aria-expanded") == "true"
 
     # Yardım: ? tuşu, Esc kapatır
     page.locator("body").press("?")
@@ -235,7 +230,8 @@ def test_data_model_tree_detail_and_tabs(page, base_url):
     page.goto(base_url + "/#/veri-modeli")
     page.wait_for_selector("#modelStats")
     assert page.locator("#view tbody tr").count() == model["stats"]["classes"]
-    assert page.locator("#nav a[data-route='veri-modeli']").get_attribute("aria-current") == "page"
+    assert page.locator("#nav a[data-hub=cmdb]").get_attribute("aria-current") == "page"
+    assert page.locator("#subnav a[data-route='veri-modeli']").get_attribute("aria-current") == "page"
     # Türkçe arama: büyük İ ile yazılsa da bulur; bağlam için üst sınıflar da görünür
     page.fill("#modelSearch", "KUBERNETES POD")
     page.wait_for_function("document.querySelector('#modelCount').textContent.startsWith('1 sınıf')")
@@ -387,19 +383,70 @@ def test_mobile_layout_has_no_horizontal_overflow(browser, base_url):
         pg.wait_for_timeout(150)
         overflow = pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth")
         assert overflow <= 1, f"{route}: yatay taşma {overflow}px"
-    # Menü düğmesi kenar menüyü açar
-    pg.click("#menuToggle")
-    assert pg.get_attribute("#menuToggle", "aria-expanded") == "true"
+    # Uygulama çubuğu alta iner: altı bölüm her an görünür, sekmeler üst çubuğun ikinci satırında
+    hubs = pg.locator("#nav a.hub")
+    assert hubs.count() == 6
+    bar = pg.locator("#sidebar").bounding_box()
+    assert bar["y"] + bar["height"] >= 844 - 1 and bar["width"] >= 389
+    for i in range(6):
+        assert hubs.nth(i).is_visible()
+    pg.goto(base_url + "/#/veri-modeli")
+    pg.wait_for_selector("#modelStats")
+    assert pg.locator("#subnav a[data-route='veri-modeli']").is_visible()
+    assert pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
     shot(pg, "web_mobile_menu")
     context.close()
     assert not errors
+
+
+def test_app_bar_hubs_tabs_and_account_panel_work_with_keyboard(page, base_url):
+    """U8.10 (ADR-0041): dar uygulama çubuğu altı bölüm; bölümün sayfaları üst çubukta sekme; bölüm son açılan sekmeyi
+    hatırlar; hesap paneli avatardan açılır, Esc kapatır ve odağı avatara döndürür."""
+    page.goto(base_url + "/#/genel-bakis")
+    page.wait_for_selector("#overviewStats")
+    labels = [t.strip() for t in page.locator("#nav a.hub .hub-label").all_inner_texts()]
+    assert labels == ["Ana sayfa", "İşlerim", "CMDB", "Kaynaklar", "Yönetim", "Kılavuz"]
+    # Klavyeyle bölüme geç: Enter ilk sekmeyi açar, sekmeler görünür
+    page.locator("#nav a[data-hub=cmdb]").focus()
+    page.keyboard.press("Enter")
+    page.wait_for_function("location.hash === '#/ci'")
+    playwright.expect(page.locator("#subnav a.subtab")).to_have_text(["Öğeler", "İlişki haritası", "Sağlık", "Eskime", "Veri modeli"])
+    playwright.expect(page.locator("#subnav a[data-route=ci]")).to_have_attribute("aria-current", "page")
+    page.locator("#subnav a[data-route=eskime]").focus()
+    page.keyboard.press("Enter")
+    playwright.expect(page.locator("#subnav a[data-route=eskime]")).to_have_attribute("aria-current", "page")
+    # Başka bölüme gidip dönünce son sekme açılır
+    page.click("#nav a[data-hub=kaynaklar]")
+    playwright.expect(page.locator("#nav a[data-hub=kaynaklar]")).to_have_attribute("aria-current", "page")
+    assert page.locator("#nav a[data-hub=cmdb]").get_attribute("href") == "#/eskime"
+    page.click("#nav a[data-hub=cmdb]")
+    page.wait_for_function("location.hash === '#/eskime'")
+    # Belge sayfası Kılavuz bölümünde kalır
+    page.goto(base_url + "/#/kilavuz")
+    playwright.expect(page.locator("#nav a[data-hub=kilavuz]")).to_have_attribute("aria-current", "page")
+    # Hesap paneli
+    me = page.locator("#meButton")
+    assert me.get_attribute("aria-expanded") == "false"
+    me.focus()
+    page.keyboard.press("Enter")
+    playwright.expect(page.locator("#mePanel")).to_be_visible()
+    assert me.get_attribute("aria-expanded") == "true"
+    page.keyboard.press("Escape")
+    playwright.expect(page.locator("#mePanel")).to_be_hidden()
+    playwright.expect(me).to_be_focused()
+    # Dışarı tıklamak da kapatır
+    me.click()
+    playwright.expect(page.locator("#mePanel")).to_be_visible()
+    page.click("#pageTitle")
+    playwright.expect(page.locator("#mePanel")).to_be_hidden()
 
 
 def test_system_status_in_demo_mode_explains_itself(page, base_url):
     """U8.1: statik demo modunda sistem durumu yoktur; sayfa bunu söyler ve gezinme menüsünde Yönetim grubu görünür."""
     page.goto(base_url + "/#/sistem-durumu")
     playwright.expect(page.locator("#view .notice")).to_contain_text("canlı API ile çalışır")
-    playwright.expect(page.locator("#nav a[data-route='sistem-durumu']")).to_have_attribute("aria-current", "page")
+    playwright.expect(page.locator("#nav a[data-hub=yonetim]")).to_have_attribute("aria-current", "page")
+    playwright.expect(page.locator("#subnav a[data-route='sistem-durumu']")).to_have_attribute("aria-current", "page")
 
 
 def test_time_inputs_use_istanbul_time_whatever_the_browser_timezone(browser, base_url):

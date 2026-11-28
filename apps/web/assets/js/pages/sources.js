@@ -40,7 +40,7 @@ export async function renderSources(view, param) {
 
   setHeader({
     title: 'Veri Kaynakları',
-    sub: 'Her veri kaynağı bir rolü doldurur. Uzlaştırma kuralları ürün adını değil rolü bilir: keşif ürünü değişirse yalnızca bağlayıcı, eşleme ve bu kayıt değişir (ADR-0009).',
+    sub: 'Bağlı veri kaynakları ve son çalışmaları.',
     crumbs: [['Veri Kaynakları']],
   });
 

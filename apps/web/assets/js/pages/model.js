@@ -302,17 +302,17 @@ export async function renderModel(view, param) {
 
   setHeader({
     title: 'Veri Modeli',
-    sub: 'ServiceNow uyumlu sınıf ağacı, alanlar, kimlik kuralları, değer listeleri ve izinli ilişkiler. Tek kaynak metadata/*.yaml; değişiklik yalnızca değişiklik setiyle yapılır.',
+    sub: 'Sınıflar, alanlar, kimlik kuralları ve değer listeleri.',
     crumbs: [['Veri Modeli']],
   });
-  view.append(
+  append(view, [
     m.demo ? h('p', { class: 'notice' }, h('strong', {}, 'Demo modu. '), 'Model metadata\'dan üretilmiş statik dosyadan okunuyor; CI sayıları sentetik demo envanterinden.') : null,
     h('div', { class: 'cards', id: 'modelStats' },
       metric({ label: 'Sınıf', value: m.stats.classes, foot: `${m.stats.identification_rules} kimlik kuralı` }),
       metric({ label: 'Alan', value: m.stats.fields, foot: `${m.stats.core_columns} kök kolon · gerisi JSONB` }),
       metric({ label: 'İlişki kuralı', value: m.stats.relationship_rules, foot: `${m.stats.relationship_types} tip · kip: ${ENF_TR[m.relationship_rules.enforcement]}` }),
       metric({ label: 'Doğrulanacak', value: m.stats.to_verify, tone: m.stats.to_verify ? 'warn' : 'good', foot: 'ServiceNow örneğinden', href: '#/veri-modeli/dogrulama' })),
-    box);
+    box]);
   render();
   if (param && byName[param]) openClass(param);
 

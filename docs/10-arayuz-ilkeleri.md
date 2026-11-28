@@ -24,7 +24,13 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
    - Yönetim paneli sayfa adlarını değil işleri listeler ("Yeni CI ekle", "Sınıfa alan ekle"); her kartta tek eylem ve "Nasıl yapılır?" bağlantısı.
    - Yapılamayan iş gizlenmez: hangi rolün gerektiği yazılır. Henüz hazır olmayan iş "Hazırlanıyor" diye görünür.
    - Kişinin karar vermesi gereken işler ("Size düşen işler") panelin en üstündedir ve ilgili ekrana götürür.
-9. **Yardım katmanlıdır.** Kılavuzun ilk sayfası kısa ve yönlendiricidir (en fazla 260 sözcük); her konu tek bir işi anlatır (en fazla 900 sözcük) ve teknik ayrıntıya bağlantı verir. Her sayfanın yardım paneli (?) kılavuzun ilgili konusunu açar.
+9. **Sadelik ve aşamalı açıklama** (ADR-0041):
+   - İlk bakışta yalnızca karar için gereken görünür; ayrıntı katlanır alanda, yardım panelinde (?) veya kılavuzdadır.
+   - Alt başlık tek cümledir. Bilgi bir kez gösterilir.
+   - Uzun listeler önce en acil dört öğeyi gösterir ("Tümünü göster (n)").
+   - Süzgeçler tek satırdadır.
+   - Koşullu öğe asla "null" metnine dönüşmez (`append` yardımcısı). Katlanır alan başlığı Türkçedir ve boş alan gizlenir.
+10. **Yardım katmanlıdır.** Kılavuzun ilk sayfası kısa ve yönlendiricidir (en fazla 260 sözcük); her konu tek bir işi anlatır (en fazla 900 sözcük) ve teknik ayrıntıya bağlantı verir. Her sayfanın yardım paneli (?) kılavuzun ilgili konusunu açar.
 
 ## Ekranlar ve yol haritasındaki yeri
 
@@ -51,10 +57,13 @@ Hedef: konfigürasyon analistinin ve CI sahibinin işini hızlandıran, kendini 
 
 ◐: ekran önizlemede sentetik veriyle çalışır (`tools/build_demo.py`, evren-core hattından üretilir); kalıcı işlemler API (F0-09) ve uzlaştırıcı (F0-10) ile gelir.
 
-## Kabuk (GRC Platformu ile aynı)
+## Kabuk (ADR-0041; görsel dil GRC Platformu ile aynı)
 
-- Beyaz, gruplu ve daraltılabilir kenar menü; kırmızı vurgu; etkin sayfada sol çizgi.
-- Üst çubukta sayfa izi, "Sentetik demo verisi" işareti, **Ctrl+K** arama paleti (CI, kaynak, kuyruk kaydı, sayfa) ve **?** yardım.
+- **Uygulama çubuğu** (80 px): altı bölüm, her biri simge ve kısa adla. Bölümler: Ana sayfa, İşlerim, CMDB, Kaynaklar, Yönetim, Kılavuz. Bekleyen eşleştirme sayısı İşlerim'de rozettir. Kırmızı vurgu kullanılır; etkin bölümde sol çizgi vardır.
+- **Bölüm sekmeleri** üst çubuktadır. Etkin sekme `aria-current="page"` taşır. Bölüm son açılan sekmeyi hatırlar. Sayfa izi yoktur.
+- **Hesap paneli** çubuğun altındaki baş harf düğmesindedir: ad, roller ve Çıkış. Esc kapatır.
+- **Mobilde** (< 860 px) çubuk alt gezinme çubuğuna dönüşür; sekmeler üst çubuğun ikinci satırına iner.
+- Üst çubukta ayrıca "Sentetik demo verisi" işareti, **Ctrl+K** arama paleti (CI, kaynak, kuyruk kaydı, sayfa), bildirim zili ve **?** yardım bulunur.
 - Sayfa başlığı + açıklama + eylemler; metrik kartları sol renk şeridiyle durumu gösterir.
 - Kayıt ayrıntısı **sağdan açılan panelde**; Esc kapatır, odak açan satıra döner; derin bağlantı (`#/ci/<sys_id>`, `#/kuyruk/<id>`, `#/kaynaklar/<ad>`).
 

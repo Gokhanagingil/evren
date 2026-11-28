@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 22/77 adım tamamlandı
+**Son güncelleme:** 28.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 23/78 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -14,7 +14,7 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 7/10 adım tamamlandı
+**İzlek ilerlemesi:** 8/10 adım tamamlandı
 
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
@@ -23,7 +23,7 @@
 - [x] **U5** Bağlayıcılar ve kaynak yönetimi: 6 kaynağın istemcisi (kaydedilmiş örnek yanıtlarla); arayüzden şimdi çalıştır, zamanlama, çalışma geçmişi — _Tamamlandı_ (ilgili: F0-11, F1-01, F1-02, F1-03, F1-04, F1-14)
 - [x] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Tamamlandı_ (ilgili: F1-21, F1-17)
 - [x] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Tamamlandı_ (ilgili: F1-06, F1-07, F1-19)
-- [ ] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu altyapısı, sistem durumu, kullanıcılar ve roller, yönetişim görevleri (ServiceNow ve Evren kanalı; zamanlanmış kampanyalar, kural tabanlı bulgu görevleri), sağlık panosu, sihirbazlar, denetim izi — _Devam ediyor_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-24, F1-25, F1-26)
+- [x] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu altyapısı, sistem durumu, kullanıcılar ve roller, yönetişim görevleri (ServiceNow ve Evren kanalı; zamanlanmış kampanyalar, kural tabanlı bulgu görevleri), sağlık panosu, sihirbazlar, denetim izi — _Tamamlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-24, F1-25, F1-26, F1-28)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09, F1-27)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
@@ -127,7 +127,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 10/28 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 11/29 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -187,7 +187,9 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: 27.11.2026 (ADR-0037, U8.6, göç 0033): kural tanımı panelden (Yönetim → Kuraldan görev aç; CMDB Sağlığı → Kurallar), şablondan başlama, önizleme (kaç bulgu, kime, neden); görev çalışanı değerlendirir, bulgu (kural × CI, tek) ve sorumluya tek görev; bulgu kapanınca görev "Bulgu giderildi" ile kapanır; "Geçerli değil" süreli istisna, "Reddedildi" sorumlu değişene kadar ayıklama (tetikleyiciler); ilk şablon: uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev.
 - [ ] **F1-27** Kullanım kılavuzu içeriğinin son hâli: ürün oturduktan sonra her konunun ekranlarla doğrulanması, ekran görüntüleri (hedef ortamla), taslak notunun kaldırılması — _Planlandı_
   - Not: 27.11.2026 proje sahibi kararı: altyapı U8.2'de hazır (ADR-0033); içerik ekranlar değişebileceği için en sonda yazılır.
-- [ ] **F1-28** Arayüz sadeleştirme ve kullanıcı deneyimi gözden geçirmesi: bütün ekranlarda aşamalı bilgi (önce özet ve asıl eylem), gereksiz bilgi ve tıklamanın ayıklanması, modern gezinme (U8.10) — _Planlandı_
+- [x] **F1-28** Arayüz sadeleştirme ve kullanıcı deneyimi gözden geçirmesi: bütün ekranlarda aşamalı bilgi (önce özet ve asıl eylem), gereksiz bilgi ve tıklamanın ayıklanması, modern gezinme (U8.10)
+  - Not: 28.11.2026: U8.10 tamam (ADR-0041). Bütün ekranlar 1440 ve 390 px'te gözden geçirildi. Sabit kenar menü yerine dar uygulama çubuğu (altı bölüm: Ana sayfa, İşlerim, CMDB, Kaynaklar, Yönetim, Kılavuz; mobilde alt çubuk), bölüm sayfaları üst çubukta sekme (son sekme hatırlanır, sayfa izi kalktı), hesap paneli; tek cümlelik alt başlıklar, yinelenen demo bandı kalktı, Size düşen işler önce en acil dört iş, eskime karar mantığı katlanır, süzgeçler tek satır; "null" ve İngilizce "Details" kusurları giderildi. Kullanıcı kabulü U10'da.
+- [ ] **F1-29** Eşleştirme kuyruğunda toplu karar ve atama: benzer adayları birlikte birleştirme veya ayrı tutma (önizlemeli, gerekçeli), kuyruk kaydını kişiye veya gruba atama — _Planlandı_
 
 **Çıkış kriterleri**
 

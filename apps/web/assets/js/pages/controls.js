@@ -10,7 +10,7 @@ export async function renderControls(view, param) {
 
   setHeader({
     title: 'GRC Kontrolleri',
-    sub: 'GRC Platformu\'nun CMDB modülü ve otomatik kontrolleri Evren\'den beslenecek. Her sonuç kaynak bilgisi (provenance) taşır; kısmi toplanan veri "kesin değil" üretir.',
+    sub: 'GRC Platformu\'na giden CMDB tabanlı kontrol sonuçları.',
     crumbs: [['GRC Kontrolleri']],
   });
   const n = (st) => d.controls.filter((c) => c.status === st).length;

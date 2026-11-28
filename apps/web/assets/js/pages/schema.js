@@ -215,7 +215,7 @@ export async function renderSchema(view, param) {
   const { mode } = await backend();
   setHeader({
     title: 'Şema ve Değişiklikler',
-    sub: 'Sınıf, alan, seçim listesi ve veri kaynağı yaşam döngüsü değişiklikleri: taslak → onay → yayın. Hazırlayan onaylayamaz; yayınlanan set Git\'e değişiklik dosyası olarak girer.',
+    sub: 'Veri modeli değişiklikleri: taslak → onay → yayın.',
     crumbs: [['Şema ve Değişiklikler']],
   });
   const flow = h('ol', { class: 'flow-strip', 'aria-label': 'Akış' },

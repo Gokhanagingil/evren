@@ -128,7 +128,7 @@ export async function renderShadow(view) {
   const { mode } = await backend();
   setHeader({
     title: 'Gölge Mod Raporu',
-    sub: 'Mevcut CMDB (ITSM rolü; bugün ServiceNow) Evren\'in kaynak gözlemleriyle karşılaştırılır: kapsam, mükerrerler, değer farkları. ServiceNow\'a hiçbir şey yazılmaz.',
+    sub: 'Mevcut CMDB ile Evren\'in gözlemlerinin karşılaştırması.',
     crumbs: [['Gölge Mod Raporu']],
   });
   if (mode !== 'api') {

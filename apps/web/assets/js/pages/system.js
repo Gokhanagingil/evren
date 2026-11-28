@@ -26,7 +26,7 @@ export async function renderSystem(view, param) {
   const { mode } = await backend();
   setHeader({
     title: 'Sistem Durumu',
-    sub: 'Veritabanı, olay omurgası, arama, servisler ve veri akışı tek ekranda; platform uyarıları ve bildirim kanalları. Kafka\'nın durumu onu kullanan servislerin nabzından okunur.',
+    sub: 'Servisler, veri akışı, uyarılar ve bildirim kanalları.',
     crumbs: [['Sistem Durumu']],
   });
   if (mode !== 'api') {

@@ -160,6 +160,8 @@ function tasks(goCi) {
   ];
 }
 
+const TODO_FIRST = 4;
+
 function attentionBox(items, mode) {
   const box = h('section', { class: 'panel todo-panel', id: 'adminAttention', 'aria-labelledby': 'attH' },
     h('h2', { id: 'attH' }, 'Size düşen işler'));
@@ -171,11 +173,26 @@ function attentionBox(items, mode) {
     box.append(h('p', { class: 'todo-empty' }, icon('check'), 'Şu an sizi bekleyen bir iş yok.'));
     return box;
   }
-  box.append(h('ul', { class: 'todo-list' }, items.map((i) => h('li', {},
-    h('a', { href: i.href, class: `todo-item tone-${i.tone}`, dataset: { id: i.id } },
+  // Önce en acil işler; ilk bakışta dört iş, gerisi isteyince (aşamalı açıklama, ADR-0041).
+  const rank = { bad: 0, warn: 1, info: 2, good: 3 };
+  const sorted = [...items].sort((a, b) => (rank[a.tone] ?? 9) - (rank[b.tone] ?? 9));
+  const list = h('ul', { class: 'todo-list', id: 'adminTodo' }, sorted.map((i, n) => h('li', { hidden: n >= TODO_FIRST },
+    h('a', { href: i.href, class: `todo-item tone-${i.tone}`, dataset: { id: i.id }, title: i.hint },
       h('span', { class: 'todo-count' }, String(i.count)),
-      h('span', { class: 'todo-text' }, h('strong', {}, i.label), h('span', { class: 'cell-sub' }, i.hint)),
-      h('span', { class: 'todo-go', 'aria-hidden': 'true' }, '→'))))));
+      h('span', { class: 'todo-text' }, h('strong', {}, i.label)),
+      h('span', { class: 'todo-go', 'aria-hidden': 'true' }, '→')))));
+  box.append(list);
+  if (sorted.length > TODO_FIRST) {
+    const more = h('button', { type: 'button', class: 'btn ghost small', id: 'adminTodoMore', 'aria-controls': 'adminTodo', 'aria-expanded': 'false' },
+      `Tümünü göster (${sorted.length})`);
+    more.addEventListener('click', () => {
+      const open = more.getAttribute('aria-expanded') !== 'true';
+      list.querySelectorAll('li').forEach((li, n) => { li.hidden = !open && n >= TODO_FIRST; });
+      more.setAttribute('aria-expanded', String(open));
+      more.textContent = open ? 'Daha az göster' : `Tümünü göster (${sorted.length})`;
+    });
+    box.append(h('div', { class: 'todo-more' }, more));
+  }
   return box;
 }
 
@@ -184,7 +201,7 @@ export async function renderAdmin(view, param) {
   const can = (mode === 'api' && me?.can) || {};
   setHeader({
     title: 'Yönetim Paneli',
-    sub: 'Ne yapmak istiyorsunuz? Bir görev seçin; Evren sizi ilgili ekrana götürür ve adım adım yönlendirir.',
+    sub: 'Ne yapmak istiyorsunuz? Bir görev seçin.',
     crumbs: [['Yönetim Paneli']],
     actions: [h('a', { class: 'btn secondary', href: '#/kilavuz/yonetim-paneli', id: 'adminGuide' }, icon('book'), 'Kullanım kılavuzu')],
   });

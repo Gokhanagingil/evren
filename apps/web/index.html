@@ -13,22 +13,21 @@
 <body>
   <a class="skip-link" href="#main">İçeriğe geç</a>
   <aside id="sidebar" aria-label="Ana menü">
-    <div class="brand">
-      <span class="mark" aria-hidden="true" id="brandMark"></span>
-      <span>Evren CMDB<small>Konfigürasyon evreni</small></span>
-    </div>
-    <nav id="nav" aria-label="Sayfalar"></nav>
+    <a class="brand" href="#/genel-bakis" title="Evren CMDB"><span class="mark" aria-hidden="true" id="brandMark"></span><span class="sr-only">Evren CMDB — ana sayfa</span></a>
+    <nav id="nav" aria-label="Bölümler"></nav>
     <div class="nav-bottom">
-      <span class="avatar" aria-hidden="true">E</span>
-      <div class="identity"><strong>Yerel önizleme</strong><span>Kimlik doğrulama: F0-09 (Entra ID)</span></div>
+      <button id="meButton" class="avatar" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="mePanel" title="Hesabım">E</button>
+      <div id="mePanel" class="me-panel" hidden>
+        <div class="identity"><strong>Yerel önizleme</strong><span>Kimlik doğrulama: Entra ID</span></div>
+      </div>
     </div>
   </aside>
   <main id="main" tabindex="-1">
     <div id="topbar">
-      <button id="menuToggle" type="button" aria-label="Menüyü aç" aria-controls="sidebar" aria-expanded="false"></button>
-      <div id="crumbs"></div>
+      <nav id="subnav" aria-label="Bu bölümün sayfaları" hidden></nav>
+      <div id="crumbs" hidden></div>
       <span class="demo-flag" title="Ekranlardaki CI, kaynak çalışması ve kuyruk kayıtları sentetiktir">Sentetik demo verisi</span>
-      <button id="searchOpen" type="button" aria-label="Ara (Ctrl+K)"><span>CI, kaynak veya sayfa ara…</span><kbd>Ctrl K</kbd></button>
+      <button id="searchOpen" type="button" aria-label="Ara (Ctrl+K)"><span>Ara…</span><kbd>Ctrl K</kbd></button>
       <button id="notifyOpen" type="button" aria-label="Bildirimler" title="Bildirimler" hidden></button>
       <button id="helpOpen" type="button" aria-label="Bu ekranın yardımı (?)" title="Bu ekranın yardımı (?)"></button>
     </div>

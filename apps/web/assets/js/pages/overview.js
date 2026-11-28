@@ -55,12 +55,11 @@ export async function renderOverview(view) {
 
   setHeader({
     title: 'Genel Bakış',
-    sub: 'Kaynaklardan gelen gözlemler ara katmanda anlamlanır: kimliği çözülür, kurallarla uzlaştırılır. Karar bekleyen işler önce gelir.',
+    sub: 'Karar bekleyen işler ve platformun durumu.',
     crumbs: [['Genel Bakış']],
   });
 
   view.append(
-    d.note ? h('p', { class: 'notice warn' }, d.note) : null,
     workerNotice(sm.worker),
     h('section', { class: 'hero', 'aria-label': 'Özet' },
       h('div', {},

@@ -1,7 +1,7 @@
 // Yönetişim görevleri (U8.4, ADR-0035, F1-24): bana atanan görevler ve kararı; Konfigürasyon yöneticisi için bütün
 // görevler, atanmamışlar, dikkat isteyenler, görev açma ve kanal ayarı. Görev ServiceNow'da açıldıysa karar yine burada
 // verilir; görev çalışanı ServiceNow kaydını kararla kapatır.
-import { h, clear, dataTable, formatDateTime, kv, pill, section, tabs } from '../lib/dom.js';
+import { h, append, clear, dataTable, formatDateTime, kv, pill, section, tabs } from '../lib/dom.js';
 import { closeDetail, closeOverlay, dialog, openDetail, setHeader, toast } from '../lib/shell.js';
 import {
   backend, ciSearch, refSearch, taskCancel, taskChannels, taskChannelUpdate, taskComplete, taskCreate, taskDetail,
@@ -220,7 +220,7 @@ function openChannelDialog(c, onDone) {
 export async function renderTasks(view, param) {
   const { mode } = await backend();
   const head = { title: 'Görevler', crumbs: [['Görevler']],
-    sub: 'Size ve grubunuza atanan yönetişim görevleri. Kararı burada verirsiniz; görev ServiceNow\'da açıldıysa Evren o kaydı kararla kapatır.' };
+    sub: 'Size ve grubunuza atanan görevler.' };
   if (mode !== 'api') {
     setHeader(head);
     view.append(h('div', { class: 'notice', role: 'note' }, h('strong', {}, 'Demo modu. '), 'Görevler canlı API ile çalışır.'));
@@ -259,7 +259,7 @@ export async function renderTasks(view, param) {
     const scoped = campaign ? h('p', { class: 'notice', id: 'taskCampaignScope' }, 'Yalnızca bir kampanyanın görevleri gösteriliyor. ',
       h('a', { href: `#/gorevler/kampanyalar/${campaign}` }, 'Kampanyayı aç'), ' · ',
       h('a', { href: '#/gorevler/tumu' }, 'Bütün görevler')) : null;
-    clear(body).append(scoped, h('div', { class: 'toolbar' }, search, stateSel), list);
+    append(clear(body), [scoped, h('div', { class: 'toolbar' }, search, stateSel), list]);
     async function load() {
       const res = first || await tasksList({ view: active, state, q, campaign });
       first = null;

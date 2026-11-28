@@ -162,7 +162,7 @@ export async function renderArchitecture(view, param) {
 
   setHeader({
     title: 'Mimari Harita',
-    sub: 'Kaynaktan karara veri akışı, kayıt sistemi, ServiceNow geçiş deseni ve güvenlik denetimleri. Bir kutuya tıklayın veya Tab ile gelip Enter\'a basın; ayrıntı ve yol haritası bağlantısı açılır.',
+    sub: 'Bileşen düzeyinde harita; ayrıntı için bir kutuya tıklayın.',
     crumbs: [['Mimari Harita']],
   });
   view.append(toolbar, layout);

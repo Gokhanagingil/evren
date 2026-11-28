@@ -597,7 +597,7 @@ const SLUG = { overview: '', rules: 'kurallar', findings: 'bulgular' };
 export async function renderHealth(view, param) {
   const { mode } = await backend();
   setHeader({ title: 'CMDB Sağlığı', crumbs: [['CMDB Sağlığı']],
-    sub: 'CMDB ne kadar eksiksiz, doğru, kurallara uygun ve kapsamlı? Kurallar bulgu üretir; bulgunun sorumlusuna görev gider, düzeltilince görev kendiliğinden kapanır.' });
+    sub: 'CMDB ne kadar eksiksiz, doğru ve kapsamlı?' });
   if (mode !== 'api') {
     view.append(h('div', { class: 'notice', role: 'note' }, h('strong', {}, 'Demo modu. '), 'Sağlık panosu ve kurallar canlı API ile çalışır.'));
     return {};

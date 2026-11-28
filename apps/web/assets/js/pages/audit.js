@@ -383,7 +383,7 @@ async function reviewsTab(body, { create = false } = {}) {
 export async function renderAudit(view, param) {
   const { mode, me } = await backend();
   setHeader({ title: 'Denetim İzi', crumbs: [['Denetim İzi']],
-    sub: 'Kim, ne zaman, neyi, nereden ve hangi sonuçla yaptı? Yönetim olayları, CI değişiklikleri ve görev olayları tek yerde; kayıtlar saatlik zincirli mühürle korunur ve kurum SIEM\'ine akar.' });
+    sub: 'Kim, ne zaman, neyi, nereden yaptı.' });
   if (mode !== 'api') {
     view.append(h('div', { class: 'notice', role: 'note' }, h('strong', {}, 'Demo modu. '), 'Denetim izi canlı API ile çalışır.'));
     return {};

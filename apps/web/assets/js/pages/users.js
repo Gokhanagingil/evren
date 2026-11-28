@@ -303,7 +303,7 @@ function eventList(items) {
 export async function renderUsers(view, param) {
   const { mode, me } = await backend();
   const head = { title: 'Kullanıcılar ve Roller',
-    sub: 'Kim Evren\'de ne yapabilir. Rol verirken gerekçe zorunludur, yetkili roller süreli verilir, kimse kendine rol veremez; verilen ve geri alınan rol hemen geçerli olur.',
+    sub: 'Kim Evren\'de ne yapabilir.',
     crumbs: [['Yönetim', '#/yonetim'], ['Kullanıcılar ve Roller']] };
   if (mode !== 'api') {
     setHeader(head);

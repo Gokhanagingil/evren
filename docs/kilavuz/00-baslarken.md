@@ -17,6 +17,10 @@ Evren, kurumun altyapısını tek ve güvenilir bir kayıtta toplar. Keşif, san
 
 Yönetim işlerinin hepsi tek yerden başlar: [Yönetim Paneli](#/yonetim) ([nasıl kullanılır?](kilavuz:yonetim-paneli)).
 
+## Ekranda yolunuzu bulmak
+
+Soldaki çubukta altı bölüm vardır: Ana sayfa, İşlerim, CMDB, Kaynaklar, Yönetim ve Kılavuz. Bir bölüm seçince sayfaları üstte sekme olarak görünür. Sağ üstteki zil bildirimlerinizi, **?** bulunduğunuz sayfanın yardımını açar. **Ctrl+K** ile her yerden arama yaparsınız. Telefonda bölümler ekranın altındadır.
+
 ## Üç şeyi bilmek yeter
 
 1. **Her bilginin bir kaynağı vardır.** Bir kaydın değerini açtığınızda hangi araçtan ve hangi kuralla geldiğini görürsünüz.

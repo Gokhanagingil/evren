@@ -80,7 +80,7 @@ export async function renderGraph(view, param) {
   const { mode } = await backend();
   setHeader({
     title: 'İlişki Haritası',
-    sub: 'Bir CI\'ın çevresi: bu CI\'a bağımlı olanlar üstte, bağımlılıkları altta, fiziksel bağlantılar aynı düzeyde. Geçmiş bir an seçerek o andaki ilişkileri görebilirsiniz.',
+    sub: 'Bir CI\'ın bağımlıları ve bağımlılıkları.',
     crumbs: [['Konfigürasyon Öğeleri', '#/ci'], ['İlişki Haritası']],
   });
   if (mode !== 'api') {
@@ -103,7 +103,7 @@ export async function renderGraph(view, param) {
   const summary = h('p', { class: 'muted small', id: 'graphSummary', 'aria-live': 'polite' });
   const scroll = h('div', { class: 'map-scroll graph-scroll', id: 'graphScroll' });
   const panel = h('aside', { class: 'panel map-detail', id: 'graphDetail', 'aria-live': 'polite', 'aria-label': 'Seçili CI' });
-  const listBox = h('details', { class: 'inherited', id: 'graphList' });
+  const listBox = h('details', { class: 'inherited', id: 'graphList', hidden: true });
   const layoutBox = h('div', { class: 'map-layout' }, h('div', {}, scroll, listBox), panel);
 
   let typing = null;
@@ -229,6 +229,7 @@ export async function renderGraph(view, param) {
     svg.append(edgeLayer, nodeLayer);
     clear(scroll).append(svg);
     // Metin alternatifi: ekran okuyucu ve kopyalama için
+    listBox.hidden = false;
     clear(listBox).append(h('summary', {}, `Liste olarak (${edges.length} ilişki)`),
       edges.length ? h('ul', { class: 'rel-list', id: 'graphEdgeList' }, edges.map((e) => h('li', {},
         h('strong', {}, byId.get(e.parent).name), ` ${e.parent_phrase} `, h('strong', {}, byId.get(e.child).name),
@@ -253,7 +254,7 @@ export async function renderGraph(view, param) {
     }
     if (!state.doc.existed) {
       clear(scroll).append(h('p', { class: 'notice', id: 'graphNotExisted' }, 'Bu CI seçilen anda henüz yoktu.'));
-      clear(panel); clear(listBox); summary.textContent = '';
+      clear(panel); clear(listBox); listBox.hidden = true; summary.textContent = '';
       return;
     }
     setHeader({ title: 'İlişki Haritası', sub: `${state.doc.name || '(adsız)'} çevresi${state.at ? ` · ${formatDateTime(state.at)}` : ''}`,
@@ -266,7 +267,7 @@ export async function renderGraph(view, param) {
     if (!/^[0-9a-f]{32}$/.test(id || '')) {
       state.id = null;
       clear(scroll).append(h('p', { class: 'muted', id: 'graphEmpty' }, 'Haritasını görmek istediğiniz CI\'ı yukarıdan arayın veya CI panelindeki "İlişki haritası" bağlantısını kullanın.'));
-      clear(panel); clear(listBox); summary.textContent = '';
+      clear(panel); clear(listBox); listBox.hidden = true; summary.textContent = '';
       return;
     }
     state.id = id;

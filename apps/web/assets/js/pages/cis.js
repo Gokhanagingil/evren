@@ -110,7 +110,7 @@ export async function renderCis(view, param) {
   const canCreate = mode === 'api' && me?.can?.create_ci;
   setHeader({
     title: 'Konfigürasyon Öğeleri',
-    sub: 'Golden record. Her öznitelik, rolüne göre yetkili kaynaktan gelir; ezilen değerler ve kural gerekçesi CI panelinde görünür.',
+    sub: 'Bir öğeye tıklayın: her değerin kaynağı ve gerekçesi görünür.',
     crumbs: [['Konfigürasyon Öğeleri']],
     actions: canCreate ? [
       h('button', { class: 'btn secondary', type: 'button', id: 'ciImport', onclick: () => openImportDialog(() => load()) }, 'CSV içe aktar…'),

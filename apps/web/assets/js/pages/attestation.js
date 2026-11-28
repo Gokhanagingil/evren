@@ -59,7 +59,7 @@ export async function renderAttestation(view) {
   const { mode } = await backend();
   setHeader({
     title: 'Sahiplik Onayı',
-    sub: 'Kapsamdaki CI\'ın sorumlusu kaydı dönemsel olarak onaylar: "Bu kayıt doğru, sorumlusu benim." Süre dolunca veya sorumlu değişince onay geçersiz olur.',
+    sub: 'Sorumlu olduğunuz kayıtların doğruluğunu dönemsel olarak onaylayın.',
     crumbs: [['Sahiplik Onayı']],
   });
   if (mode !== 'api') {

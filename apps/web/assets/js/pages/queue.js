@@ -24,7 +24,7 @@ export async function renderQueue(view, param) {
 
   setHeader({
     title: 'Eşleştirme Kuyruğu',
-    sub: 'Otomatik birleştirilmeyen kayıtlar: kural eşleşti ama güçlü çelişki var, birden çok aday var veya kimlik yetersiz. Her kanıt açıklanır; karar geri alınabilir.',
+    sub: 'Evren\'in emin olamadığı eşleşmeler kararınızı bekliyor.',
     crumbs: [['Eşleştirme Kuyruğu']],
   });
 

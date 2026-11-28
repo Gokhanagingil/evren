@@ -18,7 +18,7 @@ export async function renderRules(view, param) {
 
   setHeader({
     title: 'Kurallar',
-    sub: 'Uzlaştırma ve veri tazeleme kuralları kaynak rolüne yazılır; sayı küçük olan kazanır. Bir alt sınıfta tanımlanan kural, ata sınıftaki kuralı o öznitelik için geçersiz kılar.',
+    sub: 'Hangi kaynak hangi alanı yazar; kurallar kaynak rolüne bağlıdır.',
     crumbs: [['Kurallar']],
   });
 
