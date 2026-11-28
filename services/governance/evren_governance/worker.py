@@ -10,6 +10,8 @@ Tur (``poll_seconds``'ta bir veya ``LISTEN evren_task`` bildirimiyle hemen):
 3. **Kapatma:** Evren'de kapanan görevin ServiceNow kaydı kararla birlikte kapatılır.
 4. **Denetim izi:** bitmiş saatlik dönemler zincirli mühürle kapatılır, günde bir son mühürler doğrulanır
    (``audit_seal``, ADR-0039).
+5. **Uyarı ve bildirim:** platform sağlığı kurallarla izlenir (``ops_watch``); görev olayları ve uyarı geçişleri
+   bildirime dönüşür, e-posta ve Teams'e teslim edilir (``notifier``, ADR-0040).
 
 Hata: ServiceNow'a ulaşılamazsa görev ``failed`` olur ve sonraki turda yeniden denenir (en çok ``max_attempts``).
 Hata iletisi sır ve sunucu gövdesi içermez. Çalışan CMDB'ye yazamaz; yalnızca görevin teslim alanlarını yazar.
@@ -40,9 +42,13 @@ from evren_core.governance import (
     next_run,
 )
 from evren_core.metadata import Metadata, load_metadata
+from evren_core.ops import AlertRule, load_rules
 
 from .audit_seal import seal_streams, verify_recent
 from .config import GovernanceConfig
+from .delivery import EmailChannel, MemoryEmail, MemoryTeams, SmtpEmail, TeamsChannel, WebhookTeams
+from .notifier import Notifier
+from .ops_watch import watch
 from .quality import RuleEvaluator, snapshot_health
 from .tasks import NoChannel, open_ci_tasks
 
@@ -59,7 +65,8 @@ REMIND_DAYS = 3
 
 class GovernanceWorker:
     def __init__(self, config: GovernanceConfig, *, transport: Transport | None = None,
-                 connect: Callable[[], psycopg.Connection[Any]] | None = None, metadata: Metadata | None = None) -> None:
+                 connect: Callable[[], psycopg.Connection[Any]] | None = None, metadata: Metadata | None = None,
+                 email: EmailChannel | None = None, teams: TeamsChannel | None = None) -> None:
         self.config = config
         self._md = metadata
         self.stop = threading.Event()
@@ -74,6 +81,31 @@ class GovernanceWorker:
             transport = self._simulator
         self.transport = transport
         self._channel: tuple[str, ServiceNowTaskChannel] | None = None
+        self._rules: list[AlertRule] | None = None
+        self.notifier = Notifier(email=email if email is not None else self._email_channel(config),
+                                 teams=teams if teams is not None else self._teams_channel(config),
+                                 base_url=config.public_url, batch=max(config.batch, 50))
+
+    @staticmethod
+    def _email_channel(config: GovernanceConfig) -> EmailChannel | None:
+        if config.notify_simulate:
+            return MemoryEmail()
+        if config.smtp_host and config.mail_from:
+            return SmtpEmail(config.smtp_host, config.smtp_port, config.mail_from, tls=config.smtp_tls,
+                             user=config.smtp_user, password=config.smtp_password, ca_file=config.smtp_ca_file)
+        return None
+
+    @staticmethod
+    def _teams_channel(config: GovernanceConfig) -> TeamsChannel | None:
+        if config.notify_simulate:
+            return MemoryTeams()
+        return WebhookTeams(config.teams_webhooks) if config.teams_webhooks else None
+
+    @property
+    def alert_rules(self) -> list[AlertRule]:
+        if self._rules is None:
+            self._rules = load_rules(self.metadata.alerts)
+        return self._rules
 
     # ------------------------------------------------------------------ bağlantı ve kanal
     def open(self) -> psycopg.Connection[Any]:
@@ -127,6 +159,7 @@ class GovernanceWorker:
         totals["health_measured"] = int(snapshot_health(conn, self.metadata, force=evaluated > 0))
         totals["audit_sealed"] = seal_streams(conn)
         totals["audit_verified"], totals["audit_seal_failed"] = verify_recent(conn)
+        self.alerts_and_notifications(conn, totals)
         sn = self._sn_settings(conn)
         if sn is not None and self.sn_ready:
             ch = self.channel(sn)
@@ -137,6 +170,19 @@ class GovernanceWorker:
         if self.config.health_file:
             Path(self.config.health_file).touch()
         return totals
+
+    def alerts_and_notifications(self, conn: psycopg.Connection[Any], totals: dict[str, int]) -> None:
+        """Platform uyarıları, görev ve uyarı bildirimleri, dış kanallara teslim. Bir adımın hatası diğerlerini
+        durdurmaz (bildirim sorunu görev akışını bekletmez)."""
+        try:
+            transitions = watch(conn, self.alert_rules)
+            totals["alerts_fired"] = sum(t.action == "fired" for t in transitions)
+            totals["alerts_resolved"] = sum(t.action == "resolved" for t in transitions)
+            totals["notifications"] = self.notifier.from_tasks(conn) + self.notifier.from_alerts(conn, transitions)
+            totals["deliveries_planned"] = self.notifier.plan(conn)
+            totals["deliveries_sent"], totals["deliveries_failed"] = self.notifier.send_due(conn)
+        except psycopg.Error as exc:
+            log.warning("uyarı/bildirim turu tamamlanamadı (%s)", type(exc).__name__)
 
     @staticmethod
     def _sn_settings(conn: psycopg.Connection[Any]) -> dict[str, Any] | None:
@@ -325,7 +371,11 @@ class GovernanceWorker:
                                      count(*) FILTER (WHERE external_closed AND state = 'open')
                                 FROM gov.task WHERE state = 'open'""").fetchone()
         details = {"channel": self.channel_mode, "pending": row[0], "failed": row[1],
-                   "external_closed": row[2]}
+                   "external_closed": row[2],
+                   "notify": {"email": self.config.email_mode, "teams": self.config.teams_mode,
+                              # Teams hedef adları sır değildir (adres sır dosyasında); yönlendirme seçimi için
+                              "teams_targets": sorted(self.config.teams_webhooks),
+                              **self.notifier.stats(conn)}}
         conn.execute(
             """INSERT INTO ingest.worker_heartbeat (worker_id, started_at, seen_at, stopped_at, processed, failed,
                                                    last_error_at, poll_seconds, kind, details)

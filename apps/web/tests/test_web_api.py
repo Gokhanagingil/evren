@@ -1683,3 +1683,97 @@ def test_audit_trail_filters_pivots_exports_verifies_and_reviews(browser, audito
         mp.wait_for_timeout(150)
         assert mp.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1, route
     mobile.close()
+
+
+@pytest.fixture(scope="module")
+def operator_url():
+    """Platform operatörü oturumu (uyarı onayı, bildirim yönlendirmesi; ADR-0040)."""
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": "evren_operator,evren_reader",
+                                  "EVREN_DEV_USER": "operator-arayuz", "EVREN_DEV_NAME": "Operatör Arayüz",
+                                  "EVREN_DB_POOL_SIZE": "3"})
+    server = uvicorn.Server(uvicorn.Config(create_app(settings), host="127.0.0.1", port=port, log_level="warning"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    for _ in range(100):
+        if server.started:
+            break
+        time.sleep(0.05)
+    yield f"http://127.0.0.1:{port}"
+    server.should_exit = True
+    thread.join(timeout=5)
+
+
+def test_notification_bell_alert_ack_and_routing(browser, operator_url):
+    """U8.9 (ADR-0040): zil okunmamış sayısını gösterir; panelde bildirime tıklamak okundu sayar ve ilgili ekrana
+    götürür; Sistem Durumu'nda uyarı gerekçeyle onaylanır (kısa not reddedilir); yönlendirme eklenir. Klavye, mobil."""
+    import uuid as _uuid
+
+    import psycopg
+
+    tag = _uuid.uuid4().hex[:8]
+    with psycopg.connect(autocommit=True) as conn:
+        conn.execute("""INSERT INTO notify.notification (kind, severity, audience_kind, audience, title, body, link, source,
+                                                         dedup_key)
+                        VALUES ('alert_firing', 'critical', 'role', 'evren_operator', %s, 'Arayüz testi.',
+                                '#/sistem-durumu/uyarilar', 'test', %s)""", (f"Arayüz uyarısı {tag}", f"test:{tag}"))
+        conn.execute("""INSERT INTO ops.alert (rule, subject, severity, state, title, detail, audience, fired_at)
+                        VALUES (%s, '', 'critical', 'firing', %s, 'Arayüz testi ayrıntısı.', '{evren_operator}', now())""",
+                     (f"test_web_{tag}", f"Sınama uyarısı {tag}"))
+    context = browser.new_context(viewport={"width": 1440, "height": 900}, locale="tr-TR")
+    pg = context.new_page()
+    problems: list[str] = []
+    pg.on("console", lambda m: problems.append(m.text) if m.type in ("error", "warning") else None)
+    pg.on("pageerror", lambda e: problems.append(str(e)))
+    pg.goto(operator_url + "/#/genel-bakis")
+    bell = pg.locator("#notifyOpen")
+    expect(bell).to_be_visible()
+    expect(bell.locator(".notif-badge")).to_be_visible()
+    expect(bell).to_have_attribute("aria-label", re.compile(r"Bildirimler: \d+ okunmamış"))
+    bell.focus()
+    pg.keyboard.press("Enter")
+    item = pg.locator("#notifList li", has_text=f"Arayüz uyarısı {tag}")
+    expect(item).to_have_class(re.compile("unread"))
+    pg.wait_for_timeout(400)
+    shot(pg, "web_api_notifications_panel")
+    item.locator("button").click()
+    expect(pg).to_have_url(re.compile(r"#/sistem-durumu/uyarilar$"))
+    expect(pg.locator("#sysAlerts")).to_be_focused()
+    bell.click()
+    expect(pg.locator("#notifList li", has_text=f"Arayüz uyarısı {tag}")).not_to_have_class(re.compile("unread"))
+    pg.keyboard.press("Escape")
+
+    # Uyarı onayı: kısa not reddedilir, gerekçeyle onaylanır
+    alert = pg.locator("#alertList li", has_text=f"Sınama uyarısı {tag}")
+    expect(alert).to_contain_text("Kritik")
+    alert.get_by_role("button", name="Onayla").click()
+    expect(pg.locator("#ackNote")).to_be_focused()
+    pg.keyboard.type("kısa")
+    pg.click("#ackSave")
+    expect(pg.locator("#ackError")).to_contain_text("en az 10")
+    pg.fill("#ackNote", f"Arayüz testi {tag}: ekip ilgileniyor.")
+    pg.click("#ackSave")
+    expect(pg.locator("#toast")).to_contain_text("Uyarı onaylandı")
+    expect(pg.locator("#alertList li", has_text=f"Sınama uyarısı {tag}")).to_contain_text("Onaylandı")
+    shot(pg, "web_api_alerts")
+
+    # Bildirim yönlendirmesi: varsayılan alıcı Platform operatörü, e-posta adresiyle kaydedilir
+    pg.click("#routeNew")
+    expect(pg.locator("#routeAudience")).to_have_value("evren_operator")
+    pg.fill("#routeTarget", f"ops-{tag}@kurum.ornek")
+    pg.click("#routeSave")
+    expect(pg.locator("#toast")).to_contain_text("Yönlendirme kaydedildi")
+    expect(pg.locator("#sysNotify table")).to_contain_text(f"ops-{tag}@kurum.ornek")
+    shot(pg, "web_api_notify_routes")
+    context.close()
+    assert not problems, f"Konsol hatası/CSP ihlali: {problems}"
+
+    mobile = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    mp = mobile.new_page()
+    mp.goto(operator_url + "/#/sistem-durumu/uyarilar")
+    expect(mp.locator("#alertList")).to_be_visible()
+    mp.wait_for_timeout(150)
+    assert mp.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+    mobile.close()

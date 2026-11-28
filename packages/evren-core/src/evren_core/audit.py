@@ -32,7 +32,8 @@ __all__ = ["ACTIONS", "CATEGORIES", "FIRST_SQL", "GENESIS", "GRACE", "SEAL_SQL",
 STREAMS = {"security": "Güvenlik ve yönetim", "ci": "CI değişiklikleri", "task": "Görevler"}
 CATEGORIES = {
     "access": "Erişim ve oturum", "iam": "Kimlik ve yetki", "cmdb": "CMDB kayıtları", "schema": "Veri modeli",
-    "integration": "Entegrasyon", "governance": "Yönetişim", "audit": "Denetim", "other": "Diğer",
+    "integration": "Entegrasyon", "governance": "Yönetişim", "audit": "Denetim", "ops": "İşletim ve bildirim",
+    "other": "Diğer",
 }
 #: Olay türü → (Türkçe ad, kategori). Yetki reddi ``<işlem>:<kaynak>`` biçimindedir (bkz. ``action_info``).
 ACTIONS: dict[str, tuple[str, str]] = {
@@ -63,6 +64,8 @@ ACTIONS: dict[str, tuple[str, str]] = {
     "finding_exception": ("Bulguya istisna", "governance"), "finding_reopen": ("Bulgu yeniden açıldı", "governance"),
     "audit_export": ("Denetim izi dışa aktarıldı", "audit"), "audit_verify": ("Mühürler doğrulandı", "audit"),
     "audit_review": ("Denetim izi incelemesi", "audit"),
+    "alert_ack": ("Platform uyarısı onaylandı", "ops"), "notify_route_update": ("Bildirim yönlendirmesi değişti", "ops"),
+    "notify_test": ("Sınama bildirimi gönderildi", "ops"),
 }
 _TASK_TR = {"created": "Görev açıldı", "delivered": "Görev kanala teslim edildi", "delivery_failed": "Görev teslim edilemedi",
             "kept_in_evren": "Görev Evren'de tutuldu", "synced": "Görev eşitlendi", "external_closed": "Görev kanalda kapatıldı",
@@ -75,7 +78,8 @@ _OPS_TR = {"read": "okuma", "create": "oluşturma", "write": "yazma", "delete": 
            "split": "ayırma", "review_match": "eşleştirme kararı", "schema_draft": "şema taslağı",
            "schema_approve": "şema onayı", "iam_admin": "yetki yönetimi", "audit_read": "denetim izi okuma",
            "connector_admin": "bağlayıcı yönetimi", "anomaly_review": "anomali kararı", "attest": "sahiplik onayı",
-           "retire": "emekliye ayırma", "task_admin": "görev yönetimi", "audit_review": "denetim incelemesi"}
+           "retire": "emekliye ayırma", "task_admin": "görev yönetimi", "audit_review": "denetim incelemesi",
+           "ops_admin": "işletim yönetimi"}
 
 
 def action_info(source: str, action: str) -> tuple[str, str]:

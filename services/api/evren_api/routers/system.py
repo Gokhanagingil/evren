@@ -31,7 +31,7 @@ SERVICES = {
     "indexer": ("Arama dizinleyicisi", "Dizinlenen CI", "Başarısız toplu yazım"),
     "connector": ("Bağlayıcı çalıştırıcı", "Tamamlanan çalışma", "Başarısız çalışma"),
     "gateway": ("Alım geçidi", "Kabul edilen kayıt", "Kafka teslim hatası"),
-    "governance": ("Görev çalışanı (ServiceNow kanalı)", "Teslim edilen görev", "Teslim hatası"),
+    "governance": ("Görev çalışanı (görevler, uyarılar, bildirimler)", "Teslim edilen görev", "Teslim hatası"),
 }
 #: Kafka tüketici gecikmesi bu sayıyı aşarsa dikkat (kayıt)
 LAG_WARN = 10_000
@@ -138,6 +138,10 @@ def _service(kind: str, rows: list[dict[str, Any]], now: datetime) -> dict[str, 
                              "simülatör": "simülatör (geliştirme)"}.get(d.get("channel"), "ServiceNow")),
                   ("Teslim bekleyen", _num(int(d.get("pending") or 0))),
                   ("Teslim edilemeyen", _num(int(d.get("failed") or 0)))]
+        n = d.get("notify") or {}
+        if n:
+            items += [("Bildirim: e-posta / Teams", f"{n.get('email', '—')} / {n.get('teams', '—')}"),
+                      ("Etkin uyarı", _num(int(n.get("alerts_firing") or 0)))]
     if kind == "requests":
         items.append(("Olay yayıncısı", "açık" if any(r["details"].get("outbox_publisher") for r in live) else
                       "kapalı (Kafka yapılandırılmamış)"))

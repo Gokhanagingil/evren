@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 22/65 adım tamamlandı
+**Son güncelleme:** 27.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 22/77 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -127,7 +127,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 10/27 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 10/28 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -162,7 +162,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: Sentetik tatbikat (tools/build_drill.py, Veri Kaynakları sayfası): BMC → Keşif-B gölge → etkin/devir → emekli; 9 denetim geçti, kural dosyaları değişmedi. Gerçek veritabanında rereconcile_source ile aynı geçişler testli. Bulgular: eşleme kapsamı farkı, adlandırma farkı. Gerçek ikinci ürün geldiğinde tatbikat onunla tekrarlanır.
 - [x] **F1-14** Ham yük arşivi ve arşivden yeniden işleme (saklama politikasıyla)
   - Not: 26.11.2026 (ADR-0024, U5.4): çalıştırıcı tarafında şifreli parça dosyaları (Fernet, anahtar döndürme), veri içermeyen manifest ve özet denetimi, göreli raw_ref, saklama süresiyle günlük temizlik, connector_run --from-archive ile kaynaksız yeniden işleme; yığın duman testinde sınandı. S3 yazıcısı ve saklama süresinin kurum onayı U10.
-- [ ] **F1-15** Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry) — _Planlandı_
+- [ ] **F1-15** Gözlemlenebilirlik: servis metrikleri, Kafka tüketici gecikmesi, uyarılar (OpenTelemetry) — _Devam ediyor_
+  - Not: 28.11.2026 (U8.9, ADR-0040, göç 0035): platform uyarıları (metadata kuralları, süre koşulu, rollere bildirim, gerekçeli onay, geçmiş), bildirim merkezi (uygulama içi, e-posta, Teams; görev atama, hatırlatma, süre aşımı ve tırmanma), /metrics (Prometheus metin biçimi; OpenTelemetry Collector prometheus alıcısıyla da okunur). Kalan: izleme (tracing) ve kurumun izleme sistemiyle canlı kabul (U10).
 - [ ] **F1-16** Denetim ve güvenlik olaylarının kurum SIEM'ine aktarımı — _Devam ediyor_
   - Not: 27.11.2026 (U8.8, ADR-0039, göç 0034): tek denetim izi görünümü, istek kimliği ve kaynak IP, saatlik zincirli mühür ve doğrulama, dönem incelemesi kanıtı, Denetim İzi sayfası; olay, mühür ve doğrulama evren.audit.v1 konusunda. Kalan: SIEM ürününe özgü teslim ve canlı kabul (U10).
 - [x] **F1-17** Sahiplik ve sertifikasyon: CI sahibinin periyodik onayı, sahipsiz CI raporu
@@ -186,6 +187,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: 27.11.2026 (ADR-0037, U8.6, göç 0033): kural tanımı panelden (Yönetim → Kuraldan görev aç; CMDB Sağlığı → Kurallar), şablondan başlama, önizleme (kaç bulgu, kime, neden); görev çalışanı değerlendirir, bulgu (kural × CI, tek) ve sorumluya tek görev; bulgu kapanınca görev "Bulgu giderildi" ile kapanır; "Geçerli değil" süreli istisna, "Reddedildi" sorumlu değişene kadar ayıklama (tetikleyiciler); ilk şablon: uygulama veya sunucuyla ilişkisi olmayan veritabanı → sahibine görev.
 - [ ] **F1-27** Kullanım kılavuzu içeriğinin son hâli: ürün oturduktan sonra her konunun ekranlarla doğrulanması, ekran görüntüleri (hedef ortamla), taslak notunun kaldırılması — _Planlandı_
   - Not: 27.11.2026 proje sahibi kararı: altyapı U8.2'de hazır (ADR-0033); içerik ekranlar değişebileceği için en sonda yazılır.
+- [ ] **F1-28** Arayüz sadeleştirme ve kullanıcı deneyimi gözden geçirmesi: bütün ekranlarda aşamalı bilgi (önce özet ve asıl eylem), gereksiz bilgi ve tıklamanın ayıklanması, modern gezinme (U8.10) — _Planlandı_
 
 **Çıkış kriterleri**
 
@@ -203,7 +205,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 
 ## F2 · Evren ana kaynak, ServiceNow replika
 
-_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/11 adım
+_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/13 adım
 
 Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.
 
@@ -221,6 +223,8 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 - [ ] **F2-09** Yedekleme, felaket kurtarma ve yüksek erişilebilirlik: PostgreSQL PITR, Kafka/OpenSearch çoğaltma, geri yükleme tatbikatı — _Planlandı_
 - [ ] **F2-10** Değişim geçmişi saklama ve bölüm yönetimi: aylık bölümlerin otomatik açılması, saklama süresi kararı (denetim ve KVKK), eski bölümlerin arşivlenmesi; zaman içinde sorgunun ufku — _Planlandı_
 - [ ] **F2-11** Görev kanalının ServiceNow'dan Evren'e devri: Evren görev ekranı (Görevlerim), e-posta ve Teams bildirimi, kanal başına gölge → etkin → emekli (ADR-0009 deseni); açık görevlerin taşınması — _Planlandı_
+- [ ] **F2-12** Maruziyet yönetimi: zafiyet × CI kritikliği × etkilediği iş hizmeti ile önceliklendirme; sahibine görev, GRC Platformu'na kanıt — _Planlandı_
+- [ ] **F2-13** Her öznitelikte güven puanı (kaynak bilgisinden): API ve raporlarda "yalnızca doğrulanmış veri" süzgeci — _Planlandı_
 
 **Çıkış kriterleri**
 
@@ -237,7 +241,7 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 
 ## F3 · CI seçici ve yapay zekâ
 
-_Ay 9–12 · Eyl – Kas 2027 (öneri)_ · 0/5 adım
+_Ay 9–12 · Eyl – Kas 2027 (öneri)_ · 0/9 adım
 
 ServiceNow formlarında CI seçimi Evren aramasıyla yapılır. Yapay zekâ önerileri insan onayıyla, ISO/IEC 42001 uyumlu biçimde devreye alınır.
 
@@ -248,6 +252,10 @@ ServiceNow formlarında CI seçimi Evren aramasıyla yapılır. Yapay zekâ öne
 - [ ] **F3-03** Eşleşme açıklama ve öneri asistanı — _Planlandı_
 - [ ] **F3-04** Anomali açıklamaları ve kök neden ipuçları — _Planlandı_
 - [ ] **F3-05** Yapay zekâ etki değerlendirmesi ve ISO/IEC 42001 kontrol eşlemesi — _Planlandı_
+- [ ] **F3-06** Değişiklik zekâsı: risk puanı (etki alanı, CI geçmişi, dondurma penceresi, bağımlı CI'larda çakışan değişiklik), kapanışta planlanan ↔ gözlenen doğrulama, değişiklik–olay bağı — _Planlandı_
+- [ ] **F3-07** Yaşam sonu, lisans ve maliyet radarı: desteği biten işletim sistemi ve donanım, lisans uyumu, hizmet ve birim bazında maliyet; bulgular kalite kuralı ve kampanyayla sahibine görev — _Planlandı_
+- [ ] **F3-08** "Ya şöyle olursa?" simülasyonu: planlanan kesinti veya felaket senaryosunda etkilenen hizmet ve kullanıcılar, yedeği olmayan hizmetler (ilişki grafiği ve zaman içinde sorgu üzerine) — _Planlandı_
+- [ ] **F3-09** Operasyon yardımcısı (yapay zekâ ajanı, MCP): etki sorusu, değişiklik planı taslağı, eşleştirme önerisi; öneri–onay, model ve gerekçe kaydı — _Planlandı_
 
 **Çıkış kriterleri**
 
@@ -262,7 +270,7 @@ ServiceNow formlarında CI seçimi Evren aramasıyla yapılır. Yapay zekâ öne
 
 ## F4 · Task tarafına hazırlık
 
-_Ay 12+ · 2028 (öneri)_ · 0/5 adım
+_Ay 12+ · 2028 (öneri)_ · 0/10 adım
 
 Aynı kimlik motoruyla olay–CI bağlama. ServiceNow task desenine uygun veri modeli ve Incident/Change pilotunun tasarımı.
 
@@ -271,6 +279,11 @@ Aynı kimlik motoruyla olay–CI bağlama. ServiceNow task desenine uygun veri m
 - [ ] **F4-03** Incident/Change pilot kapsamı ve ServiceNow lisans çıkış planı — _Planlandı_
 - [ ] **F4-04** Süreç uygulaması olaylarının ortak denetim izine bağlanması (olay, değişiklik, talep: aynı görünüm, mühür, SIEM akışı; ADR-0039) — _Planlandı_
 - [ ] **F4-05** ESM süreç kataloğu ve ISO/IEC 20000-1 süreç eşlemesi (hangi süreç hangi kayıt ve kanıtı üretir) — _Planlandı_
+- [ ] **F4-06** Metadata ile süreç uygulaması kurma (ESM omurgası): kayıt türü, form, onay akışı ve iş süresi hedefi kod yazmadan, değişiklik setiyle (taslak → onay → yayın); İK, idari işler, hukuk gibi birimler aynı platformda — _Planlandı_
+- [ ] **F4-07** Topolojiye dayalı alarm korelasyonu ve hizmet sağlığı: alarm → CI → bağımlı hizmet, aynı kök nedenli alarmlar tek olayda, kurum içi hizmet durumu sayfası — _Planlandı_
+- [ ] **F4-08** Teams ve e-postadan etkileşimli onay: görev kararı ve değişiklik onayı karttan, kimlik doğrulamalı ve denetim izli — _Planlandı_
+- [ ] **F4-09** Kapalı döngü self servis: talep → onay → otomasyon → keşif doğrular → CI kendiliğinden bağlanır — _Planlandı_
+- [ ] **F4-10** Deneyim göstergeleri (XLA): iş süresi hedeflerinin yanında izleme ve olay verisinden çalışan deneyimi — _Planlandı_
 
 **Çıkış kriterleri**
 

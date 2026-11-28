@@ -152,6 +152,18 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | R | Kayıtların incelenmediği veya mühür sorunu varken "sorun yok" denmesi | İnceleme kaydı mühürleri doğrular, sayıları sabitler; mühür sorunu varken "Bulgu yok" reddedilir; 7 günü geçen inceleme Denetçiye iş olarak düşer | api `routers/audit.py`, `admin.py` |
 | E | Platform yöneticisinin kendi izini görmesi veya incelemesi | Görevler ayrılığı: denetim izi yalnızca Denetçi rolünde; Platform yöneticisi ve Konfigürasyon yöneticisi 403 (testli) | `0002_iam_seed.sql`, test_api_audit |
 
+### Uyarılar, bildirimler ve metrikler (ADR-0040)
+
+| Tehdit | Senaryo | Denetim | Nerede |
+| --- | --- | --- | --- |
+| I | SMTP parolası veya Teams web kancası adresinin sızması (veritabanı, günlük, arayüz, hata iletisi) | Yalnızca görev çalışanının sır dosyalarında; veritabanında yalnızca Teams hedef adı; hata iletileri adres ve sunucu yanıtı içermez; arayüz ve API yalnızca hedef adlarını görür (testli) | `evren_governance/config.py`, `delivery.py`, test_api_notifications |
+| S/T | Sahte bildirimle kullanıcıyı yönlendirme (oltalama) | Bildirimi görev çalışanı üretir; API yalnızca "sınama" ekleyebilir (tetikleyici); bağlantı yalnızca uygulama içi (`#/…`, şema kısıtı); e-posta düz metin, Teams kartında Markdown kaçışlı; değiştirilemez | göç 0035, `evren_core/notify.py`, test_postgres, test_ops_notify |
+| I | Başkasının bildirimini okuma veya okundu işaretleme | Gelen kutusu kişi, grup üyeliği ve etkin rollerle süzülür; okundu işareti yalnızca görünen bildirime eklenir (testli) | api `routers/notifications.py` |
+| T/R | Uyarının sessizce kapatılması veya onayın inkârı | Uyarıyı yalnızca görev çalışanı açar ve çözer; API yalnızca onay sütunlarını yazar, onay bir kez ve gerekçeli; uyarı silinemez, çözülen değişmez; onay `audit.security_event` `alert_ack`; geçişler olay omurgasında | göç 0035, test_api_notifications |
+| D | Bildirim seli ve dış kanalın tıkanması | Tekrar anahtarı (aynı olay ikinci bildirim üretmez); yönlendirmede önem eşiği; teslimde artan aralıkla yeniden deneme ve sınır | `notifier.py` |
+| I | `/metrics` ile iç ayrıntının açılması | Belirteç dosyası yoksa 404; sabit süreli karşılaştırmalı Bearer; etiketlerde kişi, kimlik değeri veya sorgu metni yok (rota şablonu) | api `metrics.py`, test_api_notifications |
+| E | İzleyicinin kendisinin durması (uyarı açılamaz) | Arayüzde "uyarı izleyicisi çalışmıyor" uyarısı; dışarıdan `evren_service_up{kind="governance"}` izlenir | Sistem Durumu, `/metrics` |
+
 ## Uygulanan denetimler (bu depoda, testli)
 
 - `0003_security.sql`: 7 grup rolü, şema ve tablo düzeyinde yetkiler, salt ekleme denetim izi, rol atama denetimi, kısıtlı güvenlik tablosu.
@@ -195,7 +207,7 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | ISO/IEC 27001:2022 A.5.9 | Bilgi varlıkları envanteri | CMDB'nin kendisi; kapsam boşluğu raporları |
 | A.5.15 / A.5.18 / A.8.2 | Erişim kontrolü, ayrıcalıklı erişim | RBAC+ABAC, SoD, break-glass, rol denetimi |
 | A.8.9 | Yapılandırma yönetimi | Golden record, kaynak bilgisi, yetkisiz değişiklik tespiti |
-| A.8.15 / A.8.16 | Kayıt ve izleme | Salt ekleme denetim izi; tek görünüm, istek kimliği ve kaynak IP; zincirli mühür ve doğrulama; `evren.audit.v1` ile SIEM (ADR-0039) |
+| A.8.15 / A.8.16 | Kayıt ve izleme | Salt ekleme denetim izi; tek görünüm, istek kimliği ve kaynak IP; zincirli mühür ve doğrulama; `evren.audit.v1` ile SIEM (ADR-0039); platform uyarıları, `/metrics` (ADR-0040) |
 | A.5.28 | Kanıt toplama | Denetlenen dışa aktarma, mühür doğrulama ve dönem incelemesi kaydı |
 | CIS Controls v8 8.2, 8.5, 8.9, 8.11 | Kayıt toplama, ayrıntılı kayıt, merkezi toplama, kayıt gözden geçirme | Birleşik denetim izi, SIEM konusu, haftalık inceleme kanıtı (`audit.review`) |
 | A.8.25–A.8.28 | Güvenli geliştirme | CI güvenlik kapıları, kod gözden geçirme komutu, ASVS |

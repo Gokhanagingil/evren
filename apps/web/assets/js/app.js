@@ -1,6 +1,7 @@
 // Evren arayüzü — derlemesiz ES modülleri, hash tabanlı yönlendirme. Kabuk GRC Platformu (tedarik) düzenindedir.
 import { h, append, clear, errorBox, fold } from './lib/dom.js';
 import { icon } from './lib/icons.js';
+import { setupNotifications } from './lib/notifications.js';
 import { backend, globalSearch, guide, overview, queueCounts, queueView, sourcesView } from './lib/data.js';
 import { closeDetail, closeOverlay, dialog, isDetailOpen, isOverlayOpen, palette, setHeader } from './lib/shell.js';
 import { renderOverview } from './pages/overview.js';
@@ -66,7 +67,7 @@ const ROUTES = {
   denetim: { title: 'Denetim İzi', icon: 'shield', render: renderAudit,
     help: 'Kim, ne zaman, neyi, nereden ve hangi sonuçla yaptı. Olaylar sekmesinde dönem, akış, kategori ve sonuçla süzün; bir olaya tıklayın: ayrıntı, kaynak IP, istek kimliği ve mührü. "Bu kişinin olayları" ve "Aynı istekteki olaylar" ile iz sürün; CSV veya NDJSON indirin (aktarma da kaydedilir). Bütünlük sekmesinde saatlik zincirli mühürler ve doğrulama; İncelemeler sekmesinde dönemi gözden geçirip kaydedin. Yalnızca Denetçi görür.' },
   'sistem-durumu': { title: 'Sistem Durumu', icon: 'heart', render: renderSystem,
-    help: 'Veritabanı, göçler, Kafka, OpenSearch, servis nabızları (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi), olay yayını, istek kuyrukları ve kaynak çalışmaları. "Bu kurulumda yok": servis veya bileşen bu ortamda çalışmıyor. Yalnızca Platform operatörü, Veri sorumlusu ve Denetçi görür.' },
+    help: 'Veritabanı, göçler, Kafka, OpenSearch, servis nabızları (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi), olay yayını, istek kuyrukları ve kaynak çalışmaları. "Bu kurulumda yok": servis veya bileşen bu ortamda çalışmıyor. Yalnızca Platform operatörü, Veri sorumlusu ve Denetçi görür. Uyarılar bölümünde görev çalışanının kurallarla açtığı platform uyarıları; Platform operatörü gerekçeyle onaylar, koşul kalkınca uyarı kendiliğinden çözülür. Bildirimler bölümünde e-posta ve Teams kanallarının durumu, rol ve grup yönlendirmeleri ve sınama bildirimi.' },
   'buyuk-resim': { title: 'Büyük Resim', icon: 'orbit', render: renderBigPicture,
     help: 'Tek sayfalık mimari özet: kaynak rolleri, alım, ara katman, kayıt sistemi, tüketim, ServiceNow geçişi, güvenlik ve fazlar.' },
   mimari: { title: 'Mimari Harita', icon: 'map', render: renderArchitecture,
@@ -158,7 +159,10 @@ async function navigate() {
   }
   // Sayfa bir paneli veya pencereyi açtıysa (ör. #/ci/<sys_id> doğrudan bağlantısı) odak orada kalır; geç biten
   // bir istekten sonra odağı ana alana çekmek, kullanıcının o arada odakladığı düğmeyi elinden alırdı.
-  if (!isDetailOpen() && !isOverlayOpen()) document.getElementById('main').focus({ preventScroll: true });
+  // Sayfa kendi içinde bir öğeye odak verdiyse (ör. #/sistem-durumu/uyarilar bölümü) odak orada kalır.
+  if (!isDetailOpen() && !isOverlayOpen() && !view.contains(document.activeElement)) {
+    document.getElementById('main').focus({ preventScroll: true });
+  }
 }
 
 async function searchItems(query = '') {
@@ -241,6 +245,7 @@ async function setupIdentity() {
     flag.hidden = !s.synthetic;
     clear(box).append(h('strong', {}, me.name), h('span', {}, me.roles.map((r) => r.label_tr).join(', ') || 'Rol yok'));
     document.querySelector('.avatar').textContent = (me.name || '?').trim().charAt(0).toLocaleUpperCase('tr');
+    setupNotifications();
     if (me.mode === 'entra') {
       box.append(h('button', { class: 'btn ghost small', type: 'button', id: 'signOut', onclick: async () => {
         await fetch('/auth/logout', { method: 'POST', credentials: 'same-origin', headers: { 'X-Evren-Request': '1' } });

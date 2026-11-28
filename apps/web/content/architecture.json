@@ -893,18 +893,21 @@
     "ops_status": {
       "label": "Sistem durumu",
       "sub": [
-        "Servis nabızları, Kafka,",
-        "OpenSearch, kuyruklar"
+        "Nabız, uyarılar,",
+        "bildirimler, /metrics"
       ],
       "kind": "engine",
       "kind_label": "Evren bileşeni",
       "chapter": "consume",
       "phase": "F1",
-      "text": "Platformun bütün parçalarının durumu tek ekranda ve tek API'de (ADR-0032). Servisler (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi) nabızlarına ayrıntı yazar; Kafka'nın durumu onu kullanan servislerin bildirdiğidir, API Kafka'ya bağlanmaz. Veritabanı, göç defteri, OpenSearch (küme ve dizin farkı), olay yayını gecikmesi, istek kuyrukları ve kaynak çalışmaları da denetlenir. Metrik, uyarı ve geçmiş eğilim OpenTelemetry ile gelecek (F1-15).",
+      "text": "Platformun bütün parçalarının durumu tek ekranda ve tek API'de (ADR-0032). Servisler (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi) nabızlarına ayrıntı yazar; Kafka'nın durumu onu kullanan servislerin bildirdiğidir, API Kafka'ya bağlanmaz. Veritabanı, göç defteri, OpenSearch (küme ve dizin farkı), olay yayını gecikmesi, istek kuyrukları ve kaynak çalışmaları da denetlenir. Görev çalışanı platformu metadata kurallarıyla izler; koşul süre boyunca sürerse uyarı ateşlenir, ilgili rollere bildirilir (uygulama içi, e-posta, Teams), Platform operatörü gerekçeyle onaylar, koşul kalkınca çözülür. Kurumun izleme sistemi /metrics'i kazır (Prometheus metin biçimi) (ADR-0040).",
       "tech": [
         "ingest.worker_heartbeat",
         "GET /api/v1/system/status",
-        "meta.schema_migration"
+        "ops.alert",
+        "notify.notification",
+        "metadata/alerts.yaml",
+        "/metrics"
       ],
       "security": [
         "Yalnızca platform okuma izni (Platform operatörü",

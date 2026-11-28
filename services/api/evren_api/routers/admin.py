@@ -143,6 +143,19 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
         if row[1]:
             items.append(_item("task_unassigned", "Sorumlusu olmayan görev", row[1], "#/gorevler/atanmamis",
                                "CI'ın sahibi, yöneteni ve destek grubu yok; görevi bir kişiye veya gruba atayın.", "info"))
+    if ctx.grant("platform", "read").allowed:
+        # Platform uyarıları (ADR-0040): etkin uyarılar; onaylanmamış kritikler önce
+        crit, other, unacked = ctx.conn.execute(
+            """SELECT count(*) FILTER (WHERE severity = 'critical'), count(*) FILTER (WHERE severity <> 'critical'),
+                      count(*) FILTER (WHERE acked_by IS NULL) FROM ops.alert WHERE state = 'firing'""").fetchone()
+        if crit:
+            items.append(_item("alerts_critical", "Kritik platform uyarısı", crit, "#/sistem-durumu/uyarilar",
+                               "Bir servis yanıt vermiyor, veri akışı durdu veya denetim izi bozuk; ayrıntı ve öneri "
+                               "uyarıda.", "bad"))
+        if other:
+            items.append(_item("alerts", "Etkin platform uyarısı", other, "#/sistem-durumu/uyarilar",
+                               f"{unacked} uyarı henüz onaylanmadı." if unacked else "Hepsi onaylandı; koşul kalkınca "
+                               "kendiliğinden çözülür.", "warn"))
     if ctx.grant("audit", "audit_read").allowed:
         # Denetim izi (ADR-0039): bozulmuş mühür, durmuş mühürleme, haftalık inceleme (CIS 8.11)
         failed, last_end, last_review = ctx.conn.execute(

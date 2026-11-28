@@ -415,6 +415,18 @@ def test_segregation_of_duties_enforced():
         ("evren_auditor_ro", "INSERT INTO audit.review (reviewer, period_start, period_end, events, denied, seals_checked, "
                              "seals_ok, outcome, note) VALUES ('x', now(), now() + interval '1 hour', 0, 0, 0, true, "
                              "'findings', 'salt okur yazamaz')"),
+        # 0035 (ADR-0040): uyarıyı görev çalışanı açar ve çözer, API yalnızca onaylar; bildirimi API silemez ve
+        # teslim durumunu yazamaz; salt okur ve bağlayıcı uyarı ve bildirim göremez; denetçi salt okur onaylayamaz
+        ("evren_app_api", "UPDATE ops.alert SET state = 'resolved' WHERE false"),
+        ("evren_app_api", "DELETE FROM notify.notification WHERE false"),
+        ("evren_app_api", "UPDATE notify.delivery SET status = 'sent' WHERE false"),
+        ("evren_app_api", "INSERT INTO notify.cursor (stream) VALUES ('sahte_imlec')"),
+        ("evren_app_api", "DELETE FROM notify.route WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM notify.notification"),
+        ("evren_readonly", "SELECT count(*) FROM ops.alert"),
+        ("evren_app_connector", "SELECT count(*) FROM notify.route"),
+        ("evren_app_ingest", "SELECT count(*) FROM ops.alert"),
+        ("evren_auditor_ro", "UPDATE ops.alert SET ack_note = 'denetçi onaylayamaz' WHERE false"),
         # ADR-0023: kısıtlı duruşu yalnızca uzlaştırıcı yazar; API yalnızca okur (hassasiyet denetimi API'de)
         ("evren_app_api", "UPDATE cmdb.ci_security_posture SET risk_score = 'High' WHERE false"),
         ("evren_app_api", "DELETE FROM cmdb.ci_security_posture WHERE false"),
@@ -493,6 +505,11 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_governance", "SELECT count(*) FROM audit.security_event"),
         ("evren_app_governance", "SELECT count(*) FROM audit.ci_change"),
         ("evren_app_governance", "SELECT count(*) FROM audit.seal_check"),
+        # 0035 (ADR-0040): sağlık izlemesi ve bildirim
+        ("evren_app_governance", "SELECT count(*), min(created_at) FROM events.outbox WHERE published_at IS NULL"),
+        ("evren_app_governance", "SELECT name FROM ingest.data_source WHERE lifecycle = 'active'"),
+        ("evren_app_api", "SELECT count(*) FROM ops.alert WHERE state = 'firing'"),
+        ("evren_auditor_ro", "SELECT count(*) FROM notify.delivery"),
     ],
 )
 def test_allowed_paths_work(role, statement):
@@ -683,3 +700,17 @@ def test_reconciler_reference_grants_match_reference_tables():
         expected += [f"{t.db_table}:INSERT:{','.join(sorted(cols | {'sys_id'}))}",
                      f"{t.db_table}:UPDATE:{','.join(sorted(cols))}"]
     assert rows == sorted(expected)
+
+
+def test_api_inserts_only_test_notifications():
+    """0035 (ADR-0040): bildirimleri görev çalışanı üretir; API yalnızca kanal sınaması için "test" ekler. Bildirim ve
+    okundu bilgisi değiştirilemez."""
+    psql("BEGIN; SET LOCAL ROLE evren_app_api; INSERT INTO notify.notification (kind, audience_kind, audience, title, "
+         "source, dedup_key) VALUES ('test', 'role', 'evren_operator', 'Sınama', 'test', 'test:pg-izinli'); ROLLBACK")
+    with pytest.raises(SqlError, match="yalnızca sınama"):
+        psql("SET ROLE evren_app_api; INSERT INTO notify.notification (kind, audience_kind, audience, title, source, "
+             "dedup_key) VALUES ('task_assigned', 'role', 'evren_operator', 'Sahte görev', 'x', 'test:pg-sahte')")
+    with pytest.raises(SqlError, match="değiştirilemez"):
+        psql("BEGIN; INSERT INTO notify.notification (kind, audience_kind, audience, title, source, dedup_key) "
+             "VALUES ('test', 'role', 'evren_operator', 'Sınama', 'test', 'test:pg-degisiklik'); "
+             "UPDATE notify.notification SET title = 'değişti' WHERE dedup_key = 'test:pg-degisiklik'; ROLLBACK")

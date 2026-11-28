@@ -99,7 +99,7 @@ class Filters:
     def __init__(self, since: datetime | None = Query(None, description="Başlangıç (ISO 8601); varsayılan 7 gün önce"),
                  until: datetime | None = Query(None, description="Bitiş (ISO 8601); varsayılan şimdi"),
                  source: Literal["security", "ci", "task"] | None = Query(None),
-                 category: Literal["access", "iam", "cmdb", "schema", "integration", "governance", "audit",
+                 category: Literal["access", "iam", "cmdb", "schema", "integration", "governance", "audit", "ops",
                                    "other"] | None = Query(None),
                  action: str | None = Query(None, max_length=120),
                  actor: str | None = Query(None, max_length=200),

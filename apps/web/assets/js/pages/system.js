@@ -3,6 +3,7 @@
 import { h, clear, errorBox, formatDateTimeSec, kv, metric, pill } from '../lib/dom.js';
 import { setHeader } from '../lib/shell.js';
 import { backend, systemStatus } from '../lib/data.js';
+import { alertsSection, notifySection } from './system-ops.js';
 
 const TONE = { ok: 'good', warn: 'warn', bad: 'bad', off: 'neutral' };
 const GROUPS = [
@@ -21,11 +22,11 @@ function card(c) {
     c.note ? h('p', { class: 'muted small sys-note' }, c.note) : null);
 }
 
-export async function renderSystem(view) {
+export async function renderSystem(view, param) {
   const { mode } = await backend();
   setHeader({
     title: 'Sistem Durumu',
-    sub: 'Veritabanı, olay omurgası, arama, servisler ve veri akışı tek ekranda. Kafka\'nın durumu onu kullanan servislerin nabzından okunur.',
+    sub: 'Veritabanı, olay omurgası, arama, servisler ve veri akışı tek ekranda; platform uyarıları ve bildirim kanalları. Kafka\'nın durumu onu kullanan servislerin nabzından okunur.',
     crumbs: [['Sistem Durumu']],
   });
   if (mode !== 'api') {
@@ -37,7 +38,10 @@ export async function renderSystem(view) {
   const counts = h('div', { class: 'cards', id: 'sysCounts' });
   const body = h('div', { id: 'sysGroups' });
   const refresh = h('button', { class: 'btn secondary small', type: 'button', id: 'sysRefresh' }, 'Yenile');
-  view.append(h('div', { class: 'toolbar' }, banner, refresh), counts, body);
+  const alertsBox = h('div', { id: 'sysAlertsBox' });
+  const notifyBox = h('div', { id: 'sysNotifyBox' });
+  view.append(h('div', { class: 'toolbar' }, banner, refresh), counts, alertsBox, body, notifyBox);
+  const [alerts] = await Promise.all([alertsSection(alertsBox), notifySection(notifyBox)]);
 
   let timer = null;
   async function load() {
@@ -68,10 +72,15 @@ export async function renderSystem(view) {
       refresh.disabled = false;
     }
   }
-  refresh.addEventListener('click', load);
+  refresh.addEventListener('click', () => { load(); alerts.reload(); });
   await load();
   if (body.querySelector('.sys-grid')) {
-    timer = setInterval(() => { if (view.isConnected) load(); else clearInterval(timer); }, REFRESH_MS);
+    timer = setInterval(() => { if (view.isConnected) { load(); alerts.reload(); } else clearInterval(timer); }, REFRESH_MS);
   }
-  return {};
+  const focusSection = (p) => {
+    const el = p === 'uyarilar' ? document.getElementById('sysAlerts') : p === 'bildirimler' ? document.getElementById('sysNotify') : null;
+    if (el) { el.scrollIntoView({ block: 'start' }); el.focus({ preventScroll: true }); }
+  };
+  focusSection(param);
+  return { update: (p) => focusSection(p) };
 }

@@ -21,6 +21,7 @@ python tools/dev_stack.py up --demo      # veya konteynerde, tüm yığınla (AD
 | `/api/v1/schema/*` metadata değişiklik setleri (ADR-0015) | Tamam |
 | `GET /api/v1/search` küresel arama: OpenSearch, PostgreSQL yedeği, yetki sorguda (ADR-0018) | Tamam |
 | `/api/v1/audit/*` denetim izi: olaylar (süzgeç, imleç), ayrıntı, özet, CSV/NDJSON dışa aktarma, bütünlük, mühür doğrulama, inceleme kaydı; her yanıtta `X-Request-Id` (ADR-0039) | Tamam |
+| `/api/v1/notifications/*` bildirim merkezi ve yönlendirme, `/api/v1/ops/alerts` platform uyarıları, `/metrics` (belirteçli; ADR-0040) | Tamam |
 | Makine hesapları | Sırada |
 | `/api/now/table/*`, `/api/now/identifyreconcile` | F2-05 |
 

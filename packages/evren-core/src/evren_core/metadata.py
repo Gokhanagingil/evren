@@ -24,6 +24,7 @@ from .attestation import AttestationPolicy, validate_attestation
 from .change_control import ChangePolicy, validate_change_control
 from .classes import ClassHierarchy
 from .identity.rules import ATTRIBUTE_KEY_TYPES
+from .ops import validate_alerts
 from .relations import ENFORCEMENT_MODES, RelationRules
 from .schedule import CronError, CronSchedule
 from .sources import SourceRegistry, SourceRegistryError
@@ -102,6 +103,8 @@ class Metadata:
     change_control: dict[str, Any] = field(default_factory=dict)
     #: Sahiplik onayı politikası (ADR-0027): ``metadata/attestation.yaml``
     attestation: dict[str, Any] = field(default_factory=dict)
+    #: Platform uyarı kuralları (ADR-0040): ``metadata/alerts.yaml``
+    alerts: dict[str, Any] = field(default_factory=dict)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -195,6 +198,7 @@ def _load_base(d: Path) -> Metadata:
         verification=_read(d / "verification.yaml") if (d / "verification.yaml").exists() else {},
         change_control=_read(d / "change_control.yaml") if (d / "change_control.yaml").exists() else {},
         attestation=_read(d / "attestation.yaml") if (d / "attestation.yaml").exists() else {},
+        alerts=_read(d / "alerts.yaml") if (d / "alerts.yaml").exists() else {},
     )
 
 
@@ -460,6 +464,7 @@ def validate(md: Metadata) -> ValidationReport:
 
     r.errors.extend(validate_attestation(md.attestation, hierarchy=md.hierarchy, fields_of=md.fields_of,
                                          choice_values=_choice_values, products=sorted(_product_words(md))))
+    r.errors.extend(validate_alerts(md.alerts, products=sorted(_product_words(md))))
     if not r.errors:
         r.errors.extend(validate_verification(md))
     return r

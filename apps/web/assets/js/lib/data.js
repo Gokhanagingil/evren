@@ -538,3 +538,26 @@ export const auditReviews = () => api('/api/v1/audit/reviews');
 export function auditReview(body) {
   return api('/api/v1/audit/reviews', { method: 'POST', body: JSON.stringify({ ...body, idempotency_key: `ui-${crypto.randomUUID()}` }) });
 }
+
+// ---------------------------------------------------------------------------------------------- bildirim ve uyarı (U8.9)
+export const notificationCount = () => api('/api/v1/notifications/count');
+export function notificationsList({ unreadOnly = false, before = null } = {}) {
+  const p = new URLSearchParams({ unread_only: unreadOnly ? 'true' : 'false' });
+  if (before) p.set('before', before);
+  return api(`/api/v1/notifications?${p}`);
+}
+export function notificationsRead(ids) {
+  return api('/api/v1/notifications/read', { method: 'POST', body: JSON.stringify({ ids }) });
+}
+export const notificationsReadAll = () => api('/api/v1/notifications/read-all', { method: 'POST' });
+export const notifyRoutes = () => api('/api/v1/notifications/routes');
+export function notifyRoutePut(body) {
+  return api('/api/v1/notifications/routes', { method: 'PUT', body: JSON.stringify(body) });
+}
+export function notifyTest(body) {
+  return api('/api/v1/notifications/test', { method: 'POST', body: JSON.stringify(body) });
+}
+export const opsAlerts = (view = 'active') => api(`/api/v1/ops/alerts?${new URLSearchParams({ view })}`);
+export function opsAlertAck(id, note) {
+  return api(`/api/v1/ops/alerts/${encodeURIComponent(id)}/ack`, { method: 'POST', body: JSON.stringify({ note }) });
+}

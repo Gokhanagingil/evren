@@ -201,6 +201,7 @@ services:
     environment:
       EVREN_DATABASE_URL_FILE: /run/secrets/governance_dsn
       EVREN_SN_TASK_SIMULATE: "1"          # yalnızca geliştirme yığını
+      EVREN_NOTIFY_SIMULATE: "1"           # e-posta ve Teams bellek içi simülatöre (ADR-0040)
       EVREN_PUBLIC_URL: http://127.0.0.1:8088
       EVREN_WORKER_POLL_SECONDS: "5"
       EVREN_WORKER_HEALTH_FILE: /tmp/governance.alive

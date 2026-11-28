@@ -147,6 +147,11 @@ packages/evren-core/      Saf alan mantığı + testler
   health.py               CMDB sağlık puanlaması (boyut ve genel puan; ölçümü görev çalışanı yapar)
   audit.py                denetim izi: olay kataloğu (Türkçe ad, kategori), mühür biçimi, özet ve zincir, dönemler,
                           doğrulama, CSV hücre koruması (ADR-0039; mühürleyen görev çalışanı, doğrulayan API ile ortak)
+  ops.py                  platform uyarıları: kural doğrulama (metadata/alerts.yaml), anlık görüntü, sinyal
+                          değerlendirmesi, uyarı yaşam döngüsü (ADR-0040)
+  notify.py               bildirim merkezi: tür kataloğu, görev/uyarı bildirim taslağı (tırmanma), teslim hedefleri,
+                          e-posta ve Teams ileti metni (ADR-0040)
+  metrics.py              Prometheus metin biçimi (sayaç, gösterge, histogram; bağımlılıksız, ADR-0040)
   timeline.py             zaman içinde sorgu: geçmiş bir andaki öznitelik ve ilişkiler, zaman çizelgesi anları (ADR-0031)
   model_view.py           Veri Modeli sayfasının görünümü (API ve model.json aynı kaynaktan)
   schedule.py             5 alanlı cron zamanlaması (çalıştırıcı servisi, metadata doğrulaması; ADR-0021)
@@ -155,11 +160,12 @@ packages/evren-core/      Saf alan mantığı + testler
 connectors/<kaynak>/      kaynak başına eşleme dosyaları; samples/ sentetik örnek veri (simülatör)
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
-db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri · 0032 kampanyalar · 0033 kalite kuralları · 0034 denetim izi ve mühürler (tools/migrate.py uygular)
+db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri · 0032 kampanyalar · 0033 kalite kuralları · 0034 denetim izi ve mühürler · 0035 uyarılar ve bildirimler (tools/migrate.py uygular)
 services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), indexer (arama),
                           connector-runner (şimdi çalıştır + zamanlama; kaynak sırları yalnızca burada, ADR-0021),
                           governance (görev çalışanı: kampanya ve kural değerlendirme, sağlık ölçümü, ServiceNow'a görev teslimi, eşitleme,
-                          kapatma, denetim izi mühürleme ve günlük doğrulama; ADR-0035…0037, ADR-0039), sn-sync, mcp
+                          kapatma, denetim izi mühürleme ve günlük doğrulama, platform uyarıları, bildirim üretimi ve
+                          e-posta/Teams teslimi; ADR-0035…0037, ADR-0039, ADR-0040), sn-sync, mcp
 deploy/                   tek imaj (Dockerfile, evren.py giriş noktası), compose geliştirme yığını, Kafka konuları, connectors.dev.yaml
 docs/                     mimari belgeler, ADR'ler; kilavuz/ kullanım kılavuzu (kilavuz.yaml + konu başına Markdown, ADR-0033)
 tools/                    yükleyici, harita/büyük resim/plan/demo üreticileri, SN dışa aktarım, geliştirme sunucusu

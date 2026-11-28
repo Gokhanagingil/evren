@@ -51,6 +51,23 @@
 - **Uzlaştırıcı çalışanı (F0-10, ADR-0013):** `ingest.worker_heartbeat` son görülme, işlenen ve başarısız istek sayısı; `/api/v1/summary` → `worker` (durum `ok`/`stale`/`none`, bekleyen istekler). Alarm önerisi: bekleyen istek varken çalışan 2 tarama aralığından uzun süre görülmüyor; başarısız istek sayısı artıyor.
 - Evren kendi altyapısını kendi CMDB'sinde CI olarak tutar.
 
+### Bugün hazır olan (U8.9, ADR-0040)
+
+- **`/metrics` (Prometheus metin biçimi):** API'de; `EVREN_METRICS_TOKEN_FILE` ile açılır, `Authorization: Bearer` ister.
+  Kurumun Prometheus'u, Grafana Agent'ı veya OpenTelemetry Collector'ı (prometheus alıcısı) kazır. Yeni bağımlılık yok.
+  - `evren_http_requests_total{method,route,status}`, `evren_http_request_duration_seconds` (rota şablonu; kişi yok).
+  - `evren_service_up{kind}`, `evren_kafka_consumer_lag{kind}`, `evren_outbox_backlog`,
+    `evren_outbox_oldest_age_seconds`, `evren_alerts_firing{severity}`, `evren_tasks_open`, `evren_tasks_overdue`,
+    `evren_findings_open`, `evren_audit_seal_age_seconds`, `evren_notification_deliveries{status}`, `evren_db_up`.
+  - Dış alarm önerisi: `evren_service_up{kind="governance"} == 0` (uyarıları görev çalışanı değerlendirir; o durunca
+    Evren içi uyarı açılamaz), `evren_db_up == 0`.
+- **Platform uyarıları:** `metadata/alerts.yaml` kuralları (servis yanıt vermiyor, Kafka'ya ulaşılamıyor, tüketici
+  gecikmesi, olay yayını birikmesi, devre kesici açık, çalıştırma isteği alınmıyor, görev teslim edilemiyor, denetim
+  mührü gecikti/bozuk). Koşul süre boyunca sürerse ateşlenir, rollere bildirilir, olay omurgasına (`ops.alert.*`)
+  gider; Platform operatörü gerekçeyle onaylar; koşul kalkınca çözülür. Sistem Durumu → Uyarılar.
+- **Bildirimler:** uygulama içi (zil), e-posta (SMTP, `EVREN_SMTP_*`) ve Teams (iş akışı gelen web kancası,
+  `EVREN_TEAMS_WEBHOOKS_FILE`). Sırlar yalnızca görev çalışanının sır dosyalarında.
+
 ## Dağıtım
 
 - Hedef ortam açık soru: Kubernetes/OpenShift mi, VM üzerinde Docker mı? (Proje sahibi en son paylaşacak; U10.) İki durumda da:

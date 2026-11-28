@@ -1,0 +1,88 @@
+# Platform uyarı kuralları (U8.9, ADR-0040; F1-15).
+#
+# Görev çalışanı her turda platformun anlık görüntüsünü alır ve bu kuralları değerlendirir. Koşul for_minutes boyunca
+# sürerse uyarı ateşlenir ve audience rollerine bildirim gider (uygulama içi; yönlendirme varsa e-posta veya Teams).
+# Koşul kalkınca uyarı çözülür ve yine bildirilir. Süre dolmadan kalkan koşul kimseyi rahatsız etmez.
+#
+# signal: bilinen sinyallerden biri (evren_core/ops.py SIGNALS); threshold: sinyalin birimiyle eşik.
+# Kurallar ürüne değil sinyale yazılır (kural 8): ürün adı geçmez. Doğrulama: tools/load_metadata.py --check.
+version: 1
+
+rules:
+  - id: servis_yanit_vermiyor
+    signal: service_down
+    title: "{subject} yanıt vermiyor"
+    severity: critical
+    for_minutes: 5
+    audience: [evren_operator]
+    advice: Servisin günlüğünü ve veritabanı bağlantısını denetleyin; gerekirse yeniden başlatın.
+
+  - id: kafka_ulasilamiyor
+    signal: kafka_unreachable
+    title: "{subject} Kafka'ya ulaşamıyor"
+    severity: critical
+    for_minutes: 5
+    audience: [evren_operator]
+    advice: Kafka kümesinin ve ağ erişiminin durumunu denetleyin; kayıtlar alınamıyor veya işlenemiyor olabilir.
+
+  - id: kafka_gecikmesi_yuksek
+    signal: kafka_lag
+    kinds: [ingest, indexer]
+    threshold: 10000
+    title: "{subject} geride kalıyor ({value} kayıt)"
+    severity: warning
+    for_minutes: 15
+    audience: [evren_operator]
+    advice: Tüketici örnek sayısını artırın veya yavaşlığın nedenini (veritabanı, arama) inceleyin.
+
+  - id: olay_yayini_birikiyor
+    signal: outbox_backlog
+    threshold: 10
+    title: "Olay yayını birikiyor ({value} dakika)"
+    severity: warning
+    for_minutes: 5
+    audience: [evren_operator]
+    advice: Olay yayıncısının (uzlaştırıcı çalışanı) Kafka bağlantısını denetleyin; aboneler güncel değişikliği almıyor.
+
+  - id: devre_kesici_acik
+    signal: breaker_open
+    title: "{subject} kaynağında devre kesici açık"
+    severity: warning
+    for_minutes: 0
+    audience: [evren_data_steward, evren_operator]
+    advice: Çalışmanın neden eksik veya şüpheli olduğunu Veri Kaynakları sayfasında inceleyin.
+
+  - id: calistirma_istegi_bekliyor
+    signal: run_request_stuck
+    threshold: 30
+    title: "Bağlayıcı çalıştırma isteği alınmıyor ({value} dakika)"
+    severity: warning
+    for_minutes: 0
+    audience: [evren_operator, evren_data_steward]
+    advice: Bağlayıcı çalıştırıcı servisinin çalıştığını ve örnek tanımını denetleyin.
+
+  - id: gorev_teslim_edilemiyor
+    signal: task_delivery_failed
+    threshold: 0
+    title: "Görevler kanala teslim edilemiyor ({value} görev)"
+    severity: warning
+    for_minutes: 30
+    audience: [evren_config_manager, evren_operator]
+    advice: Görev kanalının ayarını ve bağlantısını Görevler → Kanallar sekmesinde denetleyin.
+
+  - id: denetim_muhru_gecikti
+    signal: audit_seal_lag
+    threshold: 120
+    title: "Denetim izi mühürlenmiyor ({value} dakika)"
+    severity: warning
+    for_minutes: 0
+    audience: [evren_operator, evren_auditor]
+    advice: Görev çalışanının çalıştığını denetleyin; mühürlenmeyen dönemler doğrulanamaz.
+
+  - id: denetim_muhru_bozuk
+    signal: audit_seal_failed
+    title: "Denetim izi mührü doğrulanamadı"
+    severity: critical
+    for_minutes: 0
+    audience: [evren_auditor, evren_operator]
+    advice: Denetim İzi → Bütünlük sekmesinde dönemi inceleyin; kayıtlar mühürlendikten sonra değişmiş olabilir.

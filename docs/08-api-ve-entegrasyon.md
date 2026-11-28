@@ -171,6 +171,13 @@ Okuma `audit/audit_read`, doğrulama ve inceleme `audit/audit_review` ister (iki
 - `POST /api/v1/audit/seals/verify` `{since, until, stream?}` (en çok 92 gün) → `{checked, failed, ok, message, problems}`; her mühür için `audit.seal_check` kanıtı ve `audit_verify` olayı.
 - `GET /api/v1/audit/reviews` → `{items, due, every_days, suggested}`. `POST /api/v1/audit/reviews` `{period_start, period_end, outcome: no_findings|findings, note (10–4000), idempotency_key}` → `201`; mühürler önce doğrulanır, mühür sorunu varken `no_findings` → `422 muhur_sorunu`.
 
+### Bildirimler, platform uyarıları ve metrikler (ADR-0040)
+
+- `GET /api/v1/notifications?unread_only&before&limit` → `{items, next, unread, critical_unread}`: bana, grubuma ve rollerime (son 90 gün). `GET /api/v1/notifications/count`. `POST /api/v1/notifications/read` `{ids}`, `POST /api/v1/notifications/read-all` (yalnızca görünen bildirimler).
+- `GET /api/v1/notifications/routes` (`platform` okuma): yönlendirmeler, kanal durumu (Teams'in yalnızca hedef adları), roller, gruplar, teslim sorunları. `PUT /api/v1/notifications/routes` `{audience_kind: role|group, audience, channel: email|teams, target, min_severity, active}` ve `POST /api/v1/notifications/test` `{audience_kind, audience}` (`ops_admin`; denetim olayı).
+- `GET /api/v1/ops/alerts?view=active|history` (`platform` okuma): uyarılar, öneri, onay, kural kataloğu. `POST /api/v1/ops/alerts/{sys_id}/ack` `{note (10–1000)}` (`ops_admin`; yalnızca ateşlenmiş ve bir kez; `409 onaylanamaz`).
+- `GET /metrics` (Prometheus metin biçimi 0.0.4): yalnızca `EVREN_METRICS_TOKEN_FILE` tanımlıysa, `Authorization: Bearer`; yoksa 404, yanlışsa 401.
+
 ### Kalite kuralları, bulgular ve CMDB sağlığı (ADR-0037)
 
 Okuma: CI okuma izni (`cmdb_ci` / `read`); okunamayan sınıftaki CI'ın bulgusu listelenmez. Yazma: Konfigürasyon yöneticisi (`governance` / `task_admin`). Yazma uç noktaları CSRF başlığı ister.
@@ -322,6 +329,7 @@ Kafka `evren.cmdb.ci.changed.v1` (anahtar: `sys_id`, CloudEvents; outbox'tan yay
 - `type`: `evren.cmdb.ci.created.v1`, `evren.cmdb.ci.changed.v1`. `subject` = sys_id.
 - `data`: sınıf, değişen öznitelikler (eski → yeni), kaynak, çalışma. Hassasiyeti `confidential`/`restricted` olan alanın değeri konmaz (`redacted: true`).
 - İnsan istekleri (elle düzenleme, ayırma …) `evren.cmdb.activity.v1` konusundadır.
+- Platform uyarısının ateşlenmesi, çözülmesi ve onayı `evren.cmdb.activity.v1` konusundadır: `type` = `evren.ops.alert.fired|resolved|acked` (kural, konu, önem, başlık, ayrıntı, değer).
 - Denetim izi `evren.audit.v1` konusundadır (1 yıl saklama, ADR-0039): `type` = `evren.audit.security_event` (kim, ne, nesne, izin/ret, kaynak IP, istek kimliği, ayrıntı), `evren.audit.seal` (akış, dönem, kayıt sayısı, özet, önceki zincir, zincir), `evren.audit.seal_check` (mühür, doğrulayan, sonuç, sorun). Kurum SIEM'i bu konuyu tüketir; mühür zincir değerleri veritabanı dışında tanık olur.
 - Webhook (F2-06): `X-Evren-Signature: sha256=<HMAC>` + zaman damgası (tekrar saldırısına karşı 5 dakika penceresi).
 

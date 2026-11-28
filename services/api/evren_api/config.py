@@ -68,6 +68,19 @@ def _trusted_proxies(raw: str) -> tuple[str, ...]:
     return tuple(out)
 
 
+def _metrics_token(env: Mapping[str, str]) -> str | None:
+    path = env.get("EVREN_METRICS_TOKEN_FILE")
+    if not path:
+        return None
+    try:
+        token = Path(path).read_text(encoding="utf-8").strip()
+    except OSError:
+        raise ConfigError("EVREN_METRICS_TOKEN_FILE okunamadı") from None
+    if len(token) < 24:
+        raise ConfigError("Metrik belirteci en az 24 karakter olmalı (tahmin edilemez, rastgele)")
+    return token
+
+
 @dataclass(frozen=True)
 class Settings:
     auth_mode: str
@@ -90,6 +103,8 @@ class Settings:
     #: Önündeki ters vekil/yük dengeleyici adresleri (IP veya CIDR). Yalnızca bunlardan gelen X-Forwarded-For
     #: güvenilir; denetim izindeki kaynak IP buradan gelir (ADR-0039). Boşsa doğrudan bağlanan adres yazılır.
     trusted_proxies: tuple[str, ...] = ()
+    #: /metrics belirteci (ADR-0040); yalnızca dosyadan. Yoksa /metrics kapalıdır (404).
+    metrics_token: str | None = field(default=None, repr=False)
 
     @property
     def session_cookie(self) -> str:
@@ -137,4 +152,5 @@ class Settings:
             dev_user=env.get("EVREN_DEV_USER", "dev"), dev_name=env.get("EVREN_DEV_NAME", "Geliştirici"),
             dev_roles=roles, entra=entra, dev_container=dev_container, opensearch=_opensearch(env),
             trusted_proxies=_trusted_proxies(env.get("EVREN_TRUSTED_PROXIES", "")),
+            metrics_token=_metrics_token(env),
         )

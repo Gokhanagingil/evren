@@ -416,14 +416,14 @@
 <text x="264.0" y="1773.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">Tedarik portalı, raporlama,</text>
 <text x="264.0" y="1789.0" fill="#4d6474" font-size="12" font-weight="400" text-anchor="start">otomasyon</text>
 </g>
-<g class="node" id="n-ops_status" data-node="ops_status" data-chapter="consume" tabindex="0" role="button" aria-label="Sistem durumu: Servis nabızları, Kafka, OpenSearch, kuyruklar">
+<g class="node" id="n-ops_status" data-node="ops_status" data-chapter="consume" tabindex="0" role="button" aria-label="Sistem durumu: Nabız, uyarılar, bildirimler, /metrics">
 <rect x="50.0" y="1729.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
 <rect x="190.0" y="1738.0" width="30" height="18" rx="9" fill="#3f7f5f" stroke="#ffffff" stroke-width="1"/>
 <text x="205.0" y="1751.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F1</text>
 <text x="64.0" y="1755.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">Sistem</text>
 <text x="64.0" y="1774.0" fill="#ffffff" font-size="14" font-weight="700" text-anchor="start">durumu</text>
-<text x="64.0" y="1792.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Servis nabızları, Kafka,</text>
-<text x="64.0" y="1808.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">OpenSearch, kuyruklar</text>
+<text x="64.0" y="1792.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Nabız, uyarılar,</text>
+<text x="64.0" y="1808.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">bildirimler, /metrics</text>
 </g>
 </g>
 <g id="ch-servicenow" data-chapter="servicenow">

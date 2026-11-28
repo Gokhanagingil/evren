@@ -5,6 +5,7 @@ import ipaddress
 import json
 import logging
 import posixpath
+import time
 import uuid
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -25,6 +26,7 @@ from .db import make_pool
 from .editing import EditPolicy
 from .entra import Entra
 from .errors import install_handlers
+from .metrics import ApiMetrics
 from .present import Presenter
 from .routers import (
     admin,
@@ -40,6 +42,7 @@ from .routers import (
     insight,
     integrations,
     manual,
+    notifications,
     platform,
     quality,
     queue,
@@ -145,6 +148,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     app = FastAPI(title="Evren CMDB API", version="0.2.0", docs_url=None, redoc_url=None,
                   openapi_url="/api/v1/openapi.json", lifespan=lifespan)
     app.state.settings = settings
+    app.state.metrics = ApiMetrics(settings.metrics_token)
     app.state.pool = pool
     app.state.metadata = md
     app.state.applied_change_files = frozenset(n for n, _ in load_change_files(REPO_ROOT / "metadata" / "changes"))
@@ -166,13 +170,29 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
             return JSONResponse({"error": {"code": "erisim_yok", "message": "Geliştirme yığınına yalnızca yerel "
                                            "ağdan erişilebilir.", "details": []}}, status_code=403)
         request.state.request_id = uuid.uuid4().hex  # denetim izinde aynı isteğin olaylarını bağlar (ADR-0039)
+        started = time.perf_counter()
         response = await call_next(request)
+        route = request.scope.get("route")
+        app.state.metrics.observe(request.method, getattr(route, "path", "eşleşmeyen"), response.status_code,
+                                  time.perf_counter() - started)
         response.headers["X-Request-Id"] = request.state.request_id
         for k, v in SECURITY_HEADERS.items():
             response.headers.setdefault(k, v)
         if request.url.path.startswith(("/api/", "/auth/")) or request.url.path in ("/healthz", "/readyz"):
             response.headers["Cache-Control"] = "no-store"
         return response
+
+    @app.get("/metrics", include_in_schema=False)
+    def metrics(request: Request) -> Response:
+        m: ApiMetrics = app.state.metrics
+        if not m.enabled:
+            return JSONResponse({"error": {"code": "bulunamadi", "message": "Bulunamadı.", "details": []}},
+                                status_code=404)
+        if not m.authorized(request.headers.get("authorization")):
+            return JSONResponse({"error": {"code": "yetkisiz", "message": "Metrik belirteci gerekli.", "details": []}},
+                                status_code=401, headers={"WWW-Authenticate": "Bearer"})
+        return Response(m.render(app.state.pool), media_type="text/plain; version=0.0.4; charset=utf-8",
+                        headers={"Cache-Control": "no-store"})
 
     @app.get("/healthz", include_in_schema=False)
     def healthz() -> dict[str, str]:
@@ -190,7 +210,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
     for r in (platform.router, ci.router, queue.router, refs.router, reports.router, schema.router, search.router,
               connectors.router, insight.router, manual.router, attestation.router, staleness.router, impact.router,
               timeline.router, graph.router, system.router, admin.router, iam.router, tasks.router, campaigns.router,
-              quality.router, integrations.router, audit.router, auth.router):
+              quality.router, integrations.router, audit.router, notifications.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)

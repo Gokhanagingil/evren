@@ -146,6 +146,10 @@ function tasks(goCi) {
     { group: 'İşletim', desc: 'Platformun sağlığı ve izlenebilirliği.', items: [
       { id: 'durum', title: 'Sistem durumunu izle', icon: 'heart', cap: 'system', guide: 'isletim', href: '#/sistem-durumu',
         desc: 'Veritabanı, Kafka, arama, servisler ve veri akışı tek ekranda.' },
+      { id: 'uyarilar', title: 'Platform uyarılarını izle', icon: 'bell', cap: 'system', guide: 'bildirimler',
+        href: '#/sistem-durumu/uyarilar', desc: 'Servis, Kafka, veri akışı ve denetim izi uyarıları; gerekçeli onay.' },
+      { id: 'bildirim-yonlendirme', title: 'Bildirim kanallarını ayarla', icon: 'bell', cap: 'system', guide: 'bildirimler',
+        href: '#/sistem-durumu/bildirimler', desc: 'Rol ve gruplara gelen bildirimleri e-postaya veya Teams\'e yönlendir; sına.' },
       { id: 'denetim', title: 'Denetim izini incele', icon: 'shield', cap: 'audit_read', guide: 'denetim-izi', href: '#/denetim',
         desc: 'Kim, ne zaman, neyi, nereden yaptı; ret olayları, dışa aktarma.' },
       { id: 'denetim-butunluk', title: 'Denetim izinin bütünlüğünü doğrula', icon: 'check', cap: 'audit_read', guide: 'denetim-izi',

@@ -16,6 +16,8 @@
 - **Dizin geride:** arama eski sonuç gösterebilir. Dizinleyiciyi denetleyin; gerekirse tam yeniden dizinleme yapın.
 - **Devre kesici açık:** bir kaynağın son çalışması eksik veya şüpheli. O çalışmada yıkıcı işlem yapılmadı; [kaynağı](#/kaynaklar) inceleyin.
 
+Bu durumlar için Evren kendiliğinden **uyarı** açar ve ilgili rollere bildirir: [Bildirimler ve uyarılar](kilavuz:bildirimler).
+
 ## Teknik ayrıntı
 
 - [Operasyon ve ölçek](belge:12-operasyon-ve-olcek)

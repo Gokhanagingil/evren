@@ -103,7 +103,7 @@ chapters:
       - {id: corp_mcp, kind: external, col: 5, row: 1, label: Kurum MCP uygulaması, sub: ["Sizin MCP katmanınız", "(ajan, orkestrasyon)"]}
       - {id: grc_app, kind: external, col: 3, row: 1, span: 2, label: GRC Platformu, sub: ["Kontrol sonuçları, kanıt;", "ör. kaydı olmayan sunucu"]}
       - {id: other_apps, kind: external, col: 1, row: 1, span: 2, label: Diğer iç uygulamalar, sub: ["Tedarik portalı, raporlama,", "otomasyon"]}
-      - {id: ops_status, kind: engine, col: 0, row: 1, label: Sistem durumu, sub: ["Servis nabızları, Kafka,", "OpenSearch, kuyruklar"]}
+      - {id: ops_status, kind: engine, col: 0, row: 1, label: Sistem durumu, sub: ["Nabız, uyarılar,", "bildirimler, /metrics"]}
     edges:
       - {from: web_ui, to: rest_api}
       - {from: ops_status, to: web_ui}
@@ -319,8 +319,8 @@ details:
     security: [Yedek şifreleme, Geri yükleme tatbikatı]
   ops_status:
     phase: F1
-    text: Platformun bütün parçalarının durumu tek ekranda ve tek API'de (ADR-0032). Servisler (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi) nabızlarına ayrıntı yazar; Kafka'nın durumu onu kullanan servislerin bildirdiğidir, API Kafka'ya bağlanmaz. Veritabanı, göç defteri, OpenSearch (küme ve dizin farkı), olay yayını gecikmesi, istek kuyrukları ve kaynak çalışmaları da denetlenir. Metrik, uyarı ve geçmiş eğilim OpenTelemetry ile gelecek (F1-15).
-    tech: [ingest.worker_heartbeat, "GET /api/v1/system/status", meta.schema_migration]
+    text: Platformun bütün parçalarının durumu tek ekranda ve tek API'de (ADR-0032). Servisler (uzlaştırıcı, alım tüketicisi, dizinleyici, bağlayıcı çalıştırıcı, alım geçidi) nabızlarına ayrıntı yazar; Kafka'nın durumu onu kullanan servislerin bildirdiğidir, API Kafka'ya bağlanmaz. Veritabanı, göç defteri, OpenSearch (küme ve dizin farkı), olay yayını gecikmesi, istek kuyrukları ve kaynak çalışmaları da denetlenir. Görev çalışanı platformu metadata kurallarıyla izler; koşul süre boyunca sürerse uyarı ateşlenir, ilgili rollere bildirilir (uygulama içi, e-posta, Teams), Platform operatörü gerekçeyle onaylar, koşul kalkınca çözülür. Kurumun izleme sistemi /metrics'i kazır (Prometheus metin biçimi) (ADR-0040).
+    tech: [ingest.worker_heartbeat, "GET /api/v1/system/status", ops.alert, notify.notification, "metadata/alerts.yaml", "/metrics"]
     security: [Yalnızca platform okuma izni (Platform operatörü, Veri sorumlusu, Denetçi), Olay içeriği API'ye kapalı]
   web_ui:
     phase: F0
