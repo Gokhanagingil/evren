@@ -383,6 +383,10 @@ def test_mobile_layout_has_no_horizontal_overflow(browser, base_url):
         pg.wait_for_timeout(150)
         overflow = pg.evaluate("document.scrollingElement.scrollWidth - window.innerWidth")
         assert overflow <= 1, f"{route}: yatay taşma {overflow}px"
+    # Sentetik veri işareti telefonda da görünür (Genel Bakış'ta ayrıca bant yok)
+    pg.goto(base_url + "/#/genel-bakis")
+    pg.wait_for_selector("#overviewStats")
+    assert pg.locator(".demo-flag").is_visible()
     # Uygulama çubuğu alta iner: altı bölüm her an görünür, sekmeler üst çubuğun ikinci satırında
     hubs = pg.locator("#nav a.hub")
     assert hubs.count() == 6

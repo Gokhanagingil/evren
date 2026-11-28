@@ -444,7 +444,10 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
   #subnav { order: 9; flex-basis: 100%; }
   #toast { bottom: 78px; }
   #searchOpen { min-width: 0; margin-left: auto; }
-  #searchOpen span, #searchOpen kbd, .demo-flag { display: none; }
+  #searchOpen span, #searchOpen kbd { display: none; }
+  /* Sentetik veri işareti telefonda da görünür (ADR-0041: bilgi bir kez, ama hiç eksik değil) */
+  .demo-flag { font-size: 10px; padding: 3px 8px; }
+  #topbar .demo-flag:not([hidden]) ~ #searchOpen { margin-left: 0; }
   #topline { display: block; padding: 18px 14px 14px; }
   #topActions { justify-content: flex-start; margin-top: 12px; }
   #view { padding: 0 14px; }
