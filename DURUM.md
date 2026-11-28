@@ -511,6 +511,7 @@ Doğrulanınca bu bölümden kaldırılacak.
 
 ## Bilinen eksikler ve sınırlar
 
+- Kararsız test (28.11.2026): `test_create_ci_with_identity_check_using_keyboard` (tarayıcı, API modu) tam yerel çalışmada bir kez kırmızı oldu; tek başına ve ikinci tam çalışmada yeşil, GitHub CI'da yeşil. Test uzlaştırıcıyı arka planda bir iş parçacığıyla 0,3 saniyede bir çalıştırıyor; zamanlamaya duyarlı. Hata ayrıntısı kaydedilmedi; tekrar ederse ayrıntı alınıp bekleme koşulu sağlamlaştırılacak.
 - Veritabanındaki veri **sentetiktir** (`tools/load_demo_pg.py`); arayüz bunu üst çubukta işaretler. Statik sunucuda (demo modu) kuyruk kararları yalnızca oturumluktur.
 - Entra akışı sahte kimlik sağlayıcıyla test edildi; **kurumun Entra kaydıyla canlı kabul yapılmadı.**
 - Ürün değişimi tatbikatı sentetiktir; gerçek ikinci ürün geldiğinde onunla tekrarlanmalı.
