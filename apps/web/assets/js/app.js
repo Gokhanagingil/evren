@@ -26,6 +26,7 @@ import { renderRules } from './pages/rules.js';
 import { renderBigPicture } from './pages/bigpicture.js';
 import { renderArchitecture } from './pages/architecture.js';
 import { renderRoadmap } from './pages/roadmap.js';
+import { renderReplica } from './pages/replica.js';
 
 const ROUTES = {
   'genel-bakis': { title: 'Genel Bakış', icon: 'home', render: renderOverview,
@@ -48,6 +49,8 @@ const ROUTES = {
     help: 'GRC Platformu\'na giden CMDB tabanlı kontrol sonuçları. Kaynak verisi kısmi toplandıysa sonuç "kesin değil" olur.' },
   'golge-mod': { title: 'Gölge Mod Raporu', tab: 'Gölge mod', icon: 'layers', render: renderShadow,
     help: 'Mevcut CMDB (ServiceNow) ile Evren gözlemlerinin karşılaştırması: keşfin görmediği kayıtlar, CMDB\'de olmayan keşif kayıtları, mükerrer adayları ve değer farkları. Rapor GRC Platformu için değiştirilemez kanıt olarak kaydedilebilir.' },
+  replika: { title: 'ServiceNow Replikası', tab: 'SN replikası', icon: 'layers', render: renderReplica,
+    help: 'Evren ana kaynaktır, ServiceNow CMDB replikadır. Kapsamdaki CI\'lar ServiceNow\'a kimlik ve uzlaştırma API\'siyle (IRE) yazılır. Önce gölge modda çalışır: ServiceNow\'a yazılmaz, kayıtların nasıl tanınacağı denenir. Etkin modda bir CI\'ın ilk itmesi yine önce denenir; ServiceNow beklenenden başka bir kayıt bulursa yazılmaz, "Karar bekleyenler"e düşer. Tur sınırını aşan toplu değişiklik onay bekler. Konfigürasyon yöneticisi ve Platform yöneticisi yönetir.' },
   kaynaklar: { title: 'Veri Kaynakları', tab: 'Veri kaynakları', icon: 'plug', render: renderSources,
     help: 'Her veri kaynağı bir rolü doldurur. Kurallar role bağlı olduğu için ürün değiştiğinde kurallar değişmez. Devre kesici kısmi çalışmada yıkıcı işlemleri durdurur.' },
   sema: { title: 'Şema ve Değişiklikler', tab: 'Şema', icon: 'key', render: renderSchema,
@@ -82,7 +85,7 @@ const HUBS = [
   { id: 'ana', label: 'Ana sayfa', icon: 'home', routes: ['genel-bakis'] },
   { id: 'islerim', label: 'İşlerim', icon: 'inbox', routes: ['gorevler', 'kuyruk', 'sahiplik-onayi'] },
   { id: 'cmdb', label: 'CMDB', icon: 'server', routes: ['ci', 'iliski-haritasi', 'saglik', 'eskime', 'veri-modeli'] },
-  { id: 'kaynaklar', label: 'Kaynaklar', icon: 'plug', routes: ['kaynaklar', 'kurallar', 'golge-mod', 'kontroller'] },
+  { id: 'kaynaklar', label: 'Kaynaklar', icon: 'plug', routes: ['kaynaklar', 'kurallar', 'golge-mod', 'replika', 'kontroller'] },
   { id: 'yonetim', label: 'Yönetim', icon: 'gear', routes: ['yonetim', 'kullanicilar', 'sema', 'denetim', 'sistem-durumu'] },
   { id: 'kilavuz', label: 'Kılavuz', icon: 'book', routes: ['kilavuz', 'buyuk-resim', 'mimari', 'yol-haritasi'], also: ['belge'] },
 ];

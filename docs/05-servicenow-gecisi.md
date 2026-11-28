@@ -42,6 +42,18 @@ Kaçındığımız değişiklik tam olarak budur.
 - **Alım yolunda:** ServiceNow bağlayıcısından gelen, bağı olmayan kayıt kimlik çözümlemesine girmez. Önce `sync.sn_ci_map`'te aranır, eşleme varsa Evren CI'ına bağlanır; yoksa CI aynı sys_id ile açılır (ADR-0020 §10). Replikadan geri gelen kayıt bu sayede mükerrer CI açmaz.
 - **Evren'de doğan CI'lar:** IRE API ile gönderilir; ServiceNow'un verdiği sys_id eşleme tablosuna yazılır. Table API ile sys_id'yi önceden belirleyerek ekleme seçeneği F2'de bir PoC ile değerlendirilecek; o zamana kadar eşleme tablosu esastır.
 
+## Uygulama durumu (U9.1, ADR-0042)
+
+İtme yönü hazırdır ve bellek içi ServiceNow simülatörüyle sınanmıştır; canlı kabul U10'dadır.
+
+- **Servis:** sn-sync (`services/sn-sync`). Kapsam `metadata/sn_sync.yaml`'dadır.
+- **Mod:** kapalı → gölge (`/identifyreconcile/query`, yazmaz) → etkin (`/identifyreconcile`).
+- **Önce doğrula, sonra yaz:** beklenmeyen eşleşme çelişki olur ve yazılmaz.
+- **Toplu değişiklik freni:** sınırı aşan tur bekletilir; gerekçeli onaydan sonra gönderilir.
+- **İzleme ve kararlar:** Kaynaklar → SN replikası sayfasında.
+
+ServiceNow tarafında yapılacaklar (veri kaynağı değeri, uzlaştırma kuralı, entegrasyon kullanıcısı) ADR-0042'de listelidir.
+
 ## Geçiş dönemi kuralları
 
 - **Hangi alan nerede yönetilir:** uzlaştırma kuralları belirler. Sahiplik ve destek grubu başlangıçta ServiceNow'da kalabilir ("ServiceNow" kaynağı). Evren arayüzü olgunlaşınca Manual kaynağına geçer.

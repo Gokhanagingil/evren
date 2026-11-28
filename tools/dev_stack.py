@@ -39,7 +39,8 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 COMPOSE = ["docker", "compose", "-f", str(ROOT / "deploy" / "compose.dev.yaml")]
-LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "gateway", "indexer", "governance"]
+LONG_RUNNING = ["postgres", "kafka", "opensearch", "api", "worker", "ingest", "gateway", "indexer", "governance",
+                "sn-sync"]
 API = "http://127.0.0.1:8088"
 GATEWAY = "http://127.0.0.1:8089"
 OPENSEARCH = "http://127.0.0.1:59200"
@@ -491,7 +492,7 @@ def smoke_system_status() -> None:
     göç defteri. Dev oturumunda Veri sorumlusu rolü var (platform okuma izni)."""
     step("Sistem durumu: servis nabızları, Kafka, OpenSearch, göç defteri")
     must_ok = ("database", "migrations", "kafka", "svc_requests", "svc_ingest", "svc_indexer", "svc_gateway",
-               "svc_governance", "outbox")
+               "svc_governance", "svc_sn_sync", "outbox")
     last: dict[str, str] = {}
 
     def ready() -> Any:

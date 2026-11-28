@@ -67,6 +67,12 @@
   gider; Platform operatörü gerekçeyle onaylar; koşul kalkınca çözülür. Sistem Durumu → Uyarılar.
 - **Bildirimler:** uygulama içi (zil), e-posta (SMTP, `EVREN_SMTP_*`) ve Teams (iş akışı gelen web kancası,
   `EVREN_TEAMS_WEBHOOKS_FILE`). Sırlar yalnızca görev çalışanının sır dosyalarında.
+- **ServiceNow replikası (sn-sync, ADR-0042):** `evren sn-sync`, giriş rolü `evren_sync_svc` → `evren_app_sync`.
+  ServiceNow adresi ve kimliği `EVREN_SN_REPLICA_URL` + `EVREN_SN_REPLICA_TOKEN_FILE` (veya kullanıcı + parola dosyası),
+  `EVREN_SN_REPLICA_CA_FILE`; istek başına `EVREN_REPLICA_BATCH` (25), tur başına `EVREN_REPLICA_LIMIT` (500) CI. Mod ve
+  toplu değişiklik sınırı panelden. İlk yükleme önce gölge modda denenir, sonra onayla sınıf sınıf ve gece penceresinde
+  etkinleştirilir (IRE kapasitesi). Sistem Durumu'nda "ServiceNow replikası (sn-sync)"; dışarıdan
+  `evren_service_up{kind="sn_sync"}` izlenir.
 
 ## Dağıtım
 

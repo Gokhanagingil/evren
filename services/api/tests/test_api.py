@@ -42,6 +42,7 @@ def test_me_reports_roles_and_capabilities(client, reader):
                          "attest": False,  # sahiplik onayı: CI sahibi rolü (ADR-0027)
                          "retire": False,  # eskime kararı: Veri sorumlusu (ADR-0028)
                          "system": False,  # sistem durumu: Platform operatörü (ADR-0032)
+                         "replica": False, "replica_admin": False,  # ServiceNow replikası (ADR-0042)
                          "relate": False, "schema_draft": False, "schema_approve": False, "connector_read": False,
                          "connector_admin": False, "anomaly_review": False, "iam_admin": False, "audit_read": False,
                          "iam_read": False, "task_admin": False}

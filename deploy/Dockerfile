@@ -43,6 +43,7 @@ COPY services/ingest-gateway/evren_gateway services/ingest-gateway/evren_gateway
 COPY services/indexer/evren_indexer services/indexer/evren_indexer
 COPY services/connector-runner/evren_connector_runner services/connector-runner/evren_connector_runner
 COPY services/governance/evren_governance services/governance/evren_governance
+COPY services/sn-sync/evren_sn_sync services/sn-sync/evren_sn_sync
 COPY tools tools
 COPY metadata metadata
 COPY db/migrations db/migrations

@@ -65,7 +65,7 @@ services:
     environment:
       EVREN_DATABASE_URL_FILE: /run/secrets/owner_dsn
     secrets: [owner_dsn, evren_api_svc, evren_worker_svc, evren_gateway_svc, evren_ingest_svc, evren_indexer_svc,
-              evren_connector_svc, evren_governance_svc]
+              evren_connector_svc, evren_governance_svc, evren_sync_svc]
     depends_on:
       postgres: {condition: service_healthy}
 
@@ -215,6 +215,27 @@ services:
     depends_on:
       migrate: {condition: service_completed_successfully}
 
+  # ServiceNow replikası (U9.1, ADR-0042): kapsamdaki CI'ları ServiceNow'a IRE ile iter. CMDB'ye yazamaz
+  # (evren_app_sync). Mod panelden (kapalı → gölge → etkin). Geliştirmede ServiceNow bellek içi simülatör; üretimde
+  # EVREN_SN_REPLICA_URL + EVREN_SN_REPLICA_USER/EVREN_SN_REPLICA_PASSWORD_FILE (veya EVREN_SN_REPLICA_TOKEN_FILE).
+  sn-sync:
+    <<: *evren
+    command: ["sn-sync"]
+    environment:
+      EVREN_DATABASE_URL_FILE: /run/secrets/sync_dsn
+      EVREN_SN_REPLICA_SIMULATE: "1"       # yalnızca geliştirme yığını
+      EVREN_WORKER_POLL_SECONDS: "10"
+      EVREN_WORKER_HEALTH_FILE: /tmp/sn-sync.alive
+    secrets: [sync_dsn]
+    healthcheck:
+      test: ["CMD", "python", "/app/deploy/evren.py", "healthcheck", "sn-sync"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+    depends_on:
+      migrate: {condition: service_completed_successfully}
+
   # Arama dizinleyicisi: CI olayları (Kafka) → güncel CI (PostgreSQL, salt okunur) → OpenSearch
   indexer:
     <<: *evren
@@ -323,6 +344,7 @@ secrets:
   indexer_dsn: {file: ./secrets/indexer_dsn}
   connector_dsn: {file: ./secrets/connector_dsn}
   governance_dsn: {file: ./secrets/governance_dsn}
+  sync_dsn: {file: ./secrets/sync_dsn}
   evren_api_svc: {file: ./secrets/evren_api_svc}
   evren_worker_svc: {file: ./secrets/evren_worker_svc}
   evren_gateway_svc: {file: ./secrets/evren_gateway_svc}
@@ -330,6 +352,7 @@ secrets:
   evren_indexer_svc: {file: ./secrets/evren_indexer_svc}
   evren_connector_svc: {file: ./secrets/evren_connector_svc}
   evren_governance_svc: {file: ./secrets/evren_governance_svc}
+  evren_sync_svc: {file: ./secrets/evren_sync_svc}
   session_key: {file: ./secrets/session_key}
 
 volumes:

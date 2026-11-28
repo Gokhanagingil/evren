@@ -178,6 +178,16 @@ Okuma `audit/audit_read`, doğrulama ve inceleme `audit/audit_review` ister (iki
 - `GET /api/v1/ops/alerts?view=active|history` (`platform` okuma): uyarılar, öneri, onay, kural kataloğu. `POST /api/v1/ops/alerts/{sys_id}/ack` `{note (10–1000)}` (`ops_admin`; yalnızca ateşlenmiş ve bir kez; `409 onaylanamaz`).
 - `GET /metrics` (Prometheus metin biçimi 0.0.4): yalnızca `EVREN_METRICS_TOKEN_FILE` tanımlıysa, `Authorization: Bearer`; yoksa 404, yanlışsa 401.
 
+### ServiceNow replikası (ADR-0042)
+
+- `GET /api/v1/replica` (`platform` okuma veya `replica_admin`): mod, tur sınırı, çalışanın canlılığı ve bağlantısı, durum sayıları (eşit, bekliyor, çelişki, hata, dışarıda), gölge sonuçları, ilişkiler, bekletilen/onaylı tur, son 10 çalışma, kapsam (sınıf, CI sayısı), `shadow_done`, `can_admin`.
+- `GET /api/v1/replica/items?view=attention|conflict|error|shadow|excluded|in_sync&limit&offset`: CI, durum, gölge sonucu, ServiceNow'un bulduğu sys_id, neden, gönderilmeyen alanlar.
+- `PUT /api/v1/replica/settings` `{mode: off|shadow|active, max_changes (1–100000), note (10–1000)}` (`replica_admin`; etkin moda geçiş tamamlanmış gölge turu ister, yoksa `409 golge_gerekli`).
+- `PUT /api/v1/replica/scope/{sınıf}` `{enabled, note}` (`replica_admin`; listede olmayan sınıf `404`).
+- `POST /api/v1/replica/runs/{id}/approve` `{note}` (`replica_admin`; yalnızca bekletilen tur, bir kez; `409 onaylanamaz`).
+- `POST /api/v1/replica/items/{sys_id}/resolve` `{action: accept|exclude|retry, note}` (`replica_admin`; `accept` yalnızca ServiceNow'un bir kayıt bulduğu çelişkide ve kayıt başka bir Evren CI'ına eşli değilse — aksi `409 baska_ci_eslesik`).
+- Hepsi denetim izine yazılır; değişiklikten sonra sn-sync `NOTIFY evren_replica` ile uyandırılır. ServiceNow'a API yazmaz.
+
 ### Kalite kuralları, bulgular ve CMDB sağlığı (ADR-0037)
 
 Okuma: CI okuma izni (`cmdb_ci` / `read`); okunamayan sınıftaki CI'ın bulgusu listelenmez. Yazma: Konfigürasyon yöneticisi (`governance` / `task_admin`). Yazma uç noktaları CSRF başlığı ister.

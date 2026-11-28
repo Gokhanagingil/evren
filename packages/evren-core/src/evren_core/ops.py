@@ -24,6 +24,7 @@ SEVERITY_TR = {"info": "Bilgi", "warning": "Uyarı", "critical": "Kritik"}
 SERVICE_TR = {
     "requests": "Uzlaştırıcı çalışanı", "ingest": "Alım tüketicisi", "indexer": "Arama dizinleyicisi",
     "connector": "Bağlayıcı çalıştırıcı", "gateway": "Alım geçidi", "governance": "Görev çalışanı",
+    "sn_sync": "ServiceNow replikası",
 }
 #: Sinyal → (Türkçe açıklama, eşiğin birimi). Eşiksiz sinyalde birim None.
 SIGNALS: dict[str, tuple[str, str | None]] = {

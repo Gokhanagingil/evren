@@ -561,3 +561,19 @@ export const opsAlerts = (view = 'active') => api(`/api/v1/ops/alerts?${new URLS
 export function opsAlertAck(id, note) {
   return api(`/api/v1/ops/alerts/${encodeURIComponent(id)}/ack`, { method: 'POST', body: JSON.stringify({ note }) });
 }
+
+// ---------------------------------------------------------------------------------------------- ServiceNow replikası (U9.1)
+export const replicaView = () => api('/api/v1/replica');
+export const replicaItems = (view = 'attention') => api(`/api/v1/replica/items?${new URLSearchParams({ view, limit: '100' })}`);
+export function replicaSetting(body) {
+  return api('/api/v1/replica/settings', { method: 'PUT', body: JSON.stringify(body) });
+}
+export function replicaScope(cls, body) {
+  return api(`/api/v1/replica/scope/${encodeURIComponent(cls)}`, { method: 'PUT', body: JSON.stringify(body) });
+}
+export function replicaApprove(id, note) {
+  return api(`/api/v1/replica/runs/${encodeURIComponent(id)}/approve`, { method: 'POST', body: JSON.stringify({ note }) });
+}
+export function replicaResolve(id, action, note) {
+  return api(`/api/v1/replica/items/${encodeURIComponent(id)}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) });
+}

@@ -377,7 +377,8 @@ def test_mobile_layout_has_no_horizontal_overflow(browser, base_url):
     errors: list[str] = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
     for route in ("#/genel-bakis", "#/kuyruk", "#/ci", "#/kaynaklar", "#/kurallar", "#/kontroller", "#/golge-mod",
-                  "#/sema", "#/veri-modeli", "#/veri-modeli/cmdb_ci_linux_server", "#/buyuk-resim", "#/yol-haritasi"):
+                  "#/sema", "#/veri-modeli", "#/veri-modeli/cmdb_ci_linux_server", "#/buyuk-resim", "#/yol-haritasi",
+                  "#/replika"):
         pg.goto(base_url + "/" + route)
         pg.wait_for_selector("#view > *")
         pg.wait_for_timeout(150)

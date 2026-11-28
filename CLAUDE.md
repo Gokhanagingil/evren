@@ -70,7 +70,7 @@ for f in db/migrations/*.sql; do psql -v ON_ERROR_STOP=1 -f "$f"; done
 python tools/load_metadata.py --sql build/seed.sql && psql -v ON_ERROR_STOP=1 -f build/seed.sql
 cd packages/evren-core && EVREN_TEST_PG=1 python -m pytest
 
-# Tüm yığın konteynerde (PostgreSQL, Kafka, OpenSearch, api, gateway, worker, ingest, indexer, governance; connector-runner profili) — ADR-0016…0021, ADR-0035
+# Tüm yığın konteynerde (PostgreSQL, Kafka, OpenSearch, api, gateway, worker, ingest, indexer, governance, sn-sync; connector-runner profili) — ADR-0016…0021, ADR-0035, ADR-0042
 python tools/dev_stack.py up --demo && python tools/dev_stack.py smoke
 python tools/migrate.py --status            # izlenen göçler (EVREN_DATABASE_URL_FILE veya libpq ortamı)
 python tools/connector_credential.py issue --name zabbix-dc1 --data-source Zabbix --by <kişi>   # bağlayıcı belirteci (ADR-0017)
@@ -79,6 +79,7 @@ python tools/connector_archive.py list      # ham yük arşivi; yeniden işleme:
 EVREN_TEST_PG=1 python -m pytest services/connector-runner/tests   # çalıştırıcı servisi: istekler, zamanlama (ADR-0021)
 EVREN_TEST_PG=1 python -m pytest services/ingest-gateway/tests services/indexer/tests   # alım geçidi, dizinleyici
 EVREN_TEST_PG=1 python -m pytest services/governance/tests   # görev çalışanı: ServiceNow simülatörüyle (ADR-0035)
+EVREN_TEST_PG=1 python -m pytest services/sn-sync/tests      # ServiceNow replikası: IRE simülatörüyle (ADR-0042)
 EVREN_TEST_OPENSEARCH_URL=http://127.0.0.1:59200 python -m pytest packages/evren-core/tests/test_search_os.py   # arama alakası
 
 # Metadata doğrula / tohum SQL üret
@@ -152,6 +153,8 @@ packages/evren-core/      Saf alan mantığı + testler
   notify.py               bildirim merkezi: tür kataloğu, görev/uyarı bildirim taslağı (tırmanma), teslim hedefleri,
                           e-posta ve Teams ileti metni (ADR-0040)
   metrics.py              Prometheus metin biçimi (sayaç, gösterge, histogram; bağımlılıksız, ADR-0040)
+  replica.py              ServiceNow replikası: kapsam doğrulaması (metadata/sn_sync.yaml), IRE yükü ve özeti, yanıt
+                          yorumu (önce doğrula: çelişki kararı), IRE istemcisi ve simülatörü (ADR-0042)
   timeline.py             zaman içinde sorgu: geçmiş bir andaki öznitelik ve ilişkiler, zaman çizelgesi anları (ADR-0031)
   model_view.py           Veri Modeli sayfasının görünümü (API ve model.json aynı kaynaktan)
   schedule.py             5 alanlı cron zamanlaması (çalıştırıcı servisi, metadata doğrulaması; ADR-0021)
@@ -160,12 +163,13 @@ packages/evren-core/      Saf alan mantığı + testler
 connectors/<kaynak>/      kaynak başına eşleme dosyaları; samples/ sentetik örnek veri (simülatör)
 metadata/                 ServiceNow uyumlu sözlük tohumları (doğruluk kaynağı)
   changes/                yayınlanmış değişiklik setleri; yükleyici ad sırasıyla uygular (ADR-0015)
-db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri · 0032 kampanyalar · 0033 kalite kuralları · 0034 denetim izi ve mühürler · 0035 uyarılar ve bildirimler (tools/migrate.py uygular)
+db/migrations/            0001 çekirdek · 0002 rol/izin tohumu · 0003 güvenlik · 0004 kaynak rolleri … 0019 çalıştırma istekleri · 0020 referans alımı · 0021 değişiklik denetimi · 0022 elle oluşturma · 0023 elle ilişki · 0024 toplu içe aktarma · 0025 sahiplik onayı · 0026 eskime · 0027 bağımlı kimlik · 0028 ilişki bildirenleri · 0029 sistem durumu · 0030 kullanıcı ve rol yönetimi · 0031 yönetişim görevleri · 0032 kampanyalar · 0033 kalite kuralları · 0034 denetim izi ve mühürler · 0035 uyarılar ve bildirimler · 0036 ServiceNow replikası (tools/migrate.py uygular)
 services/                 api, reconciler (çalışan + alım tüketicisi + outbox), ingest-gateway (alım geçidi), indexer (arama),
                           connector-runner (şimdi çalıştır + zamanlama; kaynak sırları yalnızca burada, ADR-0021),
                           governance (görev çalışanı: kampanya ve kural değerlendirme, sağlık ölçümü, ServiceNow'a görev teslimi, eşitleme,
                           kapatma, denetim izi mühürleme ve günlük doğrulama, platform uyarıları, bildirim üretimi ve
-                          e-posta/Teams teslimi; ADR-0035…0037, ADR-0039, ADR-0040), sn-sync, mcp
+                          e-posta/Teams teslimi; ADR-0035…0037, ADR-0039, ADR-0040), sn-sync (ServiceNow replikası: gölge → etkin,
+                          önce doğrula sonra yaz, toplu değişiklik freni; ServiceNow yazma kimliği yalnızca burada, ADR-0042), mcp
 deploy/                   tek imaj (Dockerfile, evren.py giriş noktası), compose geliştirme yığını, Kafka konuları, connectors.dev.yaml
 docs/                     mimari belgeler, ADR'ler; kilavuz/ kullanım kılavuzu (kilavuz.yaml + konu başına Markdown, ADR-0033)
 tools/                    yükleyici, harita/büyük resim/plan/demo üreticileri, SN dışa aktarım, geliştirme sunucusu

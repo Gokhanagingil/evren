@@ -1791,3 +1791,112 @@ def test_notification_bell_alert_ack_and_routing(browser, operator_url):
     mp.wait_for_timeout(150)
     assert mp.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
     mobile.close()
+
+
+@pytest.fixture(scope="module")
+def config_manager_url():
+    """Konfigürasyon yöneticisi oturumu (ServiceNow replikası; ADR-0042)."""
+    with socket.socket() as s:
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+    settings = Settings.from_env({"EVREN_AUTH_MODE": "dev", "EVREN_DEV_ROLES": "evren_config_manager,evren_reader",
+                                  "EVREN_DEV_USER": "konfig-arayuz", "EVREN_DEV_NAME": "Konfigürasyon Arayüz",
+                                  "EVREN_DB_POOL_SIZE": "3"})
+    server = uvicorn.Server(uvicorn.Config(create_app(settings), host="127.0.0.1", port=port, log_level="warning"))
+    thread = threading.Thread(target=server.run, daemon=True)
+    thread.start()
+    for _ in range(100):
+        if server.started:
+            break
+        time.sleep(0.05)
+    yield f"http://127.0.0.1:{port}"
+    server.should_exit = True
+    thread.join(timeout=5)
+
+
+def test_servicenow_replica_page_mode_approval_and_conflict_decision(browser, config_manager_url):
+    """U9.1 (ADR-0042): replika sayfası; etkin mod gölge turundan önce kapalı; mod gerekçeyle değişir; bekletilen
+    toplu itme klavyeyle onaylanır; çelişkide ServiceNow kaydı kabul edilir. Konsol hatası yok, mobilde taşma yok."""
+    import uuid as _uuid
+
+    import psycopg
+
+    tag = _uuid.uuid4().hex[:8]
+    with psycopg.connect(autocommit=True) as o:
+        o.execute("UPDATE sync.replica_setting SET mode = 'off', max_changes = 200")
+        o.execute("UPDATE sync.replica_run SET status = 'done', finished_at = now() "
+                  "WHERE status IN ('held', 'approved', 'running')")
+        shadow_done = o.execute("SELECT EXISTS (SELECT 1 FROM sync.replica_run WHERE mode = 'shadow' "
+                                "AND status = 'done')").fetchone()[0]
+        ci = _uuid.uuid4().hex
+        o.execute("INSERT INTO cmdb.cmdb_ci (sys_id, sys_class_name, name) VALUES (%s, 'cmdb_ci_linux_server', %s)",
+                  (ci, f"replika-arayuz-{tag}"))
+        found = _uuid.uuid4().hex
+        o.execute("""INSERT INTO sync.sn_ci_map (evren_sys_id, sn_class, state, identified_sn_sys_id, message)
+                     VALUES (%s, 'cmdb_ci_linux_server', 'conflict', %s,
+                             'ServiceNow bu CI''ı beklenenden başka bir kayıtla eşleştirdi')""", (ci, found))
+    context = browser.new_context(viewport={"width": 1440, "height": 900})
+    pg = context.new_page()
+    problems: list[str] = []
+    pg.on("console", lambda m: problems.append(m.text) if m.type == "error" else None)
+    pg.goto(config_manager_url + "/#/replika")
+    expect(pg.locator("#replicaStats")).to_contain_text("Kapalı")
+    expect(pg.locator("#subnav a[data-route=replika]")).to_have_attribute("aria-current", "page")
+
+    # Mod: etkin, gölge turu yoksa seçilemez; gölge gerekçeyle seçilir (kısa gerekçe reddedilir)
+    pg.locator("#replicaModeBtn").focus()
+    pg.keyboard.press("Enter")
+    expect(pg.locator("#replicaMode-off")).to_be_focused()
+    if not shadow_done:
+        expect(pg.locator("#replicaMode-active")).to_be_disabled()
+    pg.locator("#replicaMode-shadow").check()
+    pg.fill("#replicaNote", "kısa")
+    pg.click("#replicaSave")
+    expect(pg.locator("#replicaError")).to_contain_text("en az 10")
+    pg.fill("#replicaNote", f"Arayüz testi {tag}: önce gölge")
+    pg.click("#replicaSave")
+    expect(pg.locator("#toast")).to_contain_text("Gölge")
+    expect(pg.locator("#replicaStats")).to_contain_text("Gölge")
+
+    # Bekletilen toplu itme: onay klavyeyle
+    with psycopg.connect(autocommit=True) as o:
+        o.execute("""INSERT INTO sync.replica_run (mode, status, candidates, held_reason)
+                     VALUES ('active', 'held', 321, '321 CI değişikliği tur sınırını (200) aşıyor; onay bekliyor')""")
+    pg.reload()
+    expect(pg.locator("#replicaHeld")).to_contain_text("321 CI değişikliği")
+    pg.locator("#replicaApprove").focus()
+    pg.keyboard.press("Enter")
+    expect(pg.locator("#replicaNote")).to_be_focused()
+    pg.keyboard.type(f"Arayüz testi {tag}: ilk yükleme onayı")
+    pg.click("#replicaSave")
+    expect(pg.locator("#toast")).to_contain_text("321")
+    expect(pg.locator("#replicaHeld")).to_have_count(0)
+
+    # Çelişki: ServiceNow kaydını kabul et
+    row = pg.locator(f"#view tbody tr[data-id='{ci}']")
+    expect(row).to_contain_text("Çelişki")
+    row.get_by_role("button", name="Kabul et…").click()
+    expect(pg.locator("#dialogTitle")).to_contain_text(f"replika-arayuz-{tag}")
+    pg.fill("#replicaNote", f"Arayüz testi {tag}: aynı sunucu")
+    pg.click("#replicaSave")
+    expect(pg.locator("#toast")).to_contain_text("kabul edildi")
+    expect(pg.locator(f"#view tbody tr[data-id='{ci}']")).to_have_count(0)
+    # Ayrıntı katlı: kapsam ve çalışmalar ilk bakışta kapalı
+    expect(pg.locator("#replicaScopeBox")).not_to_have_attribute("open", "")
+    pg.locator("#replicaScopeBox summary").click()
+    expect(pg.locator("#replicaScope")).to_contain_text("Sunucu")
+    shot(pg, "web_api_replica")
+    assert "null" not in pg.locator("main").inner_text()
+    context.close()
+    assert not problems, f"Konsol hatası/CSP ihlali: {problems}"
+    with psycopg.connect(autocommit=True) as o:
+        o.execute("UPDATE sync.replica_setting SET mode = 'off'")
+        o.execute("UPDATE sync.replica_run SET status = 'done', finished_at = now() WHERE status IN ('held', 'approved')")
+
+    mobile = browser.new_context(viewport={"width": 390, "height": 844}, is_mobile=True)
+    mp = mobile.new_page()
+    mp.goto(config_manager_url + "/#/replika")
+    expect(mp.locator("#replicaStats")).to_be_visible()
+    mp.wait_for_timeout(150)
+    assert mp.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
+    mobile.close()

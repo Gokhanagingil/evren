@@ -118,7 +118,7 @@ chapters:
     lead: Evren ana kaynaktır, ServiceNow CMDB replikadır. Task kayıtları SN'deki CI'ları göstermeye devam eder; business rule değişmez.
     nodes:
       - {id: evren_master, kind: store, col: 0, row: 0, label: Evren (ana kaynak), sub: ["Golden record,", "kapsam kuralları"]}
-      - {id: sn_sync, kind: engine, col: 1, row: 0, label: sn-sync, sub: ["Sınıf/alan kapsamı,", "yeniden deneme"]}
+      - {id: sn_sync, kind: engine, col: 1, row: 0, label: sn-sync, sub: ["Gölge → etkin, önce", "doğrula sonra yaz"]}
       - {id: sn_ire, kind: servicenow, col: 2, row: 0, label: SN IRE API, sub: ["/api/now/", "identifyreconcile"]}
       - {id: sn_cmdb, kind: servicenow, col: 3, row: 0, label: SN CMDB (replika), sub: ["Yalnızca süreç sınıfları", "(sunucu, ağ, servis)"]}
       - {id: sn_task, kind: servicenow, col: 4, row: 0, span: 2, label: "task.cmdb_ci", sub: ["Incident, Change, Problem — alanlar", "ve business rule'lar değişmez"]}
@@ -364,14 +364,14 @@ details:
     security: []
   evren_master:
     phase: F2
-    text: Gölge fazından sonra Evren ana kaynak olur. Hangi sınıfın ve alanın ServiceNow'a gideceğini sync.sn_sync_scope belirler.
-    tech: [sync.sn_sync_scope, sync.sn_ci_map]
+    text: Gölge fazından sonra Evren ana kaynak olur. Hangi sınıfın ServiceNow'a gideceğini metadata/sn_sync.yaml ve panelden açılıp kapanan sync.sn_sync_scope belirler; alanlar sözlükten (ServiceNow'da da var olan, kısıtlı olmayan). ServiceNow'un verdiği sys_id sync.sn_ci_map'tedir (ADR-0042).
+    tech: [metadata/sn_sync.yaml, sync.sn_sync_scope, sync.sn_ci_map]
     security: []
   sn_sync:
     phase: F2
-    text: Kapsamdaki CI'ları ServiceNow'a iter. Başarısız denemeler sıraya alınır, aynı içerik tekrar gönderilmez.
-    tech: [IRE API, Yeniden deneme + özet karşılaştırma]
-    security: [Ayrı SN entegrasyon kullanıcısı]
+    text: Kapsamdaki CI'ları ServiceNow'a IRE ile iter. Önce gölge modda işlemeden dener, sonra etkin modda yazar. Eşlemesi doğrulanmamış CI önce denenir; ServiceNow beklenenden başka bir kayıt bulursa yazılmaz, çelişki olarak insan kararına düşer. Tur sınırını aşan toplu değişiklik onay bekler. Değişiklik CI sürümüyle izlenir, aynı içerik tekrar gönderilmez (ADR-0042).
+    tech: [IRE API (/identifyreconcile, /query), "evren_app_sync", Yeniden deneme + özet karşılaştırma]
+    security: [Ayrı SN entegrasyon kullanıcısı, CMDB'ye yazamaz, Sır yalnızca dosyadan]
   sn_ire:
     phase: F2
     text: ServiceNow'un Identification and Reconciliation API'si. Mükerrer CI oluşmasını engeller ve yalnızca yetkili kaynakların güncelleme yapmasına izin verir. SN tarafında "Evren" veri kaynağı en yüksek önceliği alır.

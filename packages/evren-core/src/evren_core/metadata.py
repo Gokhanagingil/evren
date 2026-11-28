@@ -26,6 +26,7 @@ from .classes import ClassHierarchy
 from .identity.rules import ATTRIBUTE_KEY_TYPES
 from .ops import validate_alerts
 from .relations import ENFORCEMENT_MODES, RelationRules
+from .replica import validate_sn_sync
 from .schedule import CronError, CronSchedule
 from .sources import SourceRegistry, SourceRegistryError
 from .staleness import StalenessPolicy, validate_staleness
@@ -105,6 +106,8 @@ class Metadata:
     attestation: dict[str, Any] = field(default_factory=dict)
     #: Platform uyarı kuralları (ADR-0040): ``metadata/alerts.yaml``
     alerts: dict[str, Any] = field(default_factory=dict)
+    #: ServiceNow replikası kapsamı (ADR-0042): ``metadata/sn_sync.yaml``
+    sn_sync: dict[str, Any] = field(default_factory=dict)
     hierarchy: ClassHierarchy = field(init=False)
 
     def __post_init__(self) -> None:
@@ -199,6 +202,7 @@ def _load_base(d: Path) -> Metadata:
         change_control=_read(d / "change_control.yaml") if (d / "change_control.yaml").exists() else {},
         attestation=_read(d / "attestation.yaml") if (d / "attestation.yaml").exists() else {},
         alerts=_read(d / "alerts.yaml") if (d / "alerts.yaml").exists() else {},
+        sn_sync=_read(d / "sn_sync.yaml") if (d / "sn_sync.yaml").exists() else {},
     )
 
 
@@ -465,6 +469,8 @@ def validate(md: Metadata) -> ValidationReport:
     r.errors.extend(validate_attestation(md.attestation, hierarchy=md.hierarchy, fields_of=md.fields_of,
                                          choice_values=_choice_values, products=sorted(_product_words(md))))
     r.errors.extend(validate_alerts(md.alerts, products=sorted(_product_words(md))))
+    r.errors.extend(validate_sn_sync(md.sn_sync, classes=set(md.class_map),
+                                     fields={f["name"] for c in md.classes for f in c.get("fields") or []}))
     if not r.errors:
         r.errors.extend(validate_verification(md))
     return r
@@ -752,6 +758,12 @@ def generate_seed_sql(md: Metadata) -> str:
             "INSERT INTO meta.cmdb_datasource_refresh (applies_to, role, effective_duration) VALUES ("
             f"{_q(d['applies_to'])}, {_q(d['role'])}, interval {_q(str(d['effective_days']) + ' days')});"
         )
+    out.append("\n-- ServiceNow replikası kapsamı (ADR-0042): yalnızca ilk kez eklenir; panelden açma/kapama korunur")
+    for sc in (md.sn_sync or {}).get("classes", []):
+        out.append(
+            "INSERT INTO sync.sn_sync_scope (sys_class_name, enabled, include_descendants, notes) VALUES ("
+            f"{_q(sc['name'])}, {_q(bool(sc.get('enabled', True)))}, {_q(bool(sc.get('include_descendants', True)))}, "
+            f"{_q(sc.get('notes'))}) ON CONFLICT (sys_class_name) DO NOTHING;")
     out.append("DELETE FROM meta.cmdb_staleness_rule;")
     for s in rec.get("staleness", []):
         out.append(

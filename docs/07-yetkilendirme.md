@@ -8,7 +8,7 @@ Bir izin şu boyutlardan oluşur:
 
 - **Rol:** Entra grubuyla eşlenir.
 - **Kaynak:** sınıf adı (alt sınıflara kalıtılır), `cmdb_rel_ci`, `match_queue`, `schema`, `rules`, `iam` veya `*`.
-- **İşlem:** `read`, `create`, `write`, `delete`, `merge`, `split`, `review_match`, `ingest`, `schema_draft`, `schema_approve`, `rules_admin`, `iam_admin`, `audit_read`, `audit_review` (0034, ADR-0039: mühür doğrulama ve dönem incelemesi kaydı; Denetçi), `ops_admin` (0035, ADR-0040: `platform` kaynağında; platform uyarısını gerekçeyle onaylama, bildirim yönlendirmesi, sınama bildirimi; Platform operatörü ve Platform yöneticisi), `connector_read`, `connector_admin` (0018: bağlayıcı kimlikleri ve çalışmayı açan kimlik; sır hiçbir zaman gösterilmez. 0019, ADR-0021: `connector_read` bağlayıcı örneklerini ve çalıştırma isteklerini de gösterir; `connector_admin` ile "şimdi çalıştır", istek iptali, kimlik verme — belirteç bir kez — ve kimlik iptali), `create` (`cmdb_ci` ve alt sınıfları; ADR-0026: elle CI oluşturma isteği, Konfigürasyon analisti; kök sınıfta açılmaz), `attest` (0025, ADR-0027: CI sahibi rolü; izin tek başına yetmez, kişi CI'ın `owned_by`/`managed_by` alanındaki kullanıcı olmalıdır — kendi CI'ını onaylar veya gerekçeyle reddeder; Veri sorumlusu başkası adına onay veremez), `retire` (0026, ADR-0028: Veri sorumlusu eskime önerisinde CI'ı gerekçeyle emekliye ayırır veya korur; emekliye ayırma yalnızca aday aşamasında; CI silinmez), `anomaly_review` (0021, ADR-0025: Veri sorumlusu yetkisiz değişiklik anomalisini "incelendi" veya gerekçeli "yanlış alarm" olarak işaretler ya da yeniden açar; "kapandı" durumunu yalnızca uzlaştırıcı verir; karar `audit.security_event`'e yazılır).
+- **İşlem:** `read`, `create`, `write`, `delete`, `merge`, `split`, `review_match`, `ingest`, `schema_draft`, `schema_approve`, `rules_admin`, `iam_admin`, `audit_read`, `audit_review` (0034, ADR-0039: mühür doğrulama ve dönem incelemesi kaydı; Denetçi), `ops_admin` (0035, ADR-0040: `platform` kaynağında; platform uyarısını gerekçeyle onaylama, bildirim yönlendirmesi, sınama bildirimi; Platform operatörü ve Platform yöneticisi), `replica_admin` (0036, ADR-0042: `platform` kaynağında; ServiceNow replikasının modu — kapalı/gölge/etkin —, kapsamı, bekletilen toplu itmenin onayı ve çelişki kararı; Konfigürasyon yöneticisi ve Platform yöneticisi; replikayı `platform` okuma izni olanlar da görür), `connector_read`, `connector_admin` (0018: bağlayıcı kimlikleri ve çalışmayı açan kimlik; sır hiçbir zaman gösterilmez. 0019, ADR-0021: `connector_read` bağlayıcı örneklerini ve çalıştırma isteklerini de gösterir; `connector_admin` ile "şimdi çalıştır", istek iptali, kimlik verme — belirteç bir kez — ve kimlik iptali), `create` (`cmdb_ci` ve alt sınıfları; ADR-0026: elle CI oluşturma isteği, Konfigürasyon analisti; kök sınıfta açılmaz), `attest` (0025, ADR-0027: CI sahibi rolü; izin tek başına yetmez, kişi CI'ın `owned_by`/`managed_by` alanındaki kullanıcı olmalıdır — kendi CI'ını onaylar veya gerekçeyle reddeder; Veri sorumlusu başkası adına onay veremez), `retire` (0026, ADR-0028: Veri sorumlusu eskime önerisinde CI'ı gerekçeyle emekliye ayırır veya korur; emekliye ayırma yalnızca aday aşamasında; CI silinmez), `anomaly_review` (0021, ADR-0025: Veri sorumlusu yetkisiz değişiklik anomalisini "incelendi" veya gerekçeli "yanlış alarm" olarak işaretler ya da yeniden açar; "kapandı" durumunu yalnızca uzlaştırıcı verir; karar `audit.security_event`'e yazılır).
 - **Alanlar:** liste; NULL tüm alanlar demektir.
 - **En yüksek hassasiyet:** `public` < `internal` < `confidential` < `restricted`. Alanın `sys_dictionary.sensitivity` değeriyle karşılaştırılır.
   Kısıtlı güvenlik duruşu (`cmdb.ci_security_posture`, ADR-0023) CI ayrıntısında yalnızca sınıf için `read` yetkisi `restricted` olan rollere (Güvenlik okuyucu, Denetçi, break-glass) döner; her gösterim `audit.security_event`'e `restricted_read` olarak yazılır.
@@ -33,7 +33,7 @@ Bir izin şu boyutlardan oluşur:
 | Konfigürasyon yöneticisi | ✓ | — | okuma | — | — | — | — | — | — | — | — |
 | Platform yöneticisi (break-glass) | ✓ | ✓ | ✓ | — | — | — | — | — | ✓ | — | ✓ |
 | Entegrasyon hesabı (makine) | ✓ | — | — | — | — | — | — | — | — | — | — |
-| SN eşleme hesabı (makine) | ✓ | ServiceNow kaynağı olarak | — | — | — | — | — | — | — | — | — |
+| sn-sync (makine, ServiceNow replikası) | ✓ | — (yalnızca eşleme ve çalışma kaydı; ServiceNow'a IRE ile yazar) | okuma | — | — | — | — | — | — | — | — |
 
 ## Görevler ayrılığı (veritabanında zorlanır)
 
@@ -44,6 +44,8 @@ Bir izin şu boyutlardan oluşur:
 | Platform yöneticisi | Denetçi | Kendi denetçisi olamaz |
 | Yetki yöneticisi | Şema onaylayıcı | Yetki ve şema kontrolü ayrı kişilerde |
 | Denetçi | Konfigürasyon yöneticisi | Denetçi denetlediği yönetişim sürecini yönetemez |
+
+ServiceNow replikasını (ADR-0042) `platform` okuma izni olanlar ve Konfigürasyon yöneticisi ile Platform yöneticisi görür; mod, kapsam, toplu itme onayı ve çelişki kararı `replica_admin` ister (bu iki rol). sn-sync kendi itmesini onaylayamaz (sütun yetkisi).
 
 Bildirimleri (ADR-0040) herkes kendine, grubuna ve rollerine gelenlerle görür; okundu bilgisi kişi başınadır. Platform uyarılarını ve bildirim yönlendirmesini `platform` okuma izni olanlar görür (Platform operatörü, Veri sorumlusu, Denetçi); onay ve yönlendirme `ops_admin` ister.
 

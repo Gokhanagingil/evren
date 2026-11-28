@@ -448,13 +448,13 @@
 <text x="64.0" y="2024.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">Golden record,</text>
 <text x="64.0" y="2040.0" fill="#4a5684" font-size="12" font-weight="400" text-anchor="start">kapsam kuralları</text>
 </g>
-<g class="node" id="n-sn_sync" data-node="sn_sync" data-chapter="servicenow" tabindex="0" role="button" aria-label="sn-sync: Sınıf/alan kapsamı, yeniden deneme">
+<g class="node" id="n-sn_sync" data-node="sn_sync" data-chapter="servicenow" tabindex="0" role="button" aria-label="sn-sync: Gölge → etkin, önce doğrula sonra yaz">
 <rect x="250.0" y="1961.0" width="180.0" height="98.0" rx="10" fill="#183349" stroke="#183349" stroke-width="1.6"/>
 <rect x="390.0" y="1970.0" width="30" height="18" rx="9" fill="#6a4fa0" stroke="#ffffff" stroke-width="1"/>
 <text x="405.0" y="1983.0" fill="#ffffff" font-size="11" font-weight="700" text-anchor="middle">F2</text>
 <text x="264.0" y="1987.0" fill="#ffffff" font-size="15" font-weight="700" text-anchor="start">sn-sync</text>
-<text x="264.0" y="2005.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Sınıf/alan kapsamı,</text>
-<text x="264.0" y="2021.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">yeniden deneme</text>
+<text x="264.0" y="2005.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">Gölge → etkin, önce</text>
+<text x="264.0" y="2021.0" fill="#c9dceb" font-size="12" font-weight="400" text-anchor="start">doğrula sonra yaz</text>
 </g>
 <g class="node" id="n-sn_ire" data-node="sn_ire" data-chapter="servicenow" tabindex="0" role="button" aria-label="SN IRE API: /api/now/ identifyreconcile">
 <rect x="450.0" y="1961.0" width="180.0" height="98.0" rx="10" fill="#eaf5ee" stroke="#2f7d4f" stroke-width="1.6"/>

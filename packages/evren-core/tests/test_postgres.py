@@ -340,7 +340,6 @@ def test_segregation_of_duties_enforced():
         ("evren_readonly", "SELECT count(*) FROM cmdb.cmdb_rel_ci_source"),
         ("evren_app_api", "SELECT last_error FROM sync.sn_ci_map"),
         ("evren_app_api", "UPDATE sync.sn_ci_map SET sn_sys_id = NULL WHERE false"),
-        ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
         ("evren_app_reconciler", "INSERT INTO ref.sys_user (sys_id, user_name, source) VALUES (repeat('e', 32), 'x', "
                                  "'entra')"),
         ("evren_app_api", "UPDATE ref.sys_user_group SET name = 'x' WHERE false"),
@@ -427,6 +426,21 @@ def test_segregation_of_duties_enforced():
         ("evren_app_connector", "SELECT count(*) FROM notify.route"),
         ("evren_app_ingest", "SELECT count(*) FROM ops.alert"),
         ("evren_auditor_ro", "UPDATE ops.alert SET ack_note = 'denetçi onaylayamaz' WHERE false"),
+        # 0036 (ADR-0042): sn-sync CMDB'ye ve ayara yazamaz, turu onaylayamaz, kaynak kaydı yazamaz; API eşlemeyi yalnızca
+        # karar sütunlarıyla yazar, çalışma açamaz, ilişki eşlemesine yazamaz; salt okur ve bağlayıcı replikayı göremez
+        ("evren_app_sync", "UPDATE cmdb.cmdb_ci SET name = 'x' WHERE false"),
+        ("evren_app_sync", "UPDATE sync.replica_setting SET mode = 'active'"),
+        ("evren_app_sync", "UPDATE sync.replica_run SET approved_by = 'x' WHERE false"),
+        ("evren_app_sync", "INSERT INTO ingest.source_record (data_source, source_key, class_hint, content_hash) "
+                           "VALUES ('ServiceNow', 'k', 'x', 'x')"),
+        ("evren_app_sync", "UPDATE sync.sn_sync_scope SET enabled = false WHERE false"),
+        ("evren_app_api", "UPDATE sync.sn_ci_map SET last_pushed_hash = 'x' WHERE false"),
+        ("evren_app_api", "INSERT INTO sync.replica_run (mode, status) VALUES ('active', 'running')"),
+        ("evren_app_api", "UPDATE sync.sn_rel_map SET state = 'in_sync' WHERE false"),
+        ("evren_app_api", "DELETE FROM sync.sn_ci_map WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM sync.replica_run"),
+        ("evren_app_connector", "SELECT count(*) FROM sync.sn_ci_map"),
+        ("evren_auditor_ro", "UPDATE sync.replica_setting SET mode = 'off'"),
         # ADR-0023: kısıtlı duruşu yalnızca uzlaştırıcı yazar; API yalnızca okur (hassasiyet denetimi API'de)
         ("evren_app_api", "UPDATE cmdb.ci_security_posture SET risk_score = 'High' WHERE false"),
         ("evren_app_api", "DELETE FROM cmdb.ci_security_posture WHERE false"),
@@ -510,6 +524,17 @@ def test_least_privilege_boundaries(role, statement):
         ("evren_app_governance", "SELECT name FROM ingest.data_source WHERE lifecycle = 'active'"),
         ("evren_app_api", "SELECT count(*) FROM ops.alert WHERE state = 'firing'"),
         ("evren_auditor_ro", "SELECT count(*) FROM notify.delivery"),
+        # 0036 (ADR-0042): sn-sync eşlemeyi ve çalışmayı yazar, nabzını yazar; API ayarı ve kararı yazar
+        ("evren_app_sync", "BEGIN; INSERT INTO sync.replica_run (mode, status) VALUES ('shadow', 'running'); ROLLBACK"),
+        ("evren_app_sync", "UPDATE sync.sn_ci_map SET attempts = attempts WHERE false"),
+        ("evren_app_sync", "SELECT count(*) FROM ingest.identity_link WHERE active"),
+        ("evren_app_api", "BEGIN; UPDATE sync.replica_setting SET mode = 'shadow', updated_by = 'x', updated_at = now(), "
+                          "note = 'yetki sınaması notu'; ROLLBACK"),
+        ("evren_app_api", "UPDATE sync.sn_ci_map SET state = 'excluded', resolved_by = 'x' WHERE false"),
+        ("evren_auditor_ro", "SELECT count(*) FROM sync.sn_ci_map"),
+        # Replika sayfası kapsamı gösterir ve panelden açıp kapatır (ADR-0042; önceden API kapsamı okuyamıyordu)
+        ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
+        ("evren_app_api", "SELECT state, identified_sn_sys_id, message FROM sync.sn_ci_map LIMIT 1"),
     ],
 )
 def test_allowed_paths_work(role, statement):

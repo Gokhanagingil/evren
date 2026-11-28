@@ -24,7 +24,7 @@
 - [x] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Tamamlandı_ (ilgili: F1-21, F1-17)
 - [x] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Tamamlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [x] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu altyapısı, sistem durumu, kullanıcılar ve roller, yönetişim görevleri (ServiceNow ve Evren kanalı; zamanlanmış kampanyalar, kural tabanlı bulgu görevleri), sağlık panosu, sihirbazlar, denetim izi — _Tamamlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-24, F1-25, F1-26, F1-28)
-- [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Planlandı_ (ilgili: F2-01, F2-02, F2-03)
+- [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Devam ediyor_ (ilgili: F2-01, F2-02, F2-03, F2-07)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09, F1-27)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
 
@@ -57,7 +57,7 @@
 | F1-10 | Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı | Devam ediyor |
 | F1-24 | ServiceNow'da görevin açılacağı tablo ve atama grubu kararı; o tabloya yazma izni olan entegrasyon hesabı (canlı kabul U10) | Devam ediyor |
 | F1-25 | Konfigürasyon yöneticisi rolünün sahibi ve kampanya takvimi (süreç sahipleri) | Devam ediyor |
-| F2-01 | ServiceNow tarafında Evren veri kaynağı için platform ekibi onayı | Planlandı |
+| F2-01 | ServiceNow tarafında Evren veri kaynağı için platform ekibi onayı | Devam ediyor |
 | F2-04 | ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi | Planlandı |
 | F2-08 | GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması | Planlandı |
 | F3-01 | MID Server veya API ağ geçidi kapasitesi | Planlandı |
@@ -211,9 +211,11 @@ _Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/13 adım
 
 Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.
 
-- [ ] **F2-01** sn-sync servisi; sınıf ve alan kapsamı — _Planlandı_
+- [ ] **F2-01** sn-sync servisi; sınıf ve alan kapsamı — _Devam ediyor_
+  - Not: 28.11.2026 (U9.1, ADR-0042): servis, kapsam, gölge → etkin, önce doğrula sonra yaz, toplu değişiklik freni, ilişkiler ve arayüz hazır; IRE simülatörüyle sınandı. Kalan: gerçek ServiceNow örneğiyle kabul (U10).
   - Sizden gereken: ServiceNow tarafında Evren veri kaynağı için platform ekibi onayı
 - [ ] **F2-02** ServiceNow tarafında "Evren" veri kaynağı ve uzlaştırma kuralı — _Planlandı_
+  - Not: Yapılacaklar ADR-0042'de: discovery_source değer listesine Evren, kapsamdaki sınıf/alanlarda en yüksek öncelikli uzlaştırma kuralı, en az yetkili entegrasyon kullanıcısı. İş kuralı, ACL veya görev alanı değişikliği yok (kural 11).
 - [ ] **F2-03** ServiceNow'a doğrudan yazan eski entegrasyonların kapatılması — _Planlandı_
 - [ ] **F2-04** ITOM abonelik birimi sayımının ServiceNow ile teyidi — _Planlandı_
   - Sizden gereken: ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi

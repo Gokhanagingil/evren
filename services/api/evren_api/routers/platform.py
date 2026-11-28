@@ -46,6 +46,9 @@ def me(ctx: Ctx = Depends(context)) -> dict[str, Any]:
                     "attest": ctx.grant("cmdb_ci", "attest").allowed,
                     "retire": ctx.grant("cmdb_ci", "retire").allowed,
                     "system": ctx.grant("platform", "read").allowed,
+                    # ServiceNow replikası (ADR-0042): görme ve yönetme
+                    "replica": ctx.grant("platform", "read").allowed or ctx.grant("platform", "replica_admin").allowed,
+                    "replica_admin": ctx.grant("platform", "replica_admin").allowed,
                     # Yönetim paneli (U8.2): görev kartları yetkiye göre açılır veya hangi rolün gerektiğini söyler
                     "relate": ctx.grant("cmdb_rel_ci", "create").allowed,
                     "schema_draft": ctx.grant("schema", "schema_draft").allowed,

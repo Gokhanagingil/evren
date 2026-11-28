@@ -19,7 +19,7 @@ const ROLE_FOR = {
   schema_draft: 'Şema tasarımcısı', schema_approve: 'Şema onaylayıcı', connector_admin: 'Veri sorumlusu',
   retire: 'Veri sorumlusu', anomaly_review: 'Veri sorumlusu', attest: 'CI sahibi', system: 'Platform operatörü',
   iam_admin: 'Yetki yöneticisi', audit_read: 'Denetçi', iam_read: 'Yetki yöneticisi veya Denetçi',
-  task_admin: 'Konfigürasyon yöneticisi',
+  task_admin: 'Konfigürasyon yöneticisi', replica_admin: 'Konfigürasyon yöneticisi veya Platform yöneticisi',
 };
 
 /** CI seçici: ilişki eklemek gibi bir CI üzerinde yapılan işler için. */
@@ -112,6 +112,8 @@ function tasks(goCi) {
         run: (opener) => openChangeSetFor({ op: 'set_source_lifecycle' }, opener) },
       { id: 'kurallar', title: 'Kuralları incele', icon: 'sliders', guide: 'entegrasyonlar', href: '#/kurallar',
         desc: 'Uzlaştırma, tanımlama, veri tazeleme ve eskime kuralları.' },
+      { id: 'replika', title: 'ServiceNow replikasını yönet', icon: 'layers', cap: 'replica_admin', guide: 'entegrasyonlar',
+        href: '#/replika', desc: 'Önce gölge, sonra etkin; kapsam, toplu itme onayı ve çelişki kararları.' },
     ] },
     { group: 'Yönetişim görevleri', desc: 'Sorumlulara zamanlanmış ve kurala bağlı görevler; şimdilik ServiceNow, ileride Evren üzerinden.', items: [
       { id: 'zamanli-gorev', title: 'Zamanlanmış görev tanımla', icon: 'clock', cap: 'task_admin', guide: 'gorevler',

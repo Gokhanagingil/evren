@@ -164,6 +164,19 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | I | `/metrics` ile iç ayrıntının açılması | Belirteç dosyası yoksa 404; sabit süreli karşılaştırmalı Bearer; etiketlerde kişi, kimlik değeri veya sorgu metni yok (rota şablonu) | api `metrics.py`, test_api_notifications |
 | E | İzleyicinin kendisinin durması (uyarı açılamaz) | Arayüzde "uyarı izleyicisi çalışmıyor" uyarısı; dışarıdan `evren_service_up{kind="governance"}` izlenir | Sistem Durumu, `/metrics` |
 
+### ServiceNow replikası (ADR-0042)
+
+Yeni dış arayüz: Evren → ServiceNow, giden HTTPS ve IRE API. ServiceNow'dan Evren'e geri çağrı yoktur.
+
+| Tehdit | Senaryo | Denetim | Nerede |
+| --- | --- | --- | --- |
+| T | Evren CI'ının ServiceNow'daki başka bir CI'ın üzerine yazılması (yanlış kimlik eşleşmesi) | Önce doğrula, sonra yaz: doğrulanmamış eşlemede işlemeden deneme (`/identifyreconcile/query`); beklenmeyen kayıt, var olanla eşleşen yeni CI veya başka Evren CI'ına eşli kayıt **çelişki** olur ve yazılmaz; aynı kimlik anahtarlı ikinci CI aynı turda gönderilmez (testli) | `evren_core.replica.judge`, `evren_sn_sync`, test_sn_sync_pg |
+| T/D | Kural veya kapsam hatasıyla binlerce ServiceNow kaydının tek turda değişmesi | Önce gölge mod (yazmaz), etkin mod gölge turu tamamlanmadan açılmaz; tur başına değişiklik sınırı aşılırsa tur bekletilir, gerekçeli onay bir kez (tetikleyici); kapsam dışı alan değişikliği freni tetiklemez | göç 0036, `routers/replica.py`, test_api_replica, test_sn_sync_pg |
+| E | sn-sync'in CMDB'ye yazması veya kendi itmesini onaylaması | `evren_app_sync` CMDB'ye, ayara ve onay sütunlarına yazamaz; eski kaynak kaydı yazma yetkisi geri alındı (testli) | göç 0036, test_postgres |
+| R | Mod, kapsam, onay veya çelişki kararının inkârı | Hepsi `platform/replica_admin` ister, gerekçeli ve `audit.security_event`'e yazılır (`replica_setting`, `replica_scope`, `replica_approve`, `replica_resolve`) | `routers/replica.py`, test_api_replica |
+| I | ServiceNow yazma kimliğinin sızması | Sır yalnızca sn-sync'te, dosyadan (`EVREN_SN_REPLICA_*_FILE`); görev kanalının kimliğinden ayrı; hata iletisi sır ve sunucu gövdesi içermez; bilinen IRE hata kodları Türkçe açıklanır | `evren_sn_sync/config.py`, `connectors/http.py` |
+| I | Kısıtlı veya Evren'e özgü verinin ServiceNow'a gitmesi | Yalnızca sözlükte `sn_sync`, ServiceNow'da da var olan ve kısıtlı olmayan alanlar; kişi/grup referansı yalnızca ServiceNow kaynaklıysa; Defender duruşu `cmdb_ci`'da değildir | `metadata/sn_sync.yaml`, `ReplicaWorker.fields_for`, test_replica |
+
 ## Uygulanan denetimler (bu depoda, testli)
 
 - `0003_security.sql`: 7 grup rolü, şema ve tablo düzeyinde yetkiler, salt ekleme denetim izi, rol atama denetimi, kısıtlı güvenlik tablosu.
@@ -219,4 +232,4 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 - Kurum sır kasası entegrasyonu ve SIEM ürününe özgü teslim (konu sözleşmesi hazır: `evren.audit.v1`; HEC veya Syslog/CEF ürün seçilince) — açık soru.
 - Denetim kaydı saklama ve arşivleme politikası (mühürle birlikte soğuk depolama) ve harici zaman damgası (RFC 3161).
 - Dağıtım ortamına göre ağ politikaları (Kubernetes NetworkPolicy veya güvenlik duvarı kuralları).
-- Sızma testi: F2 öncesi, ServiceNow'a yazma başlamadan.
+- Sızma testi: F2 öncesi, ServiceNow replikası etkin moda alınmadan (U10).

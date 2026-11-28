@@ -12,8 +12,9 @@
     evren connector-runner  bağlayıcı çalıştırıcı servisi: istekler + zamanlama (EVREN_CONNECTORS_FILE; --once, --check)
     evren connector-archive  ham yük arşivi: list | verify <çalışma> | prune --days N (EVREN_ARCHIVE_DIR)
     evren governance   görev çalışanı: yönetişim görevlerini kanala (ServiceNow) teslim eder, eşitler, kapatır (--once)
+    evren sn-sync      ServiceNow replikası: kapsamdaki CI'ları IRE ile iter; mod panelden (--once, --check)
     evren demo         sentetik demo verisini yükle (yalnızca EVREN_ALLOW_DEMO=1; boş geliştirme veritabanı)
-    evren healthcheck  api|gateway|worker|ingest|indexer|connector-runner|governance — konteyner sağlık denetimi
+    evren healthcheck  api|gateway|worker|ingest|indexer|connector-runner|governance|sn-sync — konteyner sağlık denetimi
 
 Sırlar dosyadan okunur (``*_FILE`` ortam değişkenleri); hiçbir sır komut satırına veya günlüğe yazılmaz.
 """
@@ -27,7 +28,7 @@ from pathlib import Path
 
 APP = Path(__file__).resolve().parents[1]
 for p in ("packages/evren-core/src", "services/api", "services/reconciler", "services/ingest-gateway", "services/indexer",
-          "services/connector-runner", "services/governance", "tools"):
+          "services/connector-runner", "services/governance", "services/sn-sync", "tools"):
     sys.path.insert(0, str(APP / p))
 
 
@@ -112,6 +113,12 @@ def governance(args: list[str]) -> int:
     return governance_main(args)
 
 
+def sn_sync(args: list[str]) -> int:
+    from evren_sn_sync import main as sync_main
+
+    return sync_main(args)
+
+
 def migrate(args: list[str]) -> int:
     import migrate as m
 
@@ -151,13 +158,14 @@ def healthcheck(target: str) -> int:
                 return 0 if r.status == 200 else 1
         except (OSError, ValueError):
             return 1
-    if target in ("worker", "ingest", "indexer", "connector-runner", "governance"):
+    if target in ("worker", "ingest", "indexer", "connector-runner", "governance", "sn-sync"):
         path = os.environ.get("EVREN_WORKER_HEALTH_FILE")
         poll = int(os.environ.get("EVREN_WORKER_POLL_SECONDS", "30"))
         if not path or not Path(path).exists():
             return 1
         return 0 if time.time() - Path(path).stat().st_mtime < 3 * poll + 10 else 1
-    print("Kullanım: evren healthcheck api|gateway|worker|ingest|indexer|connector-runner|governance", file=sys.stderr)
+    print("Kullanım: evren healthcheck api|gateway|worker|ingest|indexer|connector-runner|governance|sn-sync",
+          file=sys.stderr)
     return 2
 
 
@@ -184,6 +192,8 @@ def main(argv: list[str]) -> int:
         return connector_runner(rest)
     if cmd == "governance":
         return governance(rest)
+    if cmd == "sn-sync":
+        return sn_sync(rest)
     if cmd == "connector-archive":
         return connector_archive(rest)
     if cmd == "migrate":

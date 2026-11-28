@@ -156,6 +156,18 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             items.append(_item("alerts", "Etkin platform uyarısı", other, "#/sistem-durumu/uyarilar",
                                f"{unacked} uyarı henüz onaylanmadı." if unacked else "Hepsi onaylandı; koşul kalkınca "
                                "kendiliğinden çözülür.", "warn"))
+    if ctx.grant("platform", "replica_admin").allowed:
+        # ServiceNow replikası (ADR-0042): onay bekleyen toplu itme, karar bekleyen kayıt
+        held, conflicts = ctx.conn.execute(
+            """SELECT (SELECT candidates FROM sync.replica_run WHERE status = 'held' LIMIT 1),
+                      (SELECT count(*) FROM sync.sn_ci_map WHERE state IN ('conflict', 'error')
+                          OR (state = 'pending_push' AND shadow_verdict IN ('conflict', 'error')))""").fetchone()
+        if held:
+            items.append(_item("replica_held", "ServiceNow'a toplu itme onay bekliyor", held, "#/replika",
+                               "Değişiklik sayısı tur sınırını aştı; listeyi gözden geçirip onaylayın.", "bad"))
+        if conflicts:
+            items.append(_item("replica_conflicts", "ServiceNow replikasında karar bekleyen kayıt", conflicts,
+                               "#/replika", "ServiceNow kaydı beklenenden başka bir kayıtla eşleştirdi veya yazılamadı."))
     if ctx.grant("audit", "audit_read").allowed:
         # Denetim izi (ADR-0039): bozulmuş mühür, durmuş mühürleme, haftalık inceleme (CIS 8.11)
         failed, last_end, last_review = ctx.conn.execute(

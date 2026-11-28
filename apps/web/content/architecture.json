@@ -926,8 +926,9 @@
       "kind_label": "Veri deposu",
       "chapter": "servicenow",
       "phase": "F2",
-      "text": "Gölge fazından sonra Evren ana kaynak olur. Hangi sınıfın ve alanın ServiceNow'a gideceğini sync.sn_sync_scope belirler.",
+      "text": "Gölge fazından sonra Evren ana kaynak olur. Hangi sınıfın ServiceNow'a gideceğini metadata/sn_sync.yaml ve panelden açılıp kapanan sync.sn_sync_scope belirler; alanlar sözlükten (ServiceNow'da da var olan, kısıtlı olmayan). ServiceNow'un verdiği sys_id sync.sn_ci_map'tedir (ADR-0042).",
       "tech": [
+        "metadata/sn_sync.yaml",
         "sync.sn_sync_scope",
         "sync.sn_ci_map"
       ],
@@ -936,20 +937,24 @@
     "sn_sync": {
       "label": "sn-sync",
       "sub": [
-        "Sınıf/alan kapsamı,",
-        "yeniden deneme"
+        "Gölge → etkin, önce",
+        "doğrula sonra yaz"
       ],
       "kind": "engine",
       "kind_label": "Evren bileşeni",
       "chapter": "servicenow",
       "phase": "F2",
-      "text": "Kapsamdaki CI'ları ServiceNow'a iter. Başarısız denemeler sıraya alınır, aynı içerik tekrar gönderilmez.",
+      "text": "Kapsamdaki CI'ları ServiceNow'a IRE ile iter. Önce gölge modda işlemeden dener, sonra etkin modda yazar. Eşlemesi doğrulanmamış CI önce denenir; ServiceNow beklenenden başka bir kayıt bulursa yazılmaz, çelişki olarak insan kararına düşer. Tur sınırını aşan toplu değişiklik onay bekler. Değişiklik CI sürümüyle izlenir, aynı içerik tekrar gönderilmez (ADR-0042).",
       "tech": [
-        "IRE API",
+        "IRE API (/identifyreconcile",
+        "/query)",
+        "evren_app_sync",
         "Yeniden deneme + özet karşılaştırma"
       ],
       "security": [
-        "Ayrı SN entegrasyon kullanıcısı"
+        "Ayrı SN entegrasyon kullanıcısı",
+        "CMDB'ye yazamaz",
+        "Sır yalnızca dosyadan"
       ]
     },
     "sn_ire": {

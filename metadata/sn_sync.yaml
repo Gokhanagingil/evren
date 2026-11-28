@@ -1,0 +1,27 @@
+# ServiceNow replikası kapsamı (U9.1, F2-01, ADR-0042).
+#
+# Evren ana kaynaktır; ServiceNow CMDB replikadır. Replikaya yalnızca ServiceNow süreçlerinin (olay, değişiklik,
+# talep) CI seçmek ve etki hesaplamak için ihtiyaç duyduğu sınıflar gider. Yüksek hacimli ve süreçlerin kullanmadığı
+# kayıtlar (ağ adaptörü, yazılım kurulumu, dosya sistemi) gitmez.
+#
+# Tohum yüklemesi kapsamı yalnızca ilk kez ekler (ON CONFLICT DO NOTHING): panelden yapılan açma/kapama korunur.
+# Alt sınıflar da kapsama girer (include_descendants). Alanlar: sözlükte ServiceNow'a gidebilen (sn_sync) ve
+# ServiceNow'da da var olan (Evren'e özgü olmayan) bütün alanlar, aşağıdaki dışlananlar hariç.
+version: 1
+
+# IRE isteğinde veri kaynağı adı. ServiceNow'da cmdb_ci.discovery_source değer listesinde bu değer bulunmalıdır
+# (F2-02: ServiceNow tarafında tanımlanır; iş kuralı, ACL veya görev alanı değişikliği gerekmez).
+source_name: Evren
+
+classes:
+  - {name: cmdb_ci_server, enabled: true, notes: "Sunucular (Linux, Windows, UNIX ve alt sınıfları)"}
+  - {name: cmdb_ci_netgear, enabled: true, notes: "Ağ cihazları (anahtar, yönlendirici, güvenlik duvarı)"}
+  - {name: cmdb_ci_vm_instance, enabled: true, notes: "Sanal makine örnekleri"}
+  - {name: cmdb_ci_appl, enabled: true, notes: "Uygulamalar"}
+  - {name: cmdb_ci_service, enabled: true, notes: "İş hizmetleri ve teknik hizmetler"}
+  - {name: cmdb_ci_business_app, enabled: true, notes: "İş uygulamaları"}
+
+# Hiçbir sınıfta gönderilmeyen alanlar:
+# * discovery_source, first_discovered, last_discovered: ServiceNow IRE bunları veri kaynağından kendisi tutar.
+# * duplicate_of: Evren'in iç birleştirme izidir; ServiceNow'daki CI kimlikleriyle karşılığı yoktur.
+exclude_fields: [discovery_source, first_discovered, last_discovered, duplicate_of]

@@ -32,6 +32,7 @@ SERVICES = {
     "connector": ("Bağlayıcı çalıştırıcı", "Tamamlanan çalışma", "Başarısız çalışma"),
     "gateway": ("Alım geçidi", "Kabul edilen kayıt", "Kafka teslim hatası"),
     "governance": ("Görev çalışanı (görevler, uyarılar, bildirimler)", "Teslim edilen görev", "Teslim hatası"),
+    "sn_sync": ("ServiceNow replikası (sn-sync)", "Gönderilen CI", "Başarısız tur"),
 }
 #: Kafka tüketici gecikmesi bu sayıyı aşarsa dikkat (kayıt)
 LAG_WARN = 10_000
@@ -142,6 +143,14 @@ def _service(kind: str, rows: list[dict[str, Any]], now: datetime) -> dict[str, 
         if n:
             items += [("Bildirim: e-posta / Teams", f"{n.get('email', '—')} / {n.get('teams', '—')}"),
                       ("Etkin uyarı", _num(int(n.get("alerts_firing") or 0)))]
+    if kind == "sn_sync" and live:
+        d = live[0]["details"]
+        st = d.get("states") or {}
+        items += [("Mod", {"off": "Kapalı", "shadow": "Gölge (yazmaz)", "active": "Etkin"}.get(d.get("mode"), "—")),
+                  ("Bağlantı", {"yok": "ServiceNow ayarı yok", "simülatör": "simülatör (geliştirme)"}.get(
+                      d.get("connection"), "ServiceNow")),
+                  ("Eşit / çelişki / hata", f"{_num(int(st.get('in_sync') or 0))} / {_num(int(st.get('conflict') or 0))}"
+                                            f" / {_num(int(st.get('error') or 0))}")]
     if kind == "requests":
         items.append(("Olay yayıncısı", "açık" if any(r["details"].get("outbox_publisher") for r in live) else
                       "kapalı (Kafka yapılandırılmamış)"))
@@ -151,6 +160,11 @@ def _service(kind: str, rows: list[dict[str, Any]], now: datetime) -> dict[str, 
             state, note = "warn", "DLQ'ya kayıt düştü: alım tüketicisinin işleyemediği kayıtlar DLQ konusunda bekliyor."
         if kafka and not all(k.get("ok") for k in kafka):
             state, note = "bad", "Kafka'ya ulaşılamıyor."
+        elif kind == "sn_sync" and int(live[0]["details"].get("held") or 0):
+            state, note = "warn", "Toplu itme onay bekliyor: ServiceNow Replikası sayfasından onaylayın."
+        elif kind == "sn_sync" and live[0]["details"].get("mode") != "off" and live[0]["details"].get(
+                "connection") == "yok":
+            state, note = "warn", "Replika açık ama ServiceNow bağlantısı ayarlanmamış; hiçbir şey gönderilmiyor."
         elif kind == "governance" and int(live[0]["details"].get("failed") or 0):
             state, note = "warn", "ServiceNow'a teslim edilemeyen görev var: kanal ayarını ve bağlantıyı denetleyin."
         elif kind in ("ingest", "indexer") and lag > LAG_WARN:
