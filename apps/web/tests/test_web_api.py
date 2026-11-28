@@ -1900,3 +1900,45 @@ def test_servicenow_replica_page_mode_approval_and_conflict_decision(browser, co
     mp.wait_for_timeout(150)
     assert mp.evaluate("document.scrollingElement.scrollWidth - window.innerWidth") <= 1
     mobile.close()
+
+
+def test_ai_proposal_page_accept_with_keyboard(page, base_url):
+    """U9.2 (ADR-0043): İşlerim → Öneriler; ajanın önerisi gerekçesiyle görünür, yetkili kişi klavyeyle kabul eder
+    (kısa gerekçe reddedilir), öneri "Karar verilen"e geçer. Konsol hatası yok."""
+    import uuid as _uuid
+
+    import psycopg
+    from psycopg.types.json import Jsonb
+
+    tag = _uuid.uuid4().hex[:8]
+    with psycopg.connect(autocommit=True) as o:
+        ci = _uuid.uuid4().hex
+        o.execute("INSERT INTO cmdb.cmdb_ci (sys_id, sys_class_name, name) VALUES (%s, 'cmdb_ci_linux_server', %s)",
+                  (ci, f"oneri-arayuz-{tag}"))
+        number = o.execute(
+            """INSERT INTO ai.proposal (kind, target, target_label, payload, rationale, model, channel, proposed_by)
+               VALUES ('ci_update', %s, %s, %s, %s, 'kurum-llm', 'mcp', 'dev:mcp-ajan') RETURNING number""",
+            (ci, f"oneri-arayuz-{tag}", Jsonb({"changes": {"short_description": f"Arayüz önerisi {tag}"}}),
+             "Açıklama boş; sunucunun görevini anlatan bir açıklama önerilir.")).fetchone()[0]
+    problems: list[str] = []
+    page.on("console", lambda m: problems.append(m.text) if m.type == "error" else None)
+    page.goto(base_url + "/#/oneriler")
+    item = page.locator(f"#proposal-{number}")
+    expect(item).to_contain_text(f"Arayüz önerisi {tag}")
+    expect(page.locator("#subnav a[data-route=oneriler]")).to_have_attribute("aria-current", "page")
+    item.locator("summary").click()
+    expect(item).to_contain_text("kurum-llm")
+    item.get_by_role("button", name="Kabul et…").focus()
+    page.keyboard.press("Enter")
+    expect(page.locator("#proposalNote")).to_be_focused()
+    page.keyboard.type("kısa")
+    page.click("#proposalSave")
+    expect(page.locator("#proposalError")).to_contain_text("en az 10")
+    page.fill("#proposalNote", f"Arayüz testi {tag}: açıklama doğru")
+    page.click("#proposalSave")
+    expect(page.locator("#toast")).to_contain_text("kabul edildi")
+    expect(page.locator(f"#proposal-{number}")).to_have_count(0)
+    page.click("#tab-decided")
+    expect(page.locator(f"#proposal-{number}")).to_contain_text("Kabul edildi")
+    shot(page, "web_api_proposals")
+    assert not problems, f"Konsol hatası/CSP ihlali: {problems}"

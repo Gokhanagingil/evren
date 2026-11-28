@@ -197,6 +197,39 @@ class Entra:
         except (ValueError, TypeError, KeyError):
             raise Denied("invalid_token_response") from None
 
+    def verify_access(self, token: Any) -> EntraIdentity:
+        """MCP ve makine istemcileri için Entra erişim belirteci (ADR-0043): RS256, kiracı, düzenleyen (v2.0), hedef
+        kitle Evren uygulaması (istemci kimliği veya ``api://<istemci>``), süre. Kullanıcı adına belirteçte roller
+        kullanıcının uygulama rolleri; uygulama belirtecinde (``idtyp=app``) makine kimliğinin uygulama rolleri."""
+        if not isinstance(token, str) or len(token) > 65536:
+            raise Denied("invalid_access_token")
+        try:
+            header = jwt.get_unverified_header(token)
+            if (header.get("alg") != "RS256" or not isinstance(header.get("kid"), str)
+                    or not 1 <= len(header["kid"]) <= 256):
+                raise Denied("invalid_token_header")
+            key = self.jwks.get_signing_key(header["kid"])
+            claims = jwt.decode(token, key.key, algorithms=["RS256"],
+                                audience=[self.config.client, f"api://{self.config.client}"],
+                                issuer=self.config.issuer, options={"require": [
+                                    "exp", "iat", "nbf", "iss", "aud", "sub", "tid", "oid", "ver"]})
+        except jwt.exceptions.PyJWKClientConnectionError:
+            raise Unavailable("signing_keys_unavailable") from None
+        except (jwt.PyJWTError, TypeError, OverflowError):
+            raise Denied("invalid_access_token") from None
+        if (claims["ver"] != "2.0" or claims["tid"] != self.config.tenant
+                or not isinstance(claims["oid"], str) or not GUID.fullmatch(claims["oid"])
+                or type(claims["exp"]) is not int or not claims["sub"]):
+            raise Denied("identity_mismatch")
+        roles = claims.get("roles") or []
+        groups = claims.get("groups") or []
+        if not isinstance(roles, list) or not isinstance(groups, list):
+            raise Denied("invalid_claims")
+        name = claims.get("name") or claims.get("app_displayname")
+        display = name.strip()[:160] if isinstance(name, str) and name.strip() else claims["oid"]
+        return EntraIdentity(claims["oid"], display, tuple(r for r in roles if isinstance(r, str)),
+                             tuple(g for g in groups if isinstance(g, str) and GUID.fullmatch(g)), claims["exp"])
+
     def verify(self, token: Any, nonce: str) -> EntraIdentity:
         if not isinstance(token, str) or len(token) > 65536:
             raise Denied("invalid_id_token")

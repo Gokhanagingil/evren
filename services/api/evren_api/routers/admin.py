@@ -156,6 +156,16 @@ def attention(ctx: Ctx = Depends(context)) -> dict[str, Any]:
             items.append(_item("alerts", "Etkin platform uyarısı", other, "#/sistem-durumu/uyarilar",
                                f"{unacked} uyarı henüz onaylanmadı." if unacked else "Hepsi onaylandı; koşul kalkınca "
                                "kendiliğinden çözülür.", "warn"))
+    if ctx.grant("cmdb_ci", "write").allowed or ctx.grant("match_queue", "review_match").allowed:
+        # Yapay zekâ önerileri (ADR-0043): kararı verebileceğiniz bekleyen öneriler (kendi önerileriniz hariç)
+        kinds = [k for k, ok in (("ci_update", ctx.grant("cmdb_ci", "write").allowed),
+                                 ("match_decision", ctx.grant("match_queue", "review_match").allowed)) if ok]
+        n = ctx.conn.execute("SELECT count(*) FROM ai.proposal WHERE status = 'pending' AND kind = ANY(%s) "
+                             "AND proposed_by <> %s", (kinds, ctx.principal.audit_id)).fetchone()[0]
+        if n:
+            items.append(_item("proposals", "Karar bekleyen yapay zekâ önerisi", n, "#/oneriler",
+                               "Ajanın önerdiği CI değişikliği veya eşleştirme kararı; gerekçesini okuyup kabul edin "
+                               "veya reddedin.", "info"))
     if ctx.grant("platform", "replica_admin").allowed:
         # ServiceNow replikası (ADR-0042): onay bekleyen toplu itme, karar bekleyen kayıt
         held, conflicts = ctx.conn.execute(

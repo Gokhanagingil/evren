@@ -99,7 +99,7 @@ chapters:
       - {id: rest_api, kind: engine, col: 1, row: 0, span: 2, label: Evren REST API, sub: ["/api/v1 · OpenAPI 3.1 ·", "idempotency_key · provenance"]}
       - {id: sn_compat_api, kind: engine, col: 3, row: 0, label: SN uyumlu API, sub: ["/api/now/table", "/identifyreconcile"]}
       - {id: event_stream, kind: engine, col: 4, row: 0, label: Olay akışı, sub: ["CloudEvents,", "imzalı webhook"]}
-      - {id: evren_mcp, kind: engine, col: 5, row: 0, label: Evren MCP sunucusu, sub: ["Salt okur araçlar +", "öneri araçları"]}
+      - {id: evren_mcp, kind: engine, col: 5, row: 0, label: Evren MCP sunucusu, sub: ["POST /mcp · 8 okuma +", "2 öneri aracı"]}
       - {id: corp_mcp, kind: external, col: 5, row: 1, label: Kurum MCP uygulaması, sub: ["Sizin MCP katmanınız", "(ajan, orkestrasyon)"]}
       - {id: grc_app, kind: external, col: 3, row: 1, span: 2, label: GRC Platformu, sub: ["Kontrol sonuçları, kanıt;", "ör. kaydı olmayan sunucu"]}
       - {id: other_apps, kind: external, col: 1, row: 1, span: 2, label: Diğer iç uygulamalar, sub: ["Tedarik portalı, raporlama,", "otomasyon"]}
@@ -344,9 +344,9 @@ details:
     security: [HMAC imza, Abonelik başına kapsam]
   evren_mcp:
     phase: F2
-    text: Evren'in kendi MCP sunucusu. Araçlar CI arama, etki analizi, eşleşme açıklaması ve sağlık raporu sunar. Yazma araçları doğrudan yazmaz, onaya düşen öneri üretir.
-    tech: [MCP (streamable HTTP), Entra OAuth]
-    security: [Araç başına yetki, CMDB içeriği güvenilmeyen veri sayılır]
+    text: Evren'in kendi MCP sunucusu; ayrı servis değil, API'de POST /mcp (Streamable HTTP, JSON-RPC). Sekiz okuma aracı (CI arama ve ayrıntı, ilişkiler, etki, eşleşme açıklaması, sağlık, kapsam boşlukları, anomaliler) REST işlevlerini çağıranın rolleriyle çağırır. İki öneri aracı Evren'e yazmaz; öneri ai.proposal'a düşer, yetkili kişi kabul edince her zamanki yoldan uygulanır (ADR-0043).
+    tech: [MCP (Streamable HTTP, JSON yanıt), Entra erişim belirteci, ai.proposal]
+    security: [Yalnızca taşıyıcı belirteç (çerez yok), Araçlar çağıranın rolleriyle, CMDB içeriği veri sayılır (content_is_data), Öneren karar veremez]
   corp_mcp:
     phase: F2
     text: Kurumun kendi MCP uygulaması. Evren'e Evren MCP sunucusu ve REST sözleşmesi üzerinden bağlanır; GRC Platformu'ndaki düzenin aynısıdır. ServiceNow'un yerleşik MCP'si kullanılmaz.

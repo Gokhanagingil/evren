@@ -70,6 +70,8 @@ ACTIONS: dict[str, tuple[str, str]] = {
     "replica_scope": ("ServiceNow replika kapsamı değişti", "integration"),
     "replica_approve": ("ServiceNow toplu itmesi onaylandı", "integration"),
     "replica_resolve": ("ServiceNow replika kararı", "integration"),
+    "mcp_call": ("MCP aracı çağrıldı", "integration"),
+    "proposal_create": ("Yapay zekâ önerisi", "cmdb"), "proposal_decide": ("Öneri kararı", "cmdb"),
 }
 _TASK_TR = {"created": "Görev açıldı", "delivered": "Görev kanala teslim edildi", "delivery_failed": "Görev teslim edilemedi",
             "kept_in_evren": "Görev Evren'de tutuldu", "synced": "Görev eşitlendi", "external_closed": "Görev kanalda kapatıldı",

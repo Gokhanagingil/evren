@@ -4,7 +4,7 @@
 
 Evren iki yoldan bağlanır:
 
-1. **Evren MCP sunucusu** (`services/mcp`): yapay zekâ ajanlarına araç sunar.
+1. **Evren MCP sunucusu** (API sürecinde, `POST /mcp`; ADR-0043): yapay zekâ ajanlarına araç sunar.
 2. **REST sözleşmesi:** kurum MCP uygulamasının adaptörü Evren API'sini GRC Platformu'ndaki gibi doğrudan kullanır.
 
 ## Sınırlar
@@ -44,6 +44,19 @@ GRC Platformu sözleşmesiyle aynı ilkeler geçerli:
 1. `GET /api/v1/ci?sysparm_query=…` ile okuma. Sayfalamayı tamamla; eksik sayfa başarı sayılmaz.
 2. Sonucu GRC Platformu'na yazarken `provenance.query_reference` alanına Evren sorgusunu, `collection_status` alanına Evren kaynak çalışmalarının durumunu koy.
 3. Yazma gerekiyorsa `POST /api/v1/proposals` kullan; `idempotency_key` zorunlu.
+
+## Uygulama durumu (U9.2, ADR-0043)
+
+- **Protokol:** Streamable HTTP, JSON-RPC 2.0, yanıt `application/json`. SSE yoktur; `GET /mcp` 405 döner.
+- **Desteklenen protokol sürümleri:** `2025-06-18`, `2025-03-26`, `2024-11-05`.
+- **Araçlar:** tablodaki on aracın hepsi.
+  - `coverage_gaps` ürün yerine kaynak rolüne göre çalışır (kural 8): `gap` = `izlenmeyen` | `korumasiz` | `itsm-yok`.
+  - `get_relationships` derinliği en çok 3'tür.
+- **Kimlik:** Entra'da yalnızca taşıyıcı belirteç kabul edilir, oturum çerezi kabul edilmez. Hedef kitle istemci kimliği veya `api://<istemci>`'dir. Belirteçteki roller ve veritabanı rol atamaları geçerlidir.
+- **Öneriler:** `ai.proposal` tablosunda tutulur, İşlerim → Öneriler sayfasında karara bağlanır.
+  - Öneren kendi önerisine karar veremez.
+  - Kabul, kararı verenin yetkisiyle elle düzenleme veya kuyruk kararı olarak uygulanır.
+- **REST:** `POST /api/v1/proposals`, `GET /api/v1/proposals`, `POST /api/v1/proposals/{id}/decide`.
 
 ## Doğrulama
 

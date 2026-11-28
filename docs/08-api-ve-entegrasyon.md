@@ -178,6 +178,13 @@ Okuma `audit/audit_read`, doğrulama ve inceleme `audit/audit_review` ister (iki
 - `GET /api/v1/ops/alerts?view=active|history` (`platform` okuma): uyarılar, öneri, onay, kural kataloğu. `POST /api/v1/ops/alerts/{sys_id}/ack` `{note (10–1000)}` (`ops_admin`; yalnızca ateşlenmiş ve bir kez; `409 onaylanamaz`).
 - `GET /metrics` (Prometheus metin biçimi 0.0.4): yalnızca `EVREN_METRICS_TOKEN_FILE` tanımlıysa, `Authorization: Bearer`; yoksa 404, yanlışsa 401.
 
+### Evren MCP sunucusu ve öneriler (ADR-0043)
+
+- `POST /mcp`: MCP Streamable HTTP, JSON-RPC 2.0. Yöntemler `initialize`, `notifications/initialized`, `ping`, `tools/list`, `tools/call`. Entra'da `Authorization: Bearer` (erişim belirteci) zorunludur; çerez kabul edilmez. Araçlar ve sınırlar `docs/09-mcp-sozlesmesi.md`'dedir.
+- `POST /api/v1/proposals` `{kind: ci_update|match_decision, target, payload, rationale, model, prompt_version, input_summary, idempotency_key}` (kurum MCP uygulamasının REST adaptörü; `cmdb_ci` okuma). Aynı anahtar aynı öneriyi döner (`200 replayed`).
+- `GET /api/v1/proposals?status=pending|decided`: öneriler, özet, gerekçe, model ve `can_decide`.
+- `POST /api/v1/proposals/{id}/decide` `{decision: accept|reject, note (10–2000)}`. Kabul, kararı verenin yetkisiyle uygulanır. Kendi öneriniz için `409 kendi_oneriniz`, karar verilmiş öneri için `409 karar_verilmis` döner. Uygulanamazsa `409 uygulanamadi` döner ve öneri "uygulanamadı" olarak kaydedilir.
+
 ### ServiceNow replikası (ADR-0042)
 
 - `GET /api/v1/replica` (`platform` okuma veya `replica_admin`): mod, tur sınırı, çalışanın canlılığı ve bağlantısı, durum sayıları (eşit, bekliyor, çelişki, hata, dışarıda), gölge sonuçları, ilişkiler, bekletilen/onaylı tur, son 10 çalışma, kapsam (sınıf, CI sayısı), `shadow_done`, `can_admin`.

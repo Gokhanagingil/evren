@@ -221,7 +221,8 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
   - Sizden gereken: ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi
 - [ ] **F2-05** ServiceNow uyumlu API: /api/now/table ve /identifyreconcile — _Planlandı_
 - [ ] **F2-06** Olay akışı ve imzalı webhook — _Planlandı_
-- [ ] **F2-07** Evren MCP sunucusu ve kurum MCP uygulaması sözleşmesi — _Planlandı_
+- [ ] **F2-07** Evren MCP sunucusu ve kurum MCP uygulaması sözleşmesi — _Devam ediyor_
+  - Not: 28.11.2026 (U9.2, ADR-0043): Evren MCP sunucusu API'de (POST /mcp): sekiz okuma ve iki öneri aracı, çağıranın rolleriyle; Entra taşıyıcı belirteci; öneriler ai.proposal (göç 0037), İşlerim → Öneriler, öneren karar veremez. Kalan: kurum MCP uygulamasıyla uçtan uca kabul (U10).
 - [ ] **F2-08** GRC Platformu (tedarik) entegrasyonu: CMDB modülünün Evren'den beslenmesi ve CMDB tabanlı otomatik kontroller — _Planlandı_
   - Sizden gereken: GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması
 - [ ] **F2-09** Yedekleme, felaket kurtarma ve yüksek erişilebilirlik: PostgreSQL PITR, Kafka/OpenSearch çoğaltma, geri yükleme tatbikatı — _Planlandı_

@@ -31,6 +31,10 @@ Yeni kaynak, veri modeli gibi değişiklik setiyle eklenir: [Yönetim Paneli](#/
 
 Evren ana kaynaktır; ServiceNow CMDB'si Evren'in kopyasıdır. [ServiceNow Replikası](#/replika) sayfasında replika önce **gölge** modda çalışır: ServiceNow'a yazılmaz, kayıtların nasıl tanınacağı denenir. Çelişki yoksa **etkin** moda geçilir. ServiceNow bir kaydı beklenenden başka bir kayıtla eşleştirirse yazılmaz; **Karar bekleyenler** listesinde kabul edin, dışarıda tutun veya yeniden deneyin. Çok sayıda değişiklik birden gidecekse Evren onayınızı bekler.
 
+## Yapay zekâ ajanları (MCP)
+
+Kurumun yapay zekâ ajanları Evren'i yalnızca sizin yetkinizle sorgular; Evren'e yazamaz. Bir düzeltme önerirse öneri [Öneriler](#/oneriler) sayfasına düşer. Gerekçesini okuyun, kabul edin veya reddedin. Kendi önerinize karar veremezsiniz.
+
 ## Teknik ayrıntı
 
 - [Kaynaklar](belge:04-kaynaklar)

@@ -441,6 +441,13 @@ def test_segregation_of_duties_enforced():
         ("evren_readonly", "SELECT count(*) FROM sync.replica_run"),
         ("evren_app_connector", "SELECT count(*) FROM sync.sn_ci_map"),
         ("evren_auditor_ro", "UPDATE sync.replica_setting SET mode = 'off'"),
+        # 0037 (ADR-0043): öneriyi API ekler ama içeriğini değiştiremez ve silemez; salt okur ve servisler göremez
+        ("evren_app_api", "UPDATE ai.proposal SET payload = '{}' WHERE false"),
+        ("evren_app_api", "DELETE FROM ai.proposal WHERE false"),
+        ("evren_readonly", "SELECT count(*) FROM ai.proposal"),
+        ("evren_app_connector", "SELECT count(*) FROM ai.proposal"),
+        ("evren_app_sync", "SELECT count(*) FROM ai.proposal"),
+        ("evren_auditor_ro", "UPDATE ai.proposal SET status = 'accepted' WHERE false"),
         # ADR-0023: kısıtlı duruşu yalnızca uzlaştırıcı yazar; API yalnızca okur (hassasiyet denetimi API'de)
         ("evren_app_api", "UPDATE cmdb.ci_security_posture SET risk_score = 'High' WHERE false"),
         ("evren_app_api", "DELETE FROM cmdb.ci_security_posture WHERE false"),
@@ -535,6 +542,12 @@ def test_least_privilege_boundaries(role, statement):
         # Replika sayfası kapsamı gösterir ve panelden açıp kapatır (ADR-0042; önceden API kapsamı okuyamıyordu)
         ("evren_app_api", "SELECT count(*) FROM sync.sn_sync_scope"),
         ("evren_app_api", "SELECT state, identified_sn_sys_id, message FROM sync.sn_ci_map LIMIT 1"),
+        # 0037 (ADR-0043): API öneri ekler ve karar sütunlarını yazar; denetçi okur
+        ("evren_app_api", "BEGIN; INSERT INTO ai.proposal (kind, target, payload, rationale, channel, proposed_by) "
+                          "VALUES ('ci_update', repeat('a', 32), '{}', 'yetki sınaması gerekçesi', 'api', 'x'); ROLLBACK"),
+        ("evren_app_api", "UPDATE ai.proposal SET status = 'rejected', decided_by = 'y', decided_at = now(), "
+                          "decision_note = 'yetki sınaması' WHERE false"),
+        ("evren_auditor_ro", "SELECT count(*) FROM ai.proposal"),
     ],
 )
 def test_allowed_paths_work(role, statement):

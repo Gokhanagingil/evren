@@ -45,6 +45,8 @@ Bir izin şu boyutlardan oluşur:
 | Yetki yöneticisi | Şema onaylayıcı | Yetki ve şema kontrolü ayrı kişilerde |
 | Denetçi | Konfigürasyon yöneticisi | Denetçi denetlediği yönetişim sürecini yönetemez |
 
+Yapay zekâ önerilerini (ADR-0043) `cmdb_ci` okuma izni olan herkes (ve MCP ajanı) ekleyebilir; öneri Evren'e yazmaz. Kararı, uygulanacak işlemin yetkisi olan kişi verir: CI değişikliğinde ilgili sınıfa yazma (Konfigürasyon analisti), eşleştirme kararında `review_match` (Eşleştirme analisti). Öneren kendi önerisine karar veremez (veritabanı kısıtı). MCP araçları çağıranın rolleriyle çalışır.
+
 ServiceNow replikasını (ADR-0042) `platform` okuma izni olanlar ve Konfigürasyon yöneticisi ile Platform yöneticisi görür; mod, kapsam, toplu itme onayı ve çelişki kararı `replica_admin` ister (bu iki rol). sn-sync kendi itmesini onaylayamaz (sütun yetkisi).
 
 Bildirimleri (ADR-0040) herkes kendine, grubuna ve rollerine gelenlerle görür; okundu bilgisi kişi başınadır. Platform uyarılarını ve bildirim yönlendirmesini `platform` okuma izni olanlar görür (Platform operatörü, Veri sorumlusu, Denetçi); onay ve yönlendirme `ops_admin` ister.

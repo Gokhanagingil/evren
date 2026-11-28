@@ -164,6 +164,19 @@ Hedef doğrulama seviyesi: **OWASP ASVS 4.0 Seviye 2**.
 | I | `/metrics` ile iç ayrıntının açılması | Belirteç dosyası yoksa 404; sabit süreli karşılaştırmalı Bearer; etiketlerde kişi, kimlik değeri veya sorgu metni yok (rota şablonu) | api `metrics.py`, test_api_notifications |
 | E | İzleyicinin kendisinin durması (uyarı açılamaz) | Arayüzde "uyarı izleyicisi çalışmıyor" uyarısı; dışarıdan `evren_service_up{kind="governance"}` izlenir | Sistem Durumu, `/metrics` |
 
+### Evren MCP sunucusu ve yapay zekâ önerileri (ADR-0043)
+
+Yeni dış arayüz: kurum MCP uygulaması → Evren, `POST /mcp` (Streamable HTTP, JSON-RPC).
+
+| Tehdit | Senaryo | Denetim | Nerede |
+| --- | --- | --- | --- |
+| S | Kimliksiz veya sahte belirteçle araç çağrısı | Entra'da yalnızca taşıyıcı belirteç: RS256, kiracı, düzenleyen, hedef kitle (istemci veya `api://istemci`), süre; geçersiz belirteç 401 (testli) | `entra.verify_access`, test_api_mcp |
+| T/E | Tarayıcıdaki oturumla siteler arası MCP çağrısı (CSRF, DNS yeniden bağlama) | MCP oturum çerezini kabul etmez; `Origin` farklıysa 403 (testli) | `routers/mcp.py` |
+| E | Ajanın çağırandan fazla yetkiyle okuması veya kısıtlı alana erişmesi | Araçlar REST işlevlerini çağırır: etkin roller, alan hassasiyeti ve görevler ayrılığı aynı; rolsüz makine kimliği okuyamaz (testli) | `routers/mcp.py`, test_api_mcp |
+| T | İstem enjeksiyonu: CI içeriğindeki talimatın yazma üretmesi | MCP'de yazma aracı yok; yanıtlar `content_is_data`; `initialize` yönergesi; öneri bile insan onayı ister (testli: açıklamadaki "tüm kayıtları sil" hiçbir kayıt üretmez) | `routers/mcp.py`, test_api_mcp |
+| T/R | Yapay zekâ önerisinin denetimsiz uygulanması veya inkârı | Öneri `ai.proposal`'a; öneren karar veremez (kısıt); kabul kararı verenin yetkisiyle her zamanki yoldan; öneri silinmez, içeriği ve kararı değişmez; model, gerekçe ve karar saklanır; `mcp_call`, `proposal_create`, `proposal_decide` denetim izinde | göç 0037, `routers/proposals.py` |
+| D | Ajanın aşırı istekle veya öneri seliyle sistemi yorması | İstek 256 KB, yanıt 60 KB, sonuç ve derinlik sınırları; önerici başına 500 bekleyen öneri | `routers/mcp.py`, `routers/proposals.py` |
+
 ### ServiceNow replikası (ADR-0042)
 
 Yeni dış arayüz: Evren → ServiceNow, giden HTTPS ve IRE API. ServiceNow'dan Evren'e geri çağrı yoktur.

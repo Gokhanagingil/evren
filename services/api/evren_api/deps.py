@@ -16,7 +16,7 @@ from .authz import Grant
 from .errors import ApiError
 from .security import Principal
 
-__all__ = ["Ctx", "context", "effective_roles", "require_csrf", "user_principal_id"]
+__all__ = ["Ctx", "context", "context_for", "effective_roles", "require_csrf", "user_principal_id"]
 
 _GUID = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
 
@@ -133,7 +133,11 @@ def request_origin(request: Request) -> tuple[str, str]:
 
 
 def context(request: Request) -> Iterator[Ctx]:
-    principal = principal_from_request(request)
+    yield from context_for(request, principal_from_request(request))
+
+
+def context_for(request: Request, principal: Principal) -> Iterator[Ctx]:
+    """Kimliği bilinen istek için bağlam (oturum çerezi veya MCP taşıyıcı belirteci): etkin roller, izinler."""
     rid, ip = request_origin(request)
     with request.app.state.pool.connection() as conn:
         # Bu bağlantıdaki her denetim olayına istek kimliği ve kaynak IP işlenir (tetikleyici); bağlantı havuza

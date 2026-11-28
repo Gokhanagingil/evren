@@ -577,3 +577,9 @@ export function replicaApprove(id, note) {
 export function replicaResolve(id, action, note) {
   return api(`/api/v1/replica/items/${encodeURIComponent(id)}/resolve`, { method: 'POST', body: JSON.stringify({ action, note }) });
 }
+
+// ---------------------------------------------------------------------------------------------- yapay zekâ önerileri (U9.2)
+export const proposalsList = (status = 'pending') => api(`/api/v1/proposals?${new URLSearchParams({ status })}`);
+export function proposalDecide(id, decision, note) {
+  return api(`/api/v1/proposals/${encodeURIComponent(id)}/decide`, { method: 'POST', body: JSON.stringify({ decision, note }) });
+}
