@@ -153,6 +153,7 @@ Doğrulanınca bu bölümden kaldırılacak.
   - Bulgu ayrıntısında "Olası kimlik boşluğu" bölümü (kuyruk kaydına veya diğer CI'a bağlantı).
   - Göç 0039: görev çalışanına `match_candidate` üzerinde yalnızca `sys_id, data_source, status, candidate_ci, candidates` okuma.
   - Demo verisinde gerçek bir örnek: `ist-db-01` için Zabbix kaydı iki CI'a uyduğu için kuyrukta; P1.1 bu sunucunun sahibine görev açıyordu, P1.2 ile görev eşleştirmeye gidiyor.
+  - Önizlemeyi kurarken düzeltilen: ilk sürüm yalnızca IP'ye dayanan %12 olasılıklı kuyruk adayını da ipucu sayıyordu (`IST-FILE-03`); gerçek bir kapsam boşluğu kuyrukta beklerken sahibinden gizlenebilirdi. Artık kural eşleşmesi veya en az %50 olasılık gerekiyor (`IDENTITY_MIN_PROBABILITY`); zayıf adayda görev sahibine gider (test eklendi).
   - Testler: çekirdek +2, görev çalışanı +2 (yalnızca kimlik: görev yok, kuyruk bağlayınca kapanır; karışık ve olası mükerrer), API +1 (Size düşen işler), tarayıcı +1 (bulgu ayrıntısı), PostgreSQL yetki sınırları.
   - Bilinen sınır: ad eşleşmesi kısa ad ve büyük/küçük harf duyarsız; Türkçe katlama SQL'de yok; daha önce açılmış sahip görevi kimlik ipucu çıkınca kapanmaz.
 - **P1.1: kapsam politikası (tamamlandı, ADR-0046, göç 0038).** Kapalı döngü kapsam güvencesinin ilk parçası.

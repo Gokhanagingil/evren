@@ -337,14 +337,14 @@ def test_coverage_gap_is_inconclusive_when_an_observer_role_is_unhealthy(worker)
     assert last_run(rid)["status"] == "inconclusive" and findings(rid) == []
 
 
-def queue_item(source: str, key: str, candidate: str) -> str:
+def queue_item(source: str, key: str, candidate: str, probability: float = 0.99) -> str:
     """Kaynağın eşleşmemiş kaydı kuyrukta; aday olarak ``candidate`` CI'ını gösteriyor."""
     with owner() as c:
         c.execute("""INSERT INTO ingest.source_record (data_source, source_key, class_hint, content_hash, last_seen)
                      VALUES (%s, %s, 'cmdb_ci_linux_server', 'x', now())""", (source, key))
         return c.execute("""INSERT INTO ingest.match_candidate (data_source, source_key, reason, candidates)
                             VALUES (%s, %s, 'Kural 2 CI ile eşleşti', %s) RETURNING sys_id""",
-                         (source, key, Jsonb([{"sys_id": candidate, "probability": 0.99}]))).fetchone()[0]
+                         (source, key, Jsonb([{"sys_id": candidate, "probability": probability}]))).fetchone()[0]
 
 
 def test_identity_gap_opens_no_owner_task_and_closes_when_the_queue_links_the_record(worker):
@@ -395,3 +395,18 @@ def test_mixed_gap_opens_owner_task_and_duplicate_is_a_hint(worker):
     assert [h["kind"] for h in dup["identity"]] == ["duplicate"] and dup["identity"][0]["ci"] == twin
     assert dup["identity_roles"] == ["Monitoring"] and dup["identity_only"] is False  # uç nokta yine eksik
     assert f"{tag}-dup.corp.local" in by_ci[f"{tag}-dup"]["details"]["text"]
+
+
+def test_weak_queue_candidate_is_not_an_identity_hint(worker):
+    """Yalnızca IP'ye dayanan %12'lik aday kimlik ipucu sayılmaz: gerçek kapsam boşluğu sahibine görev olarak gider."""
+    tag = f"kiw{uuid.uuid4().hex[:6]}"
+    srv = ci(f"{tag}-srv", "cmdb_ci_linux_server", owned_by=person(), used_for="Production")
+    seen(srv, "vCenter", 0.1)
+    queue_item("Zabbix", f"{tag}-zbx", srv, probability=0.12)
+    healthy_runs("Monitoring", "Virtualization", "Discovery")
+    rid = rule(tag, "coverage_gap", {"roles": ["Monitoring"], "observed_by": ["Virtualization", "Discovery"]},
+               scope_class="cmdb_ci_server", dimension="coverage")
+    cycle(worker)
+    [f] = findings(rid)
+    assert f["details"]["identity"] == [] and f["details"]["identity_only"] is False
+    assert len(tasks(f["sys_id"])) == 1

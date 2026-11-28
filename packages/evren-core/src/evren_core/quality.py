@@ -286,6 +286,9 @@ def _int_param(value: Any, name: str, lo: int, hi: int) -> int:
 _SEEN = ("EXISTS (SELECT 1 FROM ingest.identity_link l JOIN ingest.source_record sr USING (data_source, source_key) "
          "JOIN ingest.data_source d ON d.name = l.data_source WHERE l.ci_sys_id = c.sys_id AND l.active "
          "AND d.lifecycle IN ('active', 'retiring') AND d.role = %s AND sr.last_seen >= now() - make_interval({unit} => %s))")
+#: Kuyruk adayının kimlik ipucu sayılması için en düşük olasılık (kural eşleşmesi her zaman sayılır). Daha zayıf aday
+#: (ör. yalnızca IP) sahibinin görevini engellemez: gerçek kapsam boşluğu kuyrukta beklerken gizlenmesin.
+IDENTITY_MIN_PROBABILITY = 0.5
 #: Kimlik ipuçları (P1.2): eksik rolün kaynağında bu CI'ı aday gösteren açık kuyruk kaydı ya da aynı ada/IP'ye sahip,
 #: o rolün kaynağına bağlı başka bir CI (olası mükerrer). Varsa kaynak CI'ı büyük olasılıkla tanıyor, sorun eşleştirmede.
 _IDENTITY = (
@@ -293,7 +296,8 @@ _IDENTITY = (
     "SELECT jsonb_build_object('role', d.role, 'kind', 'queue', 'candidate', m.sys_id, 'data_source', m.data_source) h "
     "FROM ingest.match_candidate m JOIN ingest.data_source d ON d.name = m.data_source "
     "WHERE m.status = 'open' AND d.role = ANY(%s::text[]) AND (m.candidate_ci = c.sys_id "
-    "OR m.candidates @> jsonb_build_array(jsonb_build_object('sys_id', c.sys_id::text))) "
+    "OR EXISTS (SELECT 1 FROM jsonb_array_elements(m.candidates) e WHERE e->>'sys_id' = c.sys_id::text "
+    "AND coalesce((e->>'probability')::numeric, 0) >= %s::numeric)) "
     "UNION ALL "
     "SELECT DISTINCT jsonb_build_object('role', d.role, 'kind', 'duplicate', 'ci', o.sys_id, 'ci_name', o.name, "
     "'data_source', l.data_source) "
@@ -340,7 +344,7 @@ def _coverage_plan(md: Any, scope_sql: str, scope_params: list[Any], params: Map
               + "], NULL)), 'last_seen', jsonb_build_object("
               + ", ".join(f"%s::text, {_LAST_SEEN}" for _ in required) + "), 'identity', " + _IDENTITY + ")")
     dparams: list[Any] = ([x for r in required for x in (r, fresh, r)] + [x for r in required for x in (r, r)]
-                          + [list(required), list(required)])
+                          + [list(required), IDENTITY_MIN_PROBABILITY, list(required)])
     labels = [roles[r].label_tr for r in required]
     seen_by = f"; {_join_or([roles[o].label_tr for o in observers])} son {within} saatte görüyor" if observers else ""
     return RulePlan(scope_sql, scope_params, match, mparams, detail, dparams,

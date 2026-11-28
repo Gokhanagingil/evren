@@ -53,7 +53,7 @@ Davranış:
 Bir rol sunucuyu "görmüyor" olabilir; ama o rolün kaynağı sunucuyu tanıyor, yalnızca kaydı sunucuya bağlanamamış da olabilir. O durumda sorun sunucu sahibinde değil eşleştirmededir. Yanlış kişiye giden görev güveni en hızlı bozan şeydir.
 
 - **İpuçları:** Eksik her rol için iki iz aranır:
-  - o rolün kaynağından gelen ve bu CI'ı aday gösteren **açık eşleştirme kuyruğu kaydı** (`candidate_ci` veya `candidates`);
+  - o rolün kaynağından gelen ve bu CI'ı aday gösteren **açık eşleştirme kuyruğu kaydı**. Aday ya kural eşleşmesidir (`candidate_ci`) ya da `candidates` içinde en az %50 olasılıklı adaydır. Daha zayıf aday (ör. yalnızca IP'ye dayanan %12) ipucu sayılmaz; gerçek bir kapsam boşluğu kuyrukta beklerken sahibinden gizlenmesin;
   - o rolün kaynağına bağlı, aynı kısa ada veya IP'ye sahip **başka bir CI** (olası mükerrer).
 - **Ayrıntı:** `identity` (ipuçları), `identity_roles` (ipucu olan eksik roller), `identity_only` (eksik rollerin hepsinde ipucu var).
 - **Yönlendirme:**
