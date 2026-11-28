@@ -27,6 +27,10 @@ Yeni kaynak, veri modeli gibi değişiklik setiyle eklenir: [Yönetim Paneli](#/
 
 > **Devre kesici:** Bir çalışma eksik kalırsa veya kayıt sayısı birden düşerse Evren o çalışmada hiçbir şeyi emekliye ayırmaz ve hiçbir ilişkiyi kaldırmaz.
 
+## Kurallar
+
+[Kurallar](#/kurallar) sayfası hangi kaynak rolünün hangi alanı yazdığını, kayıtların nasıl tanındığını ve ne zaman eskidiğini gösterir. Sayfa salt okunurdur; bu kurallar değişiklik setiyle yayınlanır. Panelden değiştirme ve istisna kaydı Kural merkezi ile gelecek. Kalite ve kapsam kurallarını bugün de [CMDB Sağlığı → Kurallar](#/saglik/kurallar) sayfasından tanımlayabilirsiniz.
+
 ## ServiceNow replikası
 
 Evren ana kaynaktır; ServiceNow CMDB'si Evren'in kopyasıdır. [ServiceNow Replikası](#/replika) sayfasında replika önce **gölge** modda çalışır: ServiceNow'a yazılmaz, kayıtların nasıl tanınacağı denenir. Çelişki yoksa **etkin** moda geçilir. ServiceNow bir kaydı beklenenden başka bir kayıtla eşleştirirse yazılmaz; **Karar bekleyenler** listesinde kabul edin, dışarıda tutun veya yeniden deneyin. Çok sayıda değişiklik birden gidecekse Evren onayınızı bekler.

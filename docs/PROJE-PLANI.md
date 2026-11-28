@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 28.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 24/83 adım tamamlandı
+**Son güncelleme:** 28.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 24/84 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -14,7 +14,7 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 9/11 adım tamamlandı
+**İzlek ilerlemesi:** 9/12 adım tamamlandı
 
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
@@ -25,6 +25,7 @@
 - [x] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Tamamlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [x] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu altyapısı, sistem durumu, kullanıcılar ve roller, yönetişim görevleri (ServiceNow ve Evren kanalı; zamanlanmış kampanyalar, kural tabanlı bulgu görevleri), sağlık panosu, sihirbazlar, denetim izi — _Tamamlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-24, F1-25, F1-26, F1-28)
 - [x] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Tamamlandı_ (ilgili: F2-01, F2-02, F2-03, F2-05, F2-07)
+- [ ] **K1** Kural merkezi: akıl katmanının bütün kurallarını tek yerden görmek, panelden değiştirmek ve istisna kaydı açmak — değişiklik setiyle (taslak → onay → yayın), yayın öncesi etki provasıyla, istisnalar gerekçeli ve süreli — _Planlandı_ (ilgili: F1-32, F1-05)
 - [ ] **P1** Pilot senaryosu — kapalı döngü kapsam güvencesi: üretimde çalışan ama izlenmeyen veya uç nokta koruması olmayan sunucuyu bul, taşıdığı uygulama/hizmeti, kaynak başına son görülmeyi ve sorumluyu tek ekranda göster, sorumluya görev aç, giderildiğini sonraki kaynak çalışmasında doğrulayıp kanıtla kapat — _Devam ediyor_ (ilgili: F1-30)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09, F1-27)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
@@ -129,7 +130,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 11/31 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 11/32 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -146,6 +147,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
   - Not: 26.11.2026 (ADR-0025, U5.5, göç 0021): servicenow_change bağlayıcısı (change_request + task_ci, açık ve son 30 gün, delta; durum/onay/tür Evren sözlüğüne çevrilir), yalnızca değişiklik rolüyle ref.sn_change_request ve ref.sn_task_ci; gözlemci rolünün kendi kaydındaki izlenen öznitelik değişikliği insight.config_change'e; bekleme süresinden sonra onaylı pencereye göre karar, unauthorized_change anomalisi, sonradan gelen kayıtla kanıtlı kapanış, devre kesici açıkken bastırma; CI ayrıntısında değişiklik denetimi, Veri sorumlusu kararı (anomaly_review), CMDB-05. Simülatör, uzlaştırıcı, API, tarayıcı ve yığın duman testiyle sınandı. Gerçek ServiceNow kabulü U10.
   - Sizden gereken: ServiceNow change_request ve task_ci okuma izni
 - [ ] **F1-05** Uzlaştırma kuralları ve "bu değer nereden geldi?" görünümü — _Planlandı_
+  - Not: 28.11.2026: kural merkezinin (K1.1, F1-32) parçası olarak yapılır.
 - [x] **F1-06** Devre kesici ve eskime işletimi; tatbikat
   - Not: 26.11.2026 (ADR-0028, U7.1, göç 0026): yalnızca gözlemci roller (keşif, izleme, güvenlik; ITSM/elle/platform canlı tutmaz); bütün gözlemciler görmüyor ve son çalışmaları tam ve OK ise eskimiş → emekliye ayırma adayı (insight.staleness_case), aksi hâlde bastırılır; golden record kendiliğinden değişmez; Veri sorumlusu gerekçeyle emekliye ayırır (yaşam döngüsü Manual kaydına, neden staleness) veya korur; uzlaştırıcı uygulama anında yeniden denetler; yeniden görülme öneriyi kapatır, emekli CI görülürse anomali. Tatbikat: gerçek devre kesiciyle 5 senaryolu PostgreSQL testi (test_staleness_pg). Eskime sayfası ve CI panelinde bölüm.
 - [x] **F1-07** Bağımlı CI kimliği (uygulama, ağ adaptörü)
@@ -197,6 +199,8 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [ ] **F1-31** Hazırlama rolü ve self-service bağlayıcısı: talep kaydından niyet verisi (talep eden, sahip, uygulama/hizmet, ortam, maliyet merkezi, istenen boyut, talep numarası) kaynak kaydı olarak; Atomic (UC4) iş geçmişinden yapılan işlem (kaynak artırma vb.) onaylı değişiklik kanıtı olarak yetkisiz değişiklik tespitine; talep ile keşif karşılaştırması (hazırlandı ama görülmüyor, görülüyor ama talebi yok); doğuştan kapsam güvencesi (F1-30) — _Planlandı_
   - Not: 28.11.2026 proje sahibinin isteği: self-service uygulaması Evren'in paydaşıdır, daha çok ondan veri alınır. Kural role yazılır (Hazırlama rolü; ürün adı kurallarda yok, kural 8); bağlayıcı yalnızca okur (kural 2); niyet verisi uzlaştırmadan geçer, Manual her zaman önce gelir; keşif niyet alanlarını ezemez (kural 5).
   - Sizden gereken: Self-service uygulamasının veri erişimi (API veya salt okunur görünüm) ve Atomic salt okuma hesabı; talep türleri ve alanlarının listesi
+- [ ] **F1-32** Kural merkezi: tanımlama (IRE), uzlaştırma önceliği, tazeleme, eskime, ilişki, kalite ve kapsam, yetkisiz değişiklik kuralları tek sayfada sade dille ve son 7 günlük etkileriyle; panelden kural değişikliği değişiklik setiyle (taslak → onay → yayın, hazırlayan onaylayamaz) ve yayın öncesi etki provasıyla (kuru çalıştırma, eşik üstü etkide ek onay, önceki sürüme dönüş); istisna kayıtları (birleştirme yasağı, öznitelik kilidi/rol engeli, kaynak kaydını yok sayma, kural muafiyeti) gerekçeli, süreli, onaylı, denetim izinde ve uzlaştırıcı tarafından uygulanır — _Planlandı_
+  - Not: 28.11.2026 proje sahibinin tespiti (Kaynaklar → Kurallar salt okunur). Değişmezler: golden record'a yine yalnızca uzlaştırıcı yazar (kural 1), şema/kural değişikliği metadata ve değişiklik setiyle (kural 6), kurallar role yazılır (kural 8), keşif yönetişim alanlarını ezemez (kural 5). Risk: tanımlama kuralı sistemin en tehlikeli ayarıdır (tek hatalı kural yüzlerce CI'ı birleştirebilir); bu yüzden doğrudan düzenleme yok, etki provası ve geri dönüş zorunlu. İstisna gölge bir kural kitabına dönüşmesin diye süreli; birikirse kural değişikliği önerilir. F1-05 ('bu değer nereden geldi?') K1.1'in parçası. İzlekte K1.
 
 **Çıkış kriterleri**
 

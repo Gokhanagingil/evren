@@ -75,8 +75,17 @@ export async function renderRules(view, param) {
     ];
   }
 
+  // Bu sayfa salt okunurdur; kullanıcı neyi nerede değiştireceğini ilk bakışta görsün (proje sahibinin tespiti, 28.11.2026).
+  const readOnly = h('div', { class: 'notice info', role: 'note', id: 'rulesReadOnly' },
+    h('strong', {}, 'Bu sayfa salt okunur. '),
+    'Tanımlama, uzlaştırma, tazeleme ve eskime kuralları metadata dosyalarındadır; değişiklik setiyle yayınlanır. ',
+    'Panelden değiştirme, etki provası ve istisna kaydı Kural merkezi ile gelecek (yol haritası K1). ',
+    'Kalite ve kapsam kuralları bugün de panelden tanımlanır: ',
+    h('a', { href: '#/saglik/kurallar', id: 'rulesQualityLink' }, 'CMDB Sağlığı → Kurallar'), '.');
+
   function render() {
     append(clear(box), [
+      readOnly,
       tabs([{ id: 'uzlastirma', label: 'Uzlaştırma', count: d.rules.reconciliation.length },
         { id: 'tanimlama', label: 'Tanımlama (IRE)', count: d.rules.identification.length },
         { id: 'tazeleme', label: 'Tazeleme ve eskime' }], tab, (t) => { tab = t; history.replaceState(null, '', `#/kurallar/${t}`); render(); }, 'Kural türü'),

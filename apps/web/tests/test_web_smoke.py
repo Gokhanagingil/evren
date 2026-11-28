@@ -222,6 +222,10 @@ def test_rules_grid_uses_roles_not_products(page, base_url):
     assert any(h.startswith("Keşif") and "BMC" in h for h in headers)
     page.click("#tab-tanimlama")
     assert page.locator("text=Evren uzantısı").count() >= 1
+    # Sayfa salt okunurdur ve bunu ilk bakışta söyler; panelden tanımlanabilen kalite/kapsam kurallarına yol gösterir
+    note = page.locator("#rulesReadOnly")
+    assert note.get_attribute("role") == "note" and "salt okunur" in note.inner_text()
+    assert page.locator("#rulesQualityLink").get_attribute("href") == "#/saglik/kurallar"
 
 
 def test_data_model_tree_detail_and_tabs(page, base_url):
@@ -519,3 +523,51 @@ def test_markdown_renderer_never_creates_markup_from_text(page, base_url):
     assert "<script>alert(2)</script>" in out["text"] and "(https://ornek.com/a)" in out["text"]
     assert out["table"] == 2 and out["nested"] == 1 and out["code"] == "<b>kod</b>"
     assert out["rel"] == ["#/belge/06-guvenlik", "#/belge/02-veri-modeli", None]
+
+
+def test_detail_panel_resizes_with_drag_keyboard_and_resets(page, base_url):
+    """Sağdaki ayrıntı paneli sol kenarındaki tutamaçla sürüklenerek genişler/daralır; ok tuşları, Home/End ve çift
+    tıklama (varsayılan) çalışır; tutamaç erişilebilir bir ayırıcıdır; telefonda panel tam ekrandır, tutamaç gizlidir."""
+    page.set_viewport_size({"width": 1440, "height": 900})
+    page.goto(base_url + "/#/ci")
+    page.wait_for_selector("#ciCount")
+    page.locator("tbody tr").first.focus()
+    page.keyboard.press("Enter")
+    page.wait_for_selector("#detail.open")
+    # Panel sağdan kayarak açılır; tutamacın yeri animasyon bitince ölçülür.
+    page.wait_for_function("() => { const r = document.getElementById('detail').getBoundingClientRect();"
+                           " return Math.abs(r.right - window.innerWidth) < 1; }")
+    panel = page.locator("#detail")
+    handle = page.locator("#detailResize")
+    assert handle.get_attribute("role") == "separator" and handle.get_attribute("aria-orientation") == "vertical"
+    start = panel.bounding_box()["width"]
+    assert round(start) == 600
+    box = handle.bounding_box()
+    x, y = box["x"] + box["width"] / 2, box["y"] + box["height"] / 2
+    page.mouse.move(x, y)
+    page.mouse.down()
+    page.mouse.move(x - 200, y, steps=5)
+    page.mouse.up()
+    wide = panel.bounding_box()["width"]
+    assert 790 <= wide <= 810, wide
+    assert int(handle.get_attribute("aria-valuenow")) == round(wide)
+    handle.focus()
+    page.keyboard.press("ArrowRight")
+    assert round(panel.bounding_box()["width"]) == round(wide) - 40
+    page.keyboard.press("Home")
+    assert round(panel.bounding_box()["width"]) == 380
+    page.keyboard.press("End")
+    assert round(panel.bounding_box()["width"]) == 1320  # 1440 - 120
+    handle.dblclick()
+    assert round(panel.bounding_box()["width"]) == 600
+    # Genişlik başka bir kayıtta da korunur (oturum boyunca)
+    handle.focus()
+    page.keyboard.press("ArrowLeft")
+    page.keyboard.press("Escape")
+    page.locator("tbody tr").nth(1).focus()
+    page.keyboard.press("Enter")
+    page.wait_for_selector("#detail.open")
+    assert round(panel.bounding_box()["width"]) == 640
+    page.set_viewport_size({"width": 390, "height": 844})
+    assert not handle.is_visible()
+    assert round(panel.bounding_box()["width"]) == 390

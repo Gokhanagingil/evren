@@ -7,6 +7,61 @@ const $ = (id) => document.getElementById(id);
 let detailState = null; // { onClose, opener }
 let overlay = null; // { el, close }
 
+// ---------- detay paneli genişliği (sürükle-bırak ve klavye). Genişlik oturum boyunca bellekte kalır; tarayıcıya
+// yazılmaz (ADR-0041). Dar ekranda panel tam genişliktir ve tutamaç gizlidir.
+const DETAIL_MIN = 380;
+const DETAIL_STEP = 40;
+const detailMax = () => Math.max(DETAIL_MIN, Math.min(1400, window.innerWidth - 120));
+
+function setDetailWidth(px) {
+  const panel = $('detail');
+  const handle = $('detailResize');
+  if (px === null) {
+    panel.style.removeProperty('width');
+  } else {
+    panel.style.width = `${Math.round(Math.min(detailMax(), Math.max(DETAIL_MIN, px)))}px`; // CSSOM: CSP ile uyumlu
+  }
+  const now = Math.round(panel.getBoundingClientRect().width || DETAIL_MIN);
+  handle.setAttribute('aria-valuemin', String(DETAIL_MIN));
+  handle.setAttribute('aria-valuemax', String(detailMax()));
+  handle.setAttribute('aria-valuenow', String(now));
+  handle.setAttribute('aria-valuetext', `${now} piksel`);
+}
+
+function setupDetailResize() {
+  const handle = $('detailResize');
+  if (!handle) return;
+  const width = () => $('detail').getBoundingClientRect().width;
+  handle.addEventListener('pointerdown', (ev) => {
+    if (ev.button !== 0) return;
+    ev.preventDefault();
+    handle.setPointerCapture(ev.pointerId);
+    handle.classList.add('dragging');
+    document.body.classList.add('resizing');
+  });
+  handle.addEventListener('pointermove', (ev) => {
+    if (!handle.hasPointerCapture(ev.pointerId)) return;
+    setDetailWidth(window.innerWidth - ev.clientX);
+  });
+  const stop = (ev) => {
+    if (handle.hasPointerCapture?.(ev.pointerId)) handle.releasePointerCapture(ev.pointerId);
+    handle.classList.remove('dragging');
+    document.body.classList.remove('resizing');
+  };
+  handle.addEventListener('pointerup', stop);
+  handle.addEventListener('pointercancel', stop);
+  handle.addEventListener('dblclick', () => setDetailWidth(null));
+  handle.addEventListener('keydown', (ev) => {
+    const keys = { ArrowLeft: width() + DETAIL_STEP, ArrowRight: width() - DETAIL_STEP, Home: DETAIL_MIN, End: detailMax() };
+    if (!(ev.key in keys)) return;
+    ev.preventDefault();
+    setDetailWidth(keys[ev.key]);
+  });
+  window.addEventListener('resize', () => { if ($('detail').style.width) setDetailWidth(width()); });
+  setDetailWidth(null);
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', setupDetailResize); else setupDetailResize();
+
 export function setHeader({ title, sub = '', crumbs = [], actions = [] }) {
   $('pageTitle').textContent = title;
   append(clear($('pageSub')), sub);
