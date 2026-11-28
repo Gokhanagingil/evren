@@ -274,27 +274,47 @@ Okuma: Yetki yöneticisi (`iam_admin`) veya Denetçi (`audit_read`); yazma yaln�
 - `GET /api/v1/ci?scope=yetkisiz-degisiklik`: açık veya incelenen yetkisiz değişikliği olan CI'lar. `GET /api/v1/summary` → `unauthorized_changes`.
 - `POST /api/v1/anomalies/{sys_id}/review` (CSRF başlığı, `anomaly/anomaly_review`): gövde `{"status": "acknowledged" | "false_positive" | "open", "note": "…"}`; yanlış alarmda gerekçe zorunlu. `resolved` istenemez (sistemin işi); uygun olmayan geçiş 409. Aynı karar tekrar gönderilirse `changed: false` döner (doğal olarak tekrar güvenli). Karar `audit.security_event` `anomaly_review`.
 
-## ServiceNow uyumlu Table API
+## ServiceNow uyumlu Table API (ADR-0044)
 
-Desteklenen parametreler:
+ServiceNow CMDB'sini Table API ile okuyan betik ve entegrasyonlar yalnızca adres ve kimlik değiştirerek Evren'i okur. Yeni entegrasyonlar `/api/v1`'i kullanmalıdır.
+
+- **Uç noktalar:** `GET /api/now/table/{tablo}` ve `GET /api/now/table/{tablo}/{sys_id}`. `/api/now/v2/table/…` de aynıdır. Yazma yöntemleri 405 döner.
+- **Tablolar:** CMDB sınıfları (`cmdb_ci` soyağacı; üst tablo alt sınıfların kayıtlarını da döner), `cmdb_rel_ci`, `cmdb_rel_type` ve referans tabloları (`sys_user`, `sys_user_group`, `cmn_location`, `core_company`, `cmn_department`, `cmn_cost_center`, `cmdb_model`).
+- **Kimlik:** Entra erişim belirteci (`Authorization: Bearer`, MCP ile aynı doğrulama) veya oturum. Temel kimlik doğrulama yoktur.
+- **Yetki:**
+  - Tablo okuma izni gerekir. İlişki tabloları için `cmdb_rel_ci`, referans tabloları için `cmdb_ci` izni.
+  - Reddedilen alt sınıf üst tabloda da görünmez. İlişki, iki ucu okunabiliyorsa görünür.
+  - Hassasiyet sınırını aşan alan yanıtta yoktur ve süzgeçte kullanılamaz. Kişi e-postası yalnızca gizli düzeyde görünür.
+
+Parametreler:
 
 - `sysparm_query` — encoded query:
   - Mantık: `^`, `^OR`, `^NQ`, `ORDERBY`, `ORDERBYDESC`.
-  - Operatörler: `=`, `!=`, `LIKE`, `NOT LIKE`, `STARTSWITH`, `ENDSWITH`, `IN`, `NOT IN`, `ISEMPTY`, `ISNOTEMPTY`, `>`, `>=`, `<`, `<=`, `BETWEEN`, `ANYTHING`, `INSTANCEOF`.
-- `sysparm_fields`
-- `sysparm_limit`, `sysparm_offset`
-- `sysparm_display_value` (F2)
+  - Operatörler: `=`, `!=`, `LIKE`, `NOT LIKE`, `STARTSWITH`, `ENDSWITH`, `IN`, `NOT IN`, `ISEMPTY`, `ISNOTEMPTY`, `>`, `>=`, `<`, `<=`, `BETWEEN`, `ANYTHING`, `INSTANCEOF`. Metin karşılaştırması büyük/küçük harf duyarsızdır.
+- `sysparm_fields`: bilinmeyen veya görülmeyen alan atlanır.
+- `sysparm_limit` (varsayılan ve en çok 10000, ServiceNow'daki gibi), `sysparm_offset`. Sıralama `sys_id` ile tamamlanır; sayfalar kararlıdır.
+- `sysparm_exclude_reference_link`.
+- `sysparm_display_value`: yalnızca `false`.
+
+Yanıt:
+
+- **Gövde:** `{"result": [...]}`. Sonuçsuz sorgu 200 ve boş dizi döner.
+- **Değerler:** Metindir; boş değer `""`, mantıksal değer `"true"`/`"false"`, zaman UTC `YYYY-MM-DD hh:mm:ss`. Referans `{"link", "value"}` biçimindedir.
+- **Başlıklar:** `X-Total-Count` ve `Link` (`first`, `prev`, `next`, `last`).
+- **Hata:** `{"error": {"message", "detail"}, "status": "failure"}`. Tekil kayıt yoksa 404 `No Record found` döner.
 
 Bilinçli farklar (güvenlik):
 
 - `javascript:` değerleri reddedilir; sunucu tarafında betik çalışmaz.
-- Dot-walk (`support_group.name`) ilk sürümde desteklenmez ve açık hata döner.
+- Dot-walk (`support_group.name`) desteklenmez ve 400 döner.
 - Koşul sayısı 200, IN listesi 1000 ile sınırlıdır.
+- `sysparm_display_value=true|all`, `sysparm_view` ve `sysparm_no_count` yoktur.
 
 Örnek:
 
 ```
-GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_server^operational_status=1^ram>=16384^ORDERBYname&sysparm_fields=sys_id,name,ip_address,ram&sysparm_limit=100
+GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_linux_server^operational_status=1^ORDERBYname&sysparm_fields=sys_id,name,ip_address,owned_by&sysparm_limit=100
+Authorization: Bearer <Entra erişim belirteci>
 ```
 
 ## Küresel arama (ADR-0018)

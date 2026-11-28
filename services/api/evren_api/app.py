@@ -53,6 +53,7 @@ from .routers import (
     reports,
     schema,
     search,
+    sn_table,
     staleness,
     system,
     tasks,
@@ -214,7 +215,7 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
               connectors.router, insight.router, manual.router, attestation.router, staleness.router, impact.router,
               timeline.router, graph.router, system.router, admin.router, iam.router, tasks.router, campaigns.router,
               quality.router, integrations.router, audit.router, notifications.router, replica.router, proposals.router, mcp.router,
-              auth.router):
+              sn_table.router, auth.router):
         app.include_router(r)
 
     @app.get("/content/backend.json", include_in_schema=False)
@@ -237,6 +238,9 @@ def create_app(settings: Settings, *, pool: Any | None = None, entra: Entra | No
 
     @app.get("/{path:path}", include_in_schema=False)
     def static(path: str) -> Response:
+        if path.startswith("api/now/"):
+            return JSONResponse({"error": {"message": "Kaynak bulunamadı.", "detail": ""}, "status": "failure"},
+                                status_code=404)
         if path.startswith(("api/", "auth/")):
             return JSONResponse({"error": {"code": "bulunamadi", "message": "Kaynak bulunamadı.", "details": []}},
                                 status_code=404)

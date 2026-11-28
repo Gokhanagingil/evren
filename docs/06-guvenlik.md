@@ -190,6 +190,20 @@ Yeni dış arayüz: Evren → ServiceNow, giden HTTPS ve IRE API. ServiceNow'dan
 | I | ServiceNow yazma kimliğinin sızması | Sır yalnızca sn-sync'te, dosyadan (`EVREN_SN_REPLICA_*_FILE`); görev kanalının kimliğinden ayrı; hata iletisi sır ve sunucu gövdesi içermez; bilinen IRE hata kodları Türkçe açıklanır | `evren_sn_sync/config.py`, `connectors/http.py` |
 | I | Kısıtlı veya Evren'e özgü verinin ServiceNow'a gitmesi | Yalnızca sözlükte `sn_sync`, ServiceNow'da da var olan ve kısıtlı olmayan alanlar; kişi/grup referansı yalnızca ServiceNow kaynaklıysa; Defender duruşu `cmdb_ci`'da değildir | `metadata/sn_sync.yaml`, `ReplicaWorker.fields_for`, test_replica |
 
+### ServiceNow uyumlu Table API (ADR-0044)
+
+Yeni dış arayüz: ServiceNow Table API'ye yazılmış betik ve entegrasyonlar → Evren, `GET /api/now/table/…` (salt okuma).
+
+| Tehdit | Senaryo | Denetim | Nerede |
+| --- | --- | --- | --- |
+| S | Kimliksiz veya parolalı (temel kimlik doğrulama) istek | Entra erişim belirteci (MCP ile ortak doğrulama) veya oturum; temel kimlik doğrulama yok; geçersiz belirteç 401 (testli) | `routers/sn_table.py`, `routers/mcp.bearer_principal` |
+| T/E | Encoded query ile SQL enjeksiyonu veya sunucu tarafı betik | Alan adları sözlükten, değerler parametre; `javascript:` reddedilir; dot-walk yok; koşul ve IN sınırları (testli) | `evren_core.encoded_query`, test_api_sn_table |
+| I | Görülmeyen alanın süzgeçle sezdirilmesi (`salary>100` gibi ikili arama) | Hassasiyet sınırını aşan alan yanıtta yok ve sorguda/sıralamada kullanılamaz (400, testli) | `routers/sn_table._Plan` |
+| I | Reddedilen alt sınıfın üst tablo veya ilişki tablosu üzerinden okunması | Üst tablo sorgusu yalnızca okunabilen sınıfları kapsar; ilişki iki ucu okunabiliyorsa görünür (testli) | `routers/sn_table._Plan` |
+| I | Kişisel verinin toplu çekilmesi | `sys_user` yalnızca kullanıcı adı, ad, departman, etkinlik; e-posta yalnızca gizli düzeyde; kısıtlı güvenlik verisi bu yoldan okunamaz | `routers/sn_table.py` |
+| D | Büyük sayfa veya pahalı sorguyla API'nin yorulması | Sayfa en çok 10000 kayıt, koşul 200; istek zaman aşımı veritabanı havuzunda | `routers/sn_table.py` |
+| R | Yetkisiz okuma girişiminin izsiz kalması | 403 `audit.security_event`'e yazılır (`read:<tablo>`, `api: sn_table`, testli) | `routers/sn_table._Plan._need` |
+
 ## Uygulanan denetimler (bu depoda, testli)
 
 - `0003_security.sql`: 7 grup rolü, şema ve tablo düzeyinde yetkiler, salt ekleme denetim izi, rol atama denetimi, kısıtlı güvenlik tablosu.

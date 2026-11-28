@@ -28,6 +28,7 @@ chapters:
       - {id: kafka, kind: store, col: 3, row: 2, span: 2, label: Olay omurgası (Kafka), sub: ["ingest.record · ingest.run", "yeniden oynatılabilir"]}
       - {id: raw_archive, kind: store, col: 5, row: 2, label: Ham yük arşivi, sub: ["Şifreli parçalar, saklama", "süresi, yeniden işleme"]}
       - {id: manual_input, kind: human, col: 0, row: 2, label: Elle girdi, sub: ["CI, ilişki, CSV, onay →", "Manual kaynağı"]}
+      - {id: src_provisioning, kind: source, col: 0, row: 1, label: Self-service + Atomic, sub: ["Hazırlama rolü: talep", "niyeti, otomasyon işi"]}
     edges:
       - {from: src_vcenter, to: connectors}
       - {from: src_bmc, to: connectors}
@@ -35,6 +36,7 @@ chapters:
       - {from: src_zabbix, to: connectors}
       - {from: src_defender, to: connectors}
       - {from: src_servicenow, to: connectors}
+      - {from: src_provisioning, to: connectors, style: dashed}
       - {from: connectors, to: ingest_gateway}
       - {from: ingest_gateway, to: kafka}
       - {from: connectors, to: raw_archive}
@@ -182,6 +184,11 @@ details:
     text: Microsoft Defender for Endpoint. Uç nokta koruma durumu ve maruziyet bilgisi. Kapsam sunucularla sınırlıdır. Güvenlik verisi ayrı ve kısıtlı tabloda tutulur.
     tech: ["Defender Machines API (/api/machines, @odata.nextLink)", "Entra istemci kimliği (client credentials)", "connectors/defender/mapping.yaml", "connectors/sources/defender.py"]
     security: [Kısıtlı veri sınıfı, Yalnızca güvenlik rolleri okur]
+  src_provisioning:
+    phase: F1
+    text: "Kurumun self-service uygulaması ve arkasındaki Atomic (UC4) iş akışları (plan F1-31, F2-14, F4-11). Kaynak olarak Hazırlama rolündedir: talepten niyet verisi (talep eden, sahip, uygulama/hizmet, ortam, maliyet merkezi, istenen boyut, talep numarası) ve Atomic iş geçmişinden yapılan işlem (kaynak artırma vb.) onaylı değişiklik kanıtı olarak gelir; talep ile keşif karşılaştırılır (hazırlandı ama görülmüyor, görülüyor ama talebi yok). Tüketici olarak formlarındaki seçim listelerini, sahipliği ve etkiyi Evren'den okur. Atomic iş akışları ileride ESM hizmet kataloğunun yürütme motorudur; Evren'den tetikleme ayrı karar ve insan onayı gerektirir."
+    tech: ["Self-service API veya salt okunur görünüm", "Atomic (UC4) REST API (salt okuma)", "Evren REST / ServiceNow uyumlu Table API (okuma)"]
+    security: [Bağlayıcı yalnızca okur, Kurallar role yazılır (ürün adı yok), Niyet verisi uzlaştırmadan geçer]
   src_servicenow:
     phase: F0
     text: Geçişin başında ServiceNow CMDB ve referans verileri (grup, kişi, konum, maliyet merkezi) aynı sys_id'lerle Evren'e yüklenir. Change kayıtları (change_request, task_ci) ayrı bağlayıcı ve ayrı veri kaynağıyla (Değişiklik kayıtları rolü) çekilir; durum kodları Evren'in değişiklik sözlüğüne çevrilir ve yetkisiz değişiklik tespiti için onaylı değişiklik penceresini sağlar (ADR-0025). Hizmet katmanı (iş uygulaması, hizmet, hizmet sunumu) ve bağımlılık tipindeki cmdb_rel_ci ilişkileri de aynı sys_id'lerle gelir; keşfin altyapısıyla birleşerek etki analizini besler (ADR-0030).
@@ -334,9 +341,9 @@ details:
     security: [Entra OIDC, "evren_app_api rolü, sütun düzeyi yetki", "CSRF başlığı + aynı köken", Yetki dışı alanlar yanıta konmaz, Makine hesabı için kapsamlı anahtar (F1)]
   sn_compat_api:
     phase: F2
-    text: ServiceNow Table API'yi (sysparm_query, sysparm_fields, sysparm_limit) ve IRE payload biçimini kabul eden uç noktalar. Mevcut betik ve entegrasyonlar minimum değişiklikle Evren'e yönlenir.
-    tech: ["evren_core.encoded_query"]
-    security: [javascript ile başlayan değerler reddedilir, Alan adları sözlükten çözülür]
+    text: "ServiceNow Table API biçiminde okuma (U9.3a, ADR-0044): GET /api/now/table/{tablo} ve /{sys_id}; sysparm_query, sysparm_fields, sysparm_limit/offset, referans bağlantısı, X-Total-Count ve Link başlıkları, ServiceNow hata biçimi. CMDB sınıfları (tablo kalıtımıyla), cmdb_rel_ci, cmdb_rel_type ve referans tabloları. Eski betikler adres ve kimlik değiştirerek Evren'i okur. IRE biçiminde veri alan uç (/identifyreconcile) U9.3b'de; o da golden record'a yazmaz, kaynak kaydı alır."
+    tech: ["evren_core.encoded_query", FastAPI (API sürecinde)]
+    security: [javascript ile başlayan değerler reddedilir, Alan adları sözlükten çözülür, Görülmeyen alan sorguda da kullanılamaz, Reddedilen alt sınıf üst tabloda görünmez, Entra taşıyıcı belirteci; temel kimlik doğrulama yok, Yazma yok]
   event_stream:
     phase: F2
     text: CI değişiklikleri CloudEvents olarak yayınlanır. Dış uygulamalar HMAC imzalı webhook ile abone olur.

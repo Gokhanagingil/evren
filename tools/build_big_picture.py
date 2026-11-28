@@ -304,8 +304,8 @@ def build() -> str:
     roles = [("role", "src_discovery", "Keşif"), ("role", "src_virtualization", "Sanallaştırma"),
              ("role", "src_network", "Ağ keşfi"), ("role", "src_monitoring", "İzleme"),
              ("role", "src_endpoint", "Uç nokta güvenliği"), ("role_sn", "src_itsm", "ITSM / mevcut CMDB"),
-             ("role_sn", "src_change", "Değişiklik kayıtları"), ("human", "manual_input", "Elle girdi (Manual)"),
-             ("new", "src_new", "+ Yeni rol veya ürün")]
+             ("role_sn", "src_change", "Değişiklik kayıtları"), ("role", "src_provisioning", "Hazırlama"),
+             ("human", "manual_input", "Elle girdi (Manual)"), ("new", "src_new", "+ Yeni rol veya ürün")]
     r_items = [(k, item(c, lbl)) for k, c, lbl in roles]
     bw1 = (w1 - 24 - 12) / 2
     rh1 = uniform(bw1, [i for _, i in r_items])

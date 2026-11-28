@@ -249,16 +249,23 @@ def tool_list() -> list[dict[str, Any]]:
 
 # ---------------------------------------------------------------------------------------------- taşıma
 def _principal(request: Request) -> Principal:
-    settings = request.app.state.settings
     origin = request.headers.get("origin")
     if origin and urlsplit(origin).netloc != request.headers.get("host", ""):
         raise ApiError(403, "koken", "İstek başka bir kökenden geldi.")
+    return bearer_principal(request, purpose="MCP")
+
+
+def bearer_principal(request: Request, *, purpose: str) -> Principal:
+    """Makine ve ajan istemcileri: Entra erişim belirteci (``Authorization: Bearer``); geliştirme kurulumunda geliştirme
+    kimliği. Roller belirtecin uygulama rolleridir; veritabanı atamaları ``context_for`` içinde eklenir. MCP ve
+    ServiceNow uyumlu Table API ortak kullanır (ADR-0043, ADR-0044)."""
+    settings = request.app.state.settings
     if settings.auth_mode == "dev":
         roles = frozenset(settings.dev_roles)
         return Principal(settings.dev_user, settings.dev_name, roles, "dev", base_roles=roles)
     auth = request.headers.get("authorization", "")
     if not auth.lower().startswith("bearer ") or request.app.state.entra is None:
-        raise ApiError(401, "belirtec_gerekli", "MCP için Entra erişim belirteci (Authorization: Bearer) gerekir.")
+        raise ApiError(401, "belirtec_gerekli", f"{purpose} için Entra erişim belirteci (Authorization: Bearer) gerekir.")
     try:
         ident = request.app.state.entra.verify_access(auth[7:].strip())
     except Denied:

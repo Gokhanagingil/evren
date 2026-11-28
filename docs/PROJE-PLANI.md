@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 28.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 23/78 adım tamamlandı
+**Son güncelleme:** 28.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 23/82 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -14,7 +14,7 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 8/10 adım tamamlandı
+**İzlek ilerlemesi:** 8/11 adım tamamlandı
 
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
@@ -25,6 +25,7 @@
 - [x] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Tamamlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [x] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu altyapısı, sistem durumu, kullanıcılar ve roller, yönetişim görevleri (ServiceNow ve Evren kanalı; zamanlanmış kampanyalar, kural tabanlı bulgu görevleri), sağlık panosu, sihirbazlar, denetim izi — _Tamamlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-24, F1-25, F1-26, F1-28)
 - [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Devam ediyor_ (ilgili: F2-01, F2-02, F2-03, F2-07)
+- [ ] **P1** Pilot senaryosu — kapalı döngü kapsam güvencesi: üretimde çalışan ama izlenmeyen veya uç nokta koruması olmayan sunucuyu bul, taşıdığı uygulama/hizmeti, kaynak başına son görülmeyi ve sorumluyu tek ekranda göster, sorumluya görev aç, giderildiğini sonraki kaynak çalışmasında doğrulayıp kanıtla kapat — _Planlandı_ (ilgili: F1-30)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09, F1-27)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
 
@@ -57,6 +58,7 @@
 | F1-10 | Süreç sahipleri ve iç denetimin rol–yetki matrisi onayı | Devam ediyor |
 | F1-24 | ServiceNow'da görevin açılacağı tablo ve atama grubu kararı; o tabloya yazma izni olan entegrasyon hesabı (canlı kabul U10) | Devam ediyor |
 | F1-25 | Konfigürasyon yöneticisi rolünün sahibi ve kampanya takvimi (süreç sahipleri) | Devam ediyor |
+| F1-31 | Self-service uygulamasının veri erişimi (API veya salt okunur görünüm) ve Atomic salt okuma hesabı; talep türleri ve alanlarının listesi | Planlandı |
 | F2-01 | ServiceNow tarafında Evren veri kaynağı için platform ekibi onayı | Devam ediyor |
 | F2-04 | ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi | Planlandı |
 | F2-08 | GRC Platformu'nda CMDB modülünün Evren bağlantısıyla yapılandırılması | Planlandı |
@@ -127,7 +129,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 
 ## F1 · Tüm kaynaklar ve uzlaştırma
 
-_Ay 3–6 · Mar – May 2027 (öneri)_ · 11/29 adım
+_Ay 3–6 · Mar – May 2027 (öneri)_ · 11/31 adım
 
 Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici, eskime, kaynak bilgisi ve sağlık ölçümü çalışır.
 
@@ -190,6 +192,11 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 - [x] **F1-28** Arayüz sadeleştirme ve kullanıcı deneyimi gözden geçirmesi: bütün ekranlarda aşamalı bilgi (önce özet ve asıl eylem), gereksiz bilgi ve tıklamanın ayıklanması, modern gezinme (U8.10)
   - Not: 28.11.2026: U8.10 tamam (ADR-0041). Bütün ekranlar 1440 ve 390 px'te gözden geçirildi. Sabit kenar menü yerine dar uygulama çubuğu (altı bölüm: Ana sayfa, İşlerim, CMDB, Kaynaklar, Yönetim, Kılavuz; mobilde alt çubuk), bölüm sayfaları üst çubukta sekme (son sekme hatırlanır, sayfa izi kalktı), hesap paneli; tek cümlelik alt başlıklar, yinelenen demo bandı kalktı, Size düşen işler önce en acil dört iş, eskime karar mantığı katlanır, süzgeçler tek satır; "null" ve İngilizce "Details" kusurları giderildi. Kullanıcı kabulü U10'da.
 - [ ] **F1-29** Eşleştirme kuyruğunda toplu karar ve atama: benzer adayları birlikte birleştirme veya ayrı tutma (önizlemeli, gerekçeli), kuyruk kaydını kişiye veya gruba atama — _Planlandı_
+- [ ] **F1-30** Kapalı döngü kapsam güvencesi: kapsam politikası (kapsam başına zorunlu kaynak rolleri ve tazelik), tek CI'a tek bulgu ve görev, kapsam/kimlik boşluğu ayrımı, kaynak çalışmasıyla olay tetikli doğrulama ve kanıtlı kapanış, kritikliğe göre öncelik, kapsam dosyası ekranı; aynı motorla yedekleme, zafiyet tarama, yama ve log gönderimi kapsamı — _Planlandı_
+  - Not: 28.11.2026 proje sahibinin önerisi; izlekte P1 pilot senaryosu. Ürüne değil role yazılır (kural 8); Evren kaynak sisteme yazmaz (kural 2). Maruziyet yönetimi (F2-12) bunun üstüne kurulur.
+- [ ] **F1-31** Hazırlama rolü ve self-service bağlayıcısı: talep kaydından niyet verisi (talep eden, sahip, uygulama/hizmet, ortam, maliyet merkezi, istenen boyut, talep numarası) kaynak kaydı olarak; Atomic (UC4) iş geçmişinden yapılan işlem (kaynak artırma vb.) onaylı değişiklik kanıtı olarak yetkisiz değişiklik tespitine; talep ile keşif karşılaştırması (hazırlandı ama görülmüyor, görülüyor ama talebi yok); doğuştan kapsam güvencesi (F1-30) — _Planlandı_
+  - Not: 28.11.2026 proje sahibinin isteği: self-service uygulaması Evren'in paydaşıdır, daha çok ondan veri alınır. Kural role yazılır (Hazırlama rolü; ürün adı kurallarda yok, kural 8); bağlayıcı yalnızca okur (kural 2); niyet verisi uzlaştırmadan geçer, Manual her zaman önce gelir; keşif niyet alanlarını ezemez (kural 5).
+  - Sizden gereken: Self-service uygulamasının veri erişimi (API veya salt okunur görünüm) ve Atomic salt okuma hesabı; talep türleri ve alanlarının listesi
 
 **Çıkış kriterleri**
 
@@ -207,7 +214,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 
 ## F2 · Evren ana kaynak, ServiceNow replika
 
-_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/13 adım
+_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/14 adım
 
 Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.
 
@@ -219,7 +226,8 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 - [ ] **F2-03** ServiceNow'a doğrudan yazan eski entegrasyonların kapatılması — _Planlandı_
 - [ ] **F2-04** ITOM abonelik birimi sayımının ServiceNow ile teyidi — _Planlandı_
   - Sizden gereken: ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi
-- [ ] **F2-05** ServiceNow uyumlu API: /api/now/table ve /identifyreconcile — _Planlandı_
+- [ ] **F2-05** ServiceNow uyumlu API: /api/now/table ve /identifyreconcile — _Devam ediyor_
+  - Not: 28.11.2026 (U9.3a, ADR-0044): Table API okuma tarafı tamam: GET /api/now/table/{tablo} ve /{sys_id} (v2 yolu da), CMDB sınıfları tablo kalıtımıyla, cmdb_rel_ci, cmdb_rel_type ve referans tabloları; sysparm_query (encoded query → güvenli SQL), sysparm_fields, sysparm_limit (varsayılan ve en çok 10000, ServiceNow gibi)/offset, sysparm_exclude_reference_link; ServiceNow yanıt ve hata biçimi, X-Total-Count ve Link; Entra taşıyıcı belirteci (MCP ile ortak doğrulama); görülmeyen alan yanıtta da sorguda da yok, reddedilen alt sınıf üst tabloda ve ilişkilerde görünmez. Biçim ServiceNow'un herkese açık belgeleri ve topluluk yanıtlarıyla doğrulandı; sentetik veriyle sınandı. Kalan: IRE uyumlu alım ucu (U9.3b; golden record'a yazmaz, kaynak kaydı alır), görünen değer (sysparm_display_value), kurum betikleriyle canlı kabul (U10).
 - [ ] **F2-06** Olay akışı ve imzalı webhook — _Planlandı_
 - [ ] **F2-07** Evren MCP sunucusu ve kurum MCP uygulaması sözleşmesi — _Devam ediyor_
   - Not: 28.11.2026 (U9.2, ADR-0043): Evren MCP sunucusu API'de (POST /mcp): sekiz okuma ve iki öneri aracı, çağıranın rolleriyle; Entra taşıyıcı belirteci; öneriler ai.proposal (göç 0037), İşlerim → Öneriler, öneren karar veremez. Kalan: kurum MCP uygulamasıyla uçtan uca kabul (U10).
@@ -230,6 +238,8 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 - [ ] **F2-11** Görev kanalının ServiceNow'dan Evren'e devri: Evren görev ekranı (Görevlerim), e-posta ve Teams bildirimi, kanal başına gölge → etkin → emekli (ADR-0009 deseni); açık görevlerin taşınması — _Planlandı_
 - [ ] **F2-12** Maruziyet yönetimi: zafiyet × CI kritikliği × etkilediği iş hizmeti ile önceliklendirme; sahibine görev, GRC Platformu'na kanıt — _Planlandı_
 - [ ] **F2-13** Her öznitelikte güven puanı (kaynak bilgisinden): API ve raporlarda "yalnızca doğrulanmış veri" süzgeci — _Planlandı_
+- [ ] **F2-14** Self-service uygulamasının Evren'den okuması: talep formlarında seçim listeleri (uygulama/hizmet, maliyet merkezi, destek grubu, konum), talep edenin sorumlu olduğu CI'lar, değişiklik öncesi etki ve kritiklik, ad ve IP çakışma denetimi; REST veya ServiceNow uyumlu Table API, gerekirse olay aboneliği (F2-06) — _Planlandı_
+  - Not: 28.11.2026: Evren self-service'e veri itmez; self-service ihtiyacı olanı Evren'den okur. Böylece doğru veri talep anında doğar. Bugün ServiceNow CMDB'sini Table API ile okuyorsa yalnızca adres ve kimlik değişir (ADR-0044).
 
 **Çıkış kriterleri**
 
@@ -275,7 +285,7 @@ ServiceNow formlarında CI seçimi Evren aramasıyla yapılır. Yapay zekâ öne
 
 ## F4 · Task tarafına hazırlık
 
-_Ay 12+ · 2028 (öneri)_ · 0/10 adım
+_Ay 12+ · 2028 (öneri)_ · 0/11 adım
 
 Aynı kimlik motoruyla olay–CI bağlama. ServiceNow task desenine uygun veri modeli ve Incident/Change pilotunun tasarımı.
 
@@ -289,6 +299,8 @@ Aynı kimlik motoruyla olay–CI bağlama. ServiceNow task desenine uygun veri m
 - [ ] **F4-08** Teams ve e-postadan etkileşimli onay: görev kararı ve değişiklik onayı karttan, kimlik doğrulamalı ve denetim izli — _Planlandı_
 - [ ] **F4-09** Kapalı döngü self servis: talep → onay → otomasyon → keşif doğrular → CI kendiliğinden bağlanır — _Planlandı_
 - [ ] **F4-10** Deneyim göstergeleri (XLA): iş süresi hedeflerinin yanında izleme ve olay verisinden çalışan deneyimi — _Planlandı_
+- [ ] **F4-11** Otomasyon kataloğu ve talep karşılama: Atomic (UC4) iş akışlarının envanteri (hangi talep türü, girdiler, etkilediği CI sınıfları, sahibi, son çalışma) ve ESM hizmet kataloğundan insan onaylı tetiklenmesi; iş akışlarının bilgi birikimi korunur, yürütme Atomic'te kalır; tamamlanan iş CMDB'ye her zamanki yoldan (hazırlama kaynağı → uzlaştırıcı) yansır — _Planlandı_
+  - Not: 28.11.2026 proje sahibinin isteği: Atomic scriptleri önemli bir bilgi birikimidir, atılmamalı. Evren'den otomasyon tetiklemek yeni bir eylem kanalıdır; ayrı karar kaydı (ADR) ve insan onayı gerekir (kural 2 ve 10 korunur).
 
 **Çıkış kriterleri**
 

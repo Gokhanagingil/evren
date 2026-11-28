@@ -2,7 +2,7 @@
   "title": "Evren CMDB",
   "heading": "Konfigürasyon evreni — kaynaktan karara",
   "width": 1280,
-  "height": 2617,
+  "height": 2652,
   "generated_from": "apps/web/content/architecture.yaml",
   "chapters": [
     {
@@ -11,14 +11,14 @@
       "title": "Kaynaklar ve alım",
       "lead": "Her kaynak bir bağlayıcı ve bir eşleme dosyasıyla eklenir. Keşif aracı değişse de sonraki katmanlar etkilenmez.",
       "y": 186,
-      "height": 436
+      "height": 471
     },
     {
       "id": "sense",
       "number": "02",
       "title": "Anlamlandırma — ara katman",
       "lead": "Milyonlarca gözlem değişmeyenler elenerek süzülür. Kimlik çözülür, öznitelikler kurallarla uzlaştırılır, şüpheli olan insana sorulur.",
-      "y": 640,
+      "y": 675,
       "height": 471
     },
     {
@@ -26,7 +26,7 @@
       "number": "03",
       "title": "Kayıt sistemi",
       "lead": "ServiceNow veri deseniyle aynı yüzey, daha güçlü bir motor. Her değerin kaynağı ve gerekçesi saklanır.",
-      "y": 1129,
+      "y": 1164,
       "height": 352
     },
     {
@@ -34,7 +34,7 @@
       "number": "04",
       "title": "Tüketim ve entegrasyon",
       "lead": "Tek API, iki dil — yerel REST ve ServiceNow uyumlu uç noktalar. Yapay zekâ ajanları kurumun kendi MCP katmanından bağlanır.",
-      "y": 1499,
+      "y": 1534,
       "height": 352
     },
     {
@@ -42,7 +42,7 @@
       "number": "05",
       "title": "ServiceNow ile geçiş deseni",
       "lead": "Evren ana kaynaktır, ServiceNow CMDB replikadır. Task kayıtları SN'deki CI'ları göstermeye devam eder; business rule değişmez.",
-      "y": 1869,
+      "y": 1904,
       "height": 352
     },
     {
@@ -50,7 +50,7 @@
       "number": "06",
       "title": "Güvenlik ve yönetişim",
       "lead": "Varsayılan reddet, en az yetki, her değişiklik iz bırakır. Yapay zekâ önerir, insan karar verir.",
-      "y": 2239,
+      "y": 2274,
       "height": 352
     }
   ],
@@ -306,6 +306,28 @@
         "Golden record'a API değil uzlaştırıcı yazar",
         "create/write izni, alan hassasiyeti",
         "Zorlama gerekçeli ve denetim izinde"
+      ]
+    },
+    "src_provisioning": {
+      "label": "Self-service + Atomic",
+      "sub": [
+        "Hazırlama rolü: talep",
+        "niyeti, otomasyon işi"
+      ],
+      "kind": "source",
+      "kind_label": "Kaynak sistem",
+      "chapter": "sources",
+      "phase": "F1",
+      "text": "Kurumun self-service uygulaması ve arkasındaki Atomic (UC4) iş akışları (plan F1-31, F2-14, F4-11). Kaynak olarak Hazırlama rolündedir: talepten niyet verisi (talep eden, sahip, uygulama/hizmet, ortam, maliyet merkezi, istenen boyut, talep numarası) ve Atomic iş geçmişinden yapılan işlem (kaynak artırma vb.) onaylı değişiklik kanıtı olarak gelir; talep ile keşif karşılaştırılır (hazırlandı ama görülmüyor, görülüyor ama talebi yok). Tüketici olarak formlarındaki seçim listelerini, sahipliği ve etkiyi Evren'den okur. Atomic iş akışları ileride ESM hizmet kataloğunun yürütme motorudur; Evren'den tetikleme ayrı karar ve insan onayı gerektirir.",
+      "tech": [
+        "Self-service API veya salt okunur görünüm",
+        "Atomic (UC4) REST API (salt okuma)",
+        "Evren REST / ServiceNow uyumlu Table API (okuma)"
+      ],
+      "security": [
+        "Bağlayıcı yalnızca okur",
+        "Kurallar role yazılır (ürün adı yok)",
+        "Niyet verisi uzlaştırmadan geçer"
       ]
     },
     "change_filter": {
@@ -786,13 +808,18 @@
       "kind_label": "Evren bileşeni",
       "chapter": "consume",
       "phase": "F2",
-      "text": "ServiceNow Table API'yi (sysparm_query, sysparm_fields, sysparm_limit) ve IRE payload biçimini kabul eden uç noktalar. Mevcut betik ve entegrasyonlar minimum değişiklikle Evren'e yönlenir.",
+      "text": "ServiceNow Table API biçiminde okuma (U9.3a, ADR-0044): GET /api/now/table/{tablo} ve /{sys_id}; sysparm_query, sysparm_fields, sysparm_limit/offset, referans bağlantısı, X-Total-Count ve Link başlıkları, ServiceNow hata biçimi. CMDB sınıfları (tablo kalıtımıyla), cmdb_rel_ci, cmdb_rel_type ve referans tabloları. Eski betikler adres ve kimlik değiştirerek Evren'i okur. IRE biçiminde veri alan uç (/identifyreconcile) U9.3b'de; o da golden record'a yazmaz, kaynak kaydı alır.",
       "tech": [
-        "evren_core.encoded_query"
+        "evren_core.encoded_query",
+        "FastAPI (API sürecinde)"
       ],
       "security": [
         "javascript ile başlayan değerler reddedilir",
-        "Alan adları sözlükten çözülür"
+        "Alan adları sözlükten çözülür",
+        "Görülmeyen alan sorguda da kullanılamaz",
+        "Reddedilen alt sınıf üst tabloda görünmez",
+        "Entra taşıyıcı belirteci; temel kimlik doğrulama yok",
+        "Yazma yok"
       ]
     },
     "event_stream": {

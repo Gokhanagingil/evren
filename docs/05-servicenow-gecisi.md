@@ -54,6 +54,16 @@ Kaçındığımız değişiklik tam olarak budur.
 
 ServiceNow tarafında yapılacaklar (veri kaynağı değeri, uzlaştırma kuralı, entegrasyon kullanıcısı) ADR-0042'de listelidir.
 
+## Eski tüketicilerin Evren'e yönlenmesi (U9.3a, ADR-0044)
+
+ServiceNow CMDB'sini Table API ile okuyan betik ve entegrasyonlar (raporlar, otomasyonlar, GRC Platformu'nun CMDB modülü) Evren'in uyumlu ucunu okur: `GET /api/now/table/{tablo}`.
+
+- **Gereken değişiklik:** Adres ve kimlik. Temel kimlik doğrulama yerine Entra istemci kimliği kullanılır. Sorgu, alan listesi, sayfalama ve yanıt biçimi aynı kalır.
+- **Kapsam:** CMDB sınıfları, ilişkiler ve referans tabloları.
+- **Sınırlar:** Görünen değer (`sysparm_display_value=true`) ve dot-walk yoktur; bunlara dayanan betik referansı ayrıca okumalıdır.
+- **Uygulama sırası:** Her tüketici önce iki kaynağı da okur ve sonuçları karşılaştırır; tutarlıysa Evren'e geçer. Böylece ServiceNow replikası yalnızca süreçlerin ihtiyacı kadar kalır.
+- **Kaynak verisi gönderen araçlar:** IRE biçiminde veri gönderen araçların ucu (`/api/now/identifyreconcile`) ayrı adımdır (U9.3b). O uç golden record'a yazmaz; veriyi kaynak kaydı olarak alır.
+
 ## Geçiş dönemi kuralları
 
 - **Hangi alan nerede yönetilir:** uzlaştırma kuralları belirler. Sahiplik ve destek grubu başlangıçta ServiceNow'da kalabilir ("ServiceNow" kaynağı). Evren arayüzü olgunlaşınca Manual kaynağına geçer.
