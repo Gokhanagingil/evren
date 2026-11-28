@@ -204,6 +204,18 @@ Yeni dış arayüz: ServiceNow Table API'ye yazılmış betik ve entegrasyonlar 
 | D | Büyük sayfa veya pahalı sorguyla API'nin yorulması | Sayfa en çok 10000 kayıt, koşul 200; istek zaman aşımı veritabanı havuzunda | `routers/sn_table.py` |
 | R | Yetkisiz okuma girişiminin izsiz kalması | 403 `audit.security_event`'e yazılır (`read:<tablo>`, `api: sn_table`, testli) | `routers/sn_table._Plan._need` |
 
+### IRE uyumlu alım ucu (ADR-0045)
+
+Yeni dış arayüz: ServiceNow'a IRE ile yazan araçlar → Evren alım geçidi, `POST /api/now/identifyreconcile`.
+
+| Tehdit | Senaryo | Denetim | Nerede |
+| --- | --- | --- | --- |
+| S/E | Aracın başka bir kaynak adına yazması veya golden record'a doğrudan yazması | Bağlayıcı belirteci tek kaynağa bağlı; `sysparm_data_source` ve öğedeki `source_name` aynı olmalı; emekli kaynak yazamaz; geçidin CMDB'ye erişimi yok, öğeler uzlaştırıcıdan geçer (testli) | `evren_gateway`, test_ire_intake |
+| T | Yükle sistem alanı (`sys_id`, `sys_class_name`) veya yönetişim alanını ezme | `sys_*` ve sözlükte olmayan alanlar atılır; yönetişim alanları uzlaştırma kurallarıyla korunur (kural 5); sınıf yalnızca CMDB sınıfı | `evren_core.ire_inbound`, `reconciliation_rules.yaml` |
+| T/D | Kısmen alınmış yükün devre kesiciyi veya eskimeyi yanıltması; aşırı büyük yük | Ya hep ya hiç; Kafka hatasında çalışma hemen eksik kapanır (yıkıcı işlem durur); öğe sayısı, gövde boyutu ve kimlik başına dakikalık sınır | `evren_gateway`, test_ire_intake |
+| I | Hata iletisiyle girdinin veya iç ayrıntının yansıması | Hata ServiceNow biçiminde; ayrıntı yalnızca konum ve kural; değer yansıtılmaz (testli) | `evren_core.ire_inbound.IreInputError` |
+| R | Alımın inkârı | Her kabul `ire_ingest` olayı (çalışma, öğe ve ilişki sayısı); ret geçidin ret olaylarıyla | `evren_gateway` |
+
 ## Uygulanan denetimler (bu depoda, testli)
 
 - `0003_security.sql`: 7 grup rolü, şema ve tablo düzeyinde yetkiler, salt ekleme denetim izi, rol atama denetimi, kısıtlı güvenlik tablosu.

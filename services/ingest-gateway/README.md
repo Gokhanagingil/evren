@@ -24,6 +24,16 @@ python tools/connector_credential.py issue --name zabbix-dc1 --data-source Zabbi
 - Çalışmayı geçit açar ve kapanışını ister (`ingest.source_run`: `opened_by`, `accepted_count`, `reported_*`, `close_requested_at`). Kapatan uzlaştırıcı çalışanıdır.
 - Çalışma olayları `evren.ingest.run.v1` konusuna yazılır (bilgilendirme amaçlı).
 
+## IRE uyumlu alım (ADR-0045)
+
+ServiceNow'a IRE ile yazan araçlar aynı yükü buraya gönderir: `POST /api/now/identifyreconcile?sysparm_data_source=<kaynak>`. Kimlik bağlayıcı belirtecidir.
+
+- Yük tek bir delta çalışması olur: aç → kayıtları Kafka'ya → kapanış iste.
+- Yanıt IRE biçimindedir; öğeler `QUEUED`, `sysId` `Unknown`.
+- `/api/now/identifyreconcile/query` yalnızca doğrular.
+- Bu yoldaki hatalar ServiceNow biçimindedir.
+- Dönüşüm: `evren_core.ire_inbound`.
+
 ## Neyi yapmaz
 
 Eşleştirme, uzlaştırma veya CMDB yazımı yapmaz. Kaynak kaydını okuyamaz, yazamaz (göç 0012). Çalışmayı kapatamaz.

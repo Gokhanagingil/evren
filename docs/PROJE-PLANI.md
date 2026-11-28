@@ -2,7 +2,7 @@
 
 > Bu dosya `apps/web/content/roadmap.json` dosyasından üretilir (`python tools/build_plan.py`); elle düzenlemeyin. Aynı plan uygulamadaki **Yol Haritası** sayfasında, mimari ise **Büyük Resim** ve **Mimari Harita** sayfalarındadır.
 
-**Son güncelleme:** 28.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 23/82 adım tamamlandı
+**Son güncelleme:** 28.11.2026 · **Etkin faz:** F0 — Temel ve gölge mod · **İlerleme:** 24/83 adım tamamlandı
 
 ## Nasıl izlenir
 
@@ -14,7 +14,7 @@
 
 > Proje sahibinin beklentisi (25.11.2026): PostgreSQL, Kafka ve OpenSearch altyapısı kurulsun; kaynak verisi anlamlandırılarak akıl katmanından geçsin (elle girdi dahil); veri modeli oluşsun; büyük resim uçtan uca tamamlansın ve tek arayüzden yönetilsin. Fazlar yönetişim için kalır; sıra bu izlekle belirlenir. Dış girdiler (Entra, ServiceNow hesabı, kaynak hesapları, hedef ortam) en sondadır.
 
-**İzlek ilerlemesi:** 8/11 adım tamamlandı
+**İzlek ilerlemesi:** 9/11 adım tamamlandı
 
 - [x] **U1** Altyapı yığını: Evren konteyner imajı; tek komutla PostgreSQL + Kafka + OpenSearch + Evren servisleri; şema/rol kurulum aracı; CI'da yığın ayağa kalkar ve sağlık denetlenir — _Tamamlandı_ (ilgili: F0-10)
 - [x] **U2** Olay omurgası: alım geçidi (bağlayıcı kimliği) → Kafka → uzlaştırıcı tüketicisi → golden record → değişiklik olayları Kafka'ya (outbox yayını) — _Tamamlandı_ (ilgili: F0-10)
@@ -24,7 +24,7 @@
 - [x] **U6** Elle girdi: arayüzden CI oluşturma, ilişki ekleme/kaldırma, CSV ile toplu içe aktarma — hepsi akıl katmanından geçer — _Tamamlandı_ (ilgili: F1-21, F1-17)
 - [x] **U7** Yaşam döngüsü ve ilişkiler: eskime işletimi, bağımlı CI kimliği, uygulama/hizmet katmanı, ilişki haritası — _Tamamlandı_ (ilgili: F1-06, F1-07, F1-19)
 - [x] **U8** Yönetim ekranları: tek yönetim paneli ve kullanım kılavuzu altyapısı, sistem durumu, kullanıcılar ve roller, yönetişim görevleri (ServiceNow ve Evren kanalı; zamanlanmış kampanyalar, kural tabanlı bulgu görevleri), sağlık panosu, sihirbazlar, denetim izi — _Tamamlandı_ (ilgili: F1-09, F1-10, F1-15, F1-16, F1-18, F1-24, F1-25, F1-26, F1-28)
-- [ ] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Devam ediyor_ (ilgili: F2-01, F2-02, F2-03, F2-07)
+- [x] **U9** ServiceNow replika ve MCP yapısı: yazma yönü (IRE) ve Evren MCP sunucusu, kaydedilmiş örneklerle — _Tamamlandı_ (ilgili: F2-01, F2-02, F2-03, F2-05, F2-07)
 - [ ] **P1** Pilot senaryosu — kapalı döngü kapsam güvencesi: üretimde çalışan ama izlenmeyen veya uç nokta koruması olmayan sunucuyu bul, taşıdığı uygulama/hizmeti, kaynak başına son görülmeyi ve sorumluyu tek ekranda göster, sorumluya görev aç, giderildiğini sonraki kaynak çalışmasında doğrulayıp kanıtla kapat — _Planlandı_ (ilgili: F1-30)
 - [ ] **U10** Canlı kabul: Entra, ServiceNow, kaynak hesapları ve hedef ortam bilgileriyle bağlantılar ve kabul testleri — _Planlandı_ (ilgili: F0-07, F0-08, F0-09, F2-09, F1-27)
   - Sizden gereken: Entra uygulama kaydı, ServiceNow salt okunur hesabı, kaynak servis hesapları, hedef çalışma ortamı (en sonda)
@@ -107,7 +107,7 @@ Güvenli temel, ServiceNow CMDB'nin aynı sys_id'lerle yüklenmesi ve ilk iki ka
 - [x] **F0-12** Eşleştirme kuyruğu ekranı (yan yana karşılaştırma, birleştir/ayır)
   - Not: Yan yana karşılaştırma, kanıtlar, kalıcı kararlar (birleştir, yeni CI, ertele, kaynakta düzelt) ve CI panelinden birleştirmeyi ayırma (ADR-0011: kimlik profili yeniden kurulur, ayrılan kaynağın değerleri temizlenir); uzlaştırıcı uygular. Sentetik veriyle test edildi.
 - [ ] **F0-13** Gölge mod raporları: SN CMDB'deki mükerrerler ve kaynaklar arası kapsam boşlukları — _Devam ediyor_
-  - Not: Rapor (kapsam, sınıf × rol, mükerrer adayları, değer farkları, gölge kaynak uyumu), arayüz sayfası ve değiştirilemez SHA-256 kanıt kaydı hazır (ADR-0014); sentetik veriyle test edildi. Gerçek ServiceNow verisiyle ilk rapor F0-08 yüklemesinden sonra; değerlendirme CMDB sahibinde.
+  - Not: Rapor (kapsam, sınıf × rol, mükerrer adayları, değer farkları, gölge kaynak uyumu), arayüz sayfası ve değiştirilemez SHA-256 kanıt kaydı hazır (ADR-0014); sentetik veriyle test edildi. Gerçek ServiceNow verisiyle ilk rapor F0-08 yüklemesinden sonra; değerlendirme CMDB sahibinde. Kalan (28.11.2026): ServiceNow CMDB'ye bugün yazan kaynakların dökümü (discovery_source dağılımı; ServiceNow CMDB bağlayıcısı alanı henüz okumuyor). IRE uyumlu alım ucunun (ADR-0045) hangi araçlar için gerektiğini bu döküm gösterir.
   - Sizden gereken: Gölge mod raporunu değerlendirecek CMDB sahibi ve süreç sahipleri
 - [x] **F0-17** CMDB veri modeli: ServiceNow uyumlu sınıf kütüphanesi (uç nokta, bulut, Kubernetes, depolama, ara katman yazılımı), CSDM katmanları, ilişki tipleri ve yaşam döngüsü durumları
   - Not: 26.11.2026 büyük resim incelemesinde planda karşılığı olmadığı görüldü; U4 ile tamamlandı (ADR-0019). Adların kurum örneğinden doğrulanması F0-07'de.
@@ -214,7 +214,7 @@ Beş kaynağın tamamı canlı. Öznitelik düzeyinde uzlaştırma, devre kesici
 
 ## F2 · Evren ana kaynak, ServiceNow replika
 
-_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 0/14 adım
+_Ay 6–9 · Haz – Ağu 2027 (öneri)_ · 1/15 adım
 
 Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıtları ve business rule'lar değişmeden çalışmaya devam eder.
 
@@ -226,8 +226,8 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 - [ ] **F2-03** ServiceNow'a doğrudan yazan eski entegrasyonların kapatılması — _Planlandı_
 - [ ] **F2-04** ITOM abonelik birimi sayımının ServiceNow ile teyidi — _Planlandı_
   - Sizden gereken: ServiceNow hesap yöneticisiyle abonelik birimi görüşmesi
-- [ ] **F2-05** ServiceNow uyumlu API: /api/now/table ve /identifyreconcile — _Devam ediyor_
-  - Not: 28.11.2026 (U9.3a, ADR-0044): Table API okuma tarafı tamam: GET /api/now/table/{tablo} ve /{sys_id} (v2 yolu da), CMDB sınıfları tablo kalıtımıyla, cmdb_rel_ci, cmdb_rel_type ve referans tabloları; sysparm_query (encoded query → güvenli SQL), sysparm_fields, sysparm_limit (varsayılan ve en çok 10000, ServiceNow gibi)/offset, sysparm_exclude_reference_link; ServiceNow yanıt ve hata biçimi, X-Total-Count ve Link; Entra taşıyıcı belirteci (MCP ile ortak doğrulama); görülmeyen alan yanıtta da sorguda da yok, reddedilen alt sınıf üst tabloda ve ilişkilerde görünmez. Biçim ServiceNow'un herkese açık belgeleri ve topluluk yanıtlarıyla doğrulandı; sentetik veriyle sınandı. Kalan: IRE uyumlu alım ucu (U9.3b; golden record'a yazmaz, kaynak kaydı alır), görünen değer (sysparm_display_value), kurum betikleriyle canlı kabul (U10).
+- [x] **F2-05** ServiceNow uyumlu API: /api/now/table ve /identifyreconcile
+  - Not: 28.11.2026 (U9.3a, ADR-0044): Table API okuma tarafı tamam: GET /api/now/table/{tablo} ve /{sys_id} (v2 yolu da), CMDB sınıfları tablo kalıtımıyla, cmdb_rel_ci, cmdb_rel_type ve referans tabloları; sysparm_query (encoded query → güvenli SQL), sysparm_fields, sysparm_limit (varsayılan ve en çok 10000, ServiceNow gibi)/offset, sysparm_exclude_reference_link; ServiceNow yanıt ve hata biçimi, X-Total-Count ve Link; Entra taşıyıcı belirteci (MCP ile ortak doğrulama); görülmeyen alan yanıtta da sorguda da yok, reddedilen alt sınıf üst tabloda ve ilişkilerde görünmez. Biçim ServiceNow'un herkese açık belgeleri ve topluluk yanıtlarıyla doğrulandı; sentetik veriyle sınandı. 28.11.2026 (U9.3b, ADR-0045): IRE uyumlu alım ucu alım geçidinde: POST /api/now/identifyreconcile (ve /query yalnızca doğrulama); bağlayıcı belirteci ve sysparm_data_source ile tek kaynak; yük tek bir delta çalışması olur, öğeler kaynak kaydı olarak Kafka → uzlaştırıcı (golden record'a geçit yazmaz); source_native_key zorunlu, ya hep ya hiç, bağımlı sınıfın ana CI'ı kuraldaki ilişkiden; yanıt IRE biçiminde (QUEUED, sysId Unknown, çalışma kimliği); Kafka hatasında eksik kapanış; uçtan uca test: yük CI ve ilişki olur. Kalan: görünen değer, dot-walk ve related (F2-15, gerçek tüketici isterse); kurum betikleri ve IRE araçlarıyla canlı kabul (U10).
 - [ ] **F2-06** Olay akışı ve imzalı webhook — _Planlandı_
 - [ ] **F2-07** Evren MCP sunucusu ve kurum MCP uygulaması sözleşmesi — _Devam ediyor_
   - Not: 28.11.2026 (U9.2, ADR-0043): Evren MCP sunucusu API'de (POST /mcp): sekiz okuma ve iki öneri aracı, çağıranın rolleriyle; Entra taşıyıcı belirteci; öneriler ai.proposal (göç 0037), İşlerim → Öneriler, öneren karar veremez. Kalan: kurum MCP uygulamasıyla uçtan uca kabul (U10).
@@ -238,6 +238,7 @@ Evren ana kaynak olur. ServiceNow CMDB'yi IRE API üzerinden besler. Task kayıt
 - [ ] **F2-11** Görev kanalının ServiceNow'dan Evren'e devri: Evren görev ekranı (Görevlerim), e-posta ve Teams bildirimi, kanal başına gölge → etkin → emekli (ADR-0009 deseni); açık görevlerin taşınması — _Planlandı_
 - [ ] **F2-12** Maruziyet yönetimi: zafiyet × CI kritikliği × etkilediği iş hizmeti ile önceliklendirme; sahibine görev, GRC Platformu'na kanıt — _Planlandı_
 - [ ] **F2-13** Her öznitelikte güven puanı (kaynak bilgisinden): API ve raporlarda "yalnızca doğrulanmış veri" süzgeci — _Planlandı_
+- [ ] **F2-15** ServiceNow uyumlu API genişletmesi (yalnızca gerçek bir tüketici isterse): görünen değer (sysparm_display_value), dot-walk, IRE related öğeleri, değişiklik ve görev tabloları — _Planlandı_
 - [ ] **F2-14** Self-service uygulamasının Evren'den okuması: talep formlarında seçim listeleri (uygulama/hizmet, maliyet merkezi, destek grubu, konum), talep edenin sorumlu olduğu CI'lar, değişiklik öncesi etki ve kritiklik, ad ve IP çakışma denetimi; REST veya ServiceNow uyumlu Table API, gerekirse olay aboneliği (F2-06) — _Planlandı_
   - Not: 28.11.2026: Evren self-service'e veri itmez; self-service ihtiyacı olanı Evren'den okur. Böylece doğru veri talep anında doğar. Bugün ServiceNow CMDB'sini Table API ile okuyorsa yalnızca adres ve kimlik değişir (ADR-0044).
 

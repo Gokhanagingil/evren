@@ -9,7 +9,7 @@ ignore = ["RUF001", "RUF002", "RUF003", "S101"]
 
 [lint.flake8-bugbear]
 # FastAPI bağımlılık ve parametre bildirimi deyimi
-extend-immutable-calls = ["fastapi.Depends", "fastapi.Query"]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body"]
 
 [lint.isort]
 known-first-party = ["evren_core", "evren_reconciler", "evren_api", "evren_gateway", "evren_indexer", "evren_connector_runner", "evren_governance", "_bootstrap", "_font_metrics", "build_architecture", "build_demo",

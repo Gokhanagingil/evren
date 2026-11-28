@@ -10,9 +10,13 @@ Geçit eşleştirme, uzlaştırma veya CMDB yazımı yapmaz; kaynak kaydına eri
 | ``POST /ingest/v1/runs/{run_id}/records`` | Toplu kayıt; Kafka onayından sonra 202 |
 | ``POST /ingest/v1/runs/{run_id}/complete`` | Kapanış ister (bildirilen sayı); uzlaştırıcı tümünü işleyince kapatır |
 | ``GET /ingest/v1/runs/{run_id}`` | Çalışma durumu (açık, kapanıyor, kapandı + devre kesici) |
+| ``POST /api/now/identifyreconcile?sysparm_data_source=…`` | IRE uyumlu alım (ADR-0045): yük tek bir delta çalışması
+  olur, öğeler kaynak kaydı olarak Kafka'ya; yanıt IRE biçiminde, öğeler ``QUEUED`` |
+| ``POST /api/now/identifyreconcile/query?sysparm_data_source=…`` | Aynı yükü yalnızca doğrular; hiçbir şey yazılmaz |
 
 Hatalar: 400 şema/kayıt, 401 kimlik, 403 kaynak yetkisi, 404 çalışma, 409 çalışma durumu, 411/413 gövde, 429 hız,
-503 Kafka. Hata gövdesi girdiyi yansıtmaz.
+503 Kafka. Hata gövdesi girdiyi yansıtmaz. ``/api/now/`` altında hata ServiceNow biçimindedir
+(``{"error": {"message", "detail"}, "status": "failure"}``).
 """
 from __future__ import annotations
 
@@ -25,10 +29,10 @@ from collections.abc import AsyncIterator, Callable
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime, timedelta
 from typing import Any, NamedTuple
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import psycopg
-from fastapi import Depends, FastAPI, Request
+from fastapi import Body, Depends, FastAPI, Query, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response
 from psycopg import sql
@@ -38,7 +42,9 @@ from pydantic import BaseModel, ConfigDict, Field
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from evren_core.credentials import token_sha256, well_formed
-from evren_core.envelope import IngestEnvelope, RunEnvelope
+from evren_core.envelope import IngestEnvelope, RunEnvelope, RunSummary
+from evren_core.ire_inbound import IreInputError, parse_payload
+from evren_core.ire_inbound import response as ire_response
 from evren_core.kafka_client import KafkaPublisher, Publisher, PublishError
 from evren_core.messaging import TOPIC_RECORD, TOPIC_RUN, MessageError, encode_record, record_key
 from evren_core.metadata import Metadata, load_metadata
@@ -109,6 +115,16 @@ def make_pool(settings: GatewaySettings) -> ConnectionPool:
 
 def _err(code: str, message: str, details: list[Any] | None = None) -> dict[str, Any]:
     return {"error": {"code": code, "message": message, "details": details or []}}
+
+
+def _respond(request: Request, status: int, code: str, message: str, details: list[Any] | None = None,
+             headers: dict[str, str] | None = None) -> JSONResponse:
+    """``/api/now/`` (ServiceNow uyumlu) altında ServiceNow hata biçimi; diğer yollarda geçidin kendi biçimi."""
+    if request.url.path.startswith("/api/now/"):
+        detail = next((d for d in details or [] if isinstance(d, str)), "")
+        return JSONResponse({"error": {"message": message, "detail": detail}, "status": "failure"}, status,
+                            headers=headers)
+    return JSONResponse(_err(code, message, details), status, headers=headers)
 
 
 def create_app(settings: GatewaySettings, *, pool: Any | None = None, publisher: Publisher | None = None,
@@ -190,26 +206,29 @@ def create_app(settings: GatewaySettings, *, pool: Any | None = None, publisher:
         return response
 
     @app.exception_handler(GatewayError)
-    async def gateway_error(_: Request, exc: GatewayError) -> JSONResponse:
-        return JSONResponse(_err(exc.code, exc.message, exc.details), exc.status, headers=exc.headers)
+    async def gateway_error(request: Request, exc: GatewayError) -> JSONResponse:
+        return _respond(request, exc.status, exc.code, exc.message, exc.details, exc.headers)
 
     @app.exception_handler(RequestValidationError)
-    async def validation(_: Request, exc: RequestValidationError) -> JSONResponse:
+    async def validation(request: Request, exc: RequestValidationError) -> JSONResponse:
         details = [{"field": ".".join(str(p) for p in e.get("loc", ())), "type": e.get("type")}
                    for e in exc.errors()[:50]]
+        if request.url.path.startswith("/api/now/"):
+            fields = ", ".join(sorted({str(d["field"]) for d in details}))
+            return _respond(request, 400, "gecersiz_istek", "İstek doğrulanamadı.", [f"Geçersiz: {fields}"])
         return JSONResponse(_err("gecersiz_zarf", "Zarf şemaya uymuyor.", details), 400)
 
     @app.exception_handler(StarletteHTTPException)
-    async def http_error(_: Request, exc: StarletteHTTPException) -> JSONResponse:
+    async def http_error(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         code = "bulunamadi" if exc.status_code == 404 else "istek_hatasi"
-        return JSONResponse(_err(code, "Kaynak bulunamadı." if exc.status_code == 404 else "İstek işlenemedi."),
-                            exc.status_code)
+        return _respond(request, exc.status_code, code,
+                        "Kaynak bulunamadı." if exc.status_code == 404 else "İstek işlenemedi.")
 
     @app.exception_handler(Exception)
-    async def unexpected(_: Request, exc: Exception) -> JSONResponse:
+    async def unexpected(request: Request, exc: Exception) -> JSONResponse:
         error_id = f"{int(time.time() * 1000):x}"
         log.error("Beklenmeyen hata %s: %s", error_id, type(exc).__name__, exc_info=exc)
-        return JSONResponse(_err("ic_hata", f"Beklenmeyen hata (hata kimliği {error_id})."), 500)
+        return _respond(request, 500, "ic_hata", f"Beklenmeyen hata (hata kimliği {error_id}).")
 
     # ------------------------------------------------------------------ kimlik ve yetki
     def audit(principal: str, action: str, resource: str, decision: str, detail: dict[str, Any]) -> None:
@@ -399,6 +418,81 @@ def create_app(settings: GatewaySettings, *, pool: Any | None = None, publisher:
     def get_run(run_id: UUID, cred: Credential = Depends(credential)) -> dict[str, Any]:
         with pool.connection() as conn, conn.cursor() as cur:
             return run_status(run_id, load_run(cur, run_id, cred))
+
+    # ------------------------------------------------------------------ IRE uyumlu alım (ADR-0045)
+    def ire_parse(payload: Any, data_source: str, cred: Credential, action: str, run_id: UUID) -> Any:
+        require_source(cred, data_source, action)
+        try:
+            return parse_payload(payload, md=md, data_source=data_source, run_id=run_id, now=now(),
+                                 max_items=settings.max_batch)
+        except IreInputError as exc:
+            raise GatewayError(400, "gecersiz_ire", "IRE yükü reddedildi; hiçbir öğe alınmadı.", [exc.detail]) from None
+
+    @app.post("/api/now/identifyreconcile/query")
+    def ire_query(payload: Any = Body(...), sysparm_data_source: str = Query(..., min_length=1, max_length=64),
+                  cred: Credential = Depends(credential)) -> dict[str, Any]:
+        parsed = ire_parse(payload, sysparm_data_source, cred, "ire_query", UUID(int=0))
+        return ire_response(parsed, operation="VALIDATED", run_id=None, status_path=None)
+
+    @app.post("/api/now/identifyreconcile")
+    def ire_commit(payload: Any = Body(...), sysparm_data_source: str = Query(..., min_length=1, max_length=64),
+                   cred: Credential = Depends(credential)) -> dict[str, Any]:
+        """Yük tek bir delta çalışması olur: aç → kayıtları Kafka'ya → kapanış iste. Golden record'a yazılmaz;
+        uzlaştırıcı kaynak kaydı olarak işler. Kafka teslim edemezse çalışma eksik kapanır (devre kesici)."""
+        run_id = uuid4()
+        parsed = ire_parse(payload, sysparm_data_source, cred, "ire_ingest", run_id)
+        if (wait := limiter.take(cred, len(parsed.records))) is not None:
+            raise GatewayError(429, "hiz_siniri", "Dakikalık kayıt sınırı aşıldı.",
+                               [f"Dakikada en çok {cred.per_minute} kayıt."],
+                               headers={"Retry-After": str(int(wait + 0.999))})
+        started = now()
+        with pool.connection() as conn, conn.transaction():
+            conn.execute("""INSERT INTO ingest.source_run (run_id, data_source, mode, started_at, opened_by, notes)
+                            VALUES (%s, %s, 'delta', %s, %s, %s)""",
+                         (run_id, cred.data_source, started, cred.name, "IRE uyumlu alım (/api/now/identifyreconcile)"))
+        ingested = started.isoformat().encode()
+        messages = []
+        for i, rec in enumerate(parsed.records):
+            env = IngestEnvelope(id=f"{run_id}:{i}", source=f"urn:evren:ire:{cred.name}", time=started, data=rec)
+            try:
+                value = encode_record(env)
+            except MessageError:
+                close_failed(run_id, cred, len(parsed.records))
+                raise GatewayError(400, "kayit_buyuk", "Bir öğe olay boyut sınırını aşıyor; hiçbir öğe alınmadı.",
+                                   [f"items[{i}] çok büyük."]) from None
+            messages.append((TOPIC_RECORD, record_key(rec.data_source, rec.source_key), value,
+                             [("evren-connector", cred.name.encode()), ("evren-ingested-at", ingested)]))
+        try:
+            publisher.publish(messages, timeout=settings.publish_timeout_s)
+        except PublishError:
+            stats["publish_failed"] += 1
+            close_failed(run_id, cred, len(messages))
+            raise GatewayError(503, "kafka_kullanilamaz", "Kayıtlar olay omurgasına teslim edilemedi; yeniden deneyin.",
+                               ["Hiçbir öğe alınmadı."], headers={"Retry-After": "5"}) from None
+        stats["accepted"] += len(messages)
+        with pool.connection() as conn, conn.transaction():
+            conn.execute("""UPDATE ingest.source_run SET accepted_count = %s, reported_count = %s,
+                                   reported_completed = true, reported_error_count = 0, close_requested_at = now()
+                             WHERE run_id = %s""", (len(messages), len(messages), run_id))
+            conn.execute("INSERT INTO audit.security_event (principal, action, resource, decision, detail) "
+                         "VALUES (%s, 'ire_ingest', %s, 'allow', %s)",
+                         (cred.principal, f"source_run:{run_id}",
+                          Jsonb({"items": len(messages), "relations": len(parsed.relations),
+                                 "data_source": cred.data_source})))
+        summary = RunSummary(data_source=cred.data_source, run_id=run_id, mode="delta", completed=True,
+                             record_count=len(messages), started_at=started)
+        for kind in ("evren.ingest.run.started.v1", "evren.ingest.run.completed.v1"):
+            publish_run_event(RunEnvelope(id=f"{run_id}:{kind}", source=f"urn:evren:ire:{cred.name}", time=started,
+                                          type=kind, data=summary), cred)
+        return ire_response(parsed, operation="QUEUED", run_id=run_id, status_path=f"/ingest/v1/runs/{run_id}")
+
+    def close_failed(run_id: UUID, cred: Credential, n: int) -> None:
+        """Teslim edilemeyen IRE çalışması hemen eksik kapanış ister: uzlaştırıcı çalışmayı eksik sayar ve devre kesici
+        bu kaynağın yıkıcı işlemlerini durdurur."""
+        with pool.connection() as conn:
+            conn.execute("""UPDATE ingest.source_run SET reported_count = 0, reported_completed = false,
+                                   reported_error_count = %s, close_requested_at = now() WHERE run_id = %s""",
+                         (n, run_id))
 
     app.state.pool, app.state.publisher, app.state.limiter = pool, publisher, limiter
     app.state.beat, app.state.worker_id = beat, worker_id

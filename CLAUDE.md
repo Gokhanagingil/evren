@@ -155,6 +155,8 @@ packages/evren-core/      Saf alan mantığı + testler
   metrics.py              Prometheus metin biçimi (sayaç, gösterge, histogram; bağımlılıksız, ADR-0040)
   replica.py              ServiceNow replikası: kapsam doğrulaması (metadata/sn_sync.yaml), IRE yükü ve özeti, yanıt
                           yorumu (önce doğrula: çelişki kararı), IRE istemcisi ve simülatörü (ADR-0042)
+  ire_inbound.py          IRE uyumlu alım: ServiceNow IRE yükü → alım kayıtları (doğrulama, bağımlı sınıfın ana CI'ı),
+                          IRE biçiminde yanıt; geçit kullanır, golden record'a yazmaz (ADR-0045)
   timeline.py             zaman içinde sorgu: geçmiş bir andaki öznitelik ve ilişkiler, zaman çizelgesi anları (ADR-0031)
   model_view.py           Veri Modeli sayfasının görünümü (API ve model.json aynı kaynaktan)
   schedule.py             5 alanlı cron zamanlaması (çalıştırıcı servisi, metadata doğrulaması; ADR-0021)

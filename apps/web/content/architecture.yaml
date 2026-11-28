@@ -341,9 +341,9 @@ details:
     security: [Entra OIDC, "evren_app_api rolü, sütun düzeyi yetki", "CSRF başlığı + aynı köken", Yetki dışı alanlar yanıta konmaz, Makine hesabı için kapsamlı anahtar (F1)]
   sn_compat_api:
     phase: F2
-    text: "ServiceNow Table API biçiminde okuma (U9.3a, ADR-0044): GET /api/now/table/{tablo} ve /{sys_id}; sysparm_query, sysparm_fields, sysparm_limit/offset, referans bağlantısı, X-Total-Count ve Link başlıkları, ServiceNow hata biçimi. CMDB sınıfları (tablo kalıtımıyla), cmdb_rel_ci, cmdb_rel_type ve referans tabloları. Eski betikler adres ve kimlik değiştirerek Evren'i okur. IRE biçiminde veri alan uç (/identifyreconcile) U9.3b'de; o da golden record'a yazmaz, kaynak kaydı alır."
-    tech: ["evren_core.encoded_query", FastAPI (API sürecinde)]
-    security: [javascript ile başlayan değerler reddedilir, Alan adları sözlükten çözülür, Görülmeyen alan sorguda da kullanılamaz, Reddedilen alt sınıf üst tabloda görünmez, Entra taşıyıcı belirteci; temel kimlik doğrulama yok, Yazma yok]
+    text: "İki uç. Okuma (U9.3a, ADR-0044, API'de): GET /api/now/table/{tablo} ve /{sys_id}; sysparm_query, sysparm_fields, sysparm_limit/offset, referans bağlantısı, X-Total-Count ve Link başlıkları, ServiceNow hata biçimi; CMDB sınıfları (tablo kalıtımıyla), cmdb_rel_ci, cmdb_rel_type ve referans tabloları. Alım (U9.3b, ADR-0045, alım geçidinde): POST /api/now/identifyreconcile; IRE yükü tek bir delta çalışması olur, öğeler kaynak kaydı olarak uzlaştırıcıdan geçer, yanıt IRE biçiminde (QUEUED). Eski betikler ve IRE ile yazan araçlar adres ve kimlik değiştirerek Evren'e yönelir; replikaya ikinci yazar girmez."
+    tech: ["evren_core.encoded_query", "evren_core.ire_inbound", FastAPI (API ve alım geçidi)]
+    security: [javascript ile başlayan değerler reddedilir, Alan adları sözlükten çözülür, Görülmeyen alan sorguda da kullanılamaz, Reddedilen alt sınıf üst tabloda görünmez, Okumada Entra taşıyıcı belirteci; alımda bağlayıcı belirteci, Golden record'a doğrudan yazma yok]
   event_stream:
     phase: F2
     text: CI değişiklikleri CloudEvents olarak yayınlanır. Dış uygulamalar HMAC imzalı webhook ile abone olur.

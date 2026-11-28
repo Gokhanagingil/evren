@@ -5,7 +5,7 @@
 | Arayüz | Kim kullanır | Nerede |
 | --- | --- | --- |
 | Yerel REST `/api/v1` | Evren arayüzü, GRC Platformu (tedarik), otomasyonlar | `services/api` |
-| ServiceNow uyumlu `/api/now/table/{table}`, `/api/now/identifyreconcile` | SN Table API'ye yazılmış eski betikler, SN IRE biçiminde veri üreten araçlar | `services/api` (F2-05) |
+| ServiceNow uyumlu `/api/now/table/{table}` (okuma), `/api/now/identifyreconcile` (alım) | SN Table API'ye yazılmış eski betikler, SN IRE biçiminde veri üreten araçlar | Table API `services/api` (ADR-0044); IRE alımı `services/ingest-gateway` (ADR-0045) |
 | Alım geçidi `/ingest/v1` | Bağlayıcılar (vCenter, Zabbix, keşif …) | `services/ingest-gateway` (ADR-0017) |
 | Olay akışı (CloudEvents + imzalı webhook) | Değişikliğe tepki veren uygulamalar | Kafka `evren.cmdb.ci.changed.v1`, webhook (F2-06) |
 | MCP | Kurumun kendi MCP uygulaması ve yapay zekâ ajanları | `services/mcp`, docs/09 |
@@ -316,6 +316,26 @@ Bilinçli farklar (güvenlik):
 GET /api/now/table/cmdb_ci_server?sysparm_query=sys_class_nameINSTANCEOFcmdb_ci_linux_server^operational_status=1^ORDERBYname&sysparm_fields=sys_id,name,ip_address,owned_by&sysparm_limit=100
 Authorization: Bearer <Entra erişim belirteci>
 ```
+
+## IRE uyumlu alım ucu (ADR-0045)
+
+ServiceNow CMDB'ye bugün IRE API ile yazan araçlar aynı yükü Evren'in **alım geçidine** gönderir. Yük golden record'a yazılmaz. Her öğe, aracın veri kaynağı adına bir kaynak kaydı olur ve uzlaştırıcıdan geçer.
+
+| İstek | Sonuç |
+| --- | --- |
+| `POST /api/now/identifyreconcile?sysparm_data_source=<kaynak>` | Yük tek bir delta çalışması olur, öğeler Kafka'ya gider. 200 ve IRE biçiminde yanıt: öğeler `QUEUED`, `sysId` `Unknown`; `result.evren` alanında `run_id`, `status_path` (`/ingest/v1/runs/{id}`) ve uyarılar |
+| `POST /api/now/identifyreconcile/query?sysparm_data_source=<kaynak>` | Yalnızca doğrular (`VALIDATED`); hiçbir şey yazılmaz |
+
+- **Kimlik:** bağlayıcı belirteci (`Authorization: Bearer evr_…`). `sysparm_data_source` belirtecin kaynağıyla aynı olmalıdır.
+- **Zorunlu alan:** `sys_object_source_info.source_native_key`.
+- **Ya hep ya hiç:** bir öğe hatalıysa hiçbiri alınmaz. Hata ServiceNow biçiminde döner; ayrıntı sorunun yerini söyler, girdiyi yansıtmaz.
+- **Bağımlı sınıf:** Uygulama gibi bağımlı sınıfların ana CI'ı, kuraldaki ilişkiyle (`Runs on::Runs`) eşleşen öğedir.
+- **İşlenmeyen veya atılan parçalar:**
+  - `related`, `referenceItems` ve `settings` işlenmez.
+  - Sözlükte olmayan alanlar ve `sys_*` alanları uyarıyla atılır.
+  - Referans alanı sys_id bekler.
+
+Dönüşüm tablosu ve bilinçli farklar: ADR-0045.
 
 ## Küresel arama (ADR-0018)
 

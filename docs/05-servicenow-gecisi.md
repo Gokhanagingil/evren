@@ -62,7 +62,8 @@ ServiceNow CMDB'sini Table API ile okuyan betik ve entegrasyonlar (raporlar, oto
 - **Kapsam:** CMDB sınıfları, ilişkiler ve referans tabloları.
 - **Sınırlar:** Görünen değer (`sysparm_display_value=true`) ve dot-walk yoktur; bunlara dayanan betik referansı ayrıca okumalıdır.
 - **Uygulama sırası:** Her tüketici önce iki kaynağı da okur ve sonuçları karşılaştırır; tutarlıysa Evren'e geçer. Böylece ServiceNow replikası yalnızca süreçlerin ihtiyacı kadar kalır.
-- **Kaynak verisi gönderen araçlar:** IRE biçiminde veri gönderen araçların ucu (`/api/now/identifyreconcile`) ayrı adımdır (U9.3b). O uç golden record'a yazmaz; veriyi kaynak kaydı olarak alır.
+- **Kaynak verisi gönderen araçlar (U9.3b, ADR-0045):** ServiceNow'a IRE ile yazan araçlar aynı yükü Evren'in alım geçidine (`/api/now/identifyreconcile`) gönderir. Uç golden record'a yazmaz; veriyi kaynak kaydı olarak alır ve uzlaştırıcıdan geçirir. Böylece replikaya ikinci bir yazar girmez. Araç önce gölge modda bir veri kaynağı olarak tanımlanır.
+- **Önce envanter:** Hangi araçların bugün ServiceNow CMDB'sine yazdığı, ServiceNow'daki `discovery_source` dağılımından anlaşılır. Bu döküm henüz Evren'de yok, çünkü ServiceNow CMDB bağlayıcısı bu alanı okumuyor. Gölge mod raporuna eklenmesi plandadır (F0-13). Hiç IRE yazarı yoksa bu uç kullanılmaz; olanlar tek tek yönlendirilir.
 
 ## Geçiş dönemi kuralları
 

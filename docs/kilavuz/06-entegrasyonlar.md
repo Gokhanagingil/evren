@@ -35,9 +35,9 @@ Evren ana kaynaktır; ServiceNow CMDB'si Evren'in kopyasıdır. [ServiceNow Repl
 
 Kurumun yapay zekâ ajanları Evren'i yalnızca sizin yetkinizle sorgular; Evren'e yazamaz. Bir düzeltme önerirse öneri [Öneriler](#/oneriler) sayfasına düşer. Gerekçesini okuyun, kabul edin veya reddedin. Kendi önerinize karar veremezsiniz.
 
-## ServiceNow'u okuyan eski betikler
+## ServiceNow'u okuyan ve ServiceNow'a yazan eski araçlar
 
-ServiceNow CMDB'sini Table API ile okuyan betikler Evren'i aynı biçimle okuyabilir. Betiğin adresi ve kimliği değişir; sorgu ve yanıt aynı kalır. Betik yalnızca kendi kimliğine verilen yetkiyle görür.
+ServiceNow CMDB'sini Table API ile okuyan betikler Evren'i aynı biçimle okuyabilir. Betiğin adresi ve kimliği değişir; sorgu ve yanıt aynı kalır. Betik yalnızca kendi kimliğine verilen yetkiyle görür. ServiceNow'a IRE ile veri yazan araçlar da aynı yükü Evren'e gönderebilir; araç önce bir veri kaynağı olarak tanımlanır ve verisi diğer kaynaklar gibi uzlaştırmadan geçer.
 
 ## Teknik ayrıntı
 
@@ -45,3 +45,4 @@ ServiceNow CMDB'sini Table API ile okuyan betikler Evren'i aynı biçimle okuyab
 - [Kaynak rolleri (karar kaydı)](belge:adr/0009-kaynak-rolleri-urun-bagimsizligi)
 - [API ve entegrasyon sözleşmesi](belge:08-api-ve-entegrasyon)
 - [ServiceNow uyumlu Table API (karar kaydı)](belge:adr/0044-servicenow-uyumlu-table-api)
+- [IRE uyumlu alım ucu (karar kaydı)](belge:adr/0045-ire-uyumlu-alim-ucu)
